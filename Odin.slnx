@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj" />
+  <Project Path="Odin.Api/Odin.Api.csproj" />
+</Solution>
