@@ -1,4 +1,6 @@
 
+using Odin.Api.Endpoints.UserManagement;
+
 namespace Odin.Api
 {
     public class Program
@@ -44,6 +46,7 @@ namespace Odin.Api
             })
             .WithName("GetWeatherForecast");
 
+            app.MapUserEndpoints();
             app.Run();
         }
     }
