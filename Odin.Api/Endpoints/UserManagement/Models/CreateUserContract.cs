@@ -4,7 +4,7 @@ namespace Odin.Api.Endpoints.UserManagement.Models
 {
     public class CreateUserContract
     {
-        public class Request
+        public class Request : IValidatableObject
         {
             public string? FirstName { get; set; }
             public string? LastName { get; set; }

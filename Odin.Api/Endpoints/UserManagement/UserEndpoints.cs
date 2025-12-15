@@ -1,5 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using Odin.Api.Endpoints.UserManagement.Models;
+﻿using Odin.Api.Endpoints.UserManagement.Models;
+using Odin.Api.Extensions;
 
 namespace Odin.Api.Endpoints.UserManagement
 {
@@ -20,20 +20,12 @@ namespace Odin.Api.Endpoints.UserManagement
 
         private static async Task<IResult> CreateUser(CreateUserContract.Request request)
         {
-            var validationResults = request.Validate(new ValidationContext(request)).ToList();
-            if (validationResults.Count != 0)
+            var validationProblem = request.ValidateAndGetProblem();
+            if (validationProblem is not null)
             {
-                var errors = validationResults
-                    .SelectMany(vr => vr.MemberNames.Select(mn => new { MemberName = mn, vr.ErrorMessage }))
-                    .GroupBy(x => x.MemberName)
-                    .ToDictionary(
-                        g => g.Key,
-                        g => g.Select(x => x.ErrorMessage ?? string.Empty).ToArray());
-
-                return Results.ValidationProblem(errors);
+                return validationProblem;
             }
 
-            await Task.Delay(2000);
             return Results.Ok();
         }
     }
