@@ -1,4 +1,5 @@
-﻿using Odin.Api.Endpoints.UserManagement.Models;
+﻿using Microsoft.AspNetCore.Mvc;
+using Odin.Api.Endpoints.UserManagement.Models;
 using Odin.Api.Extensions;
 
 namespace Odin.Api.Endpoints.UserManagement
@@ -18,7 +19,7 @@ namespace Odin.Api.Endpoints.UserManagement
             return Results.Ok("User endpoint is working!");
         }
 
-        private static async Task<IResult> CreateUser(CreateUserContract.Request request)
+        private static async Task<IResult> CreateUser(IUserService userService, [FromBody]CreateUserContract.Request request)
         {
             var validationProblem = request.ValidateAndGetProblem();
             if (validationProblem is not null)
@@ -26,7 +27,8 @@ namespace Odin.Api.Endpoints.UserManagement
                 return validationProblem;
             }
 
-            return Results.Ok();
+            var response = await userService.CreateUserAsync(request);
+            return Results.Ok(response);
         }
     }
 }
