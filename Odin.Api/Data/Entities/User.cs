@@ -12,6 +12,7 @@ namespace Odin.Api.Data.Entities
         public string FirstName { get; set; } = string.Empty;
         public string MiddleName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        public List<GeneticInspection> GeneticInspections { get; set; } = [];
         public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; }
         public DateTime UpdatedAt { get; set; }
