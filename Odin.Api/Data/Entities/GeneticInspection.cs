@@ -5,6 +5,7 @@ namespace Odin.Api.Data.Entities
 {
     public class GeneticInspection
     {
+        public int Id { get; set; }
         public int UserId { get; set; }
         public User User { get; set; }
         public string FirstName { get; set; }
@@ -20,7 +21,7 @@ namespace Odin.Api.Data.Entities
     {
         public void Configure(EntityTypeBuilder<GeneticInspection> builder)
         {
-            builder.HasKey(e => e.UserId);
+            builder.HasKey(e => e.Id);
             builder.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             builder.Property(e => e.LastName).IsRequired().HasMaxLength(100);
 
