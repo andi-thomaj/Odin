@@ -6,26 +6,22 @@ namespace Odin.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
             var configuration = builder.Configuration;
             var services = builder.Services;
-            // Add services to the container.
-            services.AddAuthorization();
 
-            // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+            services.AddAuthorization();
             services.AddOpenApi();
             services.AddSwaggerGen();
-
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
             services.AddValidation();
-
             services.AddScoped<IUserService, UserService>();
-            var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
+            var app = builder.Build();
+            await app.InitializeDatabaseAsync();
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
@@ -39,7 +35,7 @@ namespace Odin.Api
             app.UseAuthorization();
 
             app.MapUserEndpoints();
-            app.Run();
+            await app.RunAsync();
         }
     }
 }
