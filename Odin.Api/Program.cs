@@ -21,7 +21,9 @@ namespace Odin.Api
             services.AddScoped<IUserService, UserService>();
 
             var app = builder.Build();
+
             await app.InitializeDatabaseAsync();
+            
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
