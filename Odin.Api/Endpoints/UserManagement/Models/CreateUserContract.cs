@@ -53,5 +53,12 @@ namespace Odin.Api.Endpoints.UserManagement.Models
                 }
             }
         }
+
+        public class Response
+        {
+            public string? FirstName { get; set; }
+            public string? LastName { get; set; }
+            public required string Email { get; set; }
+        }
     }
 }
