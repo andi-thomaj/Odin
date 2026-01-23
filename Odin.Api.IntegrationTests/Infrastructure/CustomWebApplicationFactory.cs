@@ -29,6 +29,9 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             // Add DbContext using the test container connection string
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(_dbFixture.ConnectionString));
+            
+            // Register ApplicationDbContextInitializer for tests
+            services.AddScoped<ApplicationDbContextInitializer>();
         });
 
         builder.UseEnvironment("Testing");

@@ -1,0 +1,47 @@
+/* Swagger UI Dark Mode Styles */
+body.dark-mode {
+    background-color: #1a1a2e;
+}
+
+body.dark-mode .swagger-ui {
+    filter: invert(88%) hue-rotate(180deg);
+}
+
+body.dark-mode .swagger-ui .highlight-code {
+    filter: invert(100%) hue-rotate(180deg);
+}
+
+body.dark-mode .swagger-ui img,
+body.dark-mode .swagger-ui svg {
+    filter: invert(100%) hue-rotate(180deg);
+}
+
+/* Dark mode toggle button */
+.dark-mode-toggle {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 9999;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    background-color: #3b4151;
+    color: #fff;
+}
+
+.dark-mode-toggle:hover {
+    background-color: #4990e2;
+}
+
+body.dark-mode .dark-mode-toggle {
+    background-color: #f0f0f0;
+    color: #1a1a2e;
+}
+
+body.dark-mode .dark-mode-toggle:hover {
+    background-color: #fff;
+}
