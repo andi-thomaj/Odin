@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+  </Folder>
   <Project Path="Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj" />
   <Project Path="Odin.Api/Odin.Api.csproj" />
 </Solution>
