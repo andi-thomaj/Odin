@@ -16,9 +16,13 @@ namespace Odin.Api
 
             services.AddAuthorization();
             services.AddOpenApi();
-            services.AddSwaggerGen();
+            services.AddSwaggerGen(options =>
+            {
+                options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
+            });
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            services.AddScoped<ApplicationDbContextInitializer>();
             services.AddValidation();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
@@ -27,15 +31,20 @@ namespace Odin.Api
             var app = builder.Build();
 
             await app.InitializeDatabaseAsync();
+
+            app.UseStaticFiles();
             
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();
                 app.UseSwagger();
-                app.UseSwaggerUI();
+                app.UseSwaggerUI(options =>
+                {
+                    options.InjectStylesheet("/swagger-ui/dark-mode.css");
+                    options.InjectJavascript("/swagger-ui/dark-mode-toggle.js");
+                });
+                app.UseHttpsRedirection();
             }
-
-            app.UseHttpsRedirection();
 
             // app.UseAuthentication();
             app.UseAuthorization();
