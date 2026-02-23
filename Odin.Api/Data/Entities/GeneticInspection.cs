@@ -14,7 +14,8 @@ namespace Odin.Api.Data.Entities
         public List<GeneticInspectionRegion> GeneticInspectionRegions { get; set; } = [];
         public List<Country> Countries { get; set; } = [];
         public int RawGeneticFileId { get; set; }
-        public RawGeneticFile RawGeneticFile { get; set; }
+        public RawGeneticFile? RawGeneticFile { get; set; }
+        public QpadmResult? QpadmResult { get; set; }
     }
 
     public class GeneticInspectionConfiguration : IEntityTypeConfiguration<GeneticInspection>
