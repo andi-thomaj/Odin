@@ -16,6 +16,7 @@ namespace Odin.Api.Data.Entities
         public int RawGeneticFileId { get; set; }
         public RawGeneticFile? RawGeneticFile { get; set; }
         public QpadmResult? QpadmResult { get; set; }
+        public VahaduoResult? VahaduoResult { get; set; }
     }
 
     public class GeneticInspectionConfiguration : IEntityTypeConfiguration<GeneticInspection>
