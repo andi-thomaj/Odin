@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
 {
-    public class GeneticInspection
+    public class GeneticInspection : BaseEntity
     {
         public int Id { get; set; }
         public int UserId { get; set; }

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
 {
-    public class User
+    public class User : BaseEntity
     {
         public int Id { get; set; }
         public string IdentityId { get; set; } = string.Empty;
@@ -13,10 +13,6 @@ namespace Odin.Api.Data.Entities
         public string MiddleName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public List<GeneticInspection> GeneticInspections { get; set; } = [];
-        public DateTime CreatedAt { get; set; }
-        public string CreatedBy { get; set; }
-        public DateTime UpdatedAt { get; set; }
-        public string UpdatedBy { get; set; }
     }
 
     public class UserConfiguration : IEntityTypeConfiguration<User>

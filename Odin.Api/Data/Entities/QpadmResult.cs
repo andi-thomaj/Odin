@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
 {
-    public class QpadmResult
+    public class QpadmResult : BaseEntity
     {
         public int Id { get; set; }
         public int GeneticInspectionId { get; set; }

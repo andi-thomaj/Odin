@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
 {
-    public class RawGeneticFile
+    public class RawGeneticFile : BaseEntity
     {
         public int Id { get; set; }
         public required byte[] RawData { get; set; } = [];
