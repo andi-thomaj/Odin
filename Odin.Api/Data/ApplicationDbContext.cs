@@ -11,9 +11,9 @@ namespace Odin.Api.Data
         public DbSet<GeneticInspectionRegion> GeneticInspectionRegions { get; set; }
         public DbSet<Ethnicity> Ethnicities { get; set; }
         public DbSet<Region> Regions { get; set; }
-        public DbSet<TimeEra> TimeEras { get; set; }
-        public DbSet<SubEra> SubEras { get; set; }
-        public DbSet<TimeEraSubEra> TimeEraSubEras { get; set; }
+        public DbSet<Era> Eras { get; set; }
+        public DbSet<Population> Populations { get; set; }
+        public DbSet<SubPopulation> SubPopulations { get; set; }
         public DbSet<QpadmResult> QpadmResults { get; set; }
         public DbSet<VahaduoResult> VahaduoResults { get; set; }
         public DbSet<ResearchLink> ResearchLinks { get; set; }

@@ -1,24 +1,24 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
 {
-    public class TimeEra : BaseEntity
+    public class Era : BaseEntity
     {
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
-        public List<TimeEraSubEra> TimeEraSubEras { get; set; } = [];
+        public List<Population> Populations { get; set; } = [];
     }
 
-    public class TimeEraConfiguration : IEntityTypeConfiguration<TimeEra>
+    public class EraConfiguration : IEntityTypeConfiguration<Era>
     {
-        public void Configure(EntityTypeBuilder<TimeEra> builder)
+        public void Configure(EntityTypeBuilder<Era> builder)
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Name).IsRequired().HasMaxLength(100);
 
-            builder.ToTable("time_eras");
+            builder.ToTable("eras");
         }
     }
 }

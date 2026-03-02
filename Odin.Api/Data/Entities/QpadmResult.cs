@@ -8,7 +8,7 @@ namespace Odin.Api.Data.Entities
         public int Id { get; set; }
         public int GeneticInspectionId { get; set; }
         public GeneticInspection GeneticInspection { get; set; }
-        public List<TimeEraSubEra> TimeEraSubEras { get; set; } = [];
+        public List<Population> Populations { get; set; } = [];
         public decimal Weight { get; set; }
         public decimal StandardError { get; set; }
         public decimal ZScore { get; set; }
@@ -28,9 +28,9 @@ namespace Odin.Api.Data.Entities
                 .WithOne(e => e.QpadmResult)
                 .HasForeignKey<QpadmResult>(e => e.GeneticInspectionId);
 
-            builder.HasMany(e => e.TimeEraSubEras)
+            builder.HasMany(e => e.Populations)
                 .WithMany()
-                .UsingEntity(j => j.ToTable("qpadm_result_time_era_sub_eras"));
+                .UsingEntity(j => j.ToTable("qpadm_result_populations"));
 
             builder.ToTable("qpadm_results");
         }
