@@ -12,6 +12,7 @@ namespace Odin.Api.Endpoints.UserManagement
 
             endpoints.MapGet("/", GetUsers);
             endpoints.MapPost("/", CreateUser);
+            endpoints.MapGet("/ethnicities", GetEthnicities);
         }
 
         private static IResult GetUsers()
@@ -29,6 +30,12 @@ namespace Odin.Api.Endpoints.UserManagement
 
             var response = await userService.CreateUserAsync(request);
             return Results.Ok(response);
+        }
+
+        private static async Task<IResult> GetEthnicities(IEthnicityService ethnicityService)
+        {
+            var ethnicities = await ethnicityService.GetAllAsync();
+            return Results.Ok(ethnicities);
         }
     }
 }

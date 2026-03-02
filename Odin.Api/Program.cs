@@ -26,6 +26,7 @@ namespace Odin.Api
             services.AddScoped<DatabaseSeeder>();
             services.AddValidation();
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IEthnicityService, EthnicityService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
 

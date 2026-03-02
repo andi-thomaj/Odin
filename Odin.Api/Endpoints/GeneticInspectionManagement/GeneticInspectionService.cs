@@ -22,7 +22,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 FirstName = request.FirstName,
                 MiddleName = request.MiddleName ?? string.Empty,
                 LastName = request.LastName,
-                RawGeneticFileId = request.RawGeneticFileId
+                RawGeneticFileId = request.RawGeneticFileId,
+                CreatedBy = string.Empty
             };
 
             dbContext.GeneticInspections.Add(geneticInspection);

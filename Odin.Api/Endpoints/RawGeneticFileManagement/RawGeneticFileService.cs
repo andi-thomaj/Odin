@@ -24,7 +24,8 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
             var rawGeneticFile = new RawGeneticFile
             {
                 FileName = request.File.FileName,
-                RawData = memoryStream.ToArray()
+                RawData = memoryStream.ToArray(),
+                CreatedBy = string.Empty
             };
 
             dbContext.RawGeneticFiles.Add(rawGeneticFile);

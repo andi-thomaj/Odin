@@ -209,7 +209,8 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         var rawFile = new RawGeneticFile
         {
             FileName = "test_genetic_data.txt",
-            RawData = "Test genetic data content"u8.ToArray()
+            RawData = "Test genetic data content"u8.ToArray(),
+            CreatedBy = string.Empty
         };
         dbContext.RawGeneticFiles.Add(rawFile);
 
