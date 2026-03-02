@@ -12,7 +12,7 @@ namespace Odin.Api.Data.Entities
         public string MiddleName { get; set; }
         public string LastName { get; set; }
         public List<GeneticInspectionRegion> GeneticInspectionRegions { get; set; } = [];
-        public List<Country> Countries { get; set; } = [];
+        public List<Ethnicity> Ethnicities { get; set; } = [];
         public int RawGeneticFileId { get; set; }
         public RawGeneticFile? RawGeneticFile { get; set; }
         public QpadmResult? QpadmResult { get; set; }

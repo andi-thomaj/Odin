@@ -30,7 +30,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             // Add region associations
             var regions = await dbContext.Regions
-                .Include(r => r.Country)
+                .Include(r => r.Ethnicity)
                 .Where(r => request.RegionIds.Contains(r.Id))
                 .ToListAsync();
 
@@ -58,7 +58,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 {
                     Id = r.Id,
                     Name = r.Name,
-                    CountryName = r.Country.Name
+                    EthnicityName = r.Ethnicity.Name
                 }).ToList()
             };
         }
@@ -70,7 +70,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .Include(gi => gi.RawGeneticFile)
                 .Include(gi => gi.GeneticInspectionRegions)
                     .ThenInclude(gir => gir.Region)
-                        .ThenInclude(r => r.Country)
+                        .ThenInclude(r => r.Ethnicity)
                 .FirstOrDefaultAsync(gi => gi.Id == id);
 
             if (inspection is null)
@@ -90,7 +90,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 {
                     Id = gir.Region.Id,
                     Name = gir.Region.Name,
-                    CountryName = gir.Region.Country.Name
+                    EthnicityName = gir.Region.Ethnicity.Name
                 }).ToList()
             };
         }
@@ -102,7 +102,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .Include(gi => gi.RawGeneticFile)
                 .Include(gi => gi.GeneticInspectionRegions)
                     .ThenInclude(gir => gir.Region)
-                        .ThenInclude(r => r.Country)
+                        .ThenInclude(r => r.Ethnicity)
                 .Select(inspection => new GetGeneticInspectionContract.Response
                 {
                     Id = inspection.Id,
@@ -115,7 +115,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     {
                         Id = gir.Region.Id,
                         Name = gir.Region.Name,
-                        CountryName = gir.Region.Country.Name
+                        EthnicityName = gir.Region.Ethnicity.Name
                     }).ToList()
                 })
                 .ToListAsync();

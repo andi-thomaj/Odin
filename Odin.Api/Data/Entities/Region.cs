@@ -7,8 +7,8 @@ namespace Odin.Api.Data.Entities
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public int CountryId { get; set; }
-        public required Country Country { get; set; }
+        public int EthnicityId { get; set; }
+        public required Ethnicity Ethnicity { get; set; }
     }
 
     public class RegionConfiguration : IEntityTypeConfiguration<Region>

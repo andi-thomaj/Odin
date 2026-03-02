@@ -172,7 +172,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
     }
 
     [Fact]
-    public async Task Create_IncludesRegionsWithCountryInfo()
+    public async Task Create_IncludesRegionsWithEthnicityInfo()
     {
         // Arrange
         var (rawFileId, regionIds) = await SeedTestDataAsync();
@@ -196,7 +196,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         Assert.All(result.Regions, r =>
         {
             Assert.NotEmpty(r.Name);
-            Assert.NotEmpty(r.CountryName);
+            Assert.NotEmpty(r.EthnicityName);
         });
     }
 
@@ -213,13 +213,13 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         };
         dbContext.RawGeneticFiles.Add(rawFile);
 
-        // Seed countries and regions
-        var country = new Country { Name = "Test Country" };
-        dbContext.Countries.Add(country);
+        // Seed ethnicities and regions
+        var ethnicity = new Ethnicity { Name = "Test Ethnicity" };
+        dbContext.Ethnicities.Add(ethnicity);
         await dbContext.SaveChangesAsync();
 
-        var region1 = new Region { Name = "Test Region 1", CountryId = country.Id, Country = country };
-        var region2 = new Region { Name = "Test Region 2", CountryId = country.Id, Country = country };
+        var region1 = new Region { Name = "Test Region 1", EthnicityId = ethnicity.Id, Ethnicity = ethnicity };
+        var region2 = new Region { Name = "Test Region 2", EthnicityId = ethnicity.Id, Ethnicity = ethnicity };
         dbContext.Regions.AddRange(region1, region2);
         await dbContext.SaveChangesAsync();
 

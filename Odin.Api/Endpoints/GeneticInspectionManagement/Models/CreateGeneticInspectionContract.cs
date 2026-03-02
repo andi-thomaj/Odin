@@ -90,6 +90,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public required string CountryName { get; set; }
+        public required string EthnicityName { get; set; }
     }
 }

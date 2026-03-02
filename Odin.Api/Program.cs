@@ -23,6 +23,7 @@ namespace Odin.Api
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
             services.AddScoped<ApplicationDbContextInitializer>();
+            services.AddScoped<DatabaseSeeder>();
             services.AddValidation();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();

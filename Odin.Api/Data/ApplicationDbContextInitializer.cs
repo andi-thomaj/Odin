@@ -14,13 +14,14 @@ namespace Odin.Api.Data
         }
     }
 
-    public class ApplicationDbContextInitializer(ApplicationDbContext context)
+    public class ApplicationDbContextInitializer(ApplicationDbContext context, DatabaseSeeder seeder)
     {
         public async Task InitialiseAsync()
         {
             try
             {
                 await context.Database.MigrateAsync();
+                await seeder.SeedAsync();
             }
             catch (Exception ex)
             {

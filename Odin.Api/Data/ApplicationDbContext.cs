@@ -9,7 +9,7 @@ namespace Odin.Api.Data
         public DbSet<RawGeneticFile> RawGeneticFiles { get; set; }
         public DbSet<GeneticInspection> GeneticInspections { get; set; }
         public DbSet<GeneticInspectionRegion> GeneticInspectionRegions { get; set; }
-        public DbSet<Country> Countries { get; set; }
+        public DbSet<Ethnicity> Ethnicities { get; set; }
         public DbSet<Region> Regions { get; set; }
         public DbSet<TimeEra> TimeEras { get; set; }
         public DbSet<SubEra> SubEras { get; set; }
