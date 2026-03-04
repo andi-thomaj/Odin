@@ -10,10 +10,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         {
             var endpoints = app.MapGroup("api/genetic-inspections");
 
-            endpoints.MapGet("/", GetAll);
-            endpoints.MapGet("/{id:int}", GetById);
-            endpoints.MapPost("/", Create);
-            endpoints.MapDelete("/{id:int}", Delete);
+            endpoints.MapGet("/", GetAll).RequireAuthorization("Authenticated");
+            endpoints.MapGet("/{id:int}", GetById).RequireAuthorization("Authenticated");
+            endpoints.MapPost("/", Create).RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapDelete("/{id:int}", Delete).RequireAuthorization("AdminOnly");
         }
 
         private static async Task<IResult> GetAll(IGeneticInspectionService service)

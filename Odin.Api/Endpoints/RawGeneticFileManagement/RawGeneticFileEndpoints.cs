@@ -9,11 +9,11 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
         {
             var endpoints = app.MapGroup("api/raw-genetic-files");
 
-            endpoints.MapGet("/", GetAllFiles);
-            endpoints.MapGet("/{id:int}", GetFileById);
-            endpoints.MapGet("/{id:int}/download", DownloadFile);
-            endpoints.MapPost("/", UploadFile).DisableAntiforgery();
-            endpoints.MapDelete("/{id:int}", DeleteFile);
+            endpoints.MapGet("/", GetAllFiles).RequireAuthorization("Authenticated");
+            endpoints.MapGet("/{id:int}", GetFileById).RequireAuthorization("Authenticated");
+            endpoints.MapGet("/{id:int}/download", DownloadFile).RequireAuthorization("Authenticated");
+            endpoints.MapPost("/", UploadFile).DisableAntiforgery().RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapDelete("/{id:int}", DeleteFile).RequireAuthorization("AdminOnly");
         }
 
         private static async Task<IResult> GetAllFiles(IRawGeneticFileService service)
