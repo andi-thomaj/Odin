@@ -18,6 +18,7 @@ namespace Odin.Api.Data
         public DbSet<VahaduoResult> VahaduoResults { get; set; }
         public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<QpadmResultResearchLink> QpadmResultResearchLinks { get; set; }
+        public DbSet<Order> Orders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

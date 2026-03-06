@@ -8,6 +8,7 @@ namespace Odin.Api.Data.Entities
         public int Id { get; set; }
         public required byte[] RawData { get; set; } = [];
         public required string FileName { get; set; }
+        public GeneticInspection? GeneticInspection { get; set; }
     }
 
     public class RawGeneticFileConfiguration : IEntityTypeConfiguration<RawGeneticFile>
@@ -16,6 +17,10 @@ namespace Odin.Api.Data.Entities
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.FileName).IsRequired().HasMaxLength(200);
+
+            builder.HasOne(e => e.GeneticInspection)
+                .WithOne(gi => gi.RawGeneticFile)
+                .HasForeignKey<GeneticInspection>(gi => gi.RawGeneticFileId);
 
             builder.ToTable("raw_genetic_files");
         }

@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
+using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Middleware;
@@ -78,6 +79,7 @@ namespace Odin.Api
             services.AddScoped<IEraService, EraService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
+            services.AddScoped<IOrderService, OrderService>();
 
             var app = builder.Build();
 
@@ -104,6 +106,7 @@ namespace Odin.Api
             app.MapUserEndpoints();
             app.MapRawGeneticFileEndpoints();
             app.MapGeneticInspectionEndpoints();
+            app.MapOrderEndpoints();
             await app.RunAsync();
         }
     }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
+using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
 using Odin.Api.Extensions;
 
 namespace Odin.Api.Endpoints.GeneticInspectionManagement
@@ -14,6 +15,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             endpoints.MapGet("/{id:int}", GetById).RequireAuthorization("Authenticated");
             endpoints.MapPost("/", Create).RequireAuthorization("ScientistOrAdmin");
             endpoints.MapDelete("/{id:int}", Delete).RequireAuthorization("AdminOnly");
+
+            endpoints.MapPost("/{id:int}/genetic-file", UploadGeneticFile).DisableAntiforgery().RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapGet("/{id:int}/genetic-file/download", DownloadGeneticFile).RequireAuthorization("Authenticated");
+            endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile).RequireAuthorization("AdminOnly");
         }
 
         private static async Task<IResult> GetAll(IGeneticInspectionService service)
@@ -52,6 +57,45 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             return deleted
                 ? Results.NoContent()
                 : Results.NotFound(new { Message = $"Genetic inspection with ID {id} not found." });
+        }
+
+        private static async Task<IResult> UploadGeneticFile(IGeneticInspectionService service, int id, IFormFile file)
+        {
+            var request = new UploadGeneticFileContract.Request { File = file };
+
+            var validationProblem = request.ValidateAndGetProblem();
+            if (validationProblem is not null)
+            {
+                return validationProblem;
+            }
+
+            var response = await service.UploadGeneticFileAsync(id, request);
+
+            return response is null
+                ? Results.NotFound(new { Message = $"Genetic inspection with ID {id} not found." })
+                : Results.Created($"/api/genetic-inspections/{id}/genetic-file", response);
+        }
+
+        private static async Task<IResult> DownloadGeneticFile(IGeneticInspectionService service, int id)
+        {
+            var result = await service.DownloadGeneticFileAsync(id);
+
+            if (result is null)
+            {
+                return Results.NotFound(new { Message = $"Genetic file for inspection with ID {id} not found." });
+            }
+
+            var (data, fileName) = result.Value;
+            return Results.File(data, "application/octet-stream", fileName);
+        }
+
+        private static async Task<IResult> DeleteGeneticFile(IGeneticInspectionService service, int id)
+        {
+            var deleted = await service.DeleteGeneticFileAsync(id);
+
+            return deleted
+                ? Results.NoContent()
+                : Results.NotFound(new { Message = $"Genetic file for inspection with ID {id} not found." });
         }
     }
 }

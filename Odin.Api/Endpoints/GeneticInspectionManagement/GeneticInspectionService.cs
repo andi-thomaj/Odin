@@ -2,6 +2,7 @@
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
+using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
 
 namespace Odin.Api.Endpoints.GeneticInspectionManagement
 {
@@ -11,6 +12,9 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         Task<GetGeneticInspectionContract.Response?> GetByIdAsync(int id);
         Task<IEnumerable<GetGeneticInspectionContract.Response>> GetAllAsync();
         Task<bool> DeleteAsync(int id);
+        Task<UploadGeneticFileContract.Response?> UploadGeneticFileAsync(int inspectionId, UploadGeneticFileContract.Request request);
+        Task<(byte[] Data, string FileName)?> DownloadGeneticFileAsync(int inspectionId);
+        Task<bool> DeleteGeneticFileAsync(int inspectionId);
     }
 
     public class GeneticInspectionService(ApplicationDbContext dbContext) : IGeneticInspectionService
@@ -132,6 +136,71 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             }
 
             dbContext.GeneticInspections.Remove(inspection);
+            await dbContext.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<UploadGeneticFileContract.Response?> UploadGeneticFileAsync(int inspectionId, UploadGeneticFileContract.Request request)
+        {
+            var inspection = await dbContext.GeneticInspections.FindAsync(inspectionId);
+
+            if (inspection is null)
+            {
+                return null;
+            }
+
+            using var memoryStream = new MemoryStream();
+            await request.File.CopyToAsync(memoryStream);
+
+            var rawGeneticFile = new RawGeneticFile
+            {
+                FileName = request.File.FileName,
+                RawData = memoryStream.ToArray(),
+                CreatedBy = string.Empty
+            };
+
+            dbContext.RawGeneticFiles.Add(rawGeneticFile);
+            await dbContext.SaveChangesAsync();
+
+            inspection.RawGeneticFileId = rawGeneticFile.Id;
+            await dbContext.SaveChangesAsync();
+
+            return new UploadGeneticFileContract.Response
+            {
+                Id = rawGeneticFile.Id,
+                FileName = rawGeneticFile.FileName,
+                FileSize = request.File.Length,
+                UploadedAt = DateTime.UtcNow
+            };
+        }
+
+        public async Task<(byte[] Data, string FileName)?> DownloadGeneticFileAsync(int inspectionId)
+        {
+            var inspection = await dbContext.GeneticInspections
+                .AsNoTracking()
+                .Include(gi => gi.RawGeneticFile)
+                .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
+
+            if (inspection?.RawGeneticFile is null)
+            {
+                return null;
+            }
+
+            return (inspection.RawGeneticFile.RawData, inspection.RawGeneticFile.FileName);
+        }
+
+        public async Task<bool> DeleteGeneticFileAsync(int inspectionId)
+        {
+            var inspection = await dbContext.GeneticInspections
+                .Include(gi => gi.RawGeneticFile)
+                .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
+
+            if (inspection?.RawGeneticFile is null)
+            {
+                return false;
+            }
+
+            dbContext.RawGeneticFiles.Remove(inspection.RawGeneticFile);
             await dbContext.SaveChangesAsync();
             return true;
         }
