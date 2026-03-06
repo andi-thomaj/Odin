@@ -200,7 +200,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return false;
             }
 
-            dbContext.RawGeneticFiles.Remove(inspection.RawGeneticFile);
+            inspection.RawGeneticFile.IsDeleted = true;
             await dbContext.SaveChangesAsync();
             return true;
         }

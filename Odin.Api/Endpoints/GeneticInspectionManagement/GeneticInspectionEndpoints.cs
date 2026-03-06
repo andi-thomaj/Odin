@@ -18,7 +18,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             endpoints.MapPost("/{id:int}/genetic-file", UploadGeneticFile).DisableAntiforgery().RequireAuthorization("ScientistOrAdmin");
             endpoints.MapGet("/{id:int}/genetic-file/download", DownloadGeneticFile).RequireAuthorization("Authenticated");
-            endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile).RequireAuthorization("AdminOnly");
+            endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile).RequireAuthorization("Authenticated");
         }
 
         private static async Task<IResult> GetAll(IGeneticInspectionService service)

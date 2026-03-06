@@ -95,7 +95,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
                 return false;
             }
 
-            dbContext.RawGeneticFiles.Remove(file);
+            file.IsDeleted = true;
             await dbContext.SaveChangesAsync();
             return true;
         }

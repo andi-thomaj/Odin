@@ -13,7 +13,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
             endpoints.MapGet("/{id:int}", GetFileById).RequireAuthorization("Authenticated");
             endpoints.MapGet("/{id:int}/download", DownloadFile).RequireAuthorization("Authenticated");
             endpoints.MapPost("/", UploadFile).DisableAntiforgery().RequireAuthorization("ScientistOrAdmin");
-            endpoints.MapDelete("/{id:int}", DeleteFile).RequireAuthorization("AdminOnly");
+            endpoints.MapDelete("/{id:int}", DeleteFile).RequireAuthorization("Authenticated");
         }
 
         private static async Task<IResult> GetAllFiles(IRawGeneticFileService service)

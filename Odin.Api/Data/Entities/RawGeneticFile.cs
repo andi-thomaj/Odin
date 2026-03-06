@@ -8,6 +8,7 @@ namespace Odin.Api.Data.Entities
         public int Id { get; set; }
         public required byte[] RawData { get; set; } = [];
         public required string FileName { get; set; }
+        public bool IsDeleted { get; set; }
         public GeneticInspection? GeneticInspection { get; set; }
     }
 
@@ -17,6 +18,9 @@ namespace Odin.Api.Data.Entities
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.FileName).IsRequired().HasMaxLength(200);
+            builder.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            builder.HasQueryFilter(e => !e.IsDeleted);
 
             builder.HasOne(e => e.GeneticInspection)
                 .WithOne(gi => gi.RawGeneticFile)
