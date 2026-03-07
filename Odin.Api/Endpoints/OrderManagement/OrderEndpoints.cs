@@ -12,8 +12,8 @@ namespace Odin.Api.Endpoints.OrderManagement
 
             endpoints.MapGet("/", GetAll).RequireAuthorization("Authenticated");
             endpoints.MapGet("/{id:int}", GetById).RequireAuthorization("Authenticated");
-            endpoints.MapPost("/", Create).RequireAuthorization("ScientistOrAdmin");
-            endpoints.MapPut("/{id:int}", Update).RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapPost("/", Create).RequireAuthorization("Authenticated");
+            endpoints.MapPut("/{id:int}", Update).RequireAuthorization("Authenticated");
             endpoints.MapDelete("/{id:int}", Delete).RequireAuthorization("AdminOnly");
         }
 

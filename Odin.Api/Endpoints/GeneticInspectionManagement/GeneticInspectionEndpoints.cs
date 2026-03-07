@@ -16,8 +16,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             endpoints.MapPost("/", Create).RequireAuthorization("ScientistOrAdmin");
             endpoints.MapDelete("/{id:int}", Delete).RequireAuthorization("AdminOnly");
 
-            endpoints.MapPost("/{id:int}/genetic-file", UploadGeneticFile).DisableAntiforgery().RequireAuthorization("ScientistOrAdmin");
-            endpoints.MapGet("/{id:int}/genetic-file/download", DownloadGeneticFile).RequireAuthorization("Authenticated");
+            endpoints.MapPost("/{id:int}/genetic-file", UploadGeneticFile).DisableAntiforgery()
+                .RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapGet("/{id:int}/genetic-file/download", DownloadGeneticFile)
+                .RequireAuthorization("Authenticated");
             endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile).RequireAuthorization("Authenticated");
 
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("ScientistOrAdmin");

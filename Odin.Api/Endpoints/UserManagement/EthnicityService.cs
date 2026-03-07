@@ -22,8 +22,7 @@ namespace Odin.Api.Endpoints.UserManagement
                     Name = e.Name,
                     Regions = e.Regions.Select(r => new GetEthnicitiesContract.RegionItem
                     {
-                        Id = r.Id,
-                        Name = r.Name
+                        Id = r.Id, Name = r.Name
                     }).ToList()
                 })
                 .ToListAsync();

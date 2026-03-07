@@ -212,7 +212,9 @@ public class DatabaseSeeder(ApplicationDbContext context)
         }
 
         // Seed raw genetic files
-        var sampleCsvContent = "rsid,chromosome,position,genotype\nrs1234567,1,100000,AG\nrs7654321,2,200000,CT\nrs1111111,3,300000,GG"u8.ToArray();
+        var sampleCsvContent =
+            "rsid,chromosome,position,genotype\nrs1234567,1,100000,AG\nrs7654321,2,200000,CT\nrs1111111,3,300000,GG"u8
+                .ToArray();
 
         var geneticFiles = new[]
         {

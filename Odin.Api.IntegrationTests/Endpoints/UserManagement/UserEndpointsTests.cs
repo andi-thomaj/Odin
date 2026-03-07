@@ -23,10 +23,7 @@ public class UserEndpointsTests(CustomWebApplicationFactory factory) : Integrati
         // Arrange
         var request = new CreateUserContract.Request
         {
-            IdentityId = "auth0|test-user-123",
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "john.doe@example.com"
+            IdentityId = "auth0|test-user-123", FirstName = "John", LastName = "Doe", Email = "john.doe@example.com"
         };
 
         // Act
@@ -78,10 +75,7 @@ public class UserEndpointsTests(CustomWebApplicationFactory factory) : Integrati
         // Arrange
         var request = new CreateUserContract.Request
         {
-            IdentityId = "auth0|invalid-email-test",
-            FirstName = "John",
-            LastName = "Doe",
-            Email = "invalid-email"
+            IdentityId = "auth0|invalid-email-test", FirstName = "John", LastName = "Doe", Email = "invalid-email"
         };
 
         // Act

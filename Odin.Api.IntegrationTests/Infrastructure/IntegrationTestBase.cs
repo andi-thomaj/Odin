@@ -23,11 +23,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         await using var connection = new NpgsqlConnection(Factory.ConnectionString);
         await connection.OpenAsync();
 
-        _respawner = await Respawner.CreateAsync(connection, new RespawnerOptions
-        {
-            DbAdapter = DbAdapter.Postgres,
-            SchemasToInclude = ["public"]
-        });
+        _respawner = await Respawner.CreateAsync(connection,
+            new RespawnerOptions { DbAdapter = DbAdapter.Postgres, SchemasToInclude = ["public"] });
 
         await _respawner.ResetAsync(connection);
     }

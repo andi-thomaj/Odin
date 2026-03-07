@@ -12,17 +12,24 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         Task<GetGeneticInspectionContract.Response?> GetByIdAsync(int id);
         Task<IEnumerable<GetGeneticInspectionContract.Response>> GetAllAsync();
         Task<bool> DeleteAsync(int id);
-        Task<UploadGeneticFileContract.Response?> UploadGeneticFileAsync(int inspectionId, UploadGeneticFileContract.Request request);
+
+        Task<UploadGeneticFileContract.Response?> UploadGeneticFileAsync(int inspectionId,
+            UploadGeneticFileContract.Request request);
+
         Task<(byte[] Data, string FileName)?> DownloadGeneticFileAsync(int inspectionId);
         Task<bool> DeleteGeneticFileAsync(int inspectionId);
-        Task<SubmitQpadmResultContract.Response?> SubmitQpadmResultAsync(int inspectionId, SubmitQpadmResultContract.Request request);
+
+        Task<SubmitQpadmResultContract.Response?> SubmitQpadmResultAsync(int inspectionId,
+            SubmitQpadmResultContract.Request request);
+
         Task<SubmitQpadmResultContract.Response?> GetQpadmResultAsync(int inspectionId);
         Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId);
     }
 
     public class GeneticInspectionService(ApplicationDbContext dbContext) : IGeneticInspectionService
     {
-        public async Task<CreateGeneticInspectionContract.Response> CreateAsync(CreateGeneticInspectionContract.Request request)
+        public async Task<CreateGeneticInspectionContract.Response> CreateAsync(
+            CreateGeneticInspectionContract.Request request)
         {
             var geneticInspection = new GeneticInspection
             {
@@ -64,9 +71,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 RawGeneticFileId = geneticInspection.RawGeneticFileId,
                 Regions = regions.Select(r => new RegionResponse
                 {
-                    Id = r.Id,
-                    Name = r.Name,
-                    EthnicityName = r.Ethnicity.Name
+                    Id = r.Id, Name = r.Name, EthnicityName = r.Ethnicity.Name
                 }).ToList()
             };
         }
@@ -77,8 +82,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .AsNoTracking()
                 .Include(gi => gi.RawGeneticFile)
                 .Include(gi => gi.GeneticInspectionRegions)
-                    .ThenInclude(gir => gir.Region)
-                        .ThenInclude(r => r.Ethnicity)
+                .ThenInclude(gir => gir.Region)
+                .ThenInclude(r => r.Ethnicity)
                 .FirstOrDefaultAsync(gi => gi.Id == id);
 
             if (inspection is null)
@@ -96,9 +101,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 RawGeneticFileName = inspection.RawGeneticFile.FileName,
                 Regions = inspection.GeneticInspectionRegions.Select(gir => new RegionResponse
                 {
-                    Id = gir.Region.Id,
-                    Name = gir.Region.Name,
-                    EthnicityName = gir.Region.Ethnicity.Name
+                    Id = gir.Region.Id, Name = gir.Region.Name, EthnicityName = gir.Region.Ethnicity.Name
                 }).ToList()
             };
         }
@@ -109,8 +112,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .AsNoTracking()
                 .Include(gi => gi.RawGeneticFile)
                 .Include(gi => gi.GeneticInspectionRegions)
-                    .ThenInclude(gir => gir.Region)
-                        .ThenInclude(r => r.Ethnicity)
+                .ThenInclude(gir => gir.Region)
+                .ThenInclude(r => r.Ethnicity)
                 .Select(inspection => new GetGeneticInspectionContract.Response
                 {
                     Id = inspection.Id,
@@ -121,9 +124,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     RawGeneticFileName = inspection.RawGeneticFile.FileName,
                     Regions = inspection.GeneticInspectionRegions.Select(gir => new RegionResponse
                     {
-                        Id = gir.Region.Id,
-                        Name = gir.Region.Name,
-                        EthnicityName = gir.Region.Ethnicity.Name
+                        Id = gir.Region.Id, Name = gir.Region.Name, EthnicityName = gir.Region.Ethnicity.Name
                     }).ToList()
                 })
                 .ToListAsync();
@@ -143,7 +144,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             return true;
         }
 
-        public async Task<UploadGeneticFileContract.Response?> UploadGeneticFileAsync(int inspectionId, UploadGeneticFileContract.Request request)
+        public async Task<UploadGeneticFileContract.Response?> UploadGeneticFileAsync(int inspectionId,
+            UploadGeneticFileContract.Request request)
         {
             var inspection = await dbContext.GeneticInspections.FindAsync(inspectionId);
 
@@ -157,9 +159,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             var rawGeneticFile = new RawGeneticFile
             {
-                FileName = request.File.FileName,
-                RawData = memoryStream.ToArray(),
-                CreatedBy = string.Empty
+                FileName = request.File.FileName, RawData = memoryStream.ToArray(), CreatedBy = string.Empty
             };
 
             dbContext.RawGeneticFiles.Add(rawGeneticFile);
@@ -208,11 +208,12 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             return true;
         }
 
-        public async Task<SubmitQpadmResultContract.Response?> SubmitQpadmResultAsync(int inspectionId, SubmitQpadmResultContract.Request request)
+        public async Task<SubmitQpadmResultContract.Response?> SubmitQpadmResultAsync(int inspectionId,
+            SubmitQpadmResultContract.Request request)
         {
             var inspection = await dbContext.GeneticInspections
                 .Include(gi => gi.QpadmResult)
-                    .ThenInclude(qr => qr!.Populations)
+                .ThenInclude(qr => qr!.Populations)
                 .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
 
             if (inspection is null)
@@ -268,10 +269,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 LeftSources = inspection.QpadmResult.LeftSources,
                 Populations = populations.Select(p => new PopulationResponse
                 {
-                    Id = p.Id,
-                    Name = p.Name,
-                    EraId = p.EraId,
-                    EraName = p.Era.Name
+                    Id = p.Id, Name = p.Name, EraId = p.EraId, EraName = p.Era.Name
                 }).ToList()
             };
         }
@@ -281,7 +279,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             var result = await dbContext.QpadmResults
                 .AsNoTracking()
                 .Include(qr => qr.Populations)
-                    .ThenInclude(p => p.Era)
+                .ThenInclude(p => p.Era)
                 .FirstOrDefaultAsync(qr => qr.GeneticInspectionId == inspectionId);
 
             if (result is null)
@@ -301,10 +299,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 LeftSources = result.LeftSources,
                 Populations = result.Populations.Select(p => new PopulationResponse
                 {
-                    Id = p.Id,
-                    Name = p.Name,
-                    EraId = p.EraId,
-                    EraName = p.Era.Name
+                    Id = p.Id, Name = p.Name, EraId = p.EraId, EraName = p.Era.Name
                 }).ToList()
             };
         }
@@ -322,17 +317,13 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             if (inspection.VahaduoResult is null)
             {
-                inspection.VahaduoResult = new VahaduoResult
-                {
-                    GeneticInspectionId = inspectionId
-                };
+                inspection.VahaduoResult = new VahaduoResult { GeneticInspectionId = inspectionId };
                 await dbContext.SaveChangesAsync();
             }
 
             return new SubmitVahaduoResultContract.Response
             {
-                Id = inspection.VahaduoResult.Id,
-                GeneticInspectionId = inspectionId
+                Id = inspection.VahaduoResult.Id, GeneticInspectionId = inspectionId
             };
         }
     }

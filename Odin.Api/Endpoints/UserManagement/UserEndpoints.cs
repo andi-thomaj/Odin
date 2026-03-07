@@ -25,7 +25,8 @@ namespace Odin.Api.Endpoints.UserManagement
             return Results.Ok("User endpoint is working!");
         }
 
-        private static async Task<IResult> CreateUser(IUserService userService, [FromBody]CreateUserContract.Request request)
+        private static async Task<IResult> CreateUser(IUserService userService,
+            [FromBody] CreateUserContract.Request request)
         {
             var validationProblem = request.ValidateAndGetProblem();
             if (validationProblem is not null)
@@ -43,7 +44,8 @@ namespace Odin.Api.Endpoints.UserManagement
             return response is not null ? Results.Ok(response) : Results.NotFound();
         }
 
-        private static async Task<IResult> UpdateUser(IUserService userService, string identityId, [FromBody]UpdateUserContract.Request request)
+        private static async Task<IResult> UpdateUser(IUserService userService, string identityId,
+            [FromBody] UpdateUserContract.Request request)
         {
             var validationProblem = request.ValidateAndGetProblem();
             if (validationProblem is not null)

@@ -10,7 +10,10 @@ namespace Odin.Api.Endpoints.UserManagement
         Task<CreateUserContract.Response> CreateUserAsync(CreateUserContract.Request request);
         Task<GetUserContract.Response?> GetUserByIdentityIdAsync(string identityId);
         Task<UpdateUserContract.Response?> UpdateUserAsync(string identityId, UpdateUserContract.Request request);
-        Task<UpdateUserRoleContract.Response?> UpdateUserRoleAsync(string identityId, UpdateUserRoleContract.Request request);
+
+        Task<UpdateUserRoleContract.Response?> UpdateUserRoleAsync(string identityId,
+            UpdateUserRoleContract.Request request);
+
         Task<bool> DeleteUserAsync(string identityId);
     }
 
@@ -86,7 +89,8 @@ namespace Odin.Api.Endpoints.UserManagement
             };
         }
 
-        public async Task<UpdateUserContract.Response?> UpdateUserAsync(string identityId, UpdateUserContract.Request request)
+        public async Task<UpdateUserContract.Response?> UpdateUserAsync(string identityId,
+            UpdateUserContract.Request request)
         {
             var user = await dbContext.Users
                 .FirstOrDefaultAsync(u => u.IdentityId == identityId);
@@ -128,7 +132,8 @@ namespace Odin.Api.Endpoints.UserManagement
             return true;
         }
 
-        public async Task<UpdateUserRoleContract.Response?> UpdateUserRoleAsync(string identityId, UpdateUserRoleContract.Request request)
+        public async Task<UpdateUserRoleContract.Response?> UpdateUserRoleAsync(string identityId,
+            UpdateUserRoleContract.Request request)
         {
             var user = await dbContext.Users
                 .FirstOrDefaultAsync(u => u.IdentityId == identityId);
@@ -149,10 +154,7 @@ namespace Odin.Api.Endpoints.UserManagement
 
             return new UpdateUserRoleContract.Response
             {
-                Id = user.Id,
-                IdentityId = user.IdentityId,
-                Email = user.Email,
-                Role = user.Role.ToString()
+                Id = user.Id, IdentityId = user.IdentityId, Email = user.Email, Role = user.Role.ToString()
             };
         }
     }

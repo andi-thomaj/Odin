@@ -51,7 +51,8 @@ public class RawGeneticFileEndpointsTests(CustomWebApplicationFactory factory) :
         var fileContent = "Invalid file content"u8.ToArray();
         using var content = new MultipartFormDataContent();
         using var fileStreamContent = new ByteArrayContent(fileContent);
-        fileStreamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+        fileStreamContent.Headers.ContentType =
+            new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
         content.Add(fileStreamContent, "file", "invalid_file.exe");
 
         // Act

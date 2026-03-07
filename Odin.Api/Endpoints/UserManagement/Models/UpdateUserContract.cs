@@ -25,12 +25,14 @@ namespace Odin.Api.Endpoints.UserManagement.Models
 
                 if (FirstName?.Length > 100)
                 {
-                    yield return new ValidationResult("First name must not exceed 100 characters.", [nameof(FirstName)]);
+                    yield return new ValidationResult("First name must not exceed 100 characters.",
+                        [nameof(FirstName)]);
                 }
 
                 if (MiddleName is not null && MiddleName.Length > 100)
                 {
-                    yield return new ValidationResult("Middle name must not exceed 100 characters.", [nameof(MiddleName)]);
+                    yield return new ValidationResult("Middle name must not exceed 100 characters.",
+                        [nameof(MiddleName)]);
                 }
 
                 if (string.IsNullOrWhiteSpace(LastName))

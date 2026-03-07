@@ -42,13 +42,13 @@ namespace Odin.Api
             {
                 options.AddPolicy("AdminOnly", policy =>
                     policy.RequireAuthenticatedUser()
-                          .RequireClaim("app_role", AppRole.Admin.ToString()));
+                        .RequireClaim("app_role", AppRole.Admin.ToString()));
 
                 options.AddPolicy("ScientistOrAdmin", policy =>
                     policy.RequireAuthenticatedUser()
-                          .RequireClaim("app_role",
-                              AppRole.Scientist.ToString(),
-                              AppRole.Admin.ToString()));
+                        .RequireClaim("app_role",
+                            AppRole.Scientist.ToString(),
+                            AppRole.Admin.ToString()));
 
                 options.AddPolicy("Authenticated", policy =>
                     policy.RequireAuthenticatedUser());
@@ -60,9 +60,9 @@ namespace Odin.Api
                 options.AddPolicy("AllowFrontend", policy =>
                 {
                     policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
-                          .AllowAnyHeader()
-                          .AllowAnyMethod()
-                          .AllowCredentials();
+                        .AllowAnyHeader()
+                        .AllowAnyMethod()
+                        .AllowCredentials();
                 });
             });
             services.AddSwaggerGen(options =>
@@ -87,7 +87,7 @@ namespace Odin.Api
 
             app.UseStaticFiles();
             app.UseCors("AllowFrontend");
-            
+
             if (app.Environment.IsDevelopment())
             {
                 app.MapOpenApi();

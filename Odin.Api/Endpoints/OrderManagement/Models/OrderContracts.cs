@@ -26,7 +26,8 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
 
                 if (GeneticInspectionId <= 0)
                 {
-                    yield return new ValidationResult("Genetic inspection ID is required.", [nameof(GeneticInspectionId)]);
+                    yield return new ValidationResult("Genetic inspection ID is required.",
+                        [nameof(GeneticInspectionId)]);
                 }
             }
         }

@@ -33,7 +33,8 @@ namespace Odin.Api.Data
             }
             catch (Npgsql.PostgresException ex) when (ex.SqlState == "28P01")
             {
-                logger.LogError(ex, "Authentication failed for PostgreSQL. Please verify your connection string credentials.");
+                logger.LogError(ex,
+                    "Authentication failed for PostgreSQL. Please verify your connection string credentials.");
                 throw new InvalidOperationException(
                     "Database authentication failed. Ensure PostgreSQL is running with correct credentials. " +
                     "Run 'docker start odin_postgres' or execute 'scripts/setup-postgres.sh' to set up the database.",

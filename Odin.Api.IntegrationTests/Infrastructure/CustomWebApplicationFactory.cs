@@ -18,8 +18,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
         builder.ConfigureTestServices(services =>
         {
             // Remove the existing DbContext registration
-            var descriptor = services.SingleOrDefault(
-                d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+            var descriptor =
+                services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
 
             if (descriptor != null)
             {
@@ -29,7 +29,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             // Add DbContext using the test container connection string
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(_dbFixture.ConnectionString));
-            
+
             // Register ApplicationDbContextInitializer for tests
             services.AddScoped<ApplicationDbContextInitializer>();
         });

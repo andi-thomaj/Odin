@@ -61,10 +61,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         var request = new CreateGeneticInspectionContract.Request
         {
-            FirstName = "",
-            LastName = "Doe",
-            RawGeneticFileId = rawFileId,
-            RegionIds = regionIds
+            FirstName = "", LastName = "Doe", RawGeneticFileId = rawFileId, RegionIds = regionIds
         };
 
         // Act
@@ -82,10 +79,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         var request = new CreateGeneticInspectionContract.Request
         {
-            FirstName = "John",
-            LastName = "Doe",
-            RawGeneticFileId = rawFileId,
-            RegionIds = []
+            FirstName = "John", LastName = "Doe", RawGeneticFileId = rawFileId, RegionIds = []
         };
 
         // Act
@@ -179,10 +173,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         var request = new CreateGeneticInspectionContract.Request
         {
-            FirstName = "Test",
-            LastName = "User",
-            RawGeneticFileId = rawFileId,
-            RegionIds = regionIds
+            FirstName = "Test", LastName = "User", RawGeneticFileId = rawFileId, RegionIds = regionIds
         };
 
         // Act
@@ -235,10 +226,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         var request = new CreateGeneticInspectionContract.Request
         {
-            FirstName = firstName,
-            LastName = lastName,
-            RawGeneticFileId = rawFileId,
-            RegionIds = regionIds
+            FirstName = firstName, LastName = lastName, RawGeneticFileId = rawFileId, RegionIds = regionIds
         };
 
         var response = await Client.PostAsJsonAsync("/api/genetic-inspections", request);

@@ -16,7 +16,7 @@ namespace Odin.Api.Endpoints.UserManagement
             return await dbContext.Eras
                 .AsNoTracking()
                 .Include(e => e.Populations)
-                    .ThenInclude(p => p.SubPopulations)
+                .ThenInclude(p => p.SubPopulations)
                 .Select(e => new GetErasContract.Response
                 {
                     Id = e.Id,
@@ -29,9 +29,7 @@ namespace Odin.Api.Endpoints.UserManagement
                         Description = p.Description,
                         SubPopulations = p.SubPopulations.Select(sp => new GetErasContract.SubPopulationItem
                         {
-                            Id = sp.Id,
-                            Name = sp.Name,
-                            Description = sp.Description
+                            Id = sp.Id, Name = sp.Name, Description = sp.Description
                         }).ToList()
                     }).ToList()
                 })

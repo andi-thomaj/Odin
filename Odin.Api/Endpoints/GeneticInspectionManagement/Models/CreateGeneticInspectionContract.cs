@@ -26,7 +26,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
 
                 if (FirstName?.Length > 100)
                 {
-                    yield return new ValidationResult("First name must not exceed 100 characters.", [nameof(FirstName)]);
+                    yield return new ValidationResult("First name must not exceed 100 characters.",
+                        [nameof(FirstName)]);
                 }
 
                 if (string.IsNullOrWhiteSpace(LastName))
@@ -46,7 +47,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
 
                 if (MiddleName?.Length > 100)
                 {
-                    yield return new ValidationResult("Middle name must not exceed 100 characters.", [nameof(MiddleName)]);
+                    yield return new ValidationResult("Middle name must not exceed 100 characters.",
+                        [nameof(MiddleName)]);
                 }
 
                 if (RawGeneticFileId <= 0)
