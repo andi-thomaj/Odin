@@ -15,6 +15,9 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         Task<UploadGeneticFileContract.Response?> UploadGeneticFileAsync(int inspectionId, UploadGeneticFileContract.Request request);
         Task<(byte[] Data, string FileName)?> DownloadGeneticFileAsync(int inspectionId);
         Task<bool> DeleteGeneticFileAsync(int inspectionId);
+        Task<SubmitQpadmResultContract.Response?> SubmitQpadmResultAsync(int inspectionId, SubmitQpadmResultContract.Request request);
+        Task<SubmitQpadmResultContract.Response?> GetQpadmResultAsync(int inspectionId);
+        Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId);
     }
 
     public class GeneticInspectionService(ApplicationDbContext dbContext) : IGeneticInspectionService
@@ -203,6 +206,134 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             inspection.RawGeneticFile.IsDeleted = true;
             await dbContext.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<SubmitQpadmResultContract.Response?> SubmitQpadmResultAsync(int inspectionId, SubmitQpadmResultContract.Request request)
+        {
+            var inspection = await dbContext.GeneticInspections
+                .Include(gi => gi.QpadmResult)
+                    .ThenInclude(qr => qr!.Populations)
+                .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
+
+            if (inspection is null)
+            {
+                return null;
+            }
+
+            // Load requested populations with their eras
+            var populations = await dbContext.Populations
+                .Include(p => p.Era)
+                .Where(p => request.PopulationIds.Contains(p.Id))
+                .ToListAsync();
+
+            if (inspection.QpadmResult is not null)
+            {
+                inspection.QpadmResult.Weight = request.Weight;
+                inspection.QpadmResult.StandardError = request.StandardError;
+                inspection.QpadmResult.ZScore = request.ZScore;
+                inspection.QpadmResult.PiValue = request.PiValue;
+                inspection.QpadmResult.RightSources = request.RightSources;
+                inspection.QpadmResult.LeftSources = request.LeftSources;
+                inspection.QpadmResult.UpdatedAt = DateTime.UtcNow;
+                inspection.QpadmResult.Populations.Clear();
+                inspection.QpadmResult.Populations.AddRange(populations);
+            }
+            else
+            {
+                inspection.QpadmResult = new QpadmResult
+                {
+                    GeneticInspectionId = inspectionId,
+                    Weight = request.Weight,
+                    StandardError = request.StandardError,
+                    ZScore = request.ZScore,
+                    PiValue = request.PiValue,
+                    RightSources = request.RightSources,
+                    LeftSources = request.LeftSources,
+                    Populations = populations,
+                    CreatedBy = string.Empty
+                };
+            }
+
+            await dbContext.SaveChangesAsync();
+
+            return new SubmitQpadmResultContract.Response
+            {
+                Id = inspection.QpadmResult.Id,
+                GeneticInspectionId = inspectionId,
+                Weight = inspection.QpadmResult.Weight,
+                StandardError = inspection.QpadmResult.StandardError,
+                ZScore = inspection.QpadmResult.ZScore,
+                PiValue = inspection.QpadmResult.PiValue,
+                RightSources = inspection.QpadmResult.RightSources,
+                LeftSources = inspection.QpadmResult.LeftSources,
+                Populations = populations.Select(p => new PopulationResponse
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    EraId = p.EraId,
+                    EraName = p.Era.Name
+                }).ToList()
+            };
+        }
+
+        public async Task<SubmitQpadmResultContract.Response?> GetQpadmResultAsync(int inspectionId)
+        {
+            var result = await dbContext.QpadmResults
+                .AsNoTracking()
+                .Include(qr => qr.Populations)
+                    .ThenInclude(p => p.Era)
+                .FirstOrDefaultAsync(qr => qr.GeneticInspectionId == inspectionId);
+
+            if (result is null)
+            {
+                return null;
+            }
+
+            return new SubmitQpadmResultContract.Response
+            {
+                Id = result.Id,
+                GeneticInspectionId = inspectionId,
+                Weight = result.Weight,
+                StandardError = result.StandardError,
+                ZScore = result.ZScore,
+                PiValue = result.PiValue,
+                RightSources = result.RightSources,
+                LeftSources = result.LeftSources,
+                Populations = result.Populations.Select(p => new PopulationResponse
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    EraId = p.EraId,
+                    EraName = p.Era.Name
+                }).ToList()
+            };
+        }
+
+        public async Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId)
+        {
+            var inspection = await dbContext.GeneticInspections
+                .Include(gi => gi.VahaduoResult)
+                .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
+
+            if (inspection is null)
+            {
+                return null;
+            }
+
+            if (inspection.VahaduoResult is null)
+            {
+                inspection.VahaduoResult = new VahaduoResult
+                {
+                    GeneticInspectionId = inspectionId
+                };
+                await dbContext.SaveChangesAsync();
+            }
+
+            return new SubmitVahaduoResultContract.Response
+            {
+                Id = inspection.VahaduoResult.Id,
+                GeneticInspectionId = inspectionId
+            };
         }
     }
 }

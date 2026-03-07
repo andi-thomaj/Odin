@@ -19,6 +19,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             endpoints.MapPost("/{id:int}/genetic-file", UploadGeneticFile).DisableAntiforgery().RequireAuthorization("ScientistOrAdmin");
             endpoints.MapGet("/{id:int}/genetic-file/download", DownloadGeneticFile).RequireAuthorization("Authenticated");
             endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile).RequireAuthorization("Authenticated");
+
+            endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapPost("/{id:int}/qpadm-result", SubmitQpadmResult).RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapPost("/{id:int}/vahaduo-result", SubmitVahaduoResult).RequireAuthorization("ScientistOrAdmin");
         }
 
         private static async Task<IResult> GetAll(IGeneticInspectionService service)
@@ -96,6 +100,42 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             return deleted
                 ? Results.NoContent()
                 : Results.NotFound(new { Message = $"Genetic file for inspection with ID {id} not found." });
+        }
+
+        private static async Task<IResult> GetQpadmResult(IGeneticInspectionService service, int id)
+        {
+            var response = await service.GetQpadmResultAsync(id);
+
+            return response is null
+                ? Results.NotFound(new { Message = $"No QPADM result found for inspection with ID {id}." })
+                : Results.Ok(response);
+        }
+
+        private static async Task<IResult> SubmitQpadmResult(
+            IGeneticInspectionService service,
+            int id,
+            [FromBody] SubmitQpadmResultContract.Request request)
+        {
+            var validationProblem = request.ValidateAndGetProblem();
+            if (validationProblem is not null)
+            {
+                return validationProblem;
+            }
+
+            var response = await service.SubmitQpadmResultAsync(id, request);
+
+            return response is null
+                ? Results.NotFound(new { Message = $"Genetic inspection with ID {id} not found." })
+                : Results.Created($"/api/genetic-inspections/{id}/qpadm-result", response);
+        }
+
+        private static async Task<IResult> SubmitVahaduoResult(IGeneticInspectionService service, int id)
+        {
+            var response = await service.SubmitVahaduoResultAsync(id);
+
+            return response is null
+                ? Results.NotFound(new { Message = $"Genetic inspection with ID {id} not found." })
+                : Results.Created($"/api/genetic-inspections/{id}/vahaduo-result", response);
         }
     }
 }

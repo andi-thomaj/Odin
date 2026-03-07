@@ -77,36 +77,47 @@ public class DatabaseSeeder(ApplicationDbContext context)
         // era -> population -> sub-populations
         var seedData = new Dictionary<string, Dictionary<string, string[]>>
         {
-            ["Bronze Age"] = new()
+            ["Hunter Gatherer & Neolithic Farmer"] = new()
             {
-                ["Mycenaean"] = ["Mycenae", "Pylos", "Tiryns"],
-                ["Minoan"] = ["Knossos", "Phaistos", "Malia"],
-                ["Yamnaya"] = ["Don-Volga", "Kalmykia", "Samara"],
-                ["Corded Ware"] = ["Central European CW", "Baltic CW", "Scandinavian CW"],
-                ["Bell Beaker"] = ["Iberian BB", "Central European BB", "British BB"],
+                ["Anatolian Neolithic Farmer"] = [],
+                ["Western Steppe Herder"] = [],
+                ["Western Hunter Gatherer"] = [],
+                ["Caucasian Hunter Gatherer"] = [],
+                ["Iranian Neolithic Farmer"] = [],
+                ["Natufian"] = [],
+                ["North African Farmer"] = [],
+                ["Northeast Asian Neolithic"] = [],
+                ["Native American"] = [],
+                ["Ancient Ancestral South Indian"] = [],
+                ["Sub Saharan African"] = [],
+                ["Uralic"] = [],
             },
-            ["Iron Age"] = new()
+            ["Iron Age & Migration Period"] = new()
             {
-                ["Classical Greek"] = ["Athenian", "Spartan", "Corinthian"],
-                ["Etruscan"] = ["Northern Etruscan", "Southern Etruscan"],
-                ["Celtic"] = ["Hallstatt", "La Tène", "Insular Celtic"],
-                ["Scythian"] = ["Pontic Scythian", "Altai Scythian", "Saka"],
-                ["Illyrian"] = ["Southern Illyrian", "Northern Illyrian", "Dardanian"],
-            },
-            ["Medieval"] = new()
-            {
-                ["Byzantine Greek"] = ["Anatolian Byzantine", "Balkan Byzantine", "Cretan Byzantine"],
-                ["Slavic"] = ["South Slavic", "West Slavic", "East Slavic"],
-                ["Viking"] = ["Norse", "Dane", "Swede"],
-                ["Anglo-Saxon"] = ["East Anglian", "Kentish", "Mercian"],
-                ["Lombard"] = ["Northern Lombard", "Southern Lombard"],
-            },
-            ["Modern"] = new()
-            {
-                ["Modern Greek"] = ["Peloponnesian", "Islander", "Macedonian Greek"],
-                ["Modern Italian"] = ["Northern Italian", "Central Italian", "Southern Italian"],
-                ["Modern Balkan"] = ["Albanian", "Serbian", "Bulgarian"],
-                ["Modern Scandinavian"] = ["Norwegian", "Swedish", "Danish"],
+                ["Illyrian"] = [],
+                ["Ancient Greek"] = [],
+                ["Thracian"] = [],
+                ["Hittite & Phrygian"] = [],
+                ["Phoenician"] = [],
+                ["Insular Celt"] = [],
+                ["Continental Celt"] = [],
+                ["Iberian"] = [],
+                ["Punic Carthage"] = [],
+                ["Berber"] = [],
+                ["Hellenistic Pontus"] = [],
+                ["Siberian"] = [],
+                ["Sicani"] = [],
+                ["Italic and Etruscan"] = [],
+                ["Sarmatian"] = [],
+                ["Colchian"] = [],
+                ["Roman Moesia"] = [],
+                ["Proto-Albanian"] = [],
+                ["Roman Greece"] = [],
+                ["Roman Gaul"] = [],
+                ["Roman East Mediterranean"] = [],
+                ["Germanic"] = [],
+                ["Medieval Slav"] = [],
+                ["Turkic"] = [],
             },
         };
 
