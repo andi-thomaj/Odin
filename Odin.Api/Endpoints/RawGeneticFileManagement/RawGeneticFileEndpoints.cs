@@ -1,4 +1,4 @@
-﻿using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
+using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
 using Odin.Api.Extensions;
 
 namespace Odin.Api.Endpoints.RawGeneticFileManagement
@@ -60,11 +60,18 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
         private static async Task<IResult> DeleteFile(IRawGeneticFileService service, int id)
         {
-            var deleted = await service.DeleteFileAsync(id);
+            try
+            {
+                var deleted = await service.DeleteFileAsync(id);
 
-            return deleted
-                ? Results.NoContent()
-                : Results.NotFound(new { Message = $"File with ID {id} not found." });
+                return deleted
+                    ? Results.NoContent()
+                    : Results.NotFound(new { Message = $"File with ID {id} not found." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { Message = ex.Message });
+            }
         }
     }
 }

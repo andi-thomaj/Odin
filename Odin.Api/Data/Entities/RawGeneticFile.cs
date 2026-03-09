@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
@@ -9,7 +9,7 @@ namespace Odin.Api.Data.Entities
         public required byte[] RawData { get; set; } = [];
         public required string FileName { get; set; }
         public bool IsDeleted { get; set; }
-        public GeneticInspection? GeneticInspection { get; set; }
+        public List<GeneticInspection> GeneticInspections { get; set; } = [];
     }
 
     public class RawGeneticFileConfiguration : IEntityTypeConfiguration<RawGeneticFile>
@@ -22,9 +22,9 @@ namespace Odin.Api.Data.Entities
 
             builder.HasQueryFilter(e => !e.IsDeleted);
 
-            builder.HasOne(e => e.GeneticInspection)
+            builder.HasMany(e => e.GeneticInspections)
                 .WithOne(gi => gi.RawGeneticFile)
-                .HasForeignKey<GeneticInspection>(gi => gi.RawGeneticFileId);
+                .HasForeignKey(gi => gi.RawGeneticFileId);
 
             builder.ToTable("raw_genetic_files");
         }

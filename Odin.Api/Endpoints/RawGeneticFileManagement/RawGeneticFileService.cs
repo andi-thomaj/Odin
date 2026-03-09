@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
 
 namespace Odin.Api.Endpoints.RawGeneticFileManagement
@@ -88,6 +89,14 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
             {
                 return false;
             }
+
+            var inUse = await dbContext.GeneticInspections
+                .AnyAsync(gi => gi.RawGeneticFileId == id
+                    && (gi.Order.Status == OrderStatus.Pending || gi.Order.Status == OrderStatus.InProcess));
+
+            if (inUse)
+                throw new InvalidOperationException(
+                    "This file cannot be deleted because it is used by an order that is still Pending or In Process.");
 
             file.IsDeleted = true;
             await dbContext.SaveChangesAsync();

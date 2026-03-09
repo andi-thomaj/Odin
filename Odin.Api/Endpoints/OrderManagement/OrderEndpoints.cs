@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.Extensions;
@@ -12,7 +13,7 @@ namespace Odin.Api.Endpoints.OrderManagement
 
             endpoints.MapGet("/", GetAll).RequireAuthorization("Authenticated");
             endpoints.MapGet("/{id:int}", GetById).RequireAuthorization("Authenticated");
-            endpoints.MapPost("/", Create).RequireAuthorization("Authenticated");
+            endpoints.MapPost("/", Create).DisableAntiforgery().RequireAuthorization("Authenticated");
             endpoints.MapPut("/{id:int}", Update).RequireAuthorization("Authenticated");
             endpoints.MapDelete("/{id:int}", Delete).RequireAuthorization("AdminOnly");
         }
@@ -34,7 +35,8 @@ namespace Odin.Api.Endpoints.OrderManagement
 
         private static async Task<IResult> Create(
             IOrderService service,
-            [FromBody] CreateOrderContract.Request request)
+            HttpContext httpContext,
+            [FromForm] CreateOrderContract.Request request)
         {
             var validationProblem = request.ValidateAndGetProblem();
             if (validationProblem is not null)
@@ -42,8 +44,19 @@ namespace Odin.Api.Endpoints.OrderManagement
                 return validationProblem;
             }
 
-            var response = await service.CreateAsync(request);
-            return Results.Created($"/api/orders/{response.Id}", response);
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            try
+            {
+                var response = await service.CreateAsync(request, identityId);
+                return Results.Created($"/api/orders/{response.Id}", response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { Message = ex.Message });
+            }
         }
 
         private static async Task<IResult> Update(
@@ -57,11 +70,18 @@ namespace Odin.Api.Endpoints.OrderManagement
                 return validationProblem;
             }
 
-            var response = await service.UpdateAsync(id, request);
+            try
+            {
+                var response = await service.UpdateAsync(id, request);
 
-            return response is null
-                ? Results.NotFound(new { Message = $"Order with ID {id} not found." })
-                : Results.Ok(response);
+                return response is null
+                    ? Results.NotFound(new { Message = $"Order with ID {id} not found." })
+                    : Results.Ok(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { Message = ex.Message });
+            }
         }
 
         private static async Task<IResult> Delete(IOrderService service, int id)

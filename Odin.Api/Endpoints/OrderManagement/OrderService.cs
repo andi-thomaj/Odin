@@ -1,14 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
+using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.OrderManagement.Models;
-using OrderServiceEnum = Odin.Api.Data.Enums.OrderService;
 
 namespace Odin.Api.Endpoints.OrderManagement
 {
     public interface IOrderService
     {
-        Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request);
+        Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId);
         Task<GetOrderContract.Response?> GetByIdAsync(int id);
         Task<IEnumerable<GetOrderContract.Response>> GetAllAsync();
         Task<GetOrderContract.Response?> UpdateAsync(int id, UpdateOrderContract.Request request);
@@ -17,27 +17,100 @@ namespace Odin.Api.Endpoints.OrderManagement
 
     public class OrderService(ApplicationDbContext dbContext) : IOrderService
     {
-        public async Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request)
+        private const decimal QpadmPrice = 49.99m;
+        private const int MaxEthnicities = 4;
+        private const int MaxRegionsPerEthnicity = 4;
+
+        public async Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId)
         {
+            var user = await dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.IdentityId == identityId)
+                ?? throw new InvalidOperationException("Authenticated user not found in the database.");
+
+            var regions = await dbContext.Regions
+                .Include(r => r.Ethnicity)
+                .Where(r => request.RegionIds.Contains(r.Id))
+                .ToListAsync();
+
+            if (regions.Count == 0)
+                throw new InvalidOperationException("None of the provided region IDs are valid.");
+
+            var grouped = regions.GroupBy(r => r.EthnicityId).ToList();
+
+            if (grouped.Count > MaxEthnicities)
+                throw new InvalidOperationException(
+                    $"You can select at most {MaxEthnicities} countries (ethnicities).");
+
+            var overLimit = grouped.FirstOrDefault(g => g.Count() > MaxRegionsPerEthnicity);
+            if (overLimit is not null)
+                throw new InvalidOperationException(
+                    $"You can select at most {MaxRegionsPerEthnicity} regions for \"{overLimit.First().Ethnicity.Name}\".");
+
+            int rawGeneticFileId;
+
+            if (request.ExistingFileId.HasValue)
+            {
+                var existingFile = await dbContext.RawGeneticFiles
+                    .FirstOrDefaultAsync(f => f.Id == request.ExistingFileId.Value && !f.IsDeleted);
+
+                if (existingFile is null)
+                    throw new InvalidOperationException("The selected genetic file does not exist or has been deleted.");
+
+                rawGeneticFileId = existingFile.Id;
+            }
+            else
+            {
+                using var memoryStream = new MemoryStream();
+                await request.File!.CopyToAsync(memoryStream);
+
+                var rawGeneticFile = new RawGeneticFile
+                {
+                    FileName = request.File.FileName,
+                    RawData = memoryStream.ToArray(),
+                    CreatedBy = identityId
+                };
+                dbContext.RawGeneticFiles.Add(rawGeneticFile);
+                await dbContext.SaveChangesAsync();
+
+                rawGeneticFileId = rawGeneticFile.Id;
+            }
+
             var order = new Data.Entities.Order
             {
-                Price = request.Price,
-                Service = (OrderServiceEnum)request.Service,
+                Price = QpadmPrice,
+                Service = request.Service,
                 Status = OrderStatus.Pending,
-                CreatedBy = string.Empty,
+                CreatedBy = identityId,
                 CreatedAt = DateTime.UtcNow
             };
-
             dbContext.Orders.Add(order);
             await dbContext.SaveChangesAsync();
 
-            // Link the genetic inspection to this order
-            var inspection = await dbContext.GeneticInspections.FindAsync(request.GeneticInspectionId);
-            if (inspection is not null)
+            var geneticInspection = new GeneticInspection
             {
-                inspection.OrderId = order.Id;
-                await dbContext.SaveChangesAsync();
+                FirstName = request.FirstName,
+                MiddleName = request.MiddleName ?? string.Empty,
+                LastName = request.LastName,
+                RawGeneticFileId = rawGeneticFileId,
+                UserId = user.Id,
+                OrderId = order.Id,
+                CreatedBy = identityId
+            };
+            dbContext.GeneticInspections.Add(geneticInspection);
+            await dbContext.SaveChangesAsync();
+
+            foreach (var region in regions)
+            {
+                dbContext.GeneticInspectionRegions.Add(new GeneticInspectionRegion
+                {
+                    GeneticInspectionId = geneticInspection.Id,
+                    GeneticInspection = geneticInspection,
+                    RegionId = region.Id,
+                    Region = region
+                });
             }
+            await dbContext.SaveChangesAsync();
 
             return new CreateOrderContract.Response
             {
@@ -45,7 +118,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                 Price = order.Price,
                 Service = order.Service.ToString(),
                 Status = order.Status.ToString(),
-                GeneticInspectionId = request.GeneticInspectionId
+                GeneticInspectionId = geneticInspection.Id
             };
         }
 
@@ -54,6 +127,7 @@ namespace Odin.Api.Endpoints.OrderManagement
             var order = await dbContext.Orders
                 .AsNoTracking()
                 .Include(o => o.GeneticInspection)
+                    .ThenInclude(gi => gi.GeneticInspectionRegions)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order is null)
@@ -68,6 +142,11 @@ namespace Odin.Api.Endpoints.OrderManagement
                 Service = order.Service.ToString(),
                 Status = order.Status.ToString(),
                 GeneticInspectionId = order.GeneticInspection?.Id ?? 0,
+                FirstName = order.GeneticInspection?.FirstName ?? string.Empty,
+                MiddleName = order.GeneticInspection?.MiddleName ?? string.Empty,
+                LastName = order.GeneticInspection?.LastName ?? string.Empty,
+                RegionIds = order.GeneticInspection?.GeneticInspectionRegions
+                    .Select(gir => gir.RegionId).ToList() ?? [],
                 CreatedAt = order.CreatedAt,
                 CreatedBy = order.CreatedBy,
                 UpdatedAt = order.UpdatedAt,
@@ -80,6 +159,7 @@ namespace Odin.Api.Endpoints.OrderManagement
             return await dbContext.Orders
                 .AsNoTracking()
                 .Include(o => o.GeneticInspection)
+                    .ThenInclude(gi => gi.GeneticInspectionRegions)
                 .Select(order => new GetOrderContract.Response
                 {
                     Id = order.Id,
@@ -87,6 +167,12 @@ namespace Odin.Api.Endpoints.OrderManagement
                     Service = order.Service.ToString(),
                     Status = order.Status.ToString(),
                     GeneticInspectionId = order.GeneticInspection != null ? order.GeneticInspection.Id : 0,
+                    FirstName = order.GeneticInspection != null ? order.GeneticInspection.FirstName : string.Empty,
+                    MiddleName = order.GeneticInspection != null ? order.GeneticInspection.MiddleName : string.Empty,
+                    LastName = order.GeneticInspection != null ? order.GeneticInspection.LastName : string.Empty,
+                    RegionIds = order.GeneticInspection != null
+                        ? order.GeneticInspection.GeneticInspectionRegions.Select(gir => gir.RegionId).ToList()
+                        : new List<int>(),
                     CreatedAt = order.CreatedAt,
                     CreatedBy = order.CreatedBy,
                     UpdatedAt = order.UpdatedAt,
@@ -99,17 +185,53 @@ namespace Odin.Api.Endpoints.OrderManagement
         {
             var order = await dbContext.Orders
                 .Include(o => o.GeneticInspection)
+                    .ThenInclude(gi => gi.GeneticInspectionRegions)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
-            if (order is null)
+            if (order is null || order.GeneticInspection is null)
             {
                 return null;
             }
 
-            order.Price = request.Price;
-            order.Service = (OrderServiceEnum)request.Service;
-            order.Status = request.Status;
+            if (order.Status != OrderStatus.Pending)
+                throw new InvalidOperationException("Only orders with status 'Pending' can be edited.");
+
+            var regions = await dbContext.Regions
+                .Include(r => r.Ethnicity)
+                .Where(r => request.RegionIds.Contains(r.Id))
+                .ToListAsync();
+
+            if (regions.Count == 0)
+                throw new InvalidOperationException("None of the provided region IDs are valid.");
+
+            var grouped = regions.GroupBy(r => r.EthnicityId).ToList();
+
+            if (grouped.Count > MaxEthnicities)
+                throw new InvalidOperationException(
+                    $"You can select at most {MaxEthnicities} countries (ethnicities).");
+
+            var overLimit = grouped.FirstOrDefault(g => g.Count() > MaxRegionsPerEthnicity);
+            if (overLimit is not null)
+                throw new InvalidOperationException(
+                    $"You can select at most {MaxRegionsPerEthnicity} regions for \"{overLimit.First().Ethnicity.Name}\".");
+
+            order.GeneticInspection.FirstName = request.FirstName;
+            order.GeneticInspection.MiddleName = request.MiddleName ?? string.Empty;
+            order.GeneticInspection.LastName = request.LastName;
             order.UpdatedAt = DateTime.UtcNow;
+
+            dbContext.GeneticInspectionRegions.RemoveRange(order.GeneticInspection.GeneticInspectionRegions);
+
+            foreach (var region in regions)
+            {
+                dbContext.GeneticInspectionRegions.Add(new GeneticInspectionRegion
+                {
+                    GeneticInspectionId = order.GeneticInspection.Id,
+                    GeneticInspection = order.GeneticInspection,
+                    RegionId = region.Id,
+                    Region = region
+                });
+            }
 
             await dbContext.SaveChangesAsync();
 
@@ -119,7 +241,11 @@ namespace Odin.Api.Endpoints.OrderManagement
                 Price = order.Price,
                 Service = order.Service.ToString(),
                 Status = order.Status.ToString(),
-                GeneticInspectionId = order.GeneticInspection?.Id ?? 0,
+                GeneticInspectionId = order.GeneticInspection.Id,
+                FirstName = order.GeneticInspection.FirstName,
+                MiddleName = order.GeneticInspection.MiddleName,
+                LastName = order.GeneticInspection.LastName,
+                RegionIds = regions.Select(r => r.Id).ToList(),
                 CreatedAt = order.CreatedAt,
                 CreatedBy = order.CreatedBy,
                 UpdatedAt = order.UpdatedAt,
