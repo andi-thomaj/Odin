@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data.Entities;
 
 namespace Odin.Api.Data
@@ -19,6 +19,7 @@ namespace Odin.Api.Data
         public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<QpadmResultResearchLink> QpadmResultResearchLinks { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

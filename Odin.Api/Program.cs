@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
+using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.UserManagement;
+using Odin.Api.Hubs;
 using Odin.Api.Middleware;
 
 namespace Odin.Api
@@ -34,6 +37,19 @@ namespace Odin.Api
                         ValidateAudience = true,
                         ValidateLifetime = true,
                         ValidateIssuerSigningKey = true,
+                    };
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            if (!string.IsNullOrEmpty(accessToken)
+                                && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                            {
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
                     };
                 });
 
@@ -80,6 +96,10 @@ namespace Odin.Api
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
             services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<INotificationService, NotificationService>();
+
+            services.AddSignalR();
+            services.AddSingleton<IUserIdProvider, UserIdProvider>();
 
             var app = builder.Build();
 
@@ -103,10 +123,13 @@ namespace Odin.Api
             app.UseRoleEnrichment();
             app.UseAuthorization();
 
+            app.MapHub<NotificationHub>("/hubs/notifications");
+
             app.MapUserEndpoints();
             app.MapRawGeneticFileEndpoints();
             app.MapGeneticInspectionEndpoints();
             app.MapOrderEndpoints();
+            app.MapNotificationEndpoints();
             await app.RunAsync();
         }
     }

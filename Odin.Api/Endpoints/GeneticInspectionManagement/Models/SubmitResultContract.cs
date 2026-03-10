@@ -2,6 +2,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
 {
+    public class PopulationPercentageItem
+    {
+        public int PopulationId { get; set; }
+        public decimal Percentage { get; set; }
+    }
+
     public class SubmitQpadmResultContract
     {
         public class Request : IValidatableObject
@@ -12,7 +18,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
             public required decimal PiValue { get; set; }
             public string RightSources { get; set; } = string.Empty;
             public string LeftSources { get; set; } = string.Empty;
-            public List<int> PopulationIds { get; set; } = [];
+            public List<PopulationPercentageItem> Populations { get; set; } = [];
+            public string? OrderStatus { get; set; }
 
             public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
             {
@@ -24,6 +31,16 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
                 if (StandardError < 0)
                 {
                     yield return new ValidationResult("Standard error must be non-negative.", [nameof(StandardError)]);
+                }
+
+                foreach (var pop in Populations)
+                {
+                    if (pop.Percentage < 0 || pop.Percentage > 100)
+                    {
+                        yield return new ValidationResult(
+                            $"Percentage for population {pop.PopulationId} must be between 0 and 100.",
+                            [nameof(Populations)]);
+                    }
                 }
             }
         }
@@ -44,6 +61,11 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
 
     public class SubmitVahaduoResultContract
     {
+        public class Request
+        {
+            public string? OrderStatus { get; set; }
+        }
+
         public class Response
         {
             public int Id { get; set; }
@@ -57,5 +79,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
         public required string Name { get; set; }
         public int EraId { get; set; }
         public required string EraName { get; set; }
+        public decimal Percentage { get; set; }
     }
 }

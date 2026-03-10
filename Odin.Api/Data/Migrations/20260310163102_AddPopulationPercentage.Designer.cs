@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Odin.Api.Data;
@@ -11,9 +12,11 @@ using Odin.Api.Data;
 namespace Odin.Api.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260310163102_AddPopulationPercentage")]
+    partial class AddPopulationPercentage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -151,65 +154,6 @@ namespace Odin.Api.Data.Migrations
                     b.HasIndex("RegionId");
 
                     b.ToTable("genetic_inspection_regions", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.Notification", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsRead")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime?>("ReadAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("RecipientUserId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("ReferenceId")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RecipientUserId", "IsRead");
-
-                    b.ToTable("notifications", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.Order", b =>
@@ -639,17 +583,6 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("Region");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.Notification", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.User", "RecipientUser")
-                        .WithMany("Notifications")
-                        .HasForeignKey("RecipientUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("RecipientUser");
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.Population", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.Era", "Era")
@@ -795,8 +728,6 @@ namespace Odin.Api.Data.Migrations
             modelBuilder.Entity("Odin.Api.Data.Entities.User", b =>
                 {
                     b.Navigation("GeneticInspections");
-
-                    b.Navigation("Notifications");
                 });
 #pragma warning restore 612, 618
         }

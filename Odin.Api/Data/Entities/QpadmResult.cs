@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
@@ -8,7 +8,7 @@ namespace Odin.Api.Data.Entities
         public int Id { get; set; }
         public int GeneticInspectionId { get; set; }
         public GeneticInspection GeneticInspection { get; set; }
-        public List<Population> Populations { get; set; } = [];
+        public List<QpadmResultPopulation> QpadmResultPopulations { get; set; } = [];
         public decimal Weight { get; set; }
         public decimal StandardError { get; set; }
         public decimal ZScore { get; set; }
@@ -27,10 +27,6 @@ namespace Odin.Api.Data.Entities
             builder.HasOne(e => e.GeneticInspection)
                 .WithOne(e => e.QpadmResult)
                 .HasForeignKey<QpadmResult>(e => e.GeneticInspectionId);
-
-            builder.HasMany(e => e.Populations)
-                .WithMany()
-                .UsingEntity(j => j.ToTable("qpadm_result_populations"));
 
             builder.ToTable("qpadm_results");
         }

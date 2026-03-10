@@ -1,7 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
+using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
 
 namespace Odin.Api.Endpoints.GeneticInspectionManagement
@@ -23,10 +25,13 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             SubmitQpadmResultContract.Request request);
 
         Task<SubmitQpadmResultContract.Response?> GetQpadmResultAsync(int inspectionId);
-        Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId);
+        Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId,
+            SubmitVahaduoResultContract.Request request);
     }
 
-    public class GeneticInspectionService(ApplicationDbContext dbContext) : IGeneticInspectionService
+    public class GeneticInspectionService(
+        ApplicationDbContext dbContext,
+        INotificationService notificationService) : IGeneticInspectionService
     {
         public async Task<CreateGeneticInspectionContract.Response> CreateAsync(
             CreateGeneticInspectionContract.Request request)
@@ -212,8 +217,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             SubmitQpadmResultContract.Request request)
         {
             var inspection = await dbContext.GeneticInspections
+                .Include(gi => gi.Order)
+                .Include(gi => gi.User)
                 .Include(gi => gi.QpadmResult)
-                .ThenInclude(qr => qr!.Populations)
+                .ThenInclude(qr => qr!.QpadmResultPopulations)
                 .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
 
             if (inspection is null)
@@ -221,11 +228,28 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return null;
             }
 
-            // Load requested populations with their eras
+            var populationIds = request.Populations.Select(p => p.PopulationId).ToList();
             var populations = await dbContext.Populations
                 .Include(p => p.Era)
-                .Where(p => request.PopulationIds.Contains(p.Id))
+                .Where(p => populationIds.Contains(p.Id))
                 .ToListAsync();
+
+            var percentageLookup = request.Populations.ToDictionary(p => p.PopulationId, p => p.Percentage);
+
+            var perEraTotal = populations
+                .GroupBy(p => p.EraId)
+                .Where(g => g.Sum(p => percentageLookup.GetValueOrDefault(p.Id)) > 100);
+
+            if (perEraTotal.Any())
+            {
+                return null;
+            }
+
+            var joinEntities = populations.Select(p => new QpadmResultPopulation
+            {
+                PopulationId = p.Id,
+                Percentage = percentageLookup.GetValueOrDefault(p.Id)
+            }).ToList();
 
             if (inspection.QpadmResult is not null)
             {
@@ -236,8 +260,12 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 inspection.QpadmResult.RightSources = request.RightSources;
                 inspection.QpadmResult.LeftSources = request.LeftSources;
                 inspection.QpadmResult.UpdatedAt = DateTime.UtcNow;
-                inspection.QpadmResult.Populations.Clear();
-                inspection.QpadmResult.Populations.AddRange(populations);
+                inspection.QpadmResult.QpadmResultPopulations.Clear();
+                foreach (var je in joinEntities)
+                {
+                    je.QpadmResultId = inspection.QpadmResult.Id;
+                    inspection.QpadmResult.QpadmResultPopulations.Add(je);
+                }
             }
             else
             {
@@ -250,12 +278,26 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     PiValue = request.PiValue,
                     RightSources = request.RightSources,
                     LeftSources = request.LeftSources,
-                    Populations = populations,
+                    QpadmResultPopulations = joinEntities,
                     CreatedBy = string.Empty
                 };
             }
 
+            inspection.Order.Status = Enum.TryParse<OrderStatus>(request.OrderStatus, out var qpadmStatus)
+                ? qpadmStatus
+                : OrderStatus.InProcess;
+
             await dbContext.SaveChangesAsync();
+
+            if (inspection.Order.Status == OrderStatus.Completed)
+            {
+                await notificationService.CreateAndSendAsync(
+                    inspection.UserId,
+                    NotificationType.OrderCompleted,
+                    "Order Completed",
+                    $"Your {inspection.Order.Service} analysis results are ready.",
+                    inspection.Order.Id.ToString());
+            }
 
             return new SubmitQpadmResultContract.Response
             {
@@ -269,7 +311,11 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 LeftSources = inspection.QpadmResult.LeftSources,
                 Populations = populations.Select(p => new PopulationResponse
                 {
-                    Id = p.Id, Name = p.Name, EraId = p.EraId, EraName = p.Era.Name
+                    Id = p.Id,
+                    Name = p.Name,
+                    EraId = p.EraId,
+                    EraName = p.Era.Name,
+                    Percentage = percentageLookup.GetValueOrDefault(p.Id)
                 }).ToList()
             };
         }
@@ -278,7 +324,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         {
             var result = await dbContext.QpadmResults
                 .AsNoTracking()
-                .Include(qr => qr.Populations)
+                .Include(qr => qr.QpadmResultPopulations)
+                .ThenInclude(qrp => qrp.Population)
                 .ThenInclude(p => p.Era)
                 .FirstOrDefaultAsync(qr => qr.GeneticInspectionId == inspectionId);
 
@@ -297,16 +344,23 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 PiValue = result.PiValue,
                 RightSources = result.RightSources,
                 LeftSources = result.LeftSources,
-                Populations = result.Populations.Select(p => new PopulationResponse
+                Populations = result.QpadmResultPopulations.Select(qrp => new PopulationResponse
                 {
-                    Id = p.Id, Name = p.Name, EraId = p.EraId, EraName = p.Era.Name
+                    Id = qrp.Population.Id,
+                    Name = qrp.Population.Name,
+                    EraId = qrp.Population.EraId,
+                    EraName = qrp.Population.Era.Name,
+                    Percentage = qrp.Percentage
                 }).ToList()
             };
         }
 
-        public async Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId)
+        public async Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId,
+            SubmitVahaduoResultContract.Request request)
         {
             var inspection = await dbContext.GeneticInspections
+                .Include(gi => gi.Order)
+                .Include(gi => gi.User)
                 .Include(gi => gi.VahaduoResult)
                 .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
 
@@ -318,7 +372,22 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             if (inspection.VahaduoResult is null)
             {
                 inspection.VahaduoResult = new VahaduoResult { GeneticInspectionId = inspectionId };
-                await dbContext.SaveChangesAsync();
+            }
+
+            inspection.Order.Status = Enum.TryParse<OrderStatus>(request.OrderStatus, out var vahaduoStatus)
+                ? vahaduoStatus
+                : OrderStatus.InProcess;
+
+            await dbContext.SaveChangesAsync();
+
+            if (inspection.Order.Status == OrderStatus.Completed)
+            {
+                await notificationService.CreateAndSendAsync(
+                    inspection.UserId,
+                    NotificationType.OrderCompleted,
+                    "Order Completed",
+                    $"Your {inspection.Order.Service} analysis results are ready.",
+                    inspection.Order.Id.ToString());
             }
 
             return new SubmitVahaduoResultContract.Response

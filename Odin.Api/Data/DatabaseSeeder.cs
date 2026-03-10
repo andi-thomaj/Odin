@@ -74,7 +74,6 @@ public class DatabaseSeeder(ApplicationDbContext context)
         var now = DateTime.UtcNow;
         const string seeder = "DatabaseSeeder";
 
-        // era -> population -> sub-populations
         var seedData = new Dictionary<string, Dictionary<string, string[]>>
         {
             ["Hunter Gatherer & Neolithic Farmer"] = new()

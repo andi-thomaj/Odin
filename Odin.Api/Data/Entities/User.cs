@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
@@ -14,6 +14,7 @@ namespace Odin.Api.Data.Entities
         public string LastName { get; set; } = string.Empty;
         public AppRole Role { get; set; } = AppRole.User;
         public List<GeneticInspection> GeneticInspections { get; set; } = [];
+        public List<Notification> Notifications { get; set; } = [];
     }
 
     public class UserConfiguration : IEntityTypeConfiguration<User>

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
 using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
 using Odin.Api.Extensions;
@@ -131,9 +131,12 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 : Results.Created($"/api/genetic-inspections/{id}/qpadm-result", response);
         }
 
-        private static async Task<IResult> SubmitVahaduoResult(IGeneticInspectionService service, int id)
+        private static async Task<IResult> SubmitVahaduoResult(
+            IGeneticInspectionService service,
+            int id,
+            [FromBody] SubmitVahaduoResultContract.Request request)
         {
-            var response = await service.SubmitVahaduoResultAsync(id);
+            var response = await service.SubmitVahaduoResultAsync(id, request);
 
             return response is null
                 ? Results.NotFound(new { Message = $"Genetic inspection with ID {id} not found." })
