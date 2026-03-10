@@ -16,6 +16,7 @@ namespace Odin.Api.Endpoints.OrderManagement
             endpoints.MapPost("/", Create).DisableAntiforgery().RequireAuthorization("Authenticated");
             endpoints.MapPut("/{id:int}", Update).RequireAuthorization("Authenticated");
             endpoints.MapDelete("/{id:int}", Delete).RequireAuthorization("AdminOnly");
+            endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("Authenticated");
         }
 
         private static async Task<IResult> GetAll(IOrderService service)
@@ -91,6 +92,23 @@ namespace Odin.Api.Endpoints.OrderManagement
             return deleted
                 ? Results.NoContent()
                 : Results.NotFound(new { Message = $"Order with ID {id} not found." });
+        }
+
+        private static async Task<IResult> GetQpadmResult(IOrderService service, HttpContext httpContext, int id)
+        {
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            var (result, statusCode, error) = await service.GetQpadmResultForOrderAsync(id, identityId);
+
+            return statusCode switch
+            {
+                200 => Results.Ok(result),
+                403 => Results.Forbid(),
+                400 => Results.BadRequest(new { Message = error }),
+                _ => Results.NotFound(new { Message = error })
+            };
         }
     }
 }

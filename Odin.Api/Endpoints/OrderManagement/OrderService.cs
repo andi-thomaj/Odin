@@ -13,6 +13,7 @@ namespace Odin.Api.Endpoints.OrderManagement
         Task<IEnumerable<GetOrderContract.Response>> GetAllAsync();
         Task<GetOrderContract.Response?> UpdateAsync(int id, UpdateOrderContract.Request request);
         Task<bool> DeleteAsync(int id);
+        Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId);
     }
 
     public class OrderService(ApplicationDbContext dbContext) : IOrderService
@@ -265,6 +266,59 @@ namespace Odin.Api.Endpoints.OrderManagement
             dbContext.Orders.Remove(order);
             await dbContext.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId)
+        {
+            var order = await dbContext.Orders
+                .AsNoTracking()
+                .Include(o => o.GeneticInspection)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order is null)
+                return (null, 404, $"Order with ID {orderId} not found.");
+
+            if (order.CreatedBy != identityId)
+                return (null, 403, "You do not have permission to view this order's results.");
+
+            if (order.Status != OrderStatus.Completed)
+                return (null, 400, "Results are only available for completed orders.");
+
+            if (order.GeneticInspection is null)
+                return (null, 404, "No genetic inspection associated with this order.");
+
+            var qpadmResult = await dbContext.QpadmResults
+                .AsNoTracking()
+                .Include(qr => qr.QpadmResultPopulations)
+                    .ThenInclude(qrp => qrp.Population)
+                        .ThenInclude(p => p.Era)
+                .FirstOrDefaultAsync(qr => qr.GeneticInspectionId == order.GeneticInspection.Id);
+
+            if (qpadmResult is null)
+                return (null, 404, "No QPADM result found for this order.");
+
+            var response = new GetOrderQpadmResultContract.Response
+            {
+                FirstName = order.GeneticInspection.FirstName,
+                MiddleName = order.GeneticInspection.MiddleName,
+                LastName = order.GeneticInspection.LastName,
+                Weight = qpadmResult.Weight,
+                StandardError = qpadmResult.StandardError,
+                ZScore = qpadmResult.ZScore,
+                PiValue = qpadmResult.PiValue,
+                RightSources = qpadmResult.RightSources,
+                LeftSources = qpadmResult.LeftSources,
+                Populations = qpadmResult.QpadmResultPopulations.Select(qrp => new GetOrderQpadmResultContract.PopulationResult
+                {
+                    Id = qrp.Population.Id,
+                    Name = qrp.Population.Name,
+                    EraId = qrp.Population.EraId,
+                    EraName = qrp.Population.Era.Name,
+                    Percentage = qrp.Percentage
+                }).ToList()
+            };
+
+            return (response, 200, null);
         }
     }
 }

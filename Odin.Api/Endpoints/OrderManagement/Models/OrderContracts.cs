@@ -133,4 +133,30 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string UpdatedBy { get; set; } = string.Empty;
         }
     }
+
+    public class GetOrderQpadmResultContract
+    {
+        public class PopulationResult
+        {
+            public int Id { get; set; }
+            public required string Name { get; set; }
+            public int EraId { get; set; }
+            public required string EraName { get; set; }
+            public decimal Percentage { get; set; }
+        }
+
+        public class Response
+        {
+            public string FirstName { get; set; } = string.Empty;
+            public string MiddleName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+            public decimal Weight { get; set; }
+            public decimal StandardError { get; set; }
+            public decimal ZScore { get; set; }
+            public decimal PiValue { get; set; }
+            public string RightSources { get; set; } = string.Empty;
+            public string LeftSources { get; set; } = string.Empty;
+            public List<PopulationResult> Populations { get; set; } = [];
+        }
+    }
 }
