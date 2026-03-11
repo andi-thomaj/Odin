@@ -9,9 +9,6 @@ namespace Odin.Api.Data.Entities
         public int GeneticInspectionId { get; set; }
         public GeneticInspection GeneticInspection { get; set; }
         public List<QpadmResultPopulation> QpadmResultPopulations { get; set; } = [];
-        public decimal Weight { get; set; }
-        public decimal StandardError { get; set; }
-        public decimal ZScore { get; set; }
         public decimal PiValue { get; set; }
         public string RightSources { get; set; }
         public string LeftSources { get; set; }

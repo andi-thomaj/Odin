@@ -13,6 +13,8 @@ namespace Odin.Api.Data.Entities
         public string MiddleName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public AppRole Role { get; set; } = AppRole.User;
+        public string? Country { get; set; }
+        public string? CountryCode { get; set; }
         public List<GeneticInspection> GeneticInspections { get; set; } = [];
         public List<Notification> Notifications { get; set; } = [];
     }
@@ -28,6 +30,8 @@ namespace Odin.Api.Data.Entities
                 .HasConversion<string>()
                 .HasMaxLength(50)
                 .HasDefaultValue(AppRole.User);
+            builder.Property(e => e.Country).HasMaxLength(100);
+            builder.Property(e => e.CountryCode).HasMaxLength(2);
 
             builder.ToTable("application_users");
         }

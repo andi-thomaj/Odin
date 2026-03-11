@@ -76,7 +76,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
         var seedData = new Dictionary<string, Dictionary<string, string[]>>
         {
-            ["Hunter Gatherer & Neolithic Farmer"] = new()
+            ["Hunter Gatherer and Neolithic Farmer"] = new()
             {
                 ["Anatolian Neolithic Farmer"] = [],
                 ["Western Steppe Herder"] = [],
@@ -91,7 +91,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
                 ["Sub Saharan African"] = [],
                 ["Uralic"] = [],
             },
-            ["Iron Age & Migration Period"] = new()
+            ["Iron Age and Migration Period"] = new()
             {
                 ["Illyrian"] = [],
                 ["Ancient Greek"] = [],
@@ -262,7 +262,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
             new Order
             {
                 Price = 29.99m,
-                Service = Enums.OrderService.Vahaduo,
+                Service = Enums.OrderService.QPADM,
                 Status = OrderStatus.InProcess,
                 CreatedAt = now.AddDays(-10),
                 CreatedBy = seeder,

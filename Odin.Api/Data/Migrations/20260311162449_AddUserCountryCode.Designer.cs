@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Odin.Api.Data;
@@ -11,9 +12,11 @@ using Odin.Api.Data;
 namespace Odin.Api.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260311162449_AddUserCountryCode")]
+    partial class AddUserCountryCode
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -321,12 +324,21 @@ namespace Odin.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<decimal>("StandardError")
+                        .HasColumnType("numeric");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UpdatedBy")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<decimal>("Weight")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("ZScore")
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
@@ -347,14 +359,6 @@ namespace Odin.Api.Data.Migrations
                     b.Property<decimal>("Percentage")
                         .HasPrecision(5, 2)
                         .HasColumnType("numeric(5,2)");
-
-                    b.Property<decimal>("StandardError")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("numeric(18,6)");
-
-                    b.Property<decimal>("ZScore")
-                        .HasPrecision(18, 6)
-                        .HasColumnType("numeric(18,6)");
 
                     b.HasKey("QpadmResultId", "PopulationId");
 
@@ -574,6 +578,58 @@ namespace Odin.Api.Data.Migrations
                     b.ToTable("application_users", (string)null);
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.VahaduoResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("GeneticInspectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GeneticInspectionId")
+                        .IsUnique();
+
+                    b.ToTable("vahaduo_results", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.VahaduoResultPopulation", b =>
+                {
+                    b.Property<int>("VahaduoResultId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PopulationId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Distance")
+                        .HasPrecision(18, 8)
+                        .HasColumnType("numeric(18,8)");
+
+                    b.HasKey("VahaduoResultId", "PopulationId");
+
+                    b.HasIndex("PopulationId");
+
+                    b.ToTable("vahaduo_result_populations", (string)null);
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.Ethnicity", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.GeneticInspection", null)
@@ -720,6 +776,36 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("Population");
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.VahaduoResult", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.GeneticInspection", "GeneticInspection")
+                        .WithOne("VahaduoResult")
+                        .HasForeignKey("Odin.Api.Data.Entities.VahaduoResult", "GeneticInspectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GeneticInspection");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.VahaduoResultPopulation", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.Population", "Population")
+                        .WithMany()
+                        .HasForeignKey("PopulationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Odin.Api.Data.Entities.VahaduoResult", "VahaduoResult")
+                        .WithMany("VahaduoResultPopulations")
+                        .HasForeignKey("VahaduoResultId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Population");
+
+                    b.Navigation("VahaduoResult");
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.Era", b =>
                 {
                     b.Navigation("Populations");
@@ -737,6 +823,8 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("GeneticInspectionRegions");
 
                     b.Navigation("QpadmResult");
+
+                    b.Navigation("VahaduoResult");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.Order", b =>
@@ -772,6 +860,11 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("GeneticInspections");
 
                     b.Navigation("Notifications");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.VahaduoResult", b =>
+                {
+                    b.Navigation("VahaduoResultPopulations");
                 });
 #pragma warning restore 612, 618
         }

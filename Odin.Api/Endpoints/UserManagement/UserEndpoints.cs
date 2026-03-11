@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Endpoints.UserManagement.Models;
 using Odin.Api.Extensions;
 
@@ -26,6 +26,7 @@ namespace Odin.Api.Endpoints.UserManagement
         }
 
         private static async Task<IResult> CreateUser(IUserService userService,
+            HttpContext httpContext,
             [FromBody] CreateUserContract.Request request)
         {
             var validationProblem = request.ValidateAndGetProblem();
@@ -34,7 +35,9 @@ namespace Odin.Api.Endpoints.UserManagement
                 return validationProblem;
             }
 
-            var response = await userService.CreateUserAsync(request);
+            var ipAddress = httpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',')[0].Trim()
+                            ?? httpContext.Connection.RemoteIpAddress?.ToString();
+            var response = await userService.CreateUserAsync(request, ipAddress);
             return Results.Ok(response);
         }
 

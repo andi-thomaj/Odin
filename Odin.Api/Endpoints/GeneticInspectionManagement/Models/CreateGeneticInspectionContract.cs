@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
 {
@@ -84,6 +84,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
             public required string LastName { get; set; }
             public int RawGeneticFileId { get; set; }
             public required string RawGeneticFileName { get; set; }
+            public required string OrderStatus { get; set; }
+            public DateTime CreatedAt { get; set; }
+            public string? Country { get; set; }
+            public string? CountryCode { get; set; }
             public List<RegionResponse> Regions { get; set; } = [];
         }
     }

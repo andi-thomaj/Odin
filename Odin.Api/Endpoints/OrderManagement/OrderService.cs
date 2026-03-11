@@ -3,32 +3,38 @@ using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.OrderManagement.Models;
+using Odin.Api.Services;
 
 namespace Odin.Api.Endpoints.OrderManagement
 {
     public interface IOrderService
     {
-        Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId);
+        Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null);
         Task<GetOrderContract.Response?> GetByIdAsync(int id);
         Task<IEnumerable<GetOrderContract.Response>> GetAllAsync();
         Task<GetOrderContract.Response?> UpdateAsync(int id, UpdateOrderContract.Request request);
         Task<bool> DeleteAsync(int id);
         Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId);
-        Task<(GetOrderVahaduoResultContract.Response? Result, int StatusCode, string? Error)> GetVahaduoResultForOrderAsync(int orderId, string identityId);
     }
 
-    public class OrderService(ApplicationDbContext dbContext) : IOrderService
+    public class OrderService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService) : IOrderService
     {
         private const decimal QpadmPrice = 49.99m;
         private const int MaxEthnicities = 4;
         private const int MaxRegionsPerEthnicity = 4;
 
-        public async Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId)
+        public async Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null)
         {
             var user = await dbContext.Users
-                .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.IdentityId == identityId)
                 ?? throw new InvalidOperationException("Authenticated user not found in the database.");
+
+            if ((user.Country is null || user.CountryCode is null) && ipAddress is not null)
+            {
+                var geo = await geoLocationService.GetCountryFromIpAsync(ipAddress);
+                user.Country = geo?.Country;
+                user.CountryCode = geo?.CountryCode;
+            }
 
             var regions = await dbContext.Regions
                 .Include(r => r.Ethnicity)
@@ -303,9 +309,6 @@ namespace Odin.Api.Endpoints.OrderManagement
                 FirstName = order.GeneticInspection.FirstName,
                 MiddleName = order.GeneticInspection.MiddleName,
                 LastName = order.GeneticInspection.LastName,
-                Weight = qpadmResult.Weight,
-                StandardError = qpadmResult.StandardError,
-                ZScore = qpadmResult.ZScore,
                 PiValue = qpadmResult.PiValue,
                 RightSources = qpadmResult.RightSources,
                 LeftSources = qpadmResult.LeftSources,
@@ -315,60 +318,14 @@ namespace Odin.Api.Endpoints.OrderManagement
                     Name = qrp.Population.Name,
                     EraId = qrp.Population.EraId,
                     EraName = qrp.Population.Era.Name,
-                    Percentage = qrp.Percentage
+                    Percentage = qrp.Percentage,
+                    StandardError = qrp.StandardError,
+                    ZScore = qrp.ZScore
                 }).ToList()
             };
 
             return (response, 200, null);
         }
 
-        public async Task<(GetOrderVahaduoResultContract.Response? Result, int StatusCode, string? Error)> GetVahaduoResultForOrderAsync(int orderId, string identityId)
-        {
-            var order = await dbContext.Orders
-                .AsNoTracking()
-                .Include(o => o.GeneticInspection)
-                .FirstOrDefaultAsync(o => o.Id == orderId);
-
-            if (order is null)
-                return (null, 404, $"Order with ID {orderId} not found.");
-
-            if (order.CreatedBy != identityId)
-                return (null, 403, "You do not have permission to view this order's results.");
-
-            if (order.Status != OrderStatus.Completed)
-                return (null, 400, "Results are only available for completed orders.");
-
-            if (order.GeneticInspection is null)
-                return (null, 404, "No genetic inspection associated with this order.");
-
-            var vahaduoResult = await dbContext.VahaduoResults
-                .AsNoTracking()
-                .Include(vr => vr.VahaduoResultPopulations)
-                    .ThenInclude(vrp => vrp.Population)
-                        .ThenInclude(p => p.Era)
-                .FirstOrDefaultAsync(vr => vr.GeneticInspectionId == order.GeneticInspection.Id);
-
-            if (vahaduoResult is null)
-                return (null, 404, "No Vahaduo result found for this order.");
-
-            var response = new GetOrderVahaduoResultContract.Response
-            {
-                FirstName = order.GeneticInspection.FirstName,
-                MiddleName = order.GeneticInspection.MiddleName,
-                LastName = order.GeneticInspection.LastName,
-                Populations = vahaduoResult.VahaduoResultPopulations
-                    .OrderBy(vrp => vrp.Distance)
-                    .Select(vrp => new GetOrderVahaduoResultContract.PopulationResult
-                    {
-                        Id = vrp.Population.Id,
-                        Name = vrp.Population.Name,
-                        EraId = vrp.Population.EraId,
-                        EraName = vrp.Population.Era.Name,
-                        Distance = vrp.Distance
-                    }).ToList()
-            };
-
-            return (response, 200, null);
-        }
     }
 }

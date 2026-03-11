@@ -11,6 +11,7 @@ using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Hubs;
 using Odin.Api.Middleware;
+using Odin.Api.Services;
 
 namespace Odin.Api
 {
@@ -97,11 +98,18 @@ namespace Odin.Api
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.AddSignalR();
             services.AddSingleton<IUserIdProvider, UserIdProvider>();
 
             var app = builder.Build();
+
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor |
+                                   Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+            });
 
             await app.InitializeDatabaseAsync();
 

@@ -1,13 +1,14 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.UserManagement.Models;
+using Odin.Api.Services;
 
 namespace Odin.Api.Endpoints.UserManagement
 {
     public interface IUserService
     {
-        Task<CreateUserContract.Response> CreateUserAsync(CreateUserContract.Request request);
+        Task<CreateUserContract.Response> CreateUserAsync(CreateUserContract.Request request, string? ipAddress = null);
         Task<GetUserContract.Response?> GetUserByIdentityIdAsync(string identityId);
         Task<UpdateUserContract.Response?> UpdateUserAsync(string identityId, UpdateUserContract.Request request);
 
@@ -17,15 +18,24 @@ namespace Odin.Api.Endpoints.UserManagement
         Task<bool> DeleteUserAsync(string identityId);
     }
 
-    public class UserService(ApplicationDbContext dbContext) : IUserService
+    public class UserService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService) : IUserService
     {
-        public async Task<CreateUserContract.Response> CreateUserAsync(CreateUserContract.Request request)
+        public async Task<CreateUserContract.Response> CreateUserAsync(CreateUserContract.Request request,
+            string? ipAddress = null)
         {
             var existingUser = await dbContext.Users
                 .FirstOrDefaultAsync(u => u.IdentityId == request.IdentityId);
 
             if (existingUser is not null)
             {
+                if ((existingUser.Country is null || existingUser.CountryCode is null) && ipAddress is not null)
+                {
+                    var geo = await geoLocationService.GetCountryFromIpAsync(ipAddress);
+                    existingUser.Country = geo?.Country;
+                    existingUser.CountryCode = geo?.CountryCode;
+                    await dbContext.SaveChangesAsync();
+                }
+
                 return new CreateUserContract.Response
                 {
                     Id = existingUser.Id,
@@ -38,6 +48,8 @@ namespace Odin.Api.Endpoints.UserManagement
                 };
             }
 
+            var geoResult = await geoLocationService.GetCountryFromIpAsync(ipAddress);
+
             var user = new User
             {
                 IdentityId = request.IdentityId,
@@ -46,6 +58,8 @@ namespace Odin.Api.Endpoints.UserManagement
                 FirstName = request.FirstName ?? string.Empty,
                 LastName = request.LastName ?? string.Empty,
                 Role = AppRole.User,
+                Country = geoResult?.Country,
+                CountryCode = geoResult?.CountryCode,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = request.IdentityId,
                 UpdatedAt = DateTime.UtcNow,

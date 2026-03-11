@@ -25,10 +25,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             SubmitQpadmResultContract.Request request);
 
         Task<SubmitQpadmResultContract.Response?> GetQpadmResultAsync(int inspectionId);
-        Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId,
-            SubmitVahaduoResultContract.Request request);
-
-        Task<SubmitVahaduoResultContract.Response?> GetVahaduoResultAsync(int inspectionId);
     }
 
     public class GeneticInspectionService(
@@ -88,6 +84,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             var inspection = await dbContext.GeneticInspections
                 .AsNoTracking()
                 .Include(gi => gi.RawGeneticFile)
+                .Include(gi => gi.Order)
+                .Include(gi => gi.User)
                 .Include(gi => gi.GeneticInspectionRegions)
                 .ThenInclude(gir => gir.Region)
                 .ThenInclude(r => r.Ethnicity)
@@ -106,6 +104,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 LastName = inspection.LastName,
                 RawGeneticFileId = inspection.RawGeneticFileId,
                 RawGeneticFileName = inspection.RawGeneticFile.FileName,
+                OrderStatus = inspection.Order.Status.ToString(),
+                CreatedAt = inspection.Order.CreatedAt,
+                Country = inspection.User?.Country,
+                CountryCode = inspection.User?.CountryCode,
                 Regions = inspection.GeneticInspectionRegions.Select(gir => new RegionResponse
                 {
                     Id = gir.Region.Id, Name = gir.Region.Name, EthnicityName = gir.Region.Ethnicity.Name
@@ -118,6 +120,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             return await dbContext.GeneticInspections
                 .AsNoTracking()
                 .Include(gi => gi.RawGeneticFile)
+                .Include(gi => gi.Order)
+                .Include(gi => gi.User)
                 .Include(gi => gi.GeneticInspectionRegions)
                 .ThenInclude(gir => gir.Region)
                 .ThenInclude(r => r.Ethnicity)
@@ -129,6 +133,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     LastName = inspection.LastName,
                     RawGeneticFileId = inspection.RawGeneticFileId,
                     RawGeneticFileName = inspection.RawGeneticFile.FileName,
+                    OrderStatus = inspection.Order.Status.ToString(),
+                    CreatedAt = inspection.Order.CreatedAt,
+                    Country = inspection.User.Country,
+                    CountryCode = inspection.User.CountryCode,
                     Regions = inspection.GeneticInspectionRegions.Select(gir => new RegionResponse
                     {
                         Id = gir.Region.Id, Name = gir.Region.Name, EthnicityName = gir.Region.Ethnicity.Name
@@ -236,28 +244,31 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .Where(p => populationIds.Contains(p.Id))
                 .ToListAsync();
 
-            var percentageLookup = request.Populations.ToDictionary(p => p.PopulationId, p => p.Percentage);
+            var popLookup = request.Populations.ToDictionary(p => p.PopulationId);
 
             var perEraTotal = populations
                 .GroupBy(p => p.EraId)
-                .Where(g => g.Sum(p => percentageLookup.GetValueOrDefault(p.Id)) > 100);
+                .Where(g => g.Sum(p => popLookup.GetValueOrDefault(p.Id)?.Percentage ?? 0) > 100);
 
             if (perEraTotal.Any())
             {
                 return null;
             }
 
-            var joinEntities = populations.Select(p => new QpadmResultPopulation
+            var joinEntities = populations.Select(p =>
             {
-                PopulationId = p.Id,
-                Percentage = percentageLookup.GetValueOrDefault(p.Id)
+                var item = popLookup.GetValueOrDefault(p.Id);
+                return new QpadmResultPopulation
+                {
+                    PopulationId = p.Id,
+                    Percentage = item?.Percentage ?? 0,
+                    StandardError = item?.StandardError ?? 0,
+                    ZScore = item?.ZScore ?? 0
+                };
             }).ToList();
 
             if (inspection.QpadmResult is not null)
             {
-                inspection.QpadmResult.Weight = request.Weight;
-                inspection.QpadmResult.StandardError = request.StandardError;
-                inspection.QpadmResult.ZScore = request.ZScore;
                 inspection.QpadmResult.PiValue = request.PiValue;
                 inspection.QpadmResult.RightSources = request.RightSources;
                 inspection.QpadmResult.LeftSources = request.LeftSources;
@@ -274,9 +285,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 inspection.QpadmResult = new QpadmResult
                 {
                     GeneticInspectionId = inspectionId,
-                    Weight = request.Weight,
-                    StandardError = request.StandardError,
-                    ZScore = request.ZScore,
                     PiValue = request.PiValue,
                     RightSources = request.RightSources,
                     LeftSources = request.LeftSources,
@@ -305,19 +313,22 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             {
                 Id = inspection.QpadmResult.Id,
                 GeneticInspectionId = inspectionId,
-                Weight = inspection.QpadmResult.Weight,
-                StandardError = inspection.QpadmResult.StandardError,
-                ZScore = inspection.QpadmResult.ZScore,
                 PiValue = inspection.QpadmResult.PiValue,
                 RightSources = inspection.QpadmResult.RightSources,
                 LeftSources = inspection.QpadmResult.LeftSources,
-                Populations = populations.Select(p => new PopulationResponse
+                Populations = populations.Select(p =>
                 {
-                    Id = p.Id,
-                    Name = p.Name,
-                    EraId = p.EraId,
-                    EraName = p.Era.Name,
-                    Percentage = percentageLookup.GetValueOrDefault(p.Id)
+                    var item = popLookup.GetValueOrDefault(p.Id);
+                    return new PopulationResponse
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        EraId = p.EraId,
+                        EraName = p.Era.Name,
+                        Percentage = item?.Percentage ?? 0,
+                        StandardError = item?.StandardError ?? 0,
+                        ZScore = item?.ZScore ?? 0
+                    };
                 }).ToList()
             };
         }
@@ -340,9 +351,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             {
                 Id = result.Id,
                 GeneticInspectionId = inspectionId,
-                Weight = result.Weight,
-                StandardError = result.StandardError,
-                ZScore = result.ZScore,
                 PiValue = result.PiValue,
                 RightSources = result.RightSources,
                 LeftSources = result.LeftSources,
@@ -352,122 +360,12 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     Name = qrp.Population.Name,
                     EraId = qrp.Population.EraId,
                     EraName = qrp.Population.Era.Name,
-                    Percentage = qrp.Percentage
+                    Percentage = qrp.Percentage,
+                    StandardError = qrp.StandardError,
+                    ZScore = qrp.ZScore
                 }).ToList()
             };
         }
 
-        public async Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId,
-            SubmitVahaduoResultContract.Request request)
-        {
-            var inspection = await dbContext.GeneticInspections
-                .Include(gi => gi.Order)
-                .Include(gi => gi.User)
-                .Include(gi => gi.VahaduoResult)
-                    .ThenInclude(vr => vr!.VahaduoResultPopulations)
-                .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
-
-            if (inspection is null)
-            {
-                return null;
-            }
-
-            var populationIds = request.Populations.Select(p => p.PopulationId).ToList();
-            var populations = await dbContext.Populations
-                .Include(p => p.Era)
-                .Where(p => populationIds.Contains(p.Id))
-                .ToListAsync();
-
-            var distanceLookup = request.Populations.ToDictionary(p => p.PopulationId, p => p.Distance);
-
-            var joinEntities = populations.Select(p => new VahaduoResultPopulation
-            {
-                PopulationId = p.Id,
-                Distance = distanceLookup.GetValueOrDefault(p.Id)
-            }).ToList();
-
-            if (inspection.VahaduoResult is not null)
-            {
-                inspection.VahaduoResult.UpdatedAt = DateTime.UtcNow;
-                inspection.VahaduoResult.VahaduoResultPopulations.Clear();
-                foreach (var je in joinEntities)
-                {
-                    je.VahaduoResultId = inspection.VahaduoResult.Id;
-                    inspection.VahaduoResult.VahaduoResultPopulations.Add(je);
-                }
-            }
-            else
-            {
-                inspection.VahaduoResult = new VahaduoResult
-                {
-                    GeneticInspectionId = inspectionId,
-                    VahaduoResultPopulations = joinEntities,
-                    CreatedBy = string.Empty
-                };
-            }
-
-            inspection.Order.Status = Enum.TryParse<OrderStatus>(request.OrderStatus, out var vahaduoStatus)
-                ? vahaduoStatus
-                : OrderStatus.InProcess;
-
-            await dbContext.SaveChangesAsync();
-
-            if (inspection.Order.Status == OrderStatus.Completed)
-            {
-                await notificationService.CreateAndSendAsync(
-                    inspection.UserId,
-                    NotificationType.OrderCompleted,
-                    "Order Completed",
-                    $"Your {inspection.Order.Service} analysis results are ready.",
-                    inspection.Order.Id.ToString());
-            }
-
-            return new SubmitVahaduoResultContract.Response
-            {
-                Id = inspection.VahaduoResult.Id,
-                GeneticInspectionId = inspectionId,
-                Populations = populations
-                    .OrderBy(p => distanceLookup.GetValueOrDefault(p.Id))
-                    .Select(p => new VahaduoPopulationResponse
-                    {
-                        Id = p.Id,
-                        Name = p.Name,
-                        EraId = p.EraId,
-                        EraName = p.Era.Name,
-                        Distance = distanceLookup.GetValueOrDefault(p.Id)
-                    }).ToList()
-            };
-        }
-
-        public async Task<SubmitVahaduoResultContract.Response?> GetVahaduoResultAsync(int inspectionId)
-        {
-            var result = await dbContext.VahaduoResults
-                .AsNoTracking()
-                .Include(vr => vr.VahaduoResultPopulations)
-                    .ThenInclude(vrp => vrp.Population)
-                        .ThenInclude(p => p.Era)
-                .FirstOrDefaultAsync(vr => vr.GeneticInspectionId == inspectionId);
-
-            if (result is null)
-            {
-                return null;
-            }
-
-            return new SubmitVahaduoResultContract.Response
-            {
-                Id = result.Id,
-                GeneticInspectionId = inspectionId,
-                Populations = result.VahaduoResultPopulations
-                    .OrderBy(vrp => vrp.Distance)
-                    .Select(vrp => new VahaduoPopulationResponse
-                    {
-                        Id = vrp.Population.Id,
-                        Name = vrp.Population.Name,
-                        EraId = vrp.Population.EraId,
-                        EraName = vrp.Population.Era.Name,
-                        Distance = vrp.Distance
-                    }).ToList()
-            };
-        }
     }
 }

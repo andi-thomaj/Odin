@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
@@ -16,7 +16,6 @@ namespace Odin.Api.Data.Entities
         public int RawGeneticFileId { get; set; }
         public RawGeneticFile? RawGeneticFile { get; set; }
         public QpadmResult? QpadmResult { get; set; }
-        public VahaduoResult? VahaduoResult { get; set; }
         public int OrderId { get; set; }
         public Order Order { get; set; }
     }

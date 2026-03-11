@@ -24,8 +24,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("ScientistOrAdmin");
             endpoints.MapPost("/{id:int}/qpadm-result", SubmitQpadmResult).RequireAuthorization("ScientistOrAdmin");
-            endpoints.MapGet("/{id:int}/vahaduo-result", GetVahaduoResult).RequireAuthorization("ScientistOrAdmin");
-            endpoints.MapPost("/{id:int}/vahaduo-result", SubmitVahaduoResult).RequireAuthorization("ScientistOrAdmin");
         }
 
         private static async Task<IResult> GetAll(IGeneticInspectionService service)
@@ -114,15 +112,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 : Results.Ok(response);
         }
 
-        private static async Task<IResult> GetVahaduoResult(IGeneticInspectionService service, int id)
-        {
-            var response = await service.GetVahaduoResultAsync(id);
-
-            return response is null
-                ? Results.NotFound(new { Message = $"No Vahaduo result found for inspection with ID {id}." })
-                : Results.Ok(response);
-        }
-
         private static async Task<IResult> SubmitQpadmResult(
             IGeneticInspectionService service,
             int id,
@@ -141,22 +130,5 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 : Results.Created($"/api/genetic-inspections/{id}/qpadm-result", response);
         }
 
-        private static async Task<IResult> SubmitVahaduoResult(
-            IGeneticInspectionService service,
-            int id,
-            [FromBody] SubmitVahaduoResultContract.Request request)
-        {
-            var validationProblem = request.ValidateAndGetProblem();
-            if (validationProblem is not null)
-            {
-                return validationProblem;
-            }
-
-            var response = await service.SubmitVahaduoResultAsync(id, request);
-
-            return response is null
-                ? Results.NotFound(new { Message = $"Genetic inspection with ID {id} not found." })
-                : Results.Created($"/api/genetic-inspections/{id}/vahaduo-result", response);
-        }
     }
 }
