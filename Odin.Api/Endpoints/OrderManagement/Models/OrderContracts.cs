@@ -159,4 +159,24 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public List<PopulationResult> Populations { get; set; } = [];
         }
     }
+
+    public class GetOrderVahaduoResultContract
+    {
+        public class PopulationResult
+        {
+            public int Id { get; set; }
+            public required string Name { get; set; }
+            public int EraId { get; set; }
+            public required string EraName { get; set; }
+            public decimal Distance { get; set; }
+        }
+
+        public class Response
+        {
+            public string FirstName { get; set; } = string.Empty;
+            public string MiddleName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+            public List<PopulationResult> Populations { get; set; } = [];
+        }
+    }
 }

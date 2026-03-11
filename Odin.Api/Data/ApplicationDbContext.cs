@@ -16,6 +16,7 @@ namespace Odin.Api.Data
         public DbSet<SubPopulation> SubPopulations { get; set; }
         public DbSet<QpadmResult> QpadmResults { get; set; }
         public DbSet<VahaduoResult> VahaduoResults { get; set; }
+        public DbSet<VahaduoResultPopulation> VahaduoResultPopulations { get; set; }
         public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<QpadmResultResearchLink> QpadmResultResearchLinks { get; set; }
         public DbSet<Order> Orders { get; set; }

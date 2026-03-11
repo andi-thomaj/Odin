@@ -27,6 +27,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         Task<SubmitQpadmResultContract.Response?> GetQpadmResultAsync(int inspectionId);
         Task<SubmitVahaduoResultContract.Response?> SubmitVahaduoResultAsync(int inspectionId,
             SubmitVahaduoResultContract.Request request);
+
+        Task<SubmitVahaduoResultContract.Response?> GetVahaduoResultAsync(int inspectionId);
     }
 
     public class GeneticInspectionService(
@@ -362,6 +364,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .Include(gi => gi.Order)
                 .Include(gi => gi.User)
                 .Include(gi => gi.VahaduoResult)
+                    .ThenInclude(vr => vr!.VahaduoResultPopulations)
                 .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
 
             if (inspection is null)
@@ -369,9 +372,38 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return null;
             }
 
-            if (inspection.VahaduoResult is null)
+            var populationIds = request.Populations.Select(p => p.PopulationId).ToList();
+            var populations = await dbContext.Populations
+                .Include(p => p.Era)
+                .Where(p => populationIds.Contains(p.Id))
+                .ToListAsync();
+
+            var distanceLookup = request.Populations.ToDictionary(p => p.PopulationId, p => p.Distance);
+
+            var joinEntities = populations.Select(p => new VahaduoResultPopulation
             {
-                inspection.VahaduoResult = new VahaduoResult { GeneticInspectionId = inspectionId };
+                PopulationId = p.Id,
+                Distance = distanceLookup.GetValueOrDefault(p.Id)
+            }).ToList();
+
+            if (inspection.VahaduoResult is not null)
+            {
+                inspection.VahaduoResult.UpdatedAt = DateTime.UtcNow;
+                inspection.VahaduoResult.VahaduoResultPopulations.Clear();
+                foreach (var je in joinEntities)
+                {
+                    je.VahaduoResultId = inspection.VahaduoResult.Id;
+                    inspection.VahaduoResult.VahaduoResultPopulations.Add(je);
+                }
+            }
+            else
+            {
+                inspection.VahaduoResult = new VahaduoResult
+                {
+                    GeneticInspectionId = inspectionId,
+                    VahaduoResultPopulations = joinEntities,
+                    CreatedBy = string.Empty
+                };
             }
 
             inspection.Order.Status = Enum.TryParse<OrderStatus>(request.OrderStatus, out var vahaduoStatus)
@@ -392,7 +424,49 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             return new SubmitVahaduoResultContract.Response
             {
-                Id = inspection.VahaduoResult.Id, GeneticInspectionId = inspectionId
+                Id = inspection.VahaduoResult.Id,
+                GeneticInspectionId = inspectionId,
+                Populations = populations
+                    .OrderBy(p => distanceLookup.GetValueOrDefault(p.Id))
+                    .Select(p => new VahaduoPopulationResponse
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        EraId = p.EraId,
+                        EraName = p.Era.Name,
+                        Distance = distanceLookup.GetValueOrDefault(p.Id)
+                    }).ToList()
+            };
+        }
+
+        public async Task<SubmitVahaduoResultContract.Response?> GetVahaduoResultAsync(int inspectionId)
+        {
+            var result = await dbContext.VahaduoResults
+                .AsNoTracking()
+                .Include(vr => vr.VahaduoResultPopulations)
+                    .ThenInclude(vrp => vrp.Population)
+                        .ThenInclude(p => p.Era)
+                .FirstOrDefaultAsync(vr => vr.GeneticInspectionId == inspectionId);
+
+            if (result is null)
+            {
+                return null;
+            }
+
+            return new SubmitVahaduoResultContract.Response
+            {
+                Id = result.Id,
+                GeneticInspectionId = inspectionId,
+                Populations = result.VahaduoResultPopulations
+                    .OrderBy(vrp => vrp.Distance)
+                    .Select(vrp => new VahaduoPopulationResponse
+                    {
+                        Id = vrp.Population.Id,
+                        Name = vrp.Population.Name,
+                        EraId = vrp.Population.EraId,
+                        EraName = vrp.Population.Era.Name,
+                        Distance = vrp.Distance
+                    }).ToList()
             };
         }
     }

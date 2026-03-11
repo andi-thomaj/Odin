@@ -14,6 +14,7 @@ namespace Odin.Api.Endpoints.OrderManagement
         Task<GetOrderContract.Response?> UpdateAsync(int id, UpdateOrderContract.Request request);
         Task<bool> DeleteAsync(int id);
         Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId);
+        Task<(GetOrderVahaduoResultContract.Response? Result, int StatusCode, string? Error)> GetVahaduoResultForOrderAsync(int orderId, string identityId);
     }
 
     public class OrderService(ApplicationDbContext dbContext) : IOrderService
@@ -316,6 +317,55 @@ namespace Odin.Api.Endpoints.OrderManagement
                     EraName = qrp.Population.Era.Name,
                     Percentage = qrp.Percentage
                 }).ToList()
+            };
+
+            return (response, 200, null);
+        }
+
+        public async Task<(GetOrderVahaduoResultContract.Response? Result, int StatusCode, string? Error)> GetVahaduoResultForOrderAsync(int orderId, string identityId)
+        {
+            var order = await dbContext.Orders
+                .AsNoTracking()
+                .Include(o => o.GeneticInspection)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order is null)
+                return (null, 404, $"Order with ID {orderId} not found.");
+
+            if (order.CreatedBy != identityId)
+                return (null, 403, "You do not have permission to view this order's results.");
+
+            if (order.Status != OrderStatus.Completed)
+                return (null, 400, "Results are only available for completed orders.");
+
+            if (order.GeneticInspection is null)
+                return (null, 404, "No genetic inspection associated with this order.");
+
+            var vahaduoResult = await dbContext.VahaduoResults
+                .AsNoTracking()
+                .Include(vr => vr.VahaduoResultPopulations)
+                    .ThenInclude(vrp => vrp.Population)
+                        .ThenInclude(p => p.Era)
+                .FirstOrDefaultAsync(vr => vr.GeneticInspectionId == order.GeneticInspection.Id);
+
+            if (vahaduoResult is null)
+                return (null, 404, "No Vahaduo result found for this order.");
+
+            var response = new GetOrderVahaduoResultContract.Response
+            {
+                FirstName = order.GeneticInspection.FirstName,
+                MiddleName = order.GeneticInspection.MiddleName,
+                LastName = order.GeneticInspection.LastName,
+                Populations = vahaduoResult.VahaduoResultPopulations
+                    .OrderBy(vrp => vrp.Distance)
+                    .Select(vrp => new GetOrderVahaduoResultContract.PopulationResult
+                    {
+                        Id = vrp.Population.Id,
+                        Name = vrp.Population.Name,
+                        EraId = vrp.Population.EraId,
+                        EraName = vrp.Population.Era.Name,
+                        Distance = vrp.Distance
+                    }).ToList()
             };
 
             return (response, 200, null);

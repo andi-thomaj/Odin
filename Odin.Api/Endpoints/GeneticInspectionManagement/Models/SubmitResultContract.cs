@@ -59,17 +59,45 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
         }
     }
 
+    public class PopulationDistanceItem
+    {
+        public int PopulationId { get; set; }
+        public decimal Distance { get; set; }
+    }
+
     public class SubmitVahaduoResultContract
     {
-        public class Request
+        public class Request : IValidatableObject
         {
+            public List<PopulationDistanceItem> Populations { get; set; } = [];
             public string? OrderStatus { get; set; }
+
+            public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+            {
+                if (Populations.Count == 0)
+                {
+                    yield return new ValidationResult(
+                        "At least one population distance is required.",
+                        [nameof(Populations)]);
+                }
+
+                foreach (var pop in Populations)
+                {
+                    if (pop.Distance < 0)
+                    {
+                        yield return new ValidationResult(
+                            $"Distance for population {pop.PopulationId} must be non-negative.",
+                            [nameof(Populations)]);
+                    }
+                }
+            }
         }
 
         public class Response
         {
             public int Id { get; set; }
             public int GeneticInspectionId { get; set; }
+            public List<VahaduoPopulationResponse> Populations { get; set; } = [];
         }
     }
 
@@ -80,5 +108,14 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
         public int EraId { get; set; }
         public required string EraName { get; set; }
         public decimal Percentage { get; set; }
+    }
+
+    public class VahaduoPopulationResponse
+    {
+        public int Id { get; set; }
+        public required string Name { get; set; }
+        public int EraId { get; set; }
+        public required string EraName { get; set; }
+        public decimal Distance { get; set; }
     }
 }
