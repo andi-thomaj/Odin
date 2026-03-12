@@ -32,7 +32,9 @@ namespace Odin.Api.Endpoints.NotificationManagement
                 Title = title,
                 Message = message,
                 ReferenceId = referenceId,
-                CreatedBy = string.Empty
+                CreatedBy = string.Empty,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
             dbContext.Notifications.Add(notification);

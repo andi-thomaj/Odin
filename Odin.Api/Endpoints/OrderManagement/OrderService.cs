@@ -296,9 +296,11 @@ namespace Odin.Api.Endpoints.OrderManagement
 
             var qpadmResult = await dbContext.QpadmResults
                 .AsNoTracking()
-                .Include(qr => qr.QpadmResultPopulations)
+                .Include(qr => qr.QpadmResultEraGroups)
+                    .ThenInclude(eg => eg.Era)
+                .Include(qr => qr.QpadmResultEraGroups)
+                    .ThenInclude(eg => eg.QpadmResultPopulations)
                     .ThenInclude(qrp => qrp.Population)
-                        .ThenInclude(p => p.Era)
                 .FirstOrDefaultAsync(qr => qr.GeneticInspectionId == order.GeneticInspection.Id);
 
             if (qpadmResult is null)
@@ -309,18 +311,21 @@ namespace Odin.Api.Endpoints.OrderManagement
                 FirstName = order.GeneticInspection.FirstName,
                 MiddleName = order.GeneticInspection.MiddleName,
                 LastName = order.GeneticInspection.LastName,
-                PiValue = qpadmResult.PiValue,
-                RightSources = qpadmResult.RightSources,
-                LeftSources = qpadmResult.LeftSources,
-                Populations = qpadmResult.QpadmResultPopulations.Select(qrp => new GetOrderQpadmResultContract.PopulationResult
+                EraGroups = qpadmResult.QpadmResultEraGroups.Select(eg => new GetOrderQpadmResultContract.EraGroupResult
                 {
-                    Id = qrp.Population.Id,
-                    Name = qrp.Population.Name,
-                    EraId = qrp.Population.EraId,
-                    EraName = qrp.Population.Era.Name,
-                    Percentage = qrp.Percentage,
-                    StandardError = qrp.StandardError,
-                    ZScore = qrp.ZScore
+                    EraId = eg.EraId,
+                    EraName = eg.Era.Name,
+                    PiValue = eg.PiValue,
+                    RightSources = eg.RightSources,
+                    LeftSources = eg.LeftSources,
+                    Populations = eg.QpadmResultPopulations.Select(qrp => new GetOrderQpadmResultContract.PopulationResult
+                    {
+                        Id = qrp.Population.Id,
+                        Name = qrp.Population.Name,
+                        Percentage = qrp.Percentage,
+                        StandardError = qrp.StandardError,
+                        ZScore = qrp.ZScore
+                    }).ToList()
                 }).ToList()
             };
 

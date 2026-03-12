@@ -230,7 +230,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .Include(gi => gi.Order)
                 .Include(gi => gi.User)
                 .Include(gi => gi.QpadmResult)
-                .ThenInclude(qr => qr!.QpadmResultPopulations)
+                    .ThenInclude(qr => qr!.QpadmResultEraGroups)
+                    .ThenInclude(eg => eg.QpadmResultPopulations)
                 .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
 
             if (inspection is null)
@@ -238,57 +239,52 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return null;
             }
 
-            var populationIds = request.Populations.Select(p => p.PopulationId).ToList();
+            var allPopulationIds = request.EraGroups
+                .SelectMany(g => g.Populations.Select(p => p.PopulationId))
+                .Distinct()
+                .ToList();
+
             var populations = await dbContext.Populations
                 .Include(p => p.Era)
-                .Where(p => populationIds.Contains(p.Id))
+                .Where(p => allPopulationIds.Contains(p.Id))
                 .ToListAsync();
 
-            var popLookup = request.Populations.ToDictionary(p => p.PopulationId);
+            var popById = populations.ToDictionary(p => p.Id);
 
-            var perEraTotal = populations
-                .GroupBy(p => p.EraId)
-                .Where(g => g.Sum(p => popLookup.GetValueOrDefault(p.Id)?.Percentage ?? 0) > 100);
-
-            if (perEraTotal.Any())
+            foreach (var group in request.EraGroups)
             {
-                return null;
+                var totalPct = group.Populations.Sum(p => p.Percentage);
+                if (totalPct > 100)
+                    return null;
             }
 
-            var joinEntities = populations.Select(p =>
+            var eraGroupEntities = request.EraGroups.Select(g => new QpadmResultEraGroup
             {
-                var item = popLookup.GetValueOrDefault(p.Id);
-                return new QpadmResultPopulation
-                {
-                    PopulationId = p.Id,
-                    Percentage = item?.Percentage ?? 0,
-                    StandardError = item?.StandardError ?? 0,
-                    ZScore = item?.ZScore ?? 0
-                };
+                EraId = g.EraId,
+                PiValue = g.PiValue,
+                RightSources = g.RightSources,
+                LeftSources = g.LeftSources,
             }).ToList();
 
             if (inspection.QpadmResult is not null)
             {
-                inspection.QpadmResult.PiValue = request.PiValue;
-                inspection.QpadmResult.RightSources = request.RightSources;
-                inspection.QpadmResult.LeftSources = request.LeftSources;
                 inspection.QpadmResult.UpdatedAt = DateTime.UtcNow;
-                inspection.QpadmResult.QpadmResultPopulations.Clear();
-                foreach (var je in joinEntities)
-                {
-                    je.QpadmResultId = inspection.QpadmResult.Id;
-                    inspection.QpadmResult.QpadmResultPopulations.Add(je);
-                }
+
+                foreach (var existing in inspection.QpadmResult.QpadmResultEraGroups.ToList())
+                    dbContext.RemoveRange(existing.QpadmResultPopulations);
+                dbContext.RemoveRange(inspection.QpadmResult.QpadmResultEraGroups);
+                inspection.QpadmResult.QpadmResultEraGroups.Clear();
+                await dbContext.SaveChangesAsync();
+
+                foreach (var eg in eraGroupEntities)
+                    inspection.QpadmResult.QpadmResultEraGroups.Add(eg);
             }
             else
             {
                 inspection.QpadmResult = new QpadmResult
                 {
                     GeneticInspectionId = inspectionId,
-                    PiValue = request.PiValue,
-                    RightSources = request.RightSources,
-                    LeftSources = request.LeftSources,
-                    QpadmResultPopulations = joinEntities,
+                    QpadmResultEraGroups = eraGroupEntities,
                     CreatedBy = string.Empty
                 };
             }
@@ -296,6 +292,26 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             inspection.Order.Status = Enum.TryParse<OrderStatus>(request.OrderStatus, out var qpadmStatus)
                 ? qpadmStatus
                 : OrderStatus.InProcess;
+
+            await dbContext.SaveChangesAsync();
+
+            for (var i = 0; i < eraGroupEntities.Count; i++)
+            {
+                var reqGroup = request.EraGroups[i];
+                var entity = eraGroupEntities[i];
+
+                foreach (var p in reqGroup.Populations)
+                {
+                    entity.QpadmResultPopulations.Add(new QpadmResultPopulation
+                    {
+                        QpadmResultEraGroupId = entity.Id,
+                        PopulationId = p.PopulationId,
+                        Percentage = p.Percentage,
+                        StandardError = p.StandardError,
+                        ZScore = p.ZScore
+                    });
+                }
+            }
 
             await dbContext.SaveChangesAsync();
 
@@ -309,26 +325,30 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     inspection.Order.Id.ToString());
             }
 
+            var eras = await dbContext.Eras
+                .AsNoTracking()
+                .Where(e => request.EraGroups.Select(g => g.EraId).Contains(e.Id))
+                .ToDictionaryAsync(e => e.Id);
+
             return new SubmitQpadmResultContract.Response
             {
                 Id = inspection.QpadmResult.Id,
                 GeneticInspectionId = inspectionId,
-                PiValue = inspection.QpadmResult.PiValue,
-                RightSources = inspection.QpadmResult.RightSources,
-                LeftSources = inspection.QpadmResult.LeftSources,
-                Populations = populations.Select(p =>
+                EraGroups = eraGroupEntities.Select(eg => new EraGroupResponse
                 {
-                    var item = popLookup.GetValueOrDefault(p.Id);
-                    return new PopulationResponse
+                    EraId = eg.EraId,
+                    EraName = eras.GetValueOrDefault(eg.EraId)?.Name ?? string.Empty,
+                    PiValue = eg.PiValue,
+                    RightSources = eg.RightSources,
+                    LeftSources = eg.LeftSources,
+                    Populations = eg.QpadmResultPopulations.Select(qrp => new PopulationResponse
                     {
-                        Id = p.Id,
-                        Name = p.Name,
-                        EraId = p.EraId,
-                        EraName = p.Era.Name,
-                        Percentage = item?.Percentage ?? 0,
-                        StandardError = item?.StandardError ?? 0,
-                        ZScore = item?.ZScore ?? 0
-                    };
+                        Id = qrp.PopulationId,
+                        Name = popById.GetValueOrDefault(qrp.PopulationId)?.Name ?? string.Empty,
+                        Percentage = qrp.Percentage,
+                        StandardError = qrp.StandardError,
+                        ZScore = qrp.ZScore
+                    }).ToList()
                 }).ToList()
             };
         }
@@ -337,9 +357,11 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         {
             var result = await dbContext.QpadmResults
                 .AsNoTracking()
-                .Include(qr => qr.QpadmResultPopulations)
-                .ThenInclude(qrp => qrp.Population)
-                .ThenInclude(p => p.Era)
+                .Include(qr => qr.QpadmResultEraGroups)
+                    .ThenInclude(eg => eg.Era)
+                .Include(qr => qr.QpadmResultEraGroups)
+                    .ThenInclude(eg => eg.QpadmResultPopulations)
+                    .ThenInclude(qrp => qrp.Population)
                 .FirstOrDefaultAsync(qr => qr.GeneticInspectionId == inspectionId);
 
             if (result is null)
@@ -351,18 +373,21 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             {
                 Id = result.Id,
                 GeneticInspectionId = inspectionId,
-                PiValue = result.PiValue,
-                RightSources = result.RightSources,
-                LeftSources = result.LeftSources,
-                Populations = result.QpadmResultPopulations.Select(qrp => new PopulationResponse
+                EraGroups = result.QpadmResultEraGroups.Select(eg => new EraGroupResponse
                 {
-                    Id = qrp.Population.Id,
-                    Name = qrp.Population.Name,
-                    EraId = qrp.Population.EraId,
-                    EraName = qrp.Population.Era.Name,
-                    Percentage = qrp.Percentage,
-                    StandardError = qrp.StandardError,
-                    ZScore = qrp.ZScore
+                    EraId = eg.EraId,
+                    EraName = eg.Era.Name,
+                    PiValue = eg.PiValue,
+                    RightSources = eg.RightSources,
+                    LeftSources = eg.LeftSources,
+                    Populations = eg.QpadmResultPopulations.Select(qrp => new PopulationResponse
+                    {
+                        Id = qrp.Population.Id,
+                        Name = qrp.Population.Name,
+                        Percentage = qrp.Percentage,
+                        StandardError = qrp.StandardError,
+                        ZScore = qrp.ZScore
+                    }).ToList()
                 }).ToList()
             };
         }

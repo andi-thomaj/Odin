@@ -5,8 +5,8 @@ namespace Odin.Api.Data.Entities
 {
     public class QpadmResultPopulation
     {
-        public int QpadmResultId { get; set; }
-        public QpadmResult QpadmResult { get; set; } = null!;
+        public int QpadmResultEraGroupId { get; set; }
+        public QpadmResultEraGroup QpadmResultEraGroup { get; set; } = null!;
         public int PopulationId { get; set; }
         public Population Population { get; set; } = null!;
         public decimal Percentage { get; set; }
@@ -18,15 +18,15 @@ namespace Odin.Api.Data.Entities
     {
         public void Configure(EntityTypeBuilder<QpadmResultPopulation> builder)
         {
-            builder.HasKey(e => new { e.QpadmResultId, e.PopulationId });
+            builder.HasKey(e => new { e.QpadmResultEraGroupId, e.PopulationId });
 
             builder.Property(e => e.Percentage).HasPrecision(5, 2);
-            builder.Property(e => e.StandardError).HasPrecision(18, 6);
-            builder.Property(e => e.ZScore).HasPrecision(18, 6);
+            builder.Property(e => e.StandardError).HasPrecision(5, 4);
+            builder.Property(e => e.ZScore).HasPrecision(5, 4);
 
-            builder.HasOne(e => e.QpadmResult)
+            builder.HasOne(e => e.QpadmResultEraGroup)
                 .WithMany(e => e.QpadmResultPopulations)
-                .HasForeignKey(e => e.QpadmResultId);
+                .HasForeignKey(e => e.QpadmResultEraGroupId);
 
             builder.HasOne(e => e.Population)
                 .WithMany()
