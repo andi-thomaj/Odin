@@ -23,7 +23,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile).RequireAuthorization("Authenticated");
 
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("ScientistOrAdmin");
-            endpoints.MapPost("/{id:int}/qpadm-result", SubmitQpadmResult).RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapPost("/{id:int}/qpadm-result", SubmitQpadmResult).DisableAntiforgery()
+                .RequireAuthorization("ScientistOrAdmin");
         }
 
         private static async Task<IResult> GetAll(IGeneticInspectionService service)
@@ -115,7 +116,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         private static async Task<IResult> SubmitQpadmResult(
             IGeneticInspectionService service,
             int id,
-            [FromBody] SubmitQpadmResultContract.Request request)
+            [FromForm] SubmitQpadmResultContract.Request request)
         {
             var validationProblem = request.ValidateAndGetProblem();
             if (validationProblem is not null)

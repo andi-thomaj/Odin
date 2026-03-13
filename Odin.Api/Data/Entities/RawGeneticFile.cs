@@ -7,7 +7,9 @@ namespace Odin.Api.Data.Entities
     {
         public int Id { get; set; }
         public required byte[] RawData { get; set; } = [];
-        public required string FileName { get; set; }
+        public required string RawDataFileName { get; set; }
+        public byte[]? MergedRawData { get; set; }
+        public string? MergedRawDataFileName { get; set; }
         public bool IsDeleted { get; set; }
         public List<GeneticInspection> GeneticInspections { get; set; } = [];
     }
@@ -17,7 +19,8 @@ namespace Odin.Api.Data.Entities
         public void Configure(EntityTypeBuilder<RawGeneticFile> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.FileName).IsRequired().HasMaxLength(200);
+            builder.Property(e => e.RawDataFileName).IsRequired().HasMaxLength(200);
+            builder.Property(e => e.MergedRawDataFileName).HasMaxLength(200);
             builder.Property(e => e.IsDeleted).HasDefaultValue(false);
 
             builder.HasQueryFilter(e => !e.IsDeleted);

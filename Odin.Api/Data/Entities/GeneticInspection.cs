@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
@@ -11,6 +12,9 @@ namespace Odin.Api.Data.Entities
         public string FirstName { get; set; }
         public string MiddleName { get; set; }
         public string LastName { get; set; }
+        public string? PaternalHaplogroup { get; set; }
+        public Gender? Gender { get; set; }
+        public string? G25Coordinates { get; set; }
         public List<GeneticInspectionRegion> GeneticInspectionRegions { get; set; } = [];
         public List<Ethnicity> Ethnicities { get; set; } = [];
         public int RawGeneticFileId { get; set; }
@@ -27,6 +31,9 @@ namespace Odin.Api.Data.Entities
             builder.HasKey(e => e.Id);
             builder.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             builder.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+            builder.Property(e => e.PaternalHaplogroup).HasMaxLength(50);
+            builder.Property(e => e.Gender).HasConversion<string>().HasMaxLength(10);
+            builder.Property(e => e.G25Coordinates).HasMaxLength(500);
 
             builder.ToTable("genetic_inspections");
         }

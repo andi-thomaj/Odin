@@ -24,7 +24,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
             var rawGeneticFile = new RawGeneticFile
             {
-                FileName = request.File.FileName, RawData = memoryStream.ToArray(), CreatedBy = string.Empty
+                RawDataFileName = request.File.FileName, RawData = memoryStream.ToArray(), CreatedBy = string.Empty
             };
 
             dbContext.RawGeneticFiles.Add(rawGeneticFile);
@@ -33,7 +33,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
             return new UploadGeneticFileContract.Response
             {
                 Id = rawGeneticFile.Id,
-                FileName = rawGeneticFile.FileName,
+                FileName = rawGeneticFile.RawDataFileName,
                 FileSize = request.File.Length,
                 UploadedAt = DateTime.UtcNow
             };
@@ -52,7 +52,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
             return new GetGeneticFileContract.Response
             {
-                Id = file.Id, FileName = file.FileName, FileSize = file.RawData.Length
+                Id = file.Id, FileName = file.RawDataFileName, FileSize = file.RawData.Length
             };
         }
 
@@ -62,7 +62,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
                 .AsNoTracking()
                 .Select(f => new GetGeneticFileContract.Response
                 {
-                    Id = f.Id, FileName = f.FileName, FileSize = f.RawData.Length
+                    Id = f.Id, FileName = f.RawDataFileName, FileSize = f.RawData.Length
                 })
                 .ToListAsync();
         }
@@ -78,7 +78,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
                 return null;
             }
 
-            return (file.RawData, file.FileName);
+            return (file.RawData, file.RawDataFileName);
         }
 
         public async Task<bool> DeleteFileAsync(int id)

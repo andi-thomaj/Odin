@@ -74,7 +74,7 @@ namespace Odin.Api.Endpoints.OrderManagement
 
                 var rawGeneticFile = new RawGeneticFile
                 {
-                    FileName = request.File.FileName,
+                    RawDataFileName = request.File.FileName,
                     RawData = memoryStream.ToArray(),
                     CreatedBy = identityId
                 };
@@ -100,6 +100,8 @@ namespace Odin.Api.Endpoints.OrderManagement
                 FirstName = request.FirstName,
                 MiddleName = request.MiddleName ?? string.Empty,
                 LastName = request.LastName,
+                Gender = Enum.Parse<Data.Enums.Gender>(request.Gender),
+                G25Coordinates = request.G25Coordinates,
                 RawGeneticFileId = rawGeneticFileId,
                 UserId = user.Id,
                 OrderId = order.Id,
@@ -178,6 +180,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                     FirstName = order.GeneticInspection != null ? order.GeneticInspection.FirstName : string.Empty,
                     MiddleName = order.GeneticInspection != null ? order.GeneticInspection.MiddleName : string.Empty,
                     LastName = order.GeneticInspection != null ? order.GeneticInspection.LastName : string.Empty,
+                    G25Coordinates = order.GeneticInspection != null ? order.GeneticInspection.G25Coordinates : null,
                     RegionIds = order.GeneticInspection != null
                         ? order.GeneticInspection.GeneticInspectionRegions.Select(gir => gir.RegionId).ToList()
                         : new List<int>(),
@@ -226,6 +229,7 @@ namespace Odin.Api.Endpoints.OrderManagement
             order.GeneticInspection.FirstName = request.FirstName;
             order.GeneticInspection.MiddleName = request.MiddleName ?? string.Empty;
             order.GeneticInspection.LastName = request.LastName;
+            order.GeneticInspection.G25Coordinates = request.G25Coordinates;
             order.UpdatedAt = DateTime.UtcNow;
 
             dbContext.GeneticInspectionRegions.RemoveRange(order.GeneticInspection.GeneticInspectionRegions);
@@ -253,6 +257,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                 FirstName = order.GeneticInspection.FirstName,
                 MiddleName = order.GeneticInspection.MiddleName,
                 LastName = order.GeneticInspection.LastName,
+                G25Coordinates = order.GeneticInspection.G25Coordinates,
                 RegionIds = regions.Select(r => r.Id).ToList(),
                 CreatedAt = order.CreatedAt,
                 CreatedBy = order.CreatedBy,

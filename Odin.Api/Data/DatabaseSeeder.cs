@@ -219,7 +219,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
         {
             new RawGeneticFile
             {
-                FileName = "sample_dna_johndoe.csv",
+                RawDataFileName = "sample_dna_johndoe.csv",
                 RawData = sampleCsvContent,
                 CreatedAt = now,
                 CreatedBy = seeder,
@@ -227,7 +227,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
             },
             new RawGeneticFile
             {
-                FileName = "sample_dna_annasmith.csv",
+                RawDataFileName = "sample_dna_annasmith.csv",
                 RawData = sampleCsvContent,
                 CreatedAt = now,
                 CreatedBy = seeder,
@@ -235,7 +235,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
             },
             new RawGeneticFile
             {
-                FileName = "sample_dna_johndoe_v2.csv",
+                RawDataFileName = "sample_dna_johndoe_v2.csv",
                 RawData = sampleCsvContent,
                 CreatedAt = now,
                 CreatedBy = seeder,

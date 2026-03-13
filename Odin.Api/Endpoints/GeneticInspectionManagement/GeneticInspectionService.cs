@@ -103,11 +103,13 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 MiddleName = inspection.MiddleName,
                 LastName = inspection.LastName,
                 RawGeneticFileId = inspection.RawGeneticFileId,
-                RawGeneticFileName = inspection.RawGeneticFile.FileName,
+                RawGeneticFileName = inspection.RawGeneticFile.RawDataFileName,
                 OrderStatus = inspection.Order.Status.ToString(),
                 CreatedAt = inspection.Order.CreatedAt,
                 Country = inspection.User?.Country,
                 CountryCode = inspection.User?.CountryCode,
+                HasQpadmResult = inspection.QpadmResult != null,
+                PaternalHaplogroup = inspection.PaternalHaplogroup,
                 Regions = inspection.GeneticInspectionRegions.Select(gir => new RegionResponse
                 {
                     Id = gir.Region.Id, Name = gir.Region.Name, EthnicityName = gir.Region.Ethnicity.Name
@@ -132,11 +134,13 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     MiddleName = inspection.MiddleName,
                     LastName = inspection.LastName,
                     RawGeneticFileId = inspection.RawGeneticFileId,
-                    RawGeneticFileName = inspection.RawGeneticFile.FileName,
+                    RawGeneticFileName = inspection.RawGeneticFile.RawDataFileName,
                     OrderStatus = inspection.Order.Status.ToString(),
                     CreatedAt = inspection.Order.CreatedAt,
                     Country = inspection.User.Country,
                     CountryCode = inspection.User.CountryCode,
+                    HasQpadmResult = inspection.QpadmResult != null,
+                    PaternalHaplogroup = inspection.PaternalHaplogroup,
                     Regions = inspection.GeneticInspectionRegions.Select(gir => new RegionResponse
                     {
                         Id = gir.Region.Id, Name = gir.Region.Name, EthnicityName = gir.Region.Ethnicity.Name
@@ -174,7 +178,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             var rawGeneticFile = new RawGeneticFile
             {
-                FileName = request.File.FileName, RawData = memoryStream.ToArray(), CreatedBy = string.Empty
+                RawDataFileName = request.File.FileName, RawData = memoryStream.ToArray(), CreatedBy = string.Empty
             };
 
             dbContext.RawGeneticFiles.Add(rawGeneticFile);
@@ -186,7 +190,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             return new UploadGeneticFileContract.Response
             {
                 Id = rawGeneticFile.Id,
-                FileName = rawGeneticFile.FileName,
+                FileName = rawGeneticFile.RawDataFileName,
                 FileSize = request.File.Length,
                 UploadedAt = DateTime.UtcNow
             };
@@ -204,7 +208,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return null;
             }
 
-            return (inspection.RawGeneticFile.RawData, inspection.RawGeneticFile.FileName);
+            return (inspection.RawGeneticFile.RawData, inspection.RawGeneticFile.RawDataFileName);
         }
 
         public async Task<bool> DeleteGeneticFileAsync(int inspectionId)
@@ -229,6 +233,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             var inspection = await dbContext.GeneticInspections
                 .Include(gi => gi.Order)
                 .Include(gi => gi.User)
+                .Include(gi => gi.RawGeneticFile)
                 .Include(gi => gi.QpadmResult)
                     .ThenInclude(qr => qr!.QpadmResultEraGroups)
                     .ThenInclude(eg => eg.QpadmResultPopulations)
@@ -237,6 +242,16 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             if (inspection is null)
             {
                 return null;
+            }
+
+            inspection.PaternalHaplogroup = request.PaternalHaplogroup;
+
+            if (request.MergedRawDataFile is { Length: > 0 } mergedFile)
+            {
+                using var ms = new MemoryStream();
+                await mergedFile.CopyToAsync(ms);
+                inspection.RawGeneticFile!.MergedRawData = ms.ToArray();
+                inspection.RawGeneticFile.MergedRawDataFileName = mergedFile.FileName;
             }
 
             var allPopulationIds = request.EraGroups
@@ -251,12 +266,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             var popById = populations.ToDictionary(p => p.Id);
 
-            foreach (var group in request.EraGroups)
-            {
-                var totalPct = group.Populations.Sum(p => p.Percentage);
-                if (totalPct > 100)
-                    return null;
-            }
+            var isFirstSubmission = inspection.QpadmResult is null;
 
             var eraGroupEntities = request.EraGroups.Select(g => new QpadmResultEraGroup
             {
@@ -315,7 +325,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             await dbContext.SaveChangesAsync();
 
-            if (inspection.Order.Status == OrderStatus.Completed)
+            if (isFirstSubmission && inspection.Order.Status == OrderStatus.Completed)
             {
                 await notificationService.CreateAndSendAsync(
                     inspection.UserId,

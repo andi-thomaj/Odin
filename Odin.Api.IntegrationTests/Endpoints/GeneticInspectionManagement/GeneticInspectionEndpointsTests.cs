@@ -199,7 +199,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         // Seed raw genetic file
         var rawFile = new RawGeneticFile
         {
-            FileName = "test_genetic_data.txt",
+            RawDataFileName = "test_genetic_data.txt",
             RawData = "Test genetic data content"u8.ToArray(),
             CreatedBy = string.Empty
         };

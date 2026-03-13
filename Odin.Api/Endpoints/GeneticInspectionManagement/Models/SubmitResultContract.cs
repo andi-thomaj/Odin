@@ -25,9 +25,16 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
         {
             public List<EraGroupItem> EraGroups { get; set; } = [];
             public string? OrderStatus { get; set; }
+            public string? PaternalHaplogroup { get; set; }
+            public IFormFile? MergedRawDataFile { get; set; }
 
             public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
             {
+                if (PaternalHaplogroup?.Length > 50)
+                    yield return new ValidationResult(
+                        "Paternal haplogroup must not exceed 50 characters.",
+                        [nameof(PaternalHaplogroup)]);
+
                 if (EraGroups.Count == 0)
                 {
                     yield return new ValidationResult(
@@ -41,6 +48,14 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
                     {
                         yield return new ValidationResult(
                             $"Pi value for era {group.EraId} must be between 0 and 9.00.",
+                            [nameof(EraGroups)]);
+                    }
+
+                    var totalPercentage = group.Populations.Sum(p => p.Percentage);
+                    if (totalPercentage != 100)
+                    {
+                        yield return new ValidationResult(
+                            $"Population percentages for era {group.EraId} must total exactly 100%. Current total: {totalPercentage}%.",
                             [nameof(EraGroups)]);
                     }
 
