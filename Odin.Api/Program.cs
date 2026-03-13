@@ -8,10 +8,15 @@ using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
+using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Hubs;
 using Odin.Api.Middleware;
 using Odin.Api.Services;
+using Serilog;
+using Serilog.Events;
+using Serilog.Sinks.PostgreSQL;
+using NpgsqlTypes;
 
 namespace Odin.Api
 {
@@ -22,6 +27,33 @@ namespace Odin.Api
             var builder = WebApplication.CreateBuilder(args);
             var configuration = builder.Configuration;
             var services = builder.Services;
+
+            // ── Serilog (Error-only → PostgreSQL) ───────────────────────
+            var connectionString = configuration.GetConnectionString("DefaultConnection")!;
+
+            var columnWriters = new Dictionary<string, ColumnWriterBase>
+            {
+                { "message", new RenderedMessageColumnWriter() },
+                { "message_template", new MessageTemplateColumnWriter() },
+                { "level", new LevelColumnWriter(true, NpgsqlDbType.Varchar) },
+                { "timestamp", new TimestampColumnWriter() },
+                { "exception", new ExceptionColumnWriter() },
+                { "properties", new PropertiesColumnWriter() },
+            };
+
+            builder.Host.UseSerilog((context, loggerConfig) =>
+            {
+                loggerConfig
+                    .MinimumLevel.Error()
+                    .WriteTo.Console(restrictedToMinimumLevel: LogEventLevel.Error)
+                    .WriteTo.PostgreSQL(
+                        connectionString: connectionString,
+                        tableName: "logs",
+                        columnOptions: columnWriters,
+                        needAutoCreateTable: false,
+                        restrictedToMinimumLevel: LogEventLevel.Error
+                    );
+            });
 
             // ── Authentication (Auth0 JWT) ──────────────────────────────
             var auth0Domain = configuration["Jwt:Authority"]!;
@@ -98,6 +130,7 @@ namespace Odin.Api
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<INotificationService, NotificationService>();
+            services.AddScoped<IReportService, ReportService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.AddSignalR();
@@ -138,6 +171,7 @@ namespace Odin.Api
             app.MapGeneticInspectionEndpoints();
             app.MapOrderEndpoints();
             app.MapNotificationEndpoints();
+            app.MapReportEndpoints();
             await app.RunAsync();
         }
     }

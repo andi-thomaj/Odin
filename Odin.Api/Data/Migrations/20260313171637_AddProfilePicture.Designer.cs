@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Odin.Api.Data;
@@ -11,13 +12,15 @@ using Odin.Api.Data;
 namespace Odin.Api.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260313171637_AddProfilePicture")]
+    partial class AddProfilePicture
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.5")
+                .HasAnnotation("ProductVersion", "10.0.3")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -170,42 +173,6 @@ namespace Odin.Api.Data.Migrations
                     b.HasIndex("RegionId");
 
                     b.ToTable("genetic_inspection_regions", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.Log", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Exception")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Level")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<string>("Message")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("MessageTemplate")
-                        .HasColumnType("text");
-
-                    b.Property<string>("Properties")
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Timestamp");
-
-                    b.ToTable("logs", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.Notification", b =>
@@ -528,79 +495,6 @@ namespace Odin.Api.Data.Migrations
                     b.ToTable("regions", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.Report", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AdminNotes")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.Property<string>("FileContentType")
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<byte[]>("FileData")
-                        .HasColumnType("bytea");
-
-                    b.Property<string>("FileName")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)");
-
-                    b.Property<string>("PageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasDefaultValue("Pending");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "Status");
-
-                    b.ToTable("reports", (string)null);
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.ResearchLink", b =>
                 {
                     b.Property<int>("Id")
@@ -887,17 +781,6 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("Ethnicity");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.Report", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.User", "User")
-                        .WithMany("Reports")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.SubPopulation", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.Population", "Population")
@@ -966,8 +849,6 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("GeneticInspections");
 
                     b.Navigation("Notifications");
-
-                    b.Navigation("Reports");
                 });
 #pragma warning restore 612, 618
         }

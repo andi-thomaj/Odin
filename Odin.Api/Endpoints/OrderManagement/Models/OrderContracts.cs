@@ -8,6 +8,8 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
     {
         private static readonly string[] AllowedFileExtensions = [".txt", ".csv", ".zip"];
         private const int MaxFileSizeBytes = 50 * 1024 * 1024;
+        private static readonly string[] AllowedProfilePictureExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+        private const int MaxProfilePictureSizeBytes = 5 * 1024 * 1024;
 
         public class Request : IValidatableObject
         {
@@ -20,6 +22,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public List<int> RegionIds { get; set; } = [];
             public IFormFile? File { get; set; }
             public int? ExistingFileId { get; set; }
+            public IFormFile? ProfilePicture { get; set; }
 
             public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
             {
@@ -75,6 +78,20 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
                             $"File size exceeds the maximum allowed size of {MaxFileSizeBytes / (1024 * 1024)} MB.",
                             [nameof(File)]);
                 }
+
+                if (ProfilePicture is not null && ProfilePicture.Length > 0)
+                {
+                    var picExtension = Path.GetExtension(ProfilePicture.FileName).ToLowerInvariant();
+                    if (!AllowedProfilePictureExtensions.Contains(picExtension))
+                        yield return new ValidationResult(
+                            $"Invalid profile picture type. Allowed types: {string.Join(", ", AllowedProfilePictureExtensions)}",
+                            [nameof(ProfilePicture)]);
+
+                    if (ProfilePicture.Length > MaxProfilePictureSizeBytes)
+                        yield return new ValidationResult(
+                            $"Profile picture size exceeds the maximum allowed size of {MaxProfilePictureSizeBytes / (1024 * 1024)} MB.",
+                            [nameof(ProfilePicture)]);
+                }
             }
         }
 
@@ -90,6 +107,9 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
 
     public class UpdateOrderContract
     {
+        private static readonly string[] AllowedProfilePictureExtensions = [".jpg", ".jpeg", ".png", ".webp"];
+        private const int MaxProfilePictureSizeBytes = 5 * 1024 * 1024;
+
         public class Request : IValidatableObject
         {
             public required string FirstName { get; set; }
@@ -97,6 +117,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public required string LastName { get; set; }
             public string? G25Coordinates { get; set; }
             public List<int> RegionIds { get; set; } = [];
+            public IFormFile? ProfilePicture { get; set; }
 
             public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
             {
@@ -122,6 +143,20 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
 
                 if (RegionIds.Count == 0)
                     yield return new ValidationResult("At least one region must be selected.", [nameof(RegionIds)]);
+
+                if (ProfilePicture is not null && ProfilePicture.Length > 0)
+                {
+                    var picExtension = Path.GetExtension(ProfilePicture.FileName).ToLowerInvariant();
+                    if (!AllowedProfilePictureExtensions.Contains(picExtension))
+                        yield return new ValidationResult(
+                            $"Invalid profile picture type. Allowed types: {string.Join(", ", AllowedProfilePictureExtensions)}",
+                            [nameof(ProfilePicture)]);
+
+                    if (ProfilePicture.Length > MaxProfilePictureSizeBytes)
+                        yield return new ValidationResult(
+                            $"Profile picture size exceeds the maximum allowed size of {MaxProfilePictureSizeBytes / (1024 * 1024)} MB.",
+                            [nameof(ProfilePicture)]);
+                }
             }
         }
     }
@@ -139,6 +174,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string MiddleName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
             public string? G25Coordinates { get; set; }
+            public bool HasProfilePicture { get; set; }
             public List<int> RegionIds { get; set; } = [];
             public DateTime CreatedAt { get; set; }
             public string CreatedBy { get; set; } = string.Empty;
@@ -173,6 +209,8 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string FirstName { get; set; } = string.Empty;
             public string MiddleName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
+            public string? PaternalHaplogroup { get; set; }
+            public bool HasMergedRawData { get; set; }
             public List<EraGroupResult> EraGroups { get; set; } = [];
         }
     }

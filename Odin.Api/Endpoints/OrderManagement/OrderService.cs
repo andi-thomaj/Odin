@@ -15,6 +15,8 @@ namespace Odin.Api.Endpoints.OrderManagement
         Task<GetOrderContract.Response?> UpdateAsync(int id, UpdateOrderContract.Request request);
         Task<bool> DeleteAsync(int id);
         Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId);
+        Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId);
+        Task<(byte[]? FileBytes, string? FileName)?> GetProfilePictureAsync(int orderId);
     }
 
     public class OrderService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService) : IOrderService
@@ -107,6 +109,15 @@ namespace Odin.Api.Endpoints.OrderManagement
                 OrderId = order.Id,
                 CreatedBy = identityId
             };
+
+            if (request.ProfilePicture is not null && request.ProfilePicture.Length > 0)
+            {
+                using var picStream = new MemoryStream();
+                await request.ProfilePicture.CopyToAsync(picStream);
+                geneticInspection.ProfilePicture = picStream.ToArray();
+                geneticInspection.ProfilePictureFileName = request.ProfilePicture.FileName;
+            }
+
             dbContext.GeneticInspections.Add(geneticInspection);
             await dbContext.SaveChangesAsync();
 
@@ -155,6 +166,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                 FirstName = order.GeneticInspection?.FirstName ?? string.Empty,
                 MiddleName = order.GeneticInspection?.MiddleName ?? string.Empty,
                 LastName = order.GeneticInspection?.LastName ?? string.Empty,
+                HasProfilePicture = order.GeneticInspection?.ProfilePicture is { Length: > 0 },
                 RegionIds = order.GeneticInspection?.GeneticInspectionRegions
                     .Select(gir => gir.RegionId).ToList() ?? [],
                 CreatedAt = order.CreatedAt,
@@ -181,6 +193,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                     MiddleName = order.GeneticInspection != null ? order.GeneticInspection.MiddleName : string.Empty,
                     LastName = order.GeneticInspection != null ? order.GeneticInspection.LastName : string.Empty,
                     G25Coordinates = order.GeneticInspection != null ? order.GeneticInspection.G25Coordinates : null,
+                    HasProfilePicture = order.GeneticInspection != null && order.GeneticInspection.ProfilePicture != null && order.GeneticInspection.ProfilePicture.Length > 0,
                     RegionIds = order.GeneticInspection != null
                         ? order.GeneticInspection.GeneticInspectionRegions.Select(gir => gir.RegionId).ToList()
                         : new List<int>(),
@@ -232,6 +245,14 @@ namespace Odin.Api.Endpoints.OrderManagement
             order.GeneticInspection.G25Coordinates = request.G25Coordinates;
             order.UpdatedAt = DateTime.UtcNow;
 
+            if (request.ProfilePicture is not null && request.ProfilePicture.Length > 0)
+            {
+                using var picStream = new MemoryStream();
+                await request.ProfilePicture.CopyToAsync(picStream);
+                order.GeneticInspection.ProfilePicture = picStream.ToArray();
+                order.GeneticInspection.ProfilePictureFileName = request.ProfilePicture.FileName;
+            }
+
             dbContext.GeneticInspectionRegions.RemoveRange(order.GeneticInspection.GeneticInspectionRegions);
 
             foreach (var region in regions)
@@ -258,6 +279,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                 MiddleName = order.GeneticInspection.MiddleName,
                 LastName = order.GeneticInspection.LastName,
                 G25Coordinates = order.GeneticInspection.G25Coordinates,
+                HasProfilePicture = order.GeneticInspection.ProfilePicture is { Length: > 0 },
                 RegionIds = regions.Select(r => r.Id).ToList(),
                 CreatedAt = order.CreatedAt,
                 CreatedBy = order.CreatedBy,
@@ -285,6 +307,7 @@ namespace Odin.Api.Endpoints.OrderManagement
             var order = await dbContext.Orders
                 .AsNoTracking()
                 .Include(o => o.GeneticInspection)
+                    .ThenInclude(gi => gi!.RawGeneticFile)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
             if (order is null)
@@ -316,6 +339,8 @@ namespace Odin.Api.Endpoints.OrderManagement
                 FirstName = order.GeneticInspection.FirstName,
                 MiddleName = order.GeneticInspection.MiddleName,
                 LastName = order.GeneticInspection.LastName,
+                PaternalHaplogroup = order.GeneticInspection.PaternalHaplogroup,
+                HasMergedRawData = order.GeneticInspection.RawGeneticFile?.MergedRawData is { Length: > 0 },
                 EraGroups = qpadmResult.QpadmResultEraGroups.Select(eg => new GetOrderQpadmResultContract.EraGroupResult
                 {
                     EraId = eg.EraId,
@@ -335,6 +360,41 @@ namespace Odin.Api.Endpoints.OrderManagement
             };
 
             return (response, 200, null);
+        }
+
+        public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId)
+        {
+            var order = await dbContext.Orders
+                .AsNoTracking()
+                .Include(o => o.GeneticInspection)
+                    .ThenInclude(gi => gi!.RawGeneticFile)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order is null)
+                return (null, null, 404, $"Order with ID {orderId} not found.");
+
+            if (order.CreatedBy != identityId)
+                return (null, null, 403, "You do not have permission to access this order's data.");
+
+            if (order.GeneticInspection?.RawGeneticFile?.MergedRawData is not { Length: > 0 } mergedData)
+                return (null, null, 404, "No merged data available for this order.");
+
+            var fileName = order.GeneticInspection.RawGeneticFile.MergedRawDataFileName ?? "merged-data";
+
+            return (mergedData, fileName, 200, null);
+        }
+
+        public async Task<(byte[]? FileBytes, string? FileName)?> GetProfilePictureAsync(int orderId)
+        {
+            var order = await dbContext.Orders
+                .AsNoTracking()
+                .Include(o => o.GeneticInspection)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order?.GeneticInspection?.ProfilePicture is not { Length: > 0 } pictureData)
+                return null;
+
+            return (pictureData, order.GeneticInspection.ProfilePictureFileName ?? "profile-picture");
         }
 
     }

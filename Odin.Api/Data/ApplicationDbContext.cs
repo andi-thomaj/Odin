@@ -20,6 +20,8 @@ namespace Odin.Api.Data
         public DbSet<QpadmResultResearchLink> QpadmResultResearchLinks { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<Log> Logs { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

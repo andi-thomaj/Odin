@@ -19,6 +19,8 @@ namespace Odin.Api.Data.Entities
         public List<Ethnicity> Ethnicities { get; set; } = [];
         public int RawGeneticFileId { get; set; }
         public RawGeneticFile? RawGeneticFile { get; set; }
+        public byte[]? ProfilePicture { get; set; }
+        public string? ProfilePictureFileName { get; set; }
         public QpadmResult? QpadmResult { get; set; }
         public int OrderId { get; set; }
         public Order Order { get; set; }
@@ -34,6 +36,7 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.PaternalHaplogroup).HasMaxLength(50);
             builder.Property(e => e.Gender).HasConversion<string>().HasMaxLength(10);
             builder.Property(e => e.G25Coordinates).HasMaxLength(500);
+            builder.Property(e => e.ProfilePictureFileName).HasMaxLength(255);
 
             builder.ToTable("genetic_inspections");
         }

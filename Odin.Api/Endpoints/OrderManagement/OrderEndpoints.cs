@@ -7,6 +7,13 @@ namespace Odin.Api.Endpoints.OrderManagement
 {
     public static class OrderEndpoints
     {
+        private static readonly Dictionary<string, string> ImageContentTypes = new(StringComparer.OrdinalIgnoreCase)
+        {
+            [".jpg"] = "image/jpeg",
+            [".jpeg"] = "image/jpeg",
+            [".png"] = "image/png",
+            [".webp"] = "image/webp"
+        };
         public static void MapOrderEndpoints(this IEndpointRouteBuilder app)
         {
             var endpoints = app.MapGroup("api/orders");
@@ -14,9 +21,11 @@ namespace Odin.Api.Endpoints.OrderManagement
             endpoints.MapGet("/", GetAll).RequireAuthorization("Authenticated");
             endpoints.MapGet("/{id:int}", GetById).RequireAuthorization("Authenticated");
             endpoints.MapPost("/", Create).DisableAntiforgery().RequireAuthorization("Authenticated");
-            endpoints.MapPut("/{id:int}", Update).RequireAuthorization("Authenticated");
+            endpoints.MapPut("/{id:int}", Update).DisableAntiforgery().RequireAuthorization("Authenticated");
             endpoints.MapDelete("/{id:int}", Delete).RequireAuthorization("AdminOnly");
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("Authenticated");
+            endpoints.MapGet("/{id:int}/merged-data/download", DownloadMergedData).RequireAuthorization("Authenticated");
+            endpoints.MapGet("/{id:int}/profile-picture", GetProfilePicture).RequireAuthorization("Authenticated");
         }
 
         private static async Task<IResult> GetAll(IOrderService service)
@@ -67,7 +76,7 @@ namespace Odin.Api.Endpoints.OrderManagement
         private static async Task<IResult> Update(
             IOrderService service,
             int id,
-            [FromBody] UpdateOrderContract.Request request)
+            [FromForm] UpdateOrderContract.Request request)
         {
             var validationProblem = request.ValidateAndGetProblem();
             if (validationProblem is not null)
@@ -113,6 +122,36 @@ namespace Odin.Api.Endpoints.OrderManagement
                 400 => Results.BadRequest(new { Message = error }),
                 _ => Results.NotFound(new { Message = error })
             };
+        }
+
+        private static async Task<IResult> DownloadMergedData(IOrderService service, HttpContext httpContext, int id)
+        {
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            var (fileBytes, fileName, statusCode, error) = await service.DownloadMergedDataForOrderAsync(id, identityId);
+
+            return statusCode switch
+            {
+                200 => Results.File(fileBytes!, "application/octet-stream", fileName),
+                403 => Results.Forbid(),
+                400 => Results.BadRequest(new { Message = error }),
+                _ => Results.NotFound(new { Message = error })
+            };
+        }
+
+        private static async Task<IResult> GetProfilePicture(IOrderService service, int id)
+        {
+            var result = await service.GetProfilePictureAsync(id);
+            if (result is null)
+                return Results.NotFound(new { Message = $"No profile picture found for order with ID {id}." });
+
+            var (fileBytes, fileName) = result.Value;
+            var extension = Path.GetExtension(fileName ?? "").ToLowerInvariant();
+            var contentType = ImageContentTypes.GetValueOrDefault(extension, "application/octet-stream");
+
+            return Results.File(fileBytes!, contentType, fileName);
         }
 
     }
