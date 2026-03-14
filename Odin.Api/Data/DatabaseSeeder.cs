@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
@@ -10,6 +11,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
     {
         await SeedEthnicitiesAndRegionsAsync();
         await SeedErasPopulationsAndSubPopulationsAsync();
+        await BackfillPopulationGeoJsonAsync();
         await SeedUsersOrdersAndGeneticFilesAsync();
     }
 
@@ -73,6 +75,8 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
         var now = DateTime.UtcNow;
         const string seeder = "DatabaseSeeder";
+
+        var geoJsonMap = LoadPopulationGeoJson();
 
         var seedData = new Dictionary<string, Dictionary<string, string[]>>
         {
@@ -139,6 +143,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
                     Name = populationName,
                     Description = $"{populationName} population",
                     Era = era,
+                    GeoJson = geoJsonMap.GetValueOrDefault(populationName),
                     CreatedAt = now,
                     CreatedBy = seeder,
                     UpdatedAt = now,
@@ -161,6 +166,47 @@ public class DatabaseSeeder(ApplicationDbContext context)
         }
 
         await context.SaveChangesAsync();
+    }
+
+    private async Task BackfillPopulationGeoJsonAsync()
+    {
+        var populationsWithoutGeoJson = await context.Populations
+            .Where(p => p.GeoJson == null)
+            .ToListAsync();
+
+        if (populationsWithoutGeoJson.Count == 0)
+            return;
+
+        var geoJsonMap = LoadPopulationGeoJson();
+
+        foreach (var population in populationsWithoutGeoJson)
+        {
+            if (geoJsonMap.TryGetValue(population.Name, out var geoJson))
+            {
+                population.GeoJson = geoJson;
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private static Dictionary<string, string> LoadPopulationGeoJson()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "population-geojson.json");
+        if (!File.Exists(path))
+            return new Dictionary<string, string>();
+
+        var json = File.ReadAllText(path);
+        var raw = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json);
+        if (raw is null)
+            return new Dictionary<string, string>();
+
+        var result = new Dictionary<string, string>();
+        foreach (var (name, geometry) in raw)
+        {
+            result[name] = geometry.GetRawText();
+        }
+        return result;
     }
 
     private async Task SeedUsersOrdersAndGeneticFilesAsync()

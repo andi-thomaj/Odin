@@ -8,6 +8,7 @@ namespace Odin.Api.Data.Entities
         public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
+        public string? GeoJson { get; set; }
         public int EraId { get; set; }
         public Era Era { get; set; }
         public List<SubPopulation> SubPopulations { get; set; } = [];
@@ -19,6 +20,7 @@ namespace Odin.Api.Data.Entities
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            builder.Property(e => e.GeoJson).HasColumnType("text");
 
             builder.HasOne(e => e.Era)
                 .WithMany(e => e.Populations)

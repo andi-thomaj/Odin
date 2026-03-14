@@ -354,7 +354,8 @@ namespace Odin.Api.Endpoints.OrderManagement
                         Name = qrp.Population.Name,
                         Percentage = qrp.Percentage,
                         StandardError = qrp.StandardError,
-                        ZScore = qrp.ZScore
+                        ZScore = qrp.ZScore,
+                        GeoJson = qrp.Population.GeoJson
                     }).ToList()
                 }).ToList()
             };
