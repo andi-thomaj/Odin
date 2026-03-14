@@ -72,6 +72,10 @@ namespace Odin.Api.Endpoints.OrderManagement
             }
             else
             {
+                const long maxFileSize = 50 * 1024 * 1024; // 50 MB
+                if (request.File!.Length > maxFileSize)
+                    throw new InvalidOperationException("Genetic file size must not exceed 50 MB.");
+
                 using var memoryStream = new MemoryStream();
                 await request.File!.CopyToAsync(memoryStream);
 
@@ -113,6 +117,10 @@ namespace Odin.Api.Endpoints.OrderManagement
 
             if (request.ProfilePicture is not null && request.ProfilePicture.Length > 0)
             {
+                const long maxPictureSize = 10 * 1024 * 1024; // 10 MB
+                if (request.ProfilePicture.Length > maxPictureSize)
+                    throw new InvalidOperationException("Profile picture size must not exceed 10 MB.");
+
                 using var picStream = new MemoryStream();
                 await request.ProfilePicture.CopyToAsync(picStream);
                 geneticInspection.ProfilePicture = picStream.ToArray();
@@ -122,16 +130,15 @@ namespace Odin.Api.Endpoints.OrderManagement
             dbContext.GeneticInspections.Add(geneticInspection);
             await dbContext.SaveChangesAsync();
 
-            foreach (var region in regions)
+            var regionAssociations = regions.Select(region => new GeneticInspectionRegion
             {
-                dbContext.GeneticInspectionRegions.Add(new GeneticInspectionRegion
-                {
-                    GeneticInspectionId = geneticInspection.Id,
-                    GeneticInspection = geneticInspection,
-                    RegionId = region.Id,
-                    Region = region
-                });
-            }
+                GeneticInspectionId = geneticInspection.Id,
+                GeneticInspection = geneticInspection,
+                RegionId = region.Id,
+                Region = region
+            }).ToList();
+
+            dbContext.GeneticInspectionRegions.AddRange(regionAssociations);
             await dbContext.SaveChangesAsync();
 
             return new CreateOrderContract.Response
@@ -167,6 +174,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                 FirstName = order.GeneticInspection?.FirstName ?? string.Empty,
                 MiddleName = order.GeneticInspection?.MiddleName ?? string.Empty,
                 LastName = order.GeneticInspection?.LastName ?? string.Empty,
+                Gender = order.GeneticInspection?.Gender?.ToString(),
                 HasProfilePicture = order.GeneticInspection?.ProfilePicture is { Length: > 0 },
                 HasViewedResults = order.HasViewedResults,
                 RegionIds = order.GeneticInspection?.GeneticInspectionRegions
@@ -195,6 +203,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                     MiddleName = order.GeneticInspection != null ? order.GeneticInspection.MiddleName : string.Empty,
                     LastName = order.GeneticInspection != null ? order.GeneticInspection.LastName : string.Empty,
                     G25Coordinates = order.GeneticInspection != null ? order.GeneticInspection.G25Coordinates : null,
+                    Gender = order.GeneticInspection != null ? order.GeneticInspection.Gender.ToString() : null,
                     HasProfilePicture = order.GeneticInspection != null && order.GeneticInspection.ProfilePicture != null && order.GeneticInspection.ProfilePicture.Length > 0,
                     HasViewedResults = order.HasViewedResults,
                     RegionIds = order.GeneticInspection != null
@@ -258,16 +267,15 @@ namespace Odin.Api.Endpoints.OrderManagement
 
             dbContext.GeneticInspectionRegions.RemoveRange(order.GeneticInspection.GeneticInspectionRegions);
 
-            foreach (var region in regions)
+            var regionAssociations = regions.Select(region => new GeneticInspectionRegion
             {
-                dbContext.GeneticInspectionRegions.Add(new GeneticInspectionRegion
-                {
-                    GeneticInspectionId = order.GeneticInspection.Id,
-                    GeneticInspection = order.GeneticInspection,
-                    RegionId = region.Id,
-                    Region = region
-                });
-            }
+                GeneticInspectionId = order.GeneticInspection.Id,
+                GeneticInspection = order.GeneticInspection,
+                RegionId = region.Id,
+                Region = region
+            }).ToList();
+
+            dbContext.GeneticInspectionRegions.AddRange(regionAssociations);
 
             await dbContext.SaveChangesAsync();
 
@@ -328,6 +336,7 @@ namespace Odin.Api.Endpoints.OrderManagement
 
             var qpadmResult = await dbContext.QpadmResults
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(qr => qr.QpadmResultEraGroups)
                     .ThenInclude(eg => eg.Era)
                 .Include(qr => qr.QpadmResultEraGroups)

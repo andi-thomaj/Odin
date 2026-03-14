@@ -16,6 +16,7 @@
     <PackageReference Include="Serilog.AspNetCore" />
     <PackageReference Include="Serilog.Sinks.PostgreSQL" />
     <PackageReference Include="Npgsql.NetTopologySuite" />
+    <PackageReference Include="AspNetCore.HealthChecks.Npgsql" />
     <PackageReference Include="Swashbuckle.AspNetCore.Swagger" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" />
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />

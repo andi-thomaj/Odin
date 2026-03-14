@@ -15,8 +15,6 @@ namespace Odin.Api.Endpoints.UserManagement
             endpoints.MapGet("/{identityId}", GetUserByIdentityId).RequireAuthorization("Authenticated");
             endpoints.MapPut("/{identityId}", UpdateUser).RequireAuthorization("Authenticated");
             endpoints.MapDelete("/{identityId}", DeleteUser).RequireAuthorization("AdminOnly");
-            endpoints.MapGet("/ethnicities", GetEthnicities).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/eras", GetEras).RequireAuthorization("Authenticated");
             endpoints.MapPatch("/{identityId}/role", UpdateUserRole).RequireAuthorization("AdminOnly");
         }
 
@@ -64,18 +62,6 @@ namespace Odin.Api.Endpoints.UserManagement
         {
             var deleted = await userService.DeleteUserAsync(identityId);
             return deleted ? Results.NoContent() : Results.NotFound();
-        }
-
-        private static async Task<IResult> GetEthnicities(IEthnicityService ethnicityService)
-        {
-            var ethnicities = await ethnicityService.GetAllAsync();
-            return Results.Ok(ethnicities);
-        }
-
-        private static async Task<IResult> GetEras(IEraService eraService)
-        {
-            var eras = await eraService.GetAllAsync();
-            return Results.Ok(eras);
         }
 
         private static async Task<IResult> UpdateUserRole(

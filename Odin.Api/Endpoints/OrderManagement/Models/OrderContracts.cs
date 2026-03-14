@@ -174,6 +174,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string MiddleName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
             public string? G25Coordinates { get; set; }
+            public string? Gender { get; set; }
             public bool HasProfilePicture { get; set; }
             public bool HasViewedResults { get; set; }
             public List<int> RegionIds { get; set; } = [];

@@ -8,11 +8,15 @@ using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
+using Odin.Api.Endpoints.ReferenceDataManagement;
 using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Hubs;
 using Odin.Api.Middleware;
 using Odin.Api.Services;
+using Microsoft.AspNetCore.ResponseCompression;
+using System.IO.Compression;
+using System.Threading.RateLimiting;
 using Serilog;
 using Serilog.Events;
 using Serilog.Sinks.PostgreSQL;
@@ -103,6 +107,50 @@ namespace Odin.Api
                     policy.RequireAuthenticatedUser());
             });
 
+            services.AddMemoryCache();
+
+            // ── Response Compression ────────────────────────────────────
+            services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+                options.Providers.Add<BrotliCompressionProvider>();
+                options.Providers.Add<GzipCompressionProvider>();
+            });
+            services.Configure<BrotliCompressionProviderOptions>(options =>
+                options.Level = CompressionLevel.Fastest);
+            services.Configure<GzipCompressionProviderOptions>(options =>
+                options.Level = CompressionLevel.Fastest);
+
+            // ── Rate Limiting ───────────────────────────────────────────
+            services.AddRateLimiter(options =>
+            {
+                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+                options.AddPolicy("authenticated", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 100,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0
+                        }));
+                options.AddPolicy("file-upload", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.Identity?.Name ?? httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 10,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0
+                        }));
+            });
+
+            // ── Health Checks ───────────────────────────────────────────
+            services.AddHealthChecks()
+                .AddNpgSql(configuration.GetConnectionString("DefaultConnection")!);
+
             services.AddOpenApi();
             services.AddCors(options =>
             {
@@ -118,8 +166,9 @@ namespace Odin.Api
             {
                 options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
             });
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
+            services.AddDbContextPool<ApplicationDbContext>(options =>
+                options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
+                    npgsqlOptions => npgsqlOptions.CommandTimeout(15)));
             services.AddScoped<ApplicationDbContextInitializer>();
             services.AddScoped<DatabaseSeeder>();
             services.AddValidation();
@@ -146,8 +195,10 @@ namespace Odin.Api
 
             await app.InitializeDatabaseAsync();
 
+            app.UseResponseCompression();
             app.UseStaticFiles();
             app.UseCors("AllowFrontend");
+            app.UseRateLimiter();
 
             if (app.Environment.IsDevelopment())
             {
@@ -165,8 +216,11 @@ namespace Odin.Api
             app.UseAuthorization();
 
             app.MapHub<NotificationHub>("/hubs/notifications");
+            app.MapHealthChecks("/health");
 
             app.MapUserEndpoints();
+            app.MapEthnicityEndpoints();
+            app.MapEraEndpoints();
             app.MapRawGeneticFileEndpoints();
             app.MapGeneticInspectionEndpoints();
             app.MapOrderEndpoints();

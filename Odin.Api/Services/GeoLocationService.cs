@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Odin.Api.Services
 {
@@ -10,12 +11,18 @@ namespace Odin.Api.Services
         Task<GeoLocationResult?> GetCountryFromIpAsync(string? ipAddress);
     }
 
-    public class GeoLocationService(HttpClient httpClient, ILogger<GeoLocationService> logger) : IGeoLocationService
+    public class GeoLocationService(HttpClient httpClient, ILogger<GeoLocationService> logger, IMemoryCache cache) : IGeoLocationService
     {
+        private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(24);
+
         public async Task<GeoLocationResult?> GetCountryFromIpAsync(string? ipAddress)
         {
             if (string.IsNullOrWhiteSpace(ipAddress))
                 return null;
+
+            var cacheKey = $"GeoLocation_{ipAddress}";
+            if (cache.TryGetValue(cacheKey, out GeoLocationResult? cached))
+                return cached;
 
             var isLoopback = IPAddress.TryParse(ipAddress, out var ip) &&
                              (IPAddress.IsLoopback(ip) || ip.Equals(IPAddress.IPv6Loopback));
@@ -35,9 +42,16 @@ namespace Odin.Api.Services
                     json.TryGetProperty("country", out var country) &&
                     json.TryGetProperty("country_code", out var countryCode))
                 {
-                    return new GeoLocationResult(
+                    var result = new GeoLocationResult(
                         country.GetString() ?? string.Empty,
                         countryCode.GetString() ?? string.Empty);
+
+                    cache.Set(cacheKey, result, new MemoryCacheEntryOptions
+                    {
+                        AbsoluteExpirationRelativeToNow = CacheDuration
+                    });
+
+                    return result;
                 }
             }
             catch (Exception ex)

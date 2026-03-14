@@ -43,26 +43,24 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 CreatedBy = string.Empty
             };
 
-            dbContext.GeneticInspections.Add(geneticInspection);
-            await dbContext.SaveChangesAsync();
-
-            // Add region associations
             var regions = await dbContext.Regions
                 .Include(r => r.Ethnicity)
                 .Where(r => request.RegionIds.Contains(r.Id))
                 .ToListAsync();
 
-            foreach (var region in regions)
-            {
-                dbContext.GeneticInspectionRegions.Add(new GeneticInspectionRegion
-                {
-                    GeneticInspectionId = geneticInspection.Id,
-                    GeneticInspection = geneticInspection,
-                    RegionId = region.Id,
-                    Region = region
-                });
-            }
+            dbContext.GeneticInspections.Add(geneticInspection);
+            await dbContext.SaveChangesAsync();
 
+            // Add region associations in bulk
+            var regionAssociations = regions.Select(region => new GeneticInspectionRegion
+            {
+                GeneticInspectionId = geneticInspection.Id,
+                GeneticInspection = geneticInspection,
+                RegionId = region.Id,
+                Region = region
+            }).ToList();
+
+            dbContext.GeneticInspectionRegions.AddRange(regionAssociations);
             await dbContext.SaveChangesAsync();
 
             return new CreateGeneticInspectionContract.Response
@@ -83,6 +81,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         {
             var inspection = await dbContext.GeneticInspections
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(gi => gi.RawGeneticFile)
                 .Include(gi => gi.Order)
                 .Include(gi => gi.User)
@@ -121,6 +120,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         {
             return await dbContext.GeneticInspections
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(gi => gi.RawGeneticFile)
                 .Include(gi => gi.Order)
                 .Include(gi => gi.User)
@@ -173,6 +173,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return null;
             }
 
+            const long maxFileSize = 50 * 1024 * 1024; // 50 MB
+            if (request.File.Length > maxFileSize)
+                throw new InvalidOperationException("Genetic file size must not exceed 50 MB.");
+
             using var memoryStream = new MemoryStream();
             await request.File.CopyToAsync(memoryStream);
 
@@ -182,8 +186,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             };
 
             dbContext.RawGeneticFiles.Add(rawGeneticFile);
-            await dbContext.SaveChangesAsync();
-
             inspection.RawGeneticFileId = rawGeneticFile.Id;
             await dbContext.SaveChangesAsync();
 
@@ -231,6 +233,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             SubmitQpadmResultContract.Request request)
         {
             var inspection = await dbContext.GeneticInspections
+                .AsSplitQuery()
                 .Include(gi => gi.Order)
                 .Include(gi => gi.User)
                 .Include(gi => gi.RawGeneticFile)
@@ -268,12 +271,26 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             var isFirstSubmission = inspection.QpadmResult is null;
 
-            var eraGroupEntities = request.EraGroups.Select(g => new QpadmResultEraGroup
+            var eraGroupEntities = request.EraGroups.Select((g, i) =>
             {
-                EraId = g.EraId,
-                PiValue = g.PiValue,
-                RightSources = g.RightSources,
-                LeftSources = g.LeftSources,
+                var eraGroup = new QpadmResultEraGroup
+                {
+                    EraId = g.EraId,
+                    PiValue = g.PiValue,
+                    RightSources = g.RightSources,
+                    LeftSources = g.LeftSources,
+                };
+                foreach (var p in g.Populations)
+                {
+                    eraGroup.QpadmResultPopulations.Add(new QpadmResultPopulation
+                    {
+                        PopulationId = p.PopulationId,
+                        Percentage = p.Percentage,
+                        StandardError = p.StandardError,
+                        ZScore = p.ZScore
+                    });
+                }
+                return eraGroup;
             }).ToList();
 
             if (inspection.QpadmResult is not null)
@@ -302,26 +319,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             inspection.Order.Status = Enum.TryParse<OrderStatus>(request.OrderStatus, out var qpadmStatus)
                 ? qpadmStatus
                 : OrderStatus.InProcess;
-
-            await dbContext.SaveChangesAsync();
-
-            for (var i = 0; i < eraGroupEntities.Count; i++)
-            {
-                var reqGroup = request.EraGroups[i];
-                var entity = eraGroupEntities[i];
-
-                foreach (var p in reqGroup.Populations)
-                {
-                    entity.QpadmResultPopulations.Add(new QpadmResultPopulation
-                    {
-                        QpadmResultEraGroupId = entity.Id,
-                        PopulationId = p.PopulationId,
-                        Percentage = p.Percentage,
-                        StandardError = p.StandardError,
-                        ZScore = p.ZScore
-                    });
-                }
-            }
 
             await dbContext.SaveChangesAsync();
 
@@ -368,6 +365,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         {
             var result = await dbContext.QpadmResults
                 .AsNoTracking()
+                .AsSplitQuery()
                 .Include(qr => qr.QpadmResultEraGroups)
                     .ThenInclude(eg => eg.Era)
                 .Include(qr => qr.QpadmResultEraGroups)

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 
 namespace Odin.Api.Middleware
@@ -8,10 +9,13 @@ namespace Odin.Api.Middleware
     /// After JWT authentication succeeds, looks up the authenticated user in the database
     /// and adds their <c>app_role</c> claim to the current principal. This allows
     /// authorization policies to use database-managed roles.
+    /// Results are cached per identity for 5 minutes to avoid a DB query on every request.
     /// </summary>
     public class RoleEnrichmentMiddleware(RequestDelegate next)
     {
-        public async Task InvokeAsync(HttpContext context, ApplicationDbContext dbContext)
+        internal const string CacheKeyPrefix = "UserRole_";
+
+        public async Task InvokeAsync(HttpContext context, ApplicationDbContext dbContext, IMemoryCache cache)
         {
             if (context.User.Identity?.IsAuthenticated == true)
             {
@@ -20,13 +24,27 @@ namespace Odin.Api.Middleware
 
                 if (!string.IsNullOrEmpty(identityId))
                 {
-                    var user = await dbContext.Users
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(u => u.IdentityId == identityId);
+                    var cacheKey = CacheKeyPrefix + identityId;
 
-                    if (user is not null)
+                    if (!cache.TryGetValue(cacheKey, out string? cachedRole))
                     {
-                        var roleClaim = new Claim("app_role", user.Role.ToString());
+                        var user = await dbContext.Users
+                            .AsNoTracking()
+                            .FirstOrDefaultAsync(u => u.IdentityId == identityId);
+
+                        if (user is not null)
+                        {
+                            cachedRole = user.Role.ToString();
+                            cache.Set(cacheKey, cachedRole, new MemoryCacheEntryOptions
+                            {
+                                SlidingExpiration = TimeSpan.FromMinutes(5)
+                            });
+                        }
+                    }
+
+                    if (cachedRole is not null)
+                    {
+                        var roleClaim = new Claim("app_role", cachedRole);
                         var appIdentity = new ClaimsIdentity([roleClaim], "AppRoleEnrichment");
                         context.User.AddIdentity(appIdentity);
                     }

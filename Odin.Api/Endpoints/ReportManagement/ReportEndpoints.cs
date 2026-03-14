@@ -16,8 +16,7 @@ namespace Odin.Api.Endpoints.ReportManagement
             var endpoints = app.MapGroup("api/reports");
 
             endpoints.MapPost("/", Create).RequireAuthorization("Authenticated").DisableAntiforgery();
-            endpoints.MapGet("/my", GetMyReports).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/", GetAll).RequireAuthorization("AdminOnly");
+            endpoints.MapGet("/", GetAll).RequireAuthorization("Authenticated");
             endpoints.MapGet("/{id:int}", GetDetail).RequireAuthorization("Authenticated");
             endpoints.MapPatch("/{id:int}/status", UpdateStatus).RequireAuthorization("AdminOnly");
             endpoints.MapGet("/{id:int}/file", DownloadFile).RequireAuthorization("Authenticated");
@@ -58,37 +57,36 @@ namespace Odin.Api.Endpoints.ReportManagement
             }
         }
 
-        private static async Task<IResult> GetMyReports(
+        private static async Task<IResult> GetAll(
             IReportService service,
             ApplicationDbContext dbContext,
             HttpContext httpContext,
-            int page = 1,
-            int pageSize = 20)
-        {
-            var userId = await ResolveUserId(httpContext, dbContext);
-            if (userId is null) return Results.Unauthorized();
-
-            var reports = await service.GetUserReportsAsync(userId.Value, page, pageSize);
-            return Results.Ok(reports);
-        }
-
-        private static async Task<IResult> GetAll(
-            IReportService service,
             int page = 1,
             int pageSize = 20,
             string? type = null,
             string? status = null)
         {
-            ReportType? typeFilter = null;
-            ReportStatus? statusFilter = null;
+            var userId = await ResolveUserId(httpContext, dbContext);
+            if (userId is null) return Results.Unauthorized();
 
-            if (type is not null && Enum.TryParse<ReportType>(type, ignoreCase: true, out var parsedType))
-                typeFilter = parsedType;
+            var isAdmin = await IsAdmin(httpContext, dbContext);
 
-            if (status is not null && Enum.TryParse<ReportStatus>(status, ignoreCase: true, out var parsedStatus))
-                statusFilter = parsedStatus;
+            if (isAdmin)
+            {
+                ReportType? typeFilter = null;
+                ReportStatus? statusFilter = null;
 
-            var reports = await service.GetAllReportsAsync(page, pageSize, typeFilter, statusFilter);
+                if (type is not null && Enum.TryParse<ReportType>(type, ignoreCase: true, out var parsedType))
+                    typeFilter = parsedType;
+
+                if (status is not null && Enum.TryParse<ReportStatus>(status, ignoreCase: true, out var parsedStatus))
+                    statusFilter = parsedStatus;
+
+                var allReports = await service.GetAllReportsAsync(page, pageSize, typeFilter, statusFilter);
+                return Results.Ok(allReports);
+            }
+
+            var reports = await service.GetUserReportsAsync(userId.Value, page, pageSize);
             return Results.Ok(reports);
         }
 

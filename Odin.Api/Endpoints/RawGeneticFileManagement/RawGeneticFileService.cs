@@ -19,6 +19,10 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
     {
         public async Task<UploadGeneticFileContract.Response> UploadFileAsync(UploadGeneticFileContract.Request request)
         {
+            const long maxFileSize = 50 * 1024 * 1024; // 50 MB
+            if (request.File.Length > maxFileSize)
+                throw new InvalidOperationException("Genetic file size must not exceed 50 MB.");
+
             using var memoryStream = new MemoryStream();
             await request.File.CopyToAsync(memoryStream);
 

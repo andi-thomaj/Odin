@@ -26,7 +26,7 @@ namespace Odin.Api.Endpoints.OrderManagement
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("Authenticated");
             endpoints.MapGet("/{id:int}/merged-data/download", DownloadMergedData).RequireAuthorization("Authenticated");
             endpoints.MapGet("/{id:int}/profile-picture", GetProfilePicture).RequireAuthorization("Authenticated");
-            endpoints.MapPost("/{id:int}/mark-viewed", MarkResultsAsViewed).RequireAuthorization("Authenticated");
+            endpoints.MapPatch("/{id:int}/viewed-status", MarkResultsAsViewed).RequireAuthorization("Authenticated");
         }
 
         private static async Task<IResult> GetAll(IOrderService service)

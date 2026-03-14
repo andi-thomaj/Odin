@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.UserManagement.Models;
+using Odin.Api.Middleware;
 using Odin.Api.Services;
 
 namespace Odin.Api.Endpoints.UserManagement
@@ -18,7 +20,7 @@ namespace Odin.Api.Endpoints.UserManagement
         Task<bool> DeleteUserAsync(string identityId);
     }
 
-    public class UserService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService) : IUserService
+    public class UserService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService, IMemoryCache cache) : IUserService
     {
         public async Task<CreateUserContract.Response> CreateUserAsync(CreateUserContract.Request request,
             string? ipAddress = null)
@@ -165,6 +167,9 @@ namespace Odin.Api.Endpoints.UserManagement
 
             user.UpdatedAt = DateTime.UtcNow;
             await dbContext.SaveChangesAsync();
+
+            // Invalidate the cached role so the middleware picks up the new role immediately
+            cache.Remove(RoleEnrichmentMiddleware.CacheKeyPrefix + identityId);
 
             return new UpdateUserRoleContract.Response
             {

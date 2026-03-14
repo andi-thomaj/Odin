@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Endpoints.UserManagement.Models;
 
@@ -9,11 +10,17 @@ namespace Odin.Api.Endpoints.UserManagement
         Task<IEnumerable<GetEthnicitiesContract.Response>> GetAllAsync();
     }
 
-    public class EthnicityService(ApplicationDbContext dbContext) : IEthnicityService
+    public class EthnicityService(ApplicationDbContext dbContext, IMemoryCache cache) : IEthnicityService
     {
+        private const string CacheKey = "AllEthnicities";
+        private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
+
         public async Task<IEnumerable<GetEthnicitiesContract.Response>> GetAllAsync()
         {
-            return await dbContext.Ethnicities
+            if (cache.TryGetValue(CacheKey, out List<GetEthnicitiesContract.Response>? cached))
+                return cached!;
+
+            var result = await dbContext.Ethnicities
                 .AsNoTracking()
                 .Include(e => e.Regions)
                 .Select(e => new GetEthnicitiesContract.Response
@@ -26,6 +33,13 @@ namespace Odin.Api.Endpoints.UserManagement
                     }).ToList()
                 })
                 .ToListAsync();
+
+            cache.Set(CacheKey, result, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheDuration
+            });
+
+            return result;
         }
     }
 }

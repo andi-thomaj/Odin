@@ -14,7 +14,7 @@ public class EthnicityEndpointsTests(CustomWebApplicationFactory factory) : Inte
     public async Task GetEthnicities_WhenNoData_ReturnsEmptyList()
     {
         // Act
-        var response = await Client.GetAsync("/api/users/ethnicities");
+        var response = await Client.GetAsync("/api/ethnicities");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -30,7 +30,7 @@ public class EthnicityEndpointsTests(CustomWebApplicationFactory factory) : Inte
         await SeedEthnicitiesAsync();
 
         // Act
-        var response = await Client.GetAsync("/api/users/ethnicities");
+        var response = await Client.GetAsync("/api/ethnicities");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -58,7 +58,7 @@ public class EthnicityEndpointsTests(CustomWebApplicationFactory factory) : Inte
         await dbContext.SaveChangesAsync();
 
         // Act
-        var response = await Client.GetAsync("/api/users/ethnicities");
+        var response = await Client.GetAsync("/api/ethnicities");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -78,7 +78,7 @@ public class EthnicityEndpointsTests(CustomWebApplicationFactory factory) : Inte
         await SeedEthnicitiesAsync();
 
         // Act
-        var response = await Client.GetAsync("/api/users/ethnicities");
+        var response = await Client.GetAsync("/api/ethnicities");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
