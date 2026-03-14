@@ -26,6 +26,7 @@ namespace Odin.Api.Endpoints.OrderManagement
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("Authenticated");
             endpoints.MapGet("/{id:int}/merged-data/download", DownloadMergedData).RequireAuthorization("Authenticated");
             endpoints.MapGet("/{id:int}/profile-picture", GetProfilePicture).RequireAuthorization("Authenticated");
+            endpoints.MapPost("/{id:int}/mark-viewed", MarkResultsAsViewed).RequireAuthorization("Authenticated");
         }
 
         private static async Task<IResult> GetAll(IOrderService service)
@@ -152,6 +153,22 @@ namespace Odin.Api.Endpoints.OrderManagement
             var contentType = ImageContentTypes.GetValueOrDefault(extension, "application/octet-stream");
 
             return Results.File(fileBytes!, contentType, fileName);
+        }
+
+        private static async Task<IResult> MarkResultsAsViewed(IOrderService service, HttpContext httpContext, int id)
+        {
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            var (success, statusCode, error) = await service.MarkResultsAsViewedAsync(id, identityId);
+
+            return statusCode switch
+            {
+                200 => Results.Ok(new { Success = success }),
+                403 => Results.Forbid(),
+                _ => Results.NotFound(new { Message = error })
+            };
         }
 
     }

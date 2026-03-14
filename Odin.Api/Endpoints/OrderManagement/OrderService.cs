@@ -17,6 +17,7 @@ namespace Odin.Api.Endpoints.OrderManagement
         Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId);
         Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId);
         Task<(byte[]? FileBytes, string? FileName)?> GetProfilePictureAsync(int orderId);
+        Task<(bool Success, int StatusCode, string? Error)> MarkResultsAsViewedAsync(int orderId, string identityId);
     }
 
     public class OrderService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService) : IOrderService
@@ -167,6 +168,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                 MiddleName = order.GeneticInspection?.MiddleName ?? string.Empty,
                 LastName = order.GeneticInspection?.LastName ?? string.Empty,
                 HasProfilePicture = order.GeneticInspection?.ProfilePicture is { Length: > 0 },
+                HasViewedResults = order.HasViewedResults,
                 RegionIds = order.GeneticInspection?.GeneticInspectionRegions
                     .Select(gir => gir.RegionId).ToList() ?? [],
                 CreatedAt = order.CreatedAt,
@@ -194,6 +196,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                     LastName = order.GeneticInspection != null ? order.GeneticInspection.LastName : string.Empty,
                     G25Coordinates = order.GeneticInspection != null ? order.GeneticInspection.G25Coordinates : null,
                     HasProfilePicture = order.GeneticInspection != null && order.GeneticInspection.ProfilePicture != null && order.GeneticInspection.ProfilePicture.Length > 0,
+                    HasViewedResults = order.HasViewedResults,
                     RegionIds = order.GeneticInspection != null
                         ? order.GeneticInspection.GeneticInspectionRegions.Select(gir => gir.RegionId).ToList()
                         : new List<int>(),
@@ -280,6 +283,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                 LastName = order.GeneticInspection.LastName,
                 G25Coordinates = order.GeneticInspection.G25Coordinates,
                 HasProfilePicture = order.GeneticInspection.ProfilePicture is { Length: > 0 },
+                HasViewedResults = order.HasViewedResults,
                 RegionIds = regions.Select(r => r.Id).ToList(),
                 CreatedAt = order.CreatedAt,
                 CreatedBy = order.CreatedBy,
@@ -396,6 +400,23 @@ namespace Odin.Api.Endpoints.OrderManagement
                 return null;
 
             return (pictureData, order.GeneticInspection.ProfilePictureFileName ?? "profile-picture");
+        }
+
+        public async Task<(bool Success, int StatusCode, string? Error)> MarkResultsAsViewedAsync(int orderId, string identityId)
+        {
+            var order = await dbContext.Orders
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order is null)
+                return (false, 404, $"Order with ID {orderId} not found.");
+
+            if (order.CreatedBy != identityId)
+                return (false, 403, "You do not have permission to modify this order.");
+
+            order.HasViewedResults = true;
+            await dbContext.SaveChangesAsync();
+
+            return (true, 200, null);
         }
 
     }
