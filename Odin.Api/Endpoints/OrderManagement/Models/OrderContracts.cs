@@ -178,6 +178,8 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public bool HasProfilePicture { get; set; }
             public bool HasViewedResults { get; set; }
             public List<int> RegionIds { get; set; } = [];
+            /// <summary>Distinct ethnicity IDs implied by selected regions (parent-ancestry context).</summary>
+            public List<int> EthnicityIds { get; set; } = [];
             public DateTime CreatedAt { get; set; }
             public string CreatedBy { get; set; } = string.Empty;
             public DateTime UpdatedAt { get; set; }

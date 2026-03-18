@@ -157,6 +157,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                 .AsNoTracking()
                 .Include(o => o.GeneticInspection)
                     .ThenInclude(gi => gi.GeneticInspectionRegions)
+                    .ThenInclude(gir => gir.Region)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
             if (order is null)
@@ -179,6 +180,9 @@ namespace Odin.Api.Endpoints.OrderManagement
                 HasViewedResults = order.HasViewedResults,
                 RegionIds = order.GeneticInspection?.GeneticInspectionRegions
                     .Select(gir => gir.RegionId).ToList() ?? [],
+                EthnicityIds = order.GeneticInspection?.GeneticInspectionRegions
+                    .Select(gir => gir.Region.EthnicityId).Distinct().OrderBy(id => id).ToList() ?? [],
+                G25Coordinates = order.GeneticInspection?.G25Coordinates,
                 CreatedAt = order.CreatedAt,
                 CreatedBy = order.CreatedBy,
                 UpdatedAt = order.UpdatedAt,
@@ -192,6 +196,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                 .AsNoTracking()
                 .Include(o => o.GeneticInspection)
                     .ThenInclude(gi => gi.GeneticInspectionRegions)
+                    .ThenInclude(gir => gir.Region)
                 .Select(order => new GetOrderContract.Response
                 {
                     Id = order.Id,
@@ -208,6 +213,9 @@ namespace Odin.Api.Endpoints.OrderManagement
                     HasViewedResults = order.HasViewedResults,
                     RegionIds = order.GeneticInspection != null
                         ? order.GeneticInspection.GeneticInspectionRegions.Select(gir => gir.RegionId).ToList()
+                        : new List<int>(),
+                    EthnicityIds = order.GeneticInspection != null
+                        ? order.GeneticInspection.GeneticInspectionRegions.Select(gir => gir.Region.EthnicityId).Distinct().OrderBy(id => id).ToList()
                         : new List<int>(),
                     CreatedAt = order.CreatedAt,
                     CreatedBy = order.CreatedBy,
@@ -293,6 +301,8 @@ namespace Odin.Api.Endpoints.OrderManagement
                 HasProfilePicture = order.GeneticInspection.ProfilePicture is { Length: > 0 },
                 HasViewedResults = order.HasViewedResults,
                 RegionIds = regions.Select(r => r.Id).ToList(),
+                EthnicityIds = regions.Select(r => r.EthnicityId).Distinct().OrderBy(id => id).ToList(),
+                Gender = order.GeneticInspection.Gender?.ToString(),
                 CreatedAt = order.CreatedAt,
                 CreatedBy = order.CreatedBy,
                 UpdatedAt = order.UpdatedAt,
