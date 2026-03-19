@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
 using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
@@ -69,6 +70,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
         private static async Task<IResult> Create(
             IGeneticInspectionService service,
+            HttpContext httpContext,
             [FromBody] CreateGeneticInspectionContract.Request request)
         {
             var validationProblem = request.ValidateAndGetProblem();
@@ -77,7 +79,12 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return validationProblem;
             }
 
-            var response = await service.CreateAsync(request);
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub");
+            if (string.IsNullOrEmpty(identityId))
+                return Results.Unauthorized();
+
+            var response = await service.CreateAsync(request, identityId);
             return Results.Created($"/api/genetic-inspections/{response.Id}", response);
         }
 

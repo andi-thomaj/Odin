@@ -10,7 +10,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 {
     public interface IGeneticInspectionService
     {
-        Task<CreateGeneticInspectionContract.Response> CreateAsync(CreateGeneticInspectionContract.Request request);
+        Task<CreateGeneticInspectionContract.Response> CreateAsync(CreateGeneticInspectionContract.Request request,
+            string identityId);
         Task<GetGeneticInspectionContract.Response?> GetByIdAsync(int id);
         Task<IEnumerable<GetGeneticInspectionContract.Response>> GetAllAsync();
         Task<bool> DeleteAsync(int id);
@@ -32,15 +33,39 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         INotificationService notificationService) : IGeneticInspectionService
     {
         public async Task<CreateGeneticInspectionContract.Response> CreateAsync(
-            CreateGeneticInspectionContract.Request request)
+            CreateGeneticInspectionContract.Request request,
+            string identityId)
         {
+            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.IdentityId == identityId)
+                ?? throw new InvalidOperationException("Authenticated user not found in the database.");
+
+            var utc = DateTime.UtcNow;
+            var order = new Order
+            {
+                Price = 0,
+                Service = OrderService.QPADM,
+                Status = OrderStatus.Pending,
+                HasViewedResults = false,
+                CreatedAt = utc,
+                CreatedBy = identityId,
+                UpdatedAt = utc,
+                UpdatedBy = identityId
+            };
+            dbContext.Orders.Add(order);
+            await dbContext.SaveChangesAsync();
+
             var geneticInspection = new GeneticInspection
             {
+                UserId = user.Id,
+                OrderId = order.Id,
                 FirstName = request.FirstName,
                 MiddleName = request.MiddleName ?? string.Empty,
                 LastName = request.LastName,
                 RawGeneticFileId = request.RawGeneticFileId,
-                CreatedBy = string.Empty
+                CreatedAt = utc,
+                CreatedBy = identityId,
+                UpdatedAt = utc,
+                UpdatedBy = identityId
             };
 
             var regions = await dbContext.Regions

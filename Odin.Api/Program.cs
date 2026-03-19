@@ -1,7 +1,10 @@
+using System.Text.Json;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Odin.Api.Authentication;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
@@ -13,6 +16,7 @@ using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Hubs;
 using Odin.Api.Middleware;
+using Odin.Api.Models;
 using Odin.Api.Services;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
@@ -77,36 +81,44 @@ namespace Odin.Api
                     );
             });
 
-            // ── Authentication (Auth0 JWT) ──────────────────────────────
-            var auth0Domain = configuration["Jwt:Authority"]!;
-            var auth0Audience = configuration["Jwt:Audience"]!;
+            // ── Authentication (JWT in app; test scheme for integration tests) ──
+            if (builder.Environment.IsEnvironment("Testing"))
+            {
+                services.AddAuthentication(TestAuthHandler.SchemeName)
+                    .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
+            }
+            else
+            {
+                var auth0Domain = configuration["Jwt:Authority"]!;
+                var auth0Audience = configuration["Jwt:Audience"]!;
 
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.Authority = auth0Domain;
-                    options.Audience = auth0Audience;
-                    options.TokenValidationParameters = new TokenValidationParameters
+                services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
                     {
-                        ValidateIssuer = true,
-                        ValidateAudience = true,
-                        ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true,
-                    };
-                    options.Events = new JwtBearerEvents
-                    {
-                        OnMessageReceived = context =>
+                        options.Authority = auth0Domain;
+                        options.Audience = auth0Audience;
+                        options.TokenValidationParameters = new TokenValidationParameters
                         {
-                            var accessToken = context.Request.Query["access_token"];
-                            if (!string.IsNullOrEmpty(accessToken)
-                                && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                            ValidateIssuer = true,
+                            ValidateAudience = true,
+                            ValidateLifetime = true,
+                            ValidateIssuerSigningKey = true,
+                        };
+                        options.Events = new JwtBearerEvents
+                        {
+                            OnMessageReceived = context =>
                             {
-                                context.Token = accessToken;
+                                var accessToken = context.Request.Query["access_token"];
+                                if (!string.IsNullOrEmpty(accessToken)
+                                    && context.HttpContext.Request.Path.StartsWithSegments("/hubs"))
+                                {
+                                    context.Token = accessToken;
+                                }
+                                return Task.CompletedTask;
                             }
-                            return Task.CompletedTask;
-                        }
-                    };
-                });
+                        };
+                    });
+            }
 
             // ── Authorization policies ──────────────────────────────────
             services.AddAuthorization(options =>
@@ -169,9 +181,18 @@ namespace Odin.Api
                         requestId,
                         policyName,
                         context.HttpContext.Request.Path);
-                    
+
+                    context.HttpContext.Response.ContentType = "application/json";
+                    var errorBody = new ErrorResponse
+                    {
+                        RequestId = requestId ?? string.Empty,
+                        StatusCode = StatusCodes.Status429TooManyRequests,
+                        Message = "Rate limit exceeded. Please try again later.",
+                        ErrorCode = "RATE_LIMIT_EXCEEDED"
+                    };
+                    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
                     await context.HttpContext.Response.WriteAsync(
-                        "Rate limit exceeded. Please try again later.", cancellationToken);
+                        JsonSerializer.Serialize(errorBody, jsonOptions), cancellationToken);
                 };
 
                 // Helper to get client IP (handles X-Forwarded-For)
@@ -336,7 +357,6 @@ namespace Odin.Api
                     npgsqlOptions => npgsqlOptions.CommandTimeout(15)));
             services.AddScoped<ApplicationDbContextInitializer>();
             services.AddScoped<DatabaseSeeder>();
-            services.AddValidation();
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IEthnicityService, EthnicityService>();
             services.AddScoped<IEraService, EraService>();
@@ -364,12 +384,7 @@ namespace Odin.Api
             }
 
             // ── Forwarded Headers (for reverse proxies) ─────────────────
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-                RequireHeaderSymmetry = false,
-                ForwardedForHeaderName = "X-Forwarded-For"
-            });
+            UseOdinForwardedHeaders(app, configuration);
 
             await app.InitializeDatabaseAsync();
 
@@ -380,7 +395,8 @@ namespace Odin.Api
             app.UseResponseCompression();
             app.UseStaticFiles();
             app.UseCors("AllowFrontend");
-            app.UseRateLimiter();
+            if (!app.Environment.IsEnvironment("Testing"))
+                app.UseRateLimiter();
             app.UseRequestTimeouts();
 
             if (app.Environment.IsDevelopment())
@@ -410,6 +426,37 @@ namespace Odin.Api
             app.MapNotificationEndpoints();
             app.MapReportEndpoints();
             await app.RunAsync();
+        }
+
+        private static void UseOdinForwardedHeaders(WebApplication app, IConfiguration configuration)
+        {
+            var forwardedOptions = new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+                RequireHeaderSymmetry = false,
+                ForwardedForHeaderName = "X-Forwarded-For"
+            };
+
+            if (app.Environment.IsDevelopment())
+            {
+                forwardedOptions.KnownIPNetworks.Clear();
+                forwardedOptions.KnownProxies.Clear();
+                forwardedOptions.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("127.0.0.1/32"));
+                forwardedOptions.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("::1/128"));
+            }
+            else if (!app.Environment.IsEnvironment("Testing"))
+            {
+                forwardedOptions.KnownIPNetworks.Clear();
+                forwardedOptions.KnownProxies.Clear();
+                foreach (var ipText in configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ??
+                                       [])
+                {
+                    if (IPAddress.TryParse(ipText, out var ip))
+                        forwardedOptions.KnownProxies.Add(ip);
+                }
+            }
+
+            app.UseForwardedHeaders(forwardedOptions);
         }
     }
 }

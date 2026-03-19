@@ -1,5 +1,3 @@
-using Odin.Api.Endpoints.UserManagement;
-
 namespace Odin.Api.Endpoints.ReferenceDataManagement
 {
     public static class EraEndpoints

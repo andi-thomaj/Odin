@@ -8,13 +8,30 @@ namespace Odin.Api.IntegrationTests.Endpoints.UserManagement;
 public class UserEndpointsTests(CustomWebApplicationFactory factory) : IntegrationTestBase(factory)
 {
     [Fact]
-    public async Task GetUsers_ReturnsOk()
+    public async Task ListUsers_AsAdmin_ReturnsPagedUsers()
     {
-        // Act
+        // Act (default client is Admin after seed user exists)
         var response = await Client.GetAsync("/api/users");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var body = await response.Content.ReadFromJsonAsync<ListUsersContract.Response>();
+        Assert.NotNull(body);
+        Assert.True(body.TotalCount >= 1);
+        Assert.NotEmpty(body.Items);
+        Assert.Contains(body.Items, u => u.IdentityId == "auth0|integration-default");
+    }
+
+    [Fact]
+    public async Task ListUsers_AsNonAdmin_ReturnsForbidden()
+    {
+        using var userClient = Factory.CreateClient();
+        userClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-Identity-Id", "auth0|integration-default");
+        userClient.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-App-Role", "User");
+
+        var response = await userClient.GetAsync("/api/users");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     [Fact]

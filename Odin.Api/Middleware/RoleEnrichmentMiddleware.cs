@@ -15,8 +15,18 @@ namespace Odin.Api.Middleware
     {
         internal const string CacheKeyPrefix = "UserRole_";
 
-        public async Task InvokeAsync(HttpContext context, ApplicationDbContext dbContext, IMemoryCache cache)
+        public async Task InvokeAsync(
+            HttpContext context,
+            ApplicationDbContext dbContext,
+            IMemoryCache cache,
+            IWebHostEnvironment environment)
         {
+            if (environment.IsEnvironment("Testing"))
+            {
+                await next(context);
+                return;
+            }
+
             if (context.User.Identity?.IsAuthenticated == true)
             {
                 var identityId = context.User.FindFirstValue(ClaimTypes.NameIdentifier)

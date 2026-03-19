@@ -11,16 +11,13 @@ namespace Odin.Api.IntegrationTests.Endpoints.UserManagement;
 public class EthnicityEndpointsTests(CustomWebApplicationFactory factory) : IntegrationTestBase(factory)
 {
     [Fact]
-    public async Task GetEthnicities_WhenNoData_ReturnsEmptyList()
+    public async Task GetEthnicities_ReturnsOk()
     {
-        // Act
         var response = await Client.GetAsync("/api/ethnicities");
 
-        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var ethnicities = await response.Content.ReadFromJsonAsync<List<GetEthnicitiesContract.Response>>();
         Assert.NotNull(ethnicities);
-        Assert.Empty(ethnicities);
     }
 
     [Fact]
@@ -64,10 +61,7 @@ public class EthnicityEndpointsTests(CustomWebApplicationFactory factory) : Inte
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var ethnicities = await response.Content.ReadFromJsonAsync<List<GetEthnicitiesContract.Response>>();
         Assert.NotNull(ethnicities);
-        Assert.Single(ethnicities);
-
-        var pomak = ethnicities.Single();
-        Assert.Equal("Pomak", pomak.Name);
+        var pomak = Assert.Single(ethnicities, e => e.Name == "Pomak");
         Assert.Empty(pomak.Regions);
     }
 

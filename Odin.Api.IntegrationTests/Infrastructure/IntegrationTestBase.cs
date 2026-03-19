@@ -1,6 +1,8 @@
+using System.Net.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Odin.Api.Data;
+using Odin.Api.Endpoints.UserManagement.Models;
 using Respawn;
 
 namespace Odin.Api.IntegrationTests.Infrastructure;
@@ -27,6 +29,21 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             new RespawnerOptions { DbAdapter = DbAdapter.Postgres, SchemasToInclude = ["public"] });
 
         await _respawner.ResetAsync(connection);
+
+        Client.DefaultRequestHeaders.Remove("X-Test-Identity-Id");
+        Client.DefaultRequestHeaders.Remove("X-Test-App-Role");
+        Client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-Identity-Id", "auth0|integration-default");
+        Client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-App-Role", "Admin");
+
+        var seedRequest = new CreateUserContract.Request
+        {
+            IdentityId = "auth0|integration-default",
+            FirstName = "Integration",
+            LastName = "User",
+            Email = "integration-default@test.local"
+        };
+        var seedResponse = await Client.PostAsJsonAsync("/api/users", seedRequest);
+        seedResponse.EnsureSuccessStatusCode();
     }
 
     public Task DisposeAsync()

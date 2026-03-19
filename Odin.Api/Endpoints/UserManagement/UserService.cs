@@ -18,6 +18,8 @@ namespace Odin.Api.Endpoints.UserManagement
             UpdateUserRoleContract.Request request);
 
         Task<bool> DeleteUserAsync(string identityId);
+
+        Task<ListUsersContract.Response> ListUsersAsync(int skip, int take);
     }
 
     public class UserService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService, IMemoryCache cache) : IUserService
@@ -174,6 +176,37 @@ namespace Odin.Api.Endpoints.UserManagement
             return new UpdateUserRoleContract.Response
             {
                 Id = user.Id, IdentityId = user.IdentityId, Email = user.Email, Role = user.Role.ToString()
+            };
+        }
+
+        public async Task<ListUsersContract.Response> ListUsersAsync(int skip, int take)
+        {
+            var query = dbContext.Users.AsNoTracking().OrderByDescending(u => u.CreatedAt);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip(skip)
+                .Take(take)
+                .Select(u => new ListUsersContract.UserItem
+                {
+                    Id = u.Id,
+                    IdentityId = u.IdentityId,
+                    Username = u.Username,
+                    Email = u.Email,
+                    FirstName = u.FirstName,
+                    LastName = u.LastName,
+                    Role = u.Role.ToString(),
+                    CreatedAt = u.CreatedAt
+                })
+                .ToListAsync();
+
+            return new ListUsersContract.Response
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Skip = skip,
+                Take = take
             };
         }
     }

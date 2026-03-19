@@ -10,7 +10,7 @@ namespace Odin.Api.Endpoints.UserManagement
         {
             var endpoints = app.MapGroup("api/users");
 
-            endpoints.MapGet("/", GetUsers)
+            endpoints.MapGet("/", ListUsers)
                 .RequireAuthorization("AdminOnly")
                 .RequireRateLimiting("strict");
             
@@ -35,9 +35,12 @@ namespace Odin.Api.Endpoints.UserManagement
                 .RequireRateLimiting("strict");
         }
 
-        private static IResult GetUsers()
+        private static async Task<IResult> ListUsers(IUserService userService, int skip = 0, int take = 50)
         {
-            return Results.Ok("User endpoint is working!");
+            skip = Math.Max(0, skip);
+            take = Math.Clamp(take, 1, 100);
+            var result = await userService.ListUsersAsync(skip, take);
+            return Results.Ok(result);
         }
 
         private static async Task<IResult> CreateUser(IUserService userService,

@@ -41,19 +41,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
     {
         await _dbFixture.InitializeAsync();
 
-        // Create database schema before the host starts, so the seeder
-        // can query tables during app startup (MigrateAsync is a no-op
-        // without real migration files).
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseNpgsql(_dbFixture.ConnectionString)
-            .Options;
-        await using (var dbContext = new ApplicationDbContext(options))
-        {
-            await dbContext.Database.EnsureCreatedAsync();
-        }
-
-        // Accessing Services triggers the host to start (Program.Main),
-        // which runs MigrateAsync + SeedAsync — tables now exist.
+        // Host startup runs MigrateAsync + SeedAsync on the test container database.
         _ = Services;
     }
 
