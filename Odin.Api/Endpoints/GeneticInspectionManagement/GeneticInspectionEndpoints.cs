@@ -11,20 +11,45 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         {
             var endpoints = app.MapGroup("api/genetic-inspections");
 
-            endpoints.MapGet("/", GetAll).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/{id:int}", GetById).RequireAuthorization("Authenticated");
-            endpoints.MapPost("/", Create).RequireAuthorization("ScientistOrAdmin");
-            endpoints.MapDelete("/{id:int}", Delete).RequireAuthorization("AdminOnly");
+            endpoints.MapGet("/", GetAll)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapGet("/{id:int}", GetById)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapPost("/", Create)
+                .RequireAuthorization("ScientistOrAdmin")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapDelete("/{id:int}", Delete)
+                .RequireAuthorization("AdminOnly")
+                .RequireRateLimiting("strict");
 
-            endpoints.MapPost("/{id:int}/genetic-file", UploadGeneticFile).DisableAntiforgery()
-                .RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapPost("/{id:int}/genetic-file", UploadGeneticFile)
+                .DisableAntiforgery()
+                .RequireAuthorization("ScientistOrAdmin")
+                .RequireRateLimiting("file-upload")
+                .WithRequestTimeout(TimeSpan.FromMinutes(5));
+            
             endpoints.MapGet("/{id:int}/genetic-file/download", DownloadGeneticFile)
-                .RequireAuthorization("Authenticated");
-            endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile).RequireAuthorization("Authenticated");
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
 
-            endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("ScientistOrAdmin");
-            endpoints.MapPost("/{id:int}/qpadm-result", SubmitQpadmResult).DisableAntiforgery()
-                .RequireAuthorization("ScientistOrAdmin");
+            endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult)
+                .RequireAuthorization("ScientistOrAdmin")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapPost("/{id:int}/qpadm-result", SubmitQpadmResult)
+                .DisableAntiforgery()
+                .RequireAuthorization("ScientistOrAdmin")
+                .RequireRateLimiting("file-upload")
+                .WithRequestTimeout(TimeSpan.FromMinutes(5));
         }
 
         private static async Task<IResult> GetAll(IGeneticInspectionService service)

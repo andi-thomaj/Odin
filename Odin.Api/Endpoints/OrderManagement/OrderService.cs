@@ -364,6 +364,8 @@ namespace Odin.Api.Endpoints.OrderManagement
                 LastName = order.GeneticInspection.LastName,
                 PaternalHaplogroup = order.GeneticInspection.PaternalHaplogroup,
                 HasMergedRawData = order.GeneticInspection.RawGeneticFile?.MergedRawData is { Length: > 0 },
+                HasProfilePicture = order.GeneticInspection.ProfilePicture is { Length: > 0 },
+                Gender = order.GeneticInspection.Gender?.ToString(),
                 EraGroups = qpadmResult.QpadmResultEraGroups.Select(eg => new GetOrderQpadmResultContract.EraGroupResult
                 {
                     EraId = eg.EraId,

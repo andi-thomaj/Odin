@@ -216,6 +216,8 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string LastName { get; set; } = string.Empty;
             public string? PaternalHaplogroup { get; set; }
             public bool HasMergedRawData { get; set; }
+            public bool HasProfilePicture { get; set; }
+            public string? Gender { get; set; }
             public List<EraGroupResult> EraGroups { get; set; } = [];
         }
     }

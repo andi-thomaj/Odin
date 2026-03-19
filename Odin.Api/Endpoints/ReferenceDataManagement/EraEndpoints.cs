@@ -8,7 +8,9 @@ namespace Odin.Api.Endpoints.ReferenceDataManagement
         {
             var endpoints = app.MapGroup("api/eras");
 
-            endpoints.MapGet("/", GetAll).RequireAuthorization("Authenticated");
+            endpoints.MapGet("/", GetAll)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
         }
 
         private static async Task<IResult> GetAll(IEraService eraService)

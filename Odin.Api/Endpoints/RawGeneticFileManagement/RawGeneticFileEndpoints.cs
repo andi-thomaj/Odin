@@ -9,11 +9,27 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
         {
             var endpoints = app.MapGroup("api/raw-genetic-files");
 
-            endpoints.MapGet("/", GetAllFiles).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/{id:int}", GetFileById).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/{id:int}/download", DownloadFile).RequireAuthorization("Authenticated");
-            endpoints.MapPost("/", UploadFile).DisableAntiforgery().RequireAuthorization("ScientistOrAdmin");
-            endpoints.MapDelete("/{id:int}", DeleteFile).RequireAuthorization("Authenticated");
+            endpoints.MapGet("/", GetAllFiles)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapGet("/{id:int}", GetFileById)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapGet("/{id:int}/download", DownloadFile)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapPost("/", UploadFile)
+                .DisableAntiforgery()
+                .RequireAuthorization("ScientistOrAdmin")
+                .RequireRateLimiting("file-upload")
+                .WithRequestTimeout(TimeSpan.FromMinutes(5));
+            
+            endpoints.MapDelete("/{id:int}", DeleteFile)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
         }
 
         private static async Task<IResult> GetAllFiles(IRawGeneticFileService service)

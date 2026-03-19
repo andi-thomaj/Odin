@@ -18,15 +18,45 @@ namespace Odin.Api.Endpoints.OrderManagement
         {
             var endpoints = app.MapGroup("api/orders");
 
-            endpoints.MapGet("/", GetAll).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/{id:int}", GetById).RequireAuthorization("Authenticated");
-            endpoints.MapPost("/", Create).DisableAntiforgery().RequireAuthorization("Authenticated");
-            endpoints.MapPut("/{id:int}", Update).DisableAntiforgery().RequireAuthorization("Authenticated");
-            endpoints.MapDelete("/{id:int}", Delete).RequireAuthorization("AdminOnly");
-            endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/{id:int}/merged-data/download", DownloadMergedData).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/{id:int}/profile-picture", GetProfilePicture).RequireAuthorization("Authenticated");
-            endpoints.MapPatch("/{id:int}/viewed-status", MarkResultsAsViewed).RequireAuthorization("Authenticated");
+            endpoints.MapGet("/", GetAll)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapGet("/{id:int}", GetById)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapPost("/", Create)
+                .DisableAntiforgery()
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("file-upload")
+                .WithRequestTimeout(TimeSpan.FromMinutes(5));
+            
+            endpoints.MapPut("/{id:int}", Update)
+                .DisableAntiforgery()
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("file-upload")
+                .WithRequestTimeout(TimeSpan.FromMinutes(5));
+            
+            endpoints.MapDelete("/{id:int}", Delete)
+                .RequireAuthorization("AdminOnly")
+                .RequireRateLimiting("strict");
+            
+            endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapGet("/{id:int}/merged-data/download", DownloadMergedData)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapGet("/{id:int}/profile-picture", GetProfilePicture)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapPatch("/{id:int}/viewed-status", MarkResultsAsViewed)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
         }
 
         private static async Task<IResult> GetAll(IOrderService service)

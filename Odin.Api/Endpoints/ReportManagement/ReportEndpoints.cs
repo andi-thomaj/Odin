@@ -15,11 +15,27 @@ namespace Odin.Api.Endpoints.ReportManagement
         {
             var endpoints = app.MapGroup("api/reports");
 
-            endpoints.MapPost("/", Create).RequireAuthorization("Authenticated").DisableAntiforgery();
-            endpoints.MapGet("/", GetAll).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/{id:int}", GetDetail).RequireAuthorization("Authenticated");
-            endpoints.MapPatch("/{id:int}/status", UpdateStatus).RequireAuthorization("AdminOnly");
-            endpoints.MapGet("/{id:int}/file", DownloadFile).RequireAuthorization("Authenticated");
+            endpoints.MapPost("/", Create)
+                .RequireAuthorization("Authenticated")
+                .DisableAntiforgery()
+                .RequireRateLimiting("file-upload")
+                .WithRequestTimeout(TimeSpan.FromMinutes(5));
+            
+            endpoints.MapGet("/", GetAll)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapGet("/{id:int}", GetDetail)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapPatch("/{id:int}/status", UpdateStatus)
+                .RequireAuthorization("AdminOnly")
+                .RequireRateLimiting("strict");
+            
+            endpoints.MapGet("/{id:int}/file", DownloadFile)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
         }
 
         private static async Task<IResult> Create(

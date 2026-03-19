@@ -10,12 +10,29 @@ namespace Odin.Api.Endpoints.UserManagement
         {
             var endpoints = app.MapGroup("api/users");
 
-            endpoints.MapGet("/", GetUsers).RequireAuthorization("AdminOnly");
-            endpoints.MapPost("/", CreateUser).RequireAuthorization("Authenticated");
-            endpoints.MapGet("/{identityId}", GetUserByIdentityId).RequireAuthorization("Authenticated");
-            endpoints.MapPut("/{identityId}", UpdateUser).RequireAuthorization("Authenticated");
-            endpoints.MapDelete("/{identityId}", DeleteUser).RequireAuthorization("AdminOnly");
-            endpoints.MapPatch("/{identityId}/role", UpdateUserRole).RequireAuthorization("AdminOnly");
+            endpoints.MapGet("/", GetUsers)
+                .RequireAuthorization("AdminOnly")
+                .RequireRateLimiting("strict");
+            
+            endpoints.MapPost("/", CreateUser)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapGet("/{identityId}", GetUserByIdentityId)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapPut("/{identityId}", UpdateUser)
+                .RequireAuthorization("Authenticated")
+                .RequireRateLimiting("authenticated");
+            
+            endpoints.MapDelete("/{identityId}", DeleteUser)
+                .RequireAuthorization("AdminOnly")
+                .RequireRateLimiting("strict");
+            
+            endpoints.MapPatch("/{identityId}/role", UpdateUserRole)
+                .RequireAuthorization("AdminOnly")
+                .RequireRateLimiting("strict");
         }
 
         private static IResult GetUsers()
