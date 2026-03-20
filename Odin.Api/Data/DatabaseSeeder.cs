@@ -10,7 +10,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
     public async Task SeedAsync()
     {
         await SeedEthnicitiesAndRegionsAsync();
-        await SeedErasPopulationsAndSubPopulationsAsync();
+        await SeedErasAndPopulationsAsync();
         await BackfillPopulationGeoJsonAsync();
         await SeedUsersOrdersAndGeneticFilesAsync();
     }
@@ -68,7 +68,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
         await context.SaveChangesAsync();
     }
 
-    private async Task SeedErasPopulationsAndSubPopulationsAsync()
+    private async Task SeedErasAndPopulationsAsync()
     {
         if (await context.Eras.AnyAsync())
             return;
@@ -78,53 +78,53 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
         var geoJsonMap = LoadPopulationGeoJson();
 
-        var seedData = new Dictionary<string, Dictionary<string, string[]>>
+        var seedData = new Dictionary<string, string[]>
         {
-            ["Hunter Gatherer and Neolithic Farmer"] = new()
-            {
-                ["Anatolian Neolithic Farmer"] = [],
-                ["Western Steppe Herder"] = [],
-                ["Western Hunter Gatherer"] = [],
-                ["Caucasian Hunter Gatherer"] = [],
-                ["Iranian Neolithic Farmer"] = [],
-                ["Natufian"] = [],
-                ["North African Farmer"] = [],
-                ["Northeast Asian Neolithic"] = [],
-                ["Native American"] = [],
-                ["Ancient Ancestral South Indian"] = [],
-                ["Sub Saharan African"] = [],
-                ["Uralic"] = [],
-            },
-            ["Iron Age and Migration Period"] = new()
-            {
-                ["Illyrian"] = [],
-                ["Ancient Greek"] = [],
-                ["Thracian"] = [],
-                ["Hittite & Phrygian"] = [],
-                ["Phoenician"] = [],
-                ["Insular Celt"] = [],
-                ["Continental Celt"] = [],
-                ["Iberian"] = [],
-                ["Punic Carthage"] = [],
-                ["Berber"] = [],
-                ["Hellenistic Pontus"] = [],
-                ["Siberian"] = [],
-                ["Sicani"] = [],
-                ["Italic and Etruscan"] = [],
-                ["Sarmatian"] = [],
-                ["Colchian"] = [],
-                ["Roman Moesia"] = [],
-                ["Proto-Albanian"] = [],
-                ["Roman Greece"] = [],
-                ["Roman Gaul"] = [],
-                ["Roman East Mediterranean"] = [],
-                ["Germanic"] = [],
-                ["Medieval Slav"] = [],
-                ["Turkic"] = [],
-            },
+            ["Hunter Gatherer and Neolithic Farmer"] =
+            [
+                "Anatolian Neolithic Farmer",
+                "Western Steppe Herder",
+                "Western Hunter Gatherer",
+                "Caucasian Hunter Gatherer",
+                "Iranian Neolithic Farmer",
+                "Natufian",
+                "North African Farmer",
+                "Northeast Asian Neolithic",
+                "Native American",
+                "Ancient Ancestral South Indian",
+                "Sub Saharan African",
+                "Uralic",
+            ],
+            ["Iron Age and Migration Period"] =
+            [
+                "Illyrian",
+                "Ancient Greek",
+                "Thracian",
+                "Hittite & Phrygian",
+                "Phoenician",
+                "Insular Celt",
+                "Continental Celt",
+                "Iberian",
+                "Punic Carthage",
+                "Berber",
+                "Hellenistic Pontus",
+                "Siberian",
+                "Sicani",
+                "Italic and Etruscan",
+                "Sarmatian",
+                "Colchian",
+                "Roman Moesia",
+                "Proto-Albanian",
+                "Roman Greece",
+                "Roman Gaul",
+                "Roman East Mediterranean",
+                "Germanic",
+                "Medieval Slav",
+                "Turkic",
+            ],
         };
 
-        foreach (var (eraName, populations) in seedData)
+        foreach (var (eraName, populationNames) in seedData)
         {
             var era = new Era
             {
@@ -136,9 +136,9 @@ public class DatabaseSeeder(ApplicationDbContext context)
             };
             context.Eras.Add(era);
 
-            foreach (var (populationName, subPopulationNames) in populations)
+            foreach (var populationName in populationNames)
             {
-                var population = new Population
+                context.Populations.Add(new Population
                 {
                     Name = populationName,
                     Description = $"{populationName} population",
@@ -147,21 +147,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
                     CreatedAt = now,
                     CreatedBy = seeder,
                     UpdatedAt = now,
-                };
-                context.Populations.Add(population);
-
-                foreach (var subPopulationName in subPopulationNames)
-                {
-                    context.SubPopulations.Add(new SubPopulation
-                    {
-                        Name = subPopulationName,
-                        Description = $"{subPopulationName} sub-population",
-                        Population = population,
-                        CreatedAt = now,
-                        CreatedBy = seeder,
-                        UpdatedAt = now,
-                    });
-                }
+                });
             }
         }
 

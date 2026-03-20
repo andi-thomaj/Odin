@@ -15,14 +15,6 @@ namespace Odin.Api.Endpoints.UserManagement.Models
             public int Id { get; set; }
             public required string Name { get; set; }
             public string Description { get; set; }
-            public List<SubPopulationItem> SubPopulations { get; set; } = [];
-        }
-
-        public class SubPopulationItem
-        {
-            public int Id { get; set; }
-            public required string Name { get; set; }
-            public string Description { get; set; }
         }
     }
 }

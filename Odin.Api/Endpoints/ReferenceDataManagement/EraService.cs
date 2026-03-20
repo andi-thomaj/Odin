@@ -29,7 +29,6 @@ public class EraService(
             .AsNoTracking()
             .AsSplitQuery()
             .Include(e => e.Populations)
-            .ThenInclude(p => p.SubPopulations)
             .Select(e => new GetErasContract.Response
             {
                 Id = e.Id,
@@ -40,10 +39,6 @@ public class EraService(
                     Id = p.Id,
                     Name = p.Name,
                     Description = p.Description,
-                    SubPopulations = p.SubPopulations.Select(sp => new GetErasContract.SubPopulationItem
-                    {
-                        Id = sp.Id, Name = sp.Name, Description = sp.Description
-                    }).ToList()
                 }).ToList()
             })
             .ToListAsync();

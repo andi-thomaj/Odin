@@ -11,7 +11,6 @@ namespace Odin.Api.Data.Entities
         public string? GeoJson { get; set; }
         public int EraId { get; set; }
         public Era Era { get; set; }
-        public List<SubPopulation> SubPopulations { get; set; } = [];
     }
 
     public class PopulationConfiguration : IEntityTypeConfiguration<Population>

@@ -193,6 +193,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
         {
             public int Id { get; set; }
             public required string Name { get; set; }
+            public string Description { get; set; } = string.Empty;
             public decimal Percentage { get; set; }
             public decimal StandardError { get; set; }
             public decimal ZScore { get; set; }

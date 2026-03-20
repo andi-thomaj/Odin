@@ -313,13 +313,15 @@ namespace Odin.Api
                         // Allow common headers plus SignalR-specific ones
                         // Note: SignalR client may send various headers during negotiation
                         .WithHeaders(
-                            "Content-Type", 
-                            "Authorization", 
+                            "Content-Type",
+                            "Authorization",
                             "X-Request-ID",
-                            "X-SignalR-User-Agent",  // SignalR specific header
-                            "x-requested-with",      // Common header SignalR may use
-                            "Accept",                 // SignalR may send Accept header
-                            "Cache-Control"          // SignalR may send Cache-Control
+                            "X-SignalR-User-Agent", // SignalR specific header
+                            "x-requested-with", // Common header SignalR may use
+                            "Accept", // SignalR may send Accept header
+                            "Cache-Control", // SignalR may send Cache-Control
+                            "sentry-trace", // Browser may send (e.g. Sentry trace propagation to API)
+                            "baggage"
                         )
                         .AllowCredentials()
                         .SetPreflightMaxAge(TimeSpan.FromHours(24));

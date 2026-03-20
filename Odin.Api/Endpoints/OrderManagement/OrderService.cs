@@ -380,6 +380,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                         {
                             Id = qrp.Population.Id,
                             Name = qrp.Population.Name,
+                            Description = qrp.Population.Description,
                             Percentage = qrp.Percentage,
                             StandardError = qrp.StandardError,
                             ZScore = qrp.ZScore,
