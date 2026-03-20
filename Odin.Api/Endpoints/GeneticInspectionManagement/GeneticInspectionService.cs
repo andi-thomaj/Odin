@@ -373,15 +373,18 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     PiValue = eg.PiValue,
                     RightSources = eg.RightSources,
                     LeftSources = eg.LeftSources,
-                    Populations = eg.QpadmResultPopulations.Select(qrp => new PopulationResponse
-                    {
-                        Id = qrp.PopulationId,
-                        Name = popById.GetValueOrDefault(qrp.PopulationId)?.Name ?? string.Empty,
-                        Percentage = qrp.Percentage,
-                        StandardError = qrp.StandardError,
-                        ZScore = qrp.ZScore,
-                        GeoJson = popById.GetValueOrDefault(qrp.PopulationId)?.GeoJson
-                    }).ToList()
+                    Populations = eg.QpadmResultPopulations
+                        .OrderByDescending(qrp => qrp.Percentage)
+                        .ThenBy(qrp => qrp.PopulationId)
+                        .Select(qrp => new PopulationResponse
+                        {
+                            Id = qrp.PopulationId,
+                            Name = popById.GetValueOrDefault(qrp.PopulationId)?.Name ?? string.Empty,
+                            Percentage = qrp.Percentage,
+                            StandardError = qrp.StandardError,
+                            ZScore = qrp.ZScore,
+                            GeoJson = popById.GetValueOrDefault(qrp.PopulationId)?.GeoJson
+                        }).ToList()
                 }).ToList()
             };
         }
@@ -414,15 +417,18 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     PiValue = eg.PiValue,
                     RightSources = eg.RightSources,
                     LeftSources = eg.LeftSources,
-                    Populations = eg.QpadmResultPopulations.Select(qrp => new PopulationResponse
-                    {
-                        Id = qrp.Population.Id,
-                        Name = qrp.Population.Name,
-                        Percentage = qrp.Percentage,
-                        StandardError = qrp.StandardError,
-                        ZScore = qrp.ZScore,
-                        GeoJson = qrp.Population.GeoJson
-                    }).ToList()
+                    Populations = eg.QpadmResultPopulations
+                        .OrderByDescending(qrp => qrp.Percentage)
+                        .ThenBy(qrp => qrp.PopulationId)
+                        .Select(qrp => new PopulationResponse
+                        {
+                            Id = qrp.Population.Id,
+                            Name = qrp.Population.Name,
+                            Percentage = qrp.Percentage,
+                            StandardError = qrp.StandardError,
+                            ZScore = qrp.ZScore,
+                            GeoJson = qrp.Population.GeoJson
+                        }).ToList()
                 }).ToList()
             };
         }

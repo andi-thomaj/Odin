@@ -373,15 +373,18 @@ namespace Odin.Api.Endpoints.OrderManagement
                     PiValue = eg.PiValue,
                     RightSources = eg.RightSources,
                     LeftSources = eg.LeftSources,
-                    Populations = eg.QpadmResultPopulations.Select(qrp => new GetOrderQpadmResultContract.PopulationResult
-                    {
-                        Id = qrp.Population.Id,
-                        Name = qrp.Population.Name,
-                        Percentage = qrp.Percentage,
-                        StandardError = qrp.StandardError,
-                        ZScore = qrp.ZScore,
-                        GeoJson = qrp.Population.GeoJson
-                    }).ToList()
+                    Populations = eg.QpadmResultPopulations
+                        .OrderByDescending(qrp => qrp.Percentage)
+                        .ThenBy(qrp => qrp.PopulationId)
+                        .Select(qrp => new GetOrderQpadmResultContract.PopulationResult
+                        {
+                            Id = qrp.Population.Id,
+                            Name = qrp.Population.Name,
+                            Percentage = qrp.Percentage,
+                            StandardError = qrp.StandardError,
+                            ZScore = qrp.ZScore,
+                            GeoJson = qrp.Population.GeoJson
+                        }).ToList()
                 }).ToList()
             };
 
