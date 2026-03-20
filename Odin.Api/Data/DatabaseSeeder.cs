@@ -9,10 +9,82 @@ public class DatabaseSeeder(ApplicationDbContext context)
 {
     public async Task SeedAsync()
     {
+        await SeedReferenceCatalogAsync();
+        await SeedUsersOrdersAndGeneticFilesAsync();
+    }
+
+    /// <summary>Ethnicities, eras, geo backfill, commerce catalog — safe to re-run when tables are empty (e.g. integration tests after Respawn).</summary>
+    public async Task SeedReferenceCatalogAsync()
+    {
         await SeedEthnicitiesAndRegionsAsync();
         await SeedErasAndPopulationsAsync();
         await BackfillPopulationGeoJsonAsync();
-        await SeedUsersOrdersAndGeneticFilesAsync();
+        await SeedCatalogCommerceAsync();
+    }
+
+    public async Task SeedCatalogCommerceAsync()
+    {
+        if (await context.CatalogProducts.AnyAsync())
+            return;
+
+        var product = new CatalogProduct
+        {
+            ServiceType = OrderService.qpAdm,
+            DisplayName = "qpAdm ancestry analysis",
+            Description = "Deep ancestry modeling with reference populations.",
+            BasePrice = 49.99m,
+            IsActive = true
+        };
+        context.CatalogProducts.Add(product);
+        await context.SaveChangesAsync();
+
+        var addons = new[]
+        {
+            new ProductAddon
+            {
+                Code = "EXPEDITED",
+                DisplayName = "Compute faster your results",
+                Price = 20m,
+                IsActive = true
+            },
+            new ProductAddon
+            {
+                Code = "Y_HAPLOGROUP",
+                DisplayName = "Find your Y haplogroup",
+                Price = 20m,
+                IsActive = true
+            },
+            new ProductAddon
+            {
+                Code = "MERGE_RAW",
+                DisplayName = "Merge your raw data",
+                Price = 40m,
+                IsActive = true
+            }
+        };
+        context.ProductAddons.AddRange(addons);
+        await context.SaveChangesAsync();
+
+        foreach (var addon in addons)
+        {
+            context.CatalogProductAddons.Add(new CatalogProductAddon
+            {
+                CatalogProductId = product.Id,
+                ProductAddonId = addon.Id
+            });
+        }
+
+        context.PromoCodes.Add(new PromoCode
+        {
+            Code = "WELCOME10",
+            DiscountType = PromoDiscountType.Percent,
+            Value = 10m,
+            IsActive = true,
+            ApplicableService = OrderService.qpAdm,
+            RedemptionCount = 0
+        });
+
+        await context.SaveChangesAsync();
     }
 
     private async Task SeedEthnicitiesAndRegionsAsync()
@@ -284,7 +356,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
             new Order
             {
                 Price = 49.99m,
-                Service = Enums.OrderService.QPADM,
+                Service = Enums.OrderService.qpAdm,
                 Status = OrderStatus.Completed,
                 CreatedAt = now.AddDays(-30),
                 CreatedBy = seeder,
@@ -294,7 +366,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
             new Order
             {
                 Price = 29.99m,
-                Service = Enums.OrderService.QPADM,
+                Service = Enums.OrderService.qpAdm,
                 Status = OrderStatus.InProcess,
                 CreatedAt = now.AddDays(-10),
                 CreatedBy = seeder,
@@ -304,7 +376,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
             new Order
             {
                 Price = 49.99m,
-                Service = Enums.OrderService.QPADM,
+                Service = Enums.OrderService.qpAdm,
                 Status = OrderStatus.Pending,
                 CreatedAt = now.AddDays(-1),
                 CreatedBy = seeder,

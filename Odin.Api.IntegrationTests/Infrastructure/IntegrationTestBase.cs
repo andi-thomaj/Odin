@@ -30,6 +30,12 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
         await _respawner.ResetAsync(connection);
 
+        await using (var seedScope = Factory.Services.CreateAsyncScope())
+        {
+            var seeder = seedScope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+            await seeder.SeedCatalogCommerceAsync();
+        }
+
         Client.DefaultRequestHeaders.Remove("X-Test-Identity-Id");
         Client.DefaultRequestHeaders.Remove("X-Test-App-Role");
         Client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-Identity-Id", "auth0|integration-default");

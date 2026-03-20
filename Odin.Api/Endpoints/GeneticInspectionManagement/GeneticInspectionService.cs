@@ -43,7 +43,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             var order = new Order
             {
                 Price = 0,
-                Service = OrderService.QPADM,
+                Service = OrderService.qpAdm,
                 Status = OrderStatus.Pending,
                 HasViewedResults = false,
                 CreatedAt = utc,

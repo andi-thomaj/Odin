@@ -18,6 +18,11 @@ namespace Odin.Api.Data
         public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<QpadmResultResearchLink> QpadmResultResearchLinks { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<CatalogProduct> CatalogProducts { get; set; }
+        public DbSet<ProductAddon> ProductAddons { get; set; }
+        public DbSet<CatalogProductAddon> CatalogProductAddons { get; set; }
+        public DbSet<OrderLineAddon> OrderLineAddons { get; set; }
+        public DbSet<PromoCode> PromoCodes { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<Log> Logs { get; set; }

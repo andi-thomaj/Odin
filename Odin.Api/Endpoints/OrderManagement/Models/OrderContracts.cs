@@ -17,9 +17,10 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string? MiddleName { get; set; }
             public required string LastName { get; set; }
             public required string Gender { get; set; }
-            public string? G25Coordinates { get; set; }
-            public OrderServiceEnum Service { get; set; } = OrderServiceEnum.QPADM;
+            public OrderServiceEnum Service { get; set; } = OrderServiceEnum.qpAdm;
             public List<int> RegionIds { get; set; } = [];
+            public List<int> AddonIds { get; set; } = [];
+            public string? PromoCode { get; set; }
             public IFormFile? File { get; set; }
             public int? ExistingFileId { get; set; }
             public IFormFile? ProfilePicture { get; set; }
@@ -45,9 +46,6 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
 
                 if (string.IsNullOrWhiteSpace(Gender) || !Enum.TryParse<Data.Enums.Gender>(Gender, out _))
                     yield return new ValidationResult("Gender is required and must be 'Male' or 'Female'.", [nameof(Gender)]);
-
-                if (G25Coordinates?.Length > 500)
-                    yield return new ValidationResult("G25 Coordinates must not exceed 500 characters.", [nameof(G25Coordinates)]);
 
                 if (!Enum.IsDefined(Service))
                     yield return new ValidationResult("Invalid service type.", [nameof(Service)]);
@@ -115,7 +113,6 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public required string FirstName { get; set; }
             public string? MiddleName { get; set; }
             public required string LastName { get; set; }
-            public string? G25Coordinates { get; set; }
             public List<int> RegionIds { get; set; } = [];
             public IFormFile? ProfilePicture { get; set; }
 
@@ -137,9 +134,6 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
 
                 if (MiddleName?.Length > 100)
                     yield return new ValidationResult("Middle name must not exceed 100 characters.", [nameof(MiddleName)]);
-
-                if (G25Coordinates?.Length > 500)
-                    yield return new ValidationResult("G25 Coordinates must not exceed 500 characters.", [nameof(G25Coordinates)]);
 
                 if (RegionIds.Count == 0)
                     yield return new ValidationResult("At least one region must be selected.", [nameof(RegionIds)]);
@@ -173,7 +167,6 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string FirstName { get; set; } = string.Empty;
             public string MiddleName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
-            public string? G25Coordinates { get; set; }
             public string? Gender { get; set; }
             public bool HasProfilePicture { get; set; }
             public bool HasViewedResults { get; set; }

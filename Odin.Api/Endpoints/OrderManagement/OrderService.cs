@@ -5,24 +5,26 @@ using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.Services;
 
-namespace Odin.Api.Endpoints.OrderManagement
-{
-    public interface IOrderService
-    {
-        Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null);
-        Task<GetOrderContract.Response?> GetByIdAsync(int id);
-        Task<IEnumerable<GetOrderContract.Response>> GetAllAsync();
-        Task<GetOrderContract.Response?> UpdateAsync(int id, UpdateOrderContract.Request request);
-        Task<bool> DeleteAsync(int id);
-        Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId);
-        Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId);
-        Task<(byte[]? FileBytes, string? FileName)?> GetProfilePictureAsync(int orderId);
-        Task<(bool Success, int StatusCode, string? Error)> MarkResultsAsViewedAsync(int orderId, string identityId);
-    }
+namespace Odin.Api.Endpoints.OrderManagement;
 
-    public class OrderService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService) : IOrderService
-    {
-        private const decimal QpadmPrice = 49.99m;
+public interface IOrderService
+{
+    Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null);
+    Task<GetOrderContract.Response?> GetByIdAsync(int id);
+    Task<IEnumerable<GetOrderContract.Response>> GetAllAsync();
+    Task<GetOrderContract.Response?> UpdateAsync(int id, UpdateOrderContract.Request request);
+    Task<bool> DeleteAsync(int id);
+    Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId);
+    Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId);
+    Task<(byte[]? FileBytes, string? FileName)?> GetProfilePictureAsync(int orderId);
+    Task<(bool Success, int StatusCode, string? Error)> MarkResultsAsViewedAsync(int orderId, string identityId);
+}
+
+public class OrderService(
+    ApplicationDbContext dbContext,
+    IGeoLocationService geoLocationService,
+    IOrderPricingService orderPricingService) : IOrderService
+{
         private const int MaxEthnicities = 4;
         private const int MaxRegionsPerEthnicity = 4;
 
@@ -91,16 +93,39 @@ namespace Odin.Api.Endpoints.OrderManagement
                 rawGeneticFileId = rawGeneticFile.Id;
             }
 
+            var pricing = await orderPricingService.ComputeAsync(
+                request.Service,
+                request.AddonIds,
+                request.PromoCode);
+
+            var now = DateTime.UtcNow;
             var order = new Data.Entities.Order
             {
-                Price = QpadmPrice,
+                Price = pricing.Total,
                 Service = request.Service,
                 Status = OrderStatus.Pending,
                 CreatedBy = identityId,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = now,
+                UpdatedAt = now,
+                UpdatedBy = identityId,
+                DiscountAmount = pricing.DiscountAmount,
+                PromoCodeId = pricing.PromoCodeId,
+                ExpeditedProcessing = pricing.ExpeditedProcessing,
+                IncludesYHaplogroup = pricing.IncludesYHaplogroup,
+                IncludesRawMerge = pricing.IncludesRawMerge
             };
             dbContext.Orders.Add(order);
             await dbContext.SaveChangesAsync();
+
+            foreach (var line in pricing.AddonLines)
+            {
+                dbContext.OrderLineAddons.Add(new OrderLineAddon
+                {
+                    OrderId = order.Id,
+                    ProductAddonId = line.ProductAddonId,
+                    UnitPriceSnapshot = line.UnitPrice
+                });
+            }
 
             var geneticInspection = new GeneticInspection
             {
@@ -108,7 +133,6 @@ namespace Odin.Api.Endpoints.OrderManagement
                 MiddleName = request.MiddleName ?? string.Empty,
                 LastName = request.LastName,
                 Gender = Enum.Parse<Data.Enums.Gender>(request.Gender),
-                G25Coordinates = request.G25Coordinates,
                 RawGeneticFileId = rawGeneticFileId,
                 UserId = user.Id,
                 OrderId = order.Id,
@@ -139,6 +163,13 @@ namespace Odin.Api.Endpoints.OrderManagement
             }).ToList();
 
             dbContext.GeneticInspectionRegions.AddRange(regionAssociations);
+
+            if (pricing.PromoCodeId is { } promoId)
+            {
+                var promo = await dbContext.PromoCodes.FirstAsync(p => p.Id == promoId);
+                promo.RedemptionCount++;
+            }
+
             await dbContext.SaveChangesAsync();
 
             return new CreateOrderContract.Response
@@ -182,7 +213,6 @@ namespace Odin.Api.Endpoints.OrderManagement
                     .Select(gir => gir.RegionId).ToList() ?? [],
                 EthnicityIds = order.GeneticInspection?.GeneticInspectionRegions
                     .Select(gir => gir.Region.EthnicityId).Distinct().OrderBy(id => id).ToList() ?? [],
-                G25Coordinates = order.GeneticInspection?.G25Coordinates,
                 CreatedAt = order.CreatedAt,
                 CreatedBy = order.CreatedBy,
                 UpdatedAt = order.UpdatedAt,
@@ -207,7 +237,6 @@ namespace Odin.Api.Endpoints.OrderManagement
                     FirstName = order.GeneticInspection != null ? order.GeneticInspection.FirstName : string.Empty,
                     MiddleName = order.GeneticInspection != null ? order.GeneticInspection.MiddleName : string.Empty,
                     LastName = order.GeneticInspection != null ? order.GeneticInspection.LastName : string.Empty,
-                    G25Coordinates = order.GeneticInspection != null ? order.GeneticInspection.G25Coordinates : null,
                     Gender = order.GeneticInspection != null ? order.GeneticInspection.Gender.ToString() : null,
                     HasProfilePicture = order.GeneticInspection != null && order.GeneticInspection.ProfilePicture != null && order.GeneticInspection.ProfilePicture.Length > 0,
                     HasViewedResults = order.HasViewedResults,
@@ -262,7 +291,6 @@ namespace Odin.Api.Endpoints.OrderManagement
             order.GeneticInspection.FirstName = request.FirstName;
             order.GeneticInspection.MiddleName = request.MiddleName ?? string.Empty;
             order.GeneticInspection.LastName = request.LastName;
-            order.GeneticInspection.G25Coordinates = request.G25Coordinates;
             order.UpdatedAt = DateTime.UtcNow;
 
             if (request.ProfilePicture is not null && request.ProfilePicture.Length > 0)
@@ -297,7 +325,6 @@ namespace Odin.Api.Endpoints.OrderManagement
                 FirstName = order.GeneticInspection.FirstName,
                 MiddleName = order.GeneticInspection.MiddleName,
                 LastName = order.GeneticInspection.LastName,
-                G25Coordinates = order.GeneticInspection.G25Coordinates,
                 HasProfilePicture = order.GeneticInspection.ProfilePicture is { Length: > 0 },
                 HasViewedResults = order.HasViewedResults,
                 RegionIds = regions.Select(r => r.Id).ToList(),
@@ -443,6 +470,4 @@ namespace Odin.Api.Endpoints.OrderManagement
 
             return (true, 200, null);
         }
-
-    }
 }

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Odin.Api.Data.Enums;
 
@@ -11,7 +11,14 @@ namespace Odin.Api.Data.Entities
         public OrderService Service { get; set; }
         public OrderStatus Status { get; set; }
         public bool HasViewedResults { get; set; }
+        public int? PromoCodeId { get; set; }
+        public PromoCode? PromoCode { get; set; }
+        public decimal DiscountAmount { get; set; }
+        public bool ExpeditedProcessing { get; set; }
+        public bool IncludesYHaplogroup { get; set; }
+        public bool IncludesRawMerge { get; set; }
         public GeneticInspection GeneticInspection { get; set; }
+        public List<OrderLineAddon> OrderLineAddons { get; set; } = [];
     }
 
     public class OrderConfiguration : IEntityTypeConfiguration<Order>
@@ -23,6 +30,15 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.Service).IsRequired().HasConversion<string>();
             builder.Property(e => e.Status).IsRequired().HasConversion<string>();
             builder.Property(e => e.HasViewedResults).IsRequired().HasDefaultValue(false);
+            builder.Property(e => e.DiscountAmount).IsRequired().HasPrecision(18, 2).HasDefaultValue(0m);
+            builder.Property(e => e.ExpeditedProcessing).IsRequired().HasDefaultValue(false);
+            builder.Property(e => e.IncludesYHaplogroup).IsRequired().HasDefaultValue(false);
+            builder.Property(e => e.IncludesRawMerge).IsRequired().HasDefaultValue(false);
+
+            builder.HasOne(e => e.PromoCode)
+                .WithMany(p => p.Orders)
+                .HasForeignKey(e => e.PromoCodeId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             builder.HasOne(e => e.GeneticInspection)
                 .WithOne(gi => gi.Order)

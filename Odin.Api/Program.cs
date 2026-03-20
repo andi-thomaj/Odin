@@ -7,6 +7,7 @@ using Microsoft.IdentityModel.Tokens;
 using Odin.Api.Authentication;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.OrderManagement;
@@ -364,6 +365,7 @@ namespace Odin.Api
             services.AddScoped<IEraService, EraService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
+            services.AddScoped<IOrderPricingService, OrderPricingService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IReportService, ReportService>();
@@ -425,6 +427,7 @@ namespace Odin.Api
             app.MapRawGeneticFileEndpoints();
             app.MapGeneticInspectionEndpoints();
             app.MapOrderEndpoints();
+            app.MapCatalogEndpoints();
             app.MapNotificationEndpoints();
             app.MapReportEndpoints();
             await app.RunAsync();
