@@ -12,6 +12,9 @@ EXPOSE 8081
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
+# TargetFramework + central package management live at repo root (not in .csproj)
+COPY ["Directory.Build.props", "."]
+COPY ["Directory.Packages.props", "."]
 COPY ["Odin.Api/Odin.Api.csproj", "Odin.Api/"]
 RUN dotnet restore "./Odin.Api/Odin.Api.csproj"
 COPY . .
