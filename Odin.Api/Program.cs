@@ -403,7 +403,7 @@ namespace Odin.Api
                 app.UseRateLimiter();
             app.UseRequestTimeouts();
 
-            if (app.Environment.IsDevelopment())
+            if (!app.Environment.IsEnvironment("Testing"))
             {
                 app.MapOpenApi();
                 app.UseSwagger();
