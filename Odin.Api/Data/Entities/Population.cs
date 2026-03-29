@@ -11,6 +11,8 @@ namespace Odin.Api.Data.Entities
         public string? GeoJson { get; set; }
         public int EraId { get; set; }
         public Era Era { get; set; }
+        public int? MusicTrackId { get; set; }
+        public MusicTrack? MusicTrack { get; set; }
     }
 
     public class PopulationConfiguration : IEntityTypeConfiguration<Population>
@@ -24,6 +26,11 @@ namespace Odin.Api.Data.Entities
             builder.HasOne(e => e.Era)
                 .WithMany(e => e.Populations)
                 .HasForeignKey(e => e.EraId);
+
+            builder.HasOne(e => e.MusicTrack)
+                .WithMany(e => e.Populations)
+                .HasForeignKey(e => e.MusicTrackId)
+                .IsRequired(false);
 
             builder.ToTable("populations");
         }

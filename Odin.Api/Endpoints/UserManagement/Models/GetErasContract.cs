@@ -15,6 +15,15 @@ namespace Odin.Api.Endpoints.UserManagement.Models
             public int Id { get; set; }
             public required string Name { get; set; }
             public string Description { get; set; }
+            public MusicTrackItem? MusicTrack { get; set; }
+        }
+
+        public class MusicTrackItem
+        {
+            public int Id { get; set; }
+            public required string Name { get; set; }
+            public required string FileName { get; set; }
+            public int DisplayOrder { get; set; }
         }
     }
 }

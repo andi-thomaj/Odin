@@ -18,6 +18,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
     {
         await SeedEthnicitiesAndRegionsAsync();
         await SeedErasAndPopulationsAsync();
+        await SeedMusicTracksAsync();
         await BackfillPopulationGeoJsonAsync();
         await SeedCatalogCommerceAsync();
     }
@@ -220,6 +221,71 @@ public class DatabaseSeeder(ApplicationDbContext context)
                     CreatedBy = seeder,
                     UpdatedAt = now,
                 });
+            }
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private async Task SeedMusicTracksAsync()
+    {
+        if (await context.MusicTracks.AnyAsync())
+            return;
+
+        var now = DateTime.UtcNow;
+        const string seeder = "DatabaseSeeder";
+
+        // Music culture groupings: (displayOrder, name, fileName, populationNames[])
+        var musicTrackData = new (int Order, string Name, string FileName, string[] Populations)[]
+        {
+            // Era 1 — Hunter Gatherer and Neolithic Farmer
+            (1, "European Foragers", "european-foragers.wav", ["Western Hunter Gatherer", "Uralic"]),
+            (2, "Eurasian Steppe", "eurasian-steppe.wav", ["Western Steppe Herder"]),
+            (3, "Near Eastern / Anatolian Farmers", "near-eastern-farmers.wav",
+                ["Anatolian Neolithic Farmer", "Iranian Neolithic Farmer", "Caucasian Hunter Gatherer", "Ancient Ancestral South Indian"]),
+            (4, "Levantine & North African", "levantine-north-african.wav", ["Natufian", "North African Farmer"]),
+            (5, "East Asian & Native American", "east-asian-native-american.wav", ["Northeast Asian Neolithic", "Native American"]),
+            (6, "Sub-Saharan African", "sub-saharan-african.wav", ["Sub Saharan African"]),
+
+            // Era 2 — Iron Age and Migration Period
+            (7, "Hellenic", "hellenic.wav",
+                ["Ancient Greek", "Roman Greece", "Hellenistic Pontus", "Roman East Mediterranean"]),
+            (8, "Roman / Italic", "roman-italic.wav", ["Italic and Etruscan", "Roman Moesia", "Roman Gaul"]),
+            (9, "Balkan / Paleo-Balkan", "balkan-paleo-balkan.wav", ["Illyrian", "Thracian", "Proto-Albanian"]),
+            (10, "Anatolian / Caucasian", "anatolian-caucasian.wav", ["Hittite & Phrygian", "Colchian"]),
+            (11, "Semitic / Phoenician", "semitic-phoenician.wav", ["Phoenician", "Punic Carthage"]),
+            (12, "Celtic", "celtic.wav", ["Insular Celt", "Continental Celt"]),
+            (13, "Western Mediterranean Pre-IE", "western-mediterranean-pre-ie.wav", ["Iberian", "Sicani"]),
+            (14, "North African / Amazigh", "north-african-amazigh.wav", ["Berber"]),
+            (15, "Germanic & Sarmatian", "germanic-sarmatian.wav", ["Germanic", "Sarmatian"]),
+            (16, "Medieval Slavic", "medieval-slavic.wav", ["Medieval Slav"]),
+            (17, "Central Asian / Nomadic", "central-asian-nomadic.wav", ["Turkic", "Siberian"]),
+        };
+
+        // Load all populations for linking
+        var populations = await context.Populations.ToListAsync();
+        var populationsByName = populations.ToDictionary(p => p.Name);
+
+        foreach (var (order, name, fileName, populationNames) in musicTrackData)
+        {
+            var track = new MusicTrack
+            {
+                Name = name,
+                FileName = fileName,
+                DisplayOrder = order,
+                CreatedAt = now,
+                CreatedBy = seeder,
+                UpdatedAt = now,
+            };
+            context.MusicTracks.Add(track);
+
+            foreach (var popName in populationNames)
+            {
+                if (populationsByName.TryGetValue(popName, out var population))
+                {
+                    population.MusicTrackId = track.Id;
+                    population.MusicTrack = track;
+                }
             }
         }
 

@@ -29,6 +29,7 @@ public class EraService(
             .AsNoTracking()
             .AsSplitQuery()
             .Include(e => e.Populations)
+                .ThenInclude(p => p.MusicTrack)
             .Select(e => new GetErasContract.Response
             {
                 Id = e.Id,
@@ -39,6 +40,13 @@ public class EraService(
                     Id = p.Id,
                     Name = p.Name,
                     Description = p.Description,
+                    MusicTrack = p.MusicTrack != null ? new GetErasContract.MusicTrackItem
+                    {
+                        Id = p.MusicTrack.Id,
+                        Name = p.MusicTrack.Name,
+                        FileName = p.MusicTrack.FileName,
+                        DisplayOrder = p.MusicTrack.DisplayOrder,
+                    } : null,
                 }).ToList()
             })
             .ToListAsync();
