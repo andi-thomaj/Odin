@@ -42,6 +42,8 @@ namespace Odin.Api
             var configuration = builder.Configuration;
             var services = builder.Services;
 
+            ValidateProductionDatabaseHost(configuration, builder.Environment);
+
             // ── Serilog (Console + PostgreSQL) ────────────────────────────
             var connectionString = configuration.GetConnectionString("DefaultConnection")!;
 
@@ -432,6 +434,36 @@ namespace Odin.Api
             app.MapReportEndpoints();
             await app.RunAsync();
         }
+
+        /// <summary>
+        /// In Docker (e.g. Coolify), <c>localhost</c> is the API container — PostgreSQL runs in another container.
+        /// </summary>
+        private static void ValidateProductionDatabaseHost(IConfiguration configuration, IHostEnvironment environment)
+        {
+            if (!environment.IsProduction()) return;
+            var raw = configuration.GetConnectionString("DefaultConnection");
+            if (string.IsNullOrWhiteSpace(raw)) return;
+            try
+            {
+                var csb = new Npgsql.NpgsqlConnectionStringBuilder(raw);
+                if (IsLoopbackDatabaseHost(csb.Host))
+                {
+                    throw new InvalidOperationException(
+                        "Production DefaultConnection must not use Host=localhost or 127.0.0.1. Inside Docker that is this container, not PostgreSQL. " +
+                        "Set ConnectionStrings__DefaultConnection in Coolify to the internal PostgreSQL hostname (same Docker network as the API) and Port=5432.");
+                }
+            }
+            catch (ArgumentException)
+            {
+                // Malformed string; let a later failure surface the error.
+            }
+        }
+
+        private static bool IsLoopbackDatabaseHost(string? host) =>
+            host is null ||
+            host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+            host.Equals("127.0.0.1", StringComparison.Ordinal) ||
+            host.Equals("::1", StringComparison.Ordinal);
 
         private static void UseOdinForwardedHeaders(WebApplication app, IConfiguration configuration)
         {
