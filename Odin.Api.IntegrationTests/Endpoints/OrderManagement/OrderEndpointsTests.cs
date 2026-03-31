@@ -390,6 +390,26 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetQpadmResult_PopulationsIncludeMediaFileNames()
+    {
+        var created = await CreateOrderViaApiAsync(Client, Factory.Services);
+        await SetOrderStatusAsync(Factory.Services, created.Id, OrderStatus.Completed);
+        await SeedQpadmResultAsync(created.GeneticInspectionId);
+
+        var response = await Client.GetAsync($"/api/orders/{created.Id}/qpadm-result");
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<GetOrderQpadmResultContract.Response>(JsonOptions);
+        Assert.NotNull(result);
+
+        var allPops = result!.EraGroups.SelectMany(eg => eg.Populations).ToList();
+        Assert.NotEmpty(allPops);
+        var withIcon = allPops.Where(p => p.IconFileName != null).ToList();
+        Assert.True(withIcon.Count > 0, "At least one population should have an IconFileName");
+        Assert.All(allPops, p => Assert.NotNull(p.MusicTrackFileName));
+    }
+
     // ── PATCH /api/orders/{id}/viewed-status ───────────────────────
 
     [Fact]

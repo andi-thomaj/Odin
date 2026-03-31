@@ -9,7 +9,6 @@ namespace Odin.Api.Data.Entities
         public string Name { get; set; }
         public string FileName { get; set; }
         public int DisplayOrder { get; set; }
-        public List<Population> Populations { get; set; } = [];
     }
 
     public class MusicTrackConfiguration : IEntityTypeConfiguration<MusicTrack>

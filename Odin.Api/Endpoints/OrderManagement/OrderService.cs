@@ -411,7 +411,6 @@ public class OrderService(
                             Percentage = qrp.Percentage,
                             StandardError = qrp.StandardError,
                             ZScore = qrp.ZScore,
-                            GeoJson = qrp.Population.GeoJson
                         }).ToList()
                 }).ToList()
             };

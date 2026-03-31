@@ -383,7 +383,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                             Percentage = qrp.Percentage,
                             StandardError = qrp.StandardError,
                             ZScore = qrp.ZScore,
-                            GeoJson = popById.GetValueOrDefault(qrp.PopulationId)?.GeoJson
                         }).ToList()
                 }).ToList()
             };
@@ -427,7 +426,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                             Percentage = qrp.Percentage,
                             StandardError = qrp.StandardError,
                             ZScore = qrp.ZScore,
-                            GeoJson = qrp.Population.GeoJson
                         }).ToList()
                 }).ToList()
             };

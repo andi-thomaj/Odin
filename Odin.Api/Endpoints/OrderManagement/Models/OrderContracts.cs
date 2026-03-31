@@ -190,7 +190,6 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public decimal Percentage { get; set; }
             public decimal StandardError { get; set; }
             public decimal ZScore { get; set; }
-            public string? GeoJson { get; set; }
         }
 
         public class EraGroupResult
