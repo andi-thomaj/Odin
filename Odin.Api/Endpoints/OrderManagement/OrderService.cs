@@ -379,6 +379,7 @@ public class OrderService(
                 .Include(qr => qr.QpadmResultEraGroups)
                     .ThenInclude(eg => eg.QpadmResultPopulations)
                     .ThenInclude(qrp => qrp.Population)
+                    .ThenInclude(p => p.MusicTrack)
                 .FirstOrDefaultAsync(qr => qr.GeneticInspectionId == order.GeneticInspection.Id);
 
             if (qpadmResult is null)
@@ -408,6 +409,8 @@ public class OrderService(
                             Id = qrp.Population.Id,
                             Name = qrp.Population.Name,
                             Description = qrp.Population.Description,
+                            IconFileName = qrp.Population.IconFileName,
+                            MusicTrackFileName = qrp.Population.MusicTrack.FileName,
                             Percentage = qrp.Percentage,
                             StandardError = qrp.StandardError,
                             ZScore = qrp.ZScore,

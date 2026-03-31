@@ -283,9 +283,11 @@ namespace Odin.Api.Data.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
-                    GeoJson = table.Column<string>(type: "text", nullable: true),
+                    GeoJson = table.Column<string>(type: "text", nullable: false),
+                    IconFileName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    VideoFileName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     EraId = table.Column<int>(type: "integer", nullable: false),
-                    MusicTrackId = table.Column<int>(type: "integer", nullable: true),
+                    MusicTrackId = table.Column<int>(type: "integer", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     CreatedBy = table.Column<string>(type: "text", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -304,7 +306,8 @@ namespace Odin.Api.Data.Migrations
                         name: "FK_populations_music_tracks_MusicTrackId",
                         column: x => x.MusicTrackId,
                         principalTable: "music_tracks",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(

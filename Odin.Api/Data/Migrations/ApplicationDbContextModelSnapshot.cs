@@ -478,13 +478,15 @@ namespace Odin.Api.Data.Migrations
                         .HasColumnType("integer");
 
                     b.Property<string>("GeoJson")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("IconFileName")
+                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<int?>("MusicTrackId")
+                    b.Property<int>("MusicTrackId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")
@@ -500,6 +502,7 @@ namespace Odin.Api.Data.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("VideoFileName")
+                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
@@ -1060,7 +1063,9 @@ namespace Odin.Api.Data.Migrations
 
                     b.HasOne("Odin.Api.Data.Entities.MusicTrack", "MusicTrack")
                         .WithMany("Populations")
-                        .HasForeignKey("MusicTrackId");
+                        .HasForeignKey("MusicTrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Era");
 

@@ -215,7 +215,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var withoutTrack = await db.Populations.CountAsync(p => p.MusicTrackId == null);
+        var withoutTrack = await db.Populations.CountAsync(p => p.MusicTrackId == 0);
 
         Assert.Equal(0, withoutTrack);
     }
