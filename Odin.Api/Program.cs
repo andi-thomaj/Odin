@@ -303,9 +303,8 @@ namespace Odin.Api
             services.AddOpenApi();
             
             // ── CORS Configuration ───────────────────────────────────────
-            var corsOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() 
-                ?? new[] { "http://localhost:3000", "http://localhost:4200", "https://localhost:3000", "https://localhost:4200" };
-            
+            var corsOrigins = BuildCorsAllowedOrigins(configuration);
+
             services.AddCors(options =>
             {
                 options.AddPolicy("AllowFrontend", policy =>
@@ -433,6 +432,33 @@ namespace Odin.Api
             app.MapNotificationEndpoints();
             app.MapReportEndpoints();
             await app.RunAsync();
+        }
+
+        /// <summary>
+        /// Merges <c>Cors:AllowedOrigins</c> with optional comma-separated <c>Cors:ExtraAllowedOrigins</c>
+        /// (environment variable <c>Cors__ExtraAllowedOrigins</c>) so deploy hosts can append origins without indexed keys.
+        /// </summary>
+        private static string[] BuildCorsAllowedOrigins(IConfiguration configuration)
+        {
+            var defaults = new[]
+            {
+                "http://localhost:3000",
+                "http://localhost:4200",
+                "https://localhost:3000",
+                "https://localhost:4200"
+            };
+
+            var baseOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? defaults;
+
+            var extra = configuration["Cors:ExtraAllowedOrigins"];
+            if (string.IsNullOrWhiteSpace(extra))
+                return baseOrigins;
+
+            var extras = extra.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return baseOrigins
+                .Concat(extras)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
         }
 
         /// <summary>
