@@ -12,8 +12,8 @@ using Odin.Api.Data;
 namespace Odin.Api.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260314081735_AddGeoJsonToPopulation")]
-    partial class AddGeoJsonToPopulation
+    [Migration("20260331091458_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,60 @@ namespace Odin.Api.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("BasePrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<string>("ServiceType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceType")
+                        .IsUnique();
+
+                    b.ToTable("catalog_products", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProductAddon", b =>
+                {
+                    b.Property<int>("CatalogProductId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProductAddonId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("CatalogProductId", "ProductAddonId");
+
+                    b.HasIndex("ProductAddonId");
+
+                    b.ToTable("catalog_product_addons", (string)null);
+                });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.Era", b =>
                 {
@@ -42,7 +96,8 @@ namespace Odin.Api.Data.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -69,17 +124,12 @@ namespace Odin.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int?>("GeneticInspectionId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("GeneticInspectionId");
 
                     b.ToTable("ethnicities", (string)null);
                 });
@@ -211,6 +261,46 @@ namespace Odin.Api.Data.Migrations
                     b.ToTable("logs", (string)null);
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.MusicTrack", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("music_tracks", (string)null);
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.Notification", b =>
                 {
                     b.Property<int>("Id")
@@ -285,9 +375,38 @@ namespace Odin.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<decimal>("DiscountAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)")
+                        .HasDefaultValue(0m);
+
+                    b.Property<bool>("ExpeditedProcessing")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("HasViewedResults")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IncludesRawMerge")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("IncludesYHaplogroup")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false);
+
                     b.Property<decimal>("Price")
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
+
+                    b.Property<int?>("PromoCodeId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Service")
                         .IsRequired()
@@ -306,7 +425,36 @@ namespace Odin.Api.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PromoCodeId");
+
                     b.ToTable("orders", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.OrderLineAddon", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProductAddonId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("UnitPriceSnapshot")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ProductAddonId");
+
+                    b.ToTable("order_line_addons", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.Population", b =>
@@ -326,13 +474,17 @@ namespace Odin.Api.Data.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<int>("EraId")
                         .HasColumnType("integer");
 
                     b.Property<string>("GeoJson")
                         .HasColumnType("text");
+
+                    b.Property<int?>("MusicTrackId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -350,7 +502,97 @@ namespace Odin.Api.Data.Migrations
 
                     b.HasIndex("EraId");
 
+                    b.HasIndex("MusicTrackId");
+
                     b.ToTable("populations", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.ProductAddon", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("product_addons", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PromoCode", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ApplicableService")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("DiscountType")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true);
+
+                    b.Property<int?>("MaxRedemptions")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RedemptionCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<DateTime?>("ValidFromUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ValidUntilUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Value")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("promo_codes", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmResult", b =>
@@ -630,47 +872,6 @@ namespace Odin.Api.Data.Migrations
                     b.ToTable("research_links", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.SubPopulation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<int>("PopulationId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PopulationId");
-
-                    b.ToTable("sub_populations", (string)null);
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -739,11 +940,23 @@ namespace Odin.Api.Data.Migrations
                     b.ToTable("application_users", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.Ethnicity", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProductAddon", b =>
                 {
-                    b.HasOne("Odin.Api.Data.Entities.GeneticInspection", null)
-                        .WithMany("Ethnicities")
-                        .HasForeignKey("GeneticInspectionId");
+                    b.HasOne("Odin.Api.Data.Entities.CatalogProduct", "CatalogProduct")
+                        .WithMany("CatalogProductAddons")
+                        .HasForeignKey("CatalogProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Odin.Api.Data.Entities.ProductAddon", "ProductAddon")
+                        .WithMany("CatalogProductAddons")
+                        .HasForeignKey("ProductAddonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CatalogProduct");
+
+                    b.Navigation("ProductAddon");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.GeneticInspection", b =>
@@ -803,6 +1016,35 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("RecipientUser");
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.Order", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.PromoCode", "PromoCode")
+                        .WithMany("Orders")
+                        .HasForeignKey("PromoCodeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("PromoCode");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.OrderLineAddon", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.Order", "Order")
+                        .WithMany("OrderLineAddons")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Odin.Api.Data.Entities.ProductAddon", "ProductAddon")
+                        .WithMany("OrderLineAddons")
+                        .HasForeignKey("ProductAddonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("ProductAddon");
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.Population", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.Era", "Era")
@@ -811,7 +1053,13 @@ namespace Odin.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Odin.Api.Data.Entities.MusicTrack", "MusicTrack")
+                        .WithMany("Populations")
+                        .HasForeignKey("MusicTrackId");
+
                     b.Navigation("Era");
+
+                    b.Navigation("MusicTrack");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmResult", b =>
@@ -904,15 +1152,9 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.SubPopulation", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProduct", b =>
                 {
-                    b.HasOne("Odin.Api.Data.Entities.Population", "Population")
-                        .WithMany("SubPopulations")
-                        .HasForeignKey("PopulationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Population");
+                    b.Navigation("CatalogProductAddons");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.Era", b =>
@@ -927,22 +1169,34 @@ namespace Odin.Api.Data.Migrations
 
             modelBuilder.Entity("Odin.Api.Data.Entities.GeneticInspection", b =>
                 {
-                    b.Navigation("Ethnicities");
-
                     b.Navigation("GeneticInspectionRegions");
 
                     b.Navigation("QpadmResult");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.MusicTrack", b =>
+                {
+                    b.Navigation("Populations");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.Order", b =>
                 {
                     b.Navigation("GeneticInspection")
                         .IsRequired();
+
+                    b.Navigation("OrderLineAddons");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.Population", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.ProductAddon", b =>
                 {
-                    b.Navigation("SubPopulations");
+                    b.Navigation("CatalogProductAddons");
+
+                    b.Navigation("OrderLineAddons");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PromoCode", b =>
+                {
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmResult", b =>

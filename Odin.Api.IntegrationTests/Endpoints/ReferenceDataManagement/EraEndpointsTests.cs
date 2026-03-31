@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Odin.Api.Data;
@@ -29,7 +30,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
 
         Assert.Equal(2, eras.Count);
         Assert.Equal("Hunter Gatherer and Neolithic Farmer", eras[0].Name);
-        Assert.Equal("Iron Age and Migration Period", eras[1].Name);
+        Assert.Equal("Classical Antiquity", eras[1].Name);
     }
 
     // ── Seeding: Populations ───────────────────────────────────────
@@ -76,7 +77,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
 
         var db = await GetDbContextAsync();
         var era = await db.Eras.Include(e => e.Populations)
-            .SingleAsync(e => e.Name == "Iron Age and Migration Period");
+            .SingleAsync(e => e.Name == "Classical Antiquity");
 
         Assert.Equal(17, era.Populations.Count);
 
@@ -111,7 +112,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
     }
 
     [Fact]
-    public async Task Seed_GeoJsonIsValidFeatureCollection()
+    public async Task Seed_GeoJsonIsPolygonOrMultiPolygon()
     {
         await SeedReferenceDataAsync();
 
@@ -120,10 +121,68 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
 
         Assert.All(populations, p =>
         {
-            Assert.Contains("\"type\"", p.GeoJson!);
-            Assert.Contains("FeatureCollection", p.GeoJson!);
-            Assert.Contains("coordinates", p.GeoJson!);
+            Assert.NotNull(p.GeoJson);
+            var doc = JsonDocument.Parse(p.GeoJson!);
+            var root = doc.RootElement;
+
+            var geoType = root.GetProperty("type").GetString();
+            Assert.True(
+                geoType == "Polygon" || geoType == "MultiPolygon",
+                $"Population '{p.Name}' has GeoJSON type '{geoType}' — expected Polygon or MultiPolygon");
+
+            Assert.True(root.TryGetProperty("coordinates", out _),
+                $"Population '{p.Name}' GeoJSON missing 'coordinates'");
         });
+    }
+
+    [Fact]
+    public async Task Seed_GeoJsonIsNotFeatureCollection()
+    {
+        await SeedReferenceDataAsync();
+
+        var db = await GetDbContextAsync();
+        var populations = await db.Populations.ToListAsync();
+
+        Assert.All(populations, p =>
+        {
+            Assert.DoesNotContain("FeatureCollection", p.GeoJson!);
+            Assert.DoesNotContain("\"features\"", p.GeoJson!);
+        });
+    }
+
+    [Fact]
+    public async Task Seed_GeoJsonCoordinatesAreNonEmpty()
+    {
+        await SeedReferenceDataAsync();
+
+        var db = await GetDbContextAsync();
+        var populations = await db.Populations.ToListAsync();
+
+        Assert.All(populations, p =>
+        {
+            var doc = JsonDocument.Parse(p.GeoJson!);
+            var coords = doc.RootElement.GetProperty("coordinates");
+            Assert.True(coords.GetArrayLength() > 0,
+                $"Population '{p.Name}' has empty coordinates array");
+        });
+    }
+
+    [Fact]
+    public async Task Seed_NativeAmericanHasMultiPolygon()
+    {
+        await SeedReferenceDataAsync();
+
+        var db = await GetDbContextAsync();
+        var nativeAmerican = await db.Populations.SingleAsync(p => p.Name == "Native American");
+
+        Assert.NotNull(nativeAmerican.GeoJson);
+        var doc = JsonDocument.Parse(nativeAmerican.GeoJson!);
+        var geoType = doc.RootElement.GetProperty("type").GetString();
+        Assert.Equal("MultiPolygon", geoType);
+
+        var coords = doc.RootElement.GetProperty("coordinates");
+        Assert.True(coords.GetArrayLength() >= 2,
+            "Native American should have at least 2 polygon rings (North + South America)");
     }
 
     // ── Seeding: Music Tracks ──────────────────────────────────────

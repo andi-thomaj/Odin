@@ -1,9 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.UserManagement.Models;
-using Odin.Api.Middleware;
 using Odin.Api.Services;
 
 namespace Odin.Api.Endpoints.UserManagement
@@ -22,7 +20,7 @@ namespace Odin.Api.Endpoints.UserManagement
         Task<ListUsersContract.Response> ListUsersAsync(int skip, int take);
     }
 
-    public class UserService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService, IMemoryCache cache) : IUserService
+    public class UserService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService) : IUserService
     {
         public async Task<CreateUserContract.Response> CreateUserAsync(CreateUserContract.Request request,
             string? ipAddress = null)
@@ -144,8 +142,43 @@ namespace Odin.Api.Endpoints.UserManagement
 
             if (user is null) return false;
 
+            // Collect IDs of entities that won't cascade from User deletion.
+            // Order and RawGeneticFile are principals (GeneticInspection holds the FK),
+            // so deleting GeneticInspection leaves them orphaned.
+            var inspectionData = await dbContext.GeneticInspections
+                .Where(gi => gi.UserId == user.Id)
+                .Select(gi => new { gi.OrderId, gi.RawGeneticFileId })
+                .ToListAsync();
+
+            var orderIds = inspectionData.Select(d => d.OrderId).ToList();
+            var rawFileIds = inspectionData.Select(d => d.RawGeneticFileId).Distinct().ToList();
+
+            await using var transaction = await dbContext.Database.BeginTransactionAsync();
+
+            // 1. Delete user — DB cascades to: GeneticInspections (→ regions, QpadmResult chain),
+            //    Notifications, Reports
             dbContext.Users.Remove(user);
             await dbContext.SaveChangesAsync();
+
+            // 2. Delete orphaned Orders (DB cascades to OrderLineAddons; PromoCode FK is SetNull)
+            if (orderIds.Count > 0)
+            {
+                await dbContext.Orders
+                    .Where(o => orderIds.Contains(o.Id))
+                    .ExecuteDeleteAsync();
+            }
+
+            // 3. Delete orphaned RawGeneticFiles not referenced by other users' inspections
+            if (rawFileIds.Count > 0)
+            {
+                await dbContext.RawGeneticFiles
+                    .IgnoreQueryFilters()
+                    .Where(rf => rawFileIds.Contains(rf.Id))
+                    .Where(rf => !dbContext.GeneticInspections.Any(gi => gi.RawGeneticFileId == rf.Id))
+                    .ExecuteDeleteAsync();
+            }
+
+            await transaction.CommitAsync();
 
             return true;
         }
@@ -169,9 +202,6 @@ namespace Odin.Api.Endpoints.UserManagement
 
             user.UpdatedAt = DateTime.UtcNow;
             await dbContext.SaveChangesAsync();
-
-            // Invalidate the cached role so the middleware picks up the new role immediately
-            cache.Remove(RoleEnrichmentMiddleware.CacheKeyPrefix + identityId);
 
             return new UpdateUserRoleContract.Response
             {
