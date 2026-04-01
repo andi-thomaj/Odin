@@ -187,8 +187,13 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public int Id { get; set; }
             public required string Name { get; set; }
             public string Description { get; set; } = string.Empty;
+            public string GeoJson { get; set; } = string.Empty;
             public string IconFileName { get; set; } = string.Empty;
+            public int MusicTrackId { get; set; }
             public string MusicTrackFileName { get; set; } = string.Empty;
+            public string VideoFileName { get; set; } = string.Empty;
+            public bool HasAudioFile { get; set; }
+            public bool HasVideoFile { get; set; }
             public decimal Percentage { get; set; }
             public decimal StandardError { get; set; }
             public decimal ZScore { get; set; }
@@ -213,6 +218,8 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public bool HasMergedRawData { get; set; }
             public bool HasProfilePicture { get; set; }
             public string? Gender { get; set; }
+            public int? IntroTrackId { get; set; }
+            public bool HasIntroAudioFile { get; set; }
             public List<EraGroupResult> EraGroups { get; set; } = [];
         }
     }

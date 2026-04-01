@@ -385,6 +385,20 @@ public class OrderService(
             if (qpadmResult is null)
                 return (null, 404, "No QPADM result found for this order.");
 
+            var introTrack = await dbContext.MusicTracks
+                .AsNoTracking()
+                .Where(t => t.DisplayOrder == 0)
+                .Select(t => new { t.Id, HasFile = t.MusicTrackFile != null })
+                .FirstOrDefaultAsync();
+
+            // Pre-query which tracks/populations have media files (avoids loading blobs).
+            // These are LINQ-to-Entities queries that translate to SQL, unlike the
+            // in-memory .Select() below where navigation properties aren't loaded.
+            var trackIdsWithAudio = new HashSet<int>(
+                await dbContext.MusicTrackFiles.Select(f => f.MusicTrackId).ToListAsync());
+            var popIdsWithVideo = new HashSet<int>(
+                await dbContext.PopulationVideoFiles.Select(f => f.PopulationId).ToListAsync());
+
             var response = new GetOrderQpadmResultContract.Response
             {
                 FirstName = order.GeneticInspection.FirstName,
@@ -394,6 +408,8 @@ public class OrderService(
                 HasMergedRawData = order.GeneticInspection.RawGeneticFile?.MergedRawData is { Length: > 0 },
                 HasProfilePicture = order.GeneticInspection.ProfilePicture is { Length: > 0 },
                 Gender = order.GeneticInspection.Gender?.ToString(),
+                IntroTrackId = introTrack?.Id,
+                HasIntroAudioFile = introTrack?.HasFile ?? false,
                 EraGroups = qpadmResult.QpadmResultEraGroups.Select(eg => new GetOrderQpadmResultContract.EraGroupResult
                 {
                     EraId = eg.EraId,
@@ -409,8 +425,13 @@ public class OrderService(
                             Id = qrp.Population.Id,
                             Name = qrp.Population.Name,
                             Description = qrp.Population.Description,
+                            GeoJson = qrp.Population.GeoJson,
                             IconFileName = qrp.Population.IconFileName,
+                            MusicTrackId = qrp.Population.MusicTrackId,
                             MusicTrackFileName = qrp.Population.MusicTrack.FileName,
+                            VideoFileName = qrp.Population.VideoFileName,
+                            HasAudioFile = trackIdsWithAudio.Contains(qrp.Population.MusicTrackId),
+                            HasVideoFile = popIdsWithVideo.Contains(qrp.Population.Id),
                             Percentage = qrp.Percentage,
                             StandardError = qrp.StandardError,
                             ZScore = qrp.ZScore,

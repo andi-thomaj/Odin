@@ -298,6 +298,56 @@ namespace Odin.Api.Data.Migrations
                     b.ToTable("music_tracks", (string)null);
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.MusicTrackFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("FileData")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("MusicTrackId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MusicTrackId")
+                        .IsUnique();
+
+                    b.ToTable("music_track_files", (string)null);
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.Notification", b =>
                 {
                     b.Property<int>("Id")
@@ -513,6 +563,56 @@ namespace Odin.Api.Data.Migrations
                     b.HasIndex("MusicTrackId");
 
                     b.ToTable("populations", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PopulationVideoFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<byte[]>("FileData")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<long>("FileSizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("PopulationId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PopulationId")
+                        .IsUnique();
+
+                    b.ToTable("population_video_files", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.ProductAddon", b =>
@@ -1013,6 +1113,17 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("Region");
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.MusicTrackFile", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.MusicTrack", "MusicTrack")
+                        .WithOne("MusicTrackFile")
+                        .HasForeignKey("Odin.Api.Data.Entities.MusicTrackFile", "MusicTrackId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MusicTrack");
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.Notification", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.User", "RecipientUser")
@@ -1070,6 +1181,17 @@ namespace Odin.Api.Data.Migrations
                     b.Navigation("Era");
 
                     b.Navigation("MusicTrack");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PopulationVideoFile", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.Population", "Population")
+                        .WithOne("PopulationVideoFile")
+                        .HasForeignKey("Odin.Api.Data.Entities.PopulationVideoFile", "PopulationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Population");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmResult", b =>
@@ -1186,6 +1308,8 @@ namespace Odin.Api.Data.Migrations
 
             modelBuilder.Entity("Odin.Api.Data.Entities.MusicTrack", b =>
                 {
+                    b.Navigation("MusicTrackFile");
+
                     b.Navigation("Populations");
                 });
 
@@ -1195,6 +1319,11 @@ namespace Odin.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("OrderLineAddons");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.Population", b =>
+                {
+                    b.Navigation("PopulationVideoFile");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.ProductAddon", b =>

@@ -15,6 +15,8 @@ namespace Odin.Api.Data.Entities
         public Era Era { get; set; }
         public int MusicTrackId { get; set; }
         public MusicTrack MusicTrack { get; set; }
+        /// <summary>Binary video file data. CAUTION: Never Include in bulk queries — contains large binary data.</summary>
+        public PopulationVideoFile? PopulationVideoFile { get; set; }
     }
 
     public class PopulationConfiguration : IEntityTypeConfiguration<Population>

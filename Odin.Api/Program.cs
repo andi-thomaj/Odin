@@ -13,6 +13,7 @@ using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
+using Odin.Api.Endpoints.MediaManagement;
 using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Hubs;
@@ -358,7 +359,7 @@ namespace Odin.Api
 
             services.AddDbContextPool<ApplicationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
-                    npgsqlOptions => npgsqlOptions.CommandTimeout(15)));
+                    npgsqlOptions => npgsqlOptions.CommandTimeout(180)));
             services.AddScoped<ApplicationDbContextInitializer>();
             services.AddScoped<DatabaseSeeder>();
             services.AddScoped<IUserService, UserService>();
@@ -370,6 +371,7 @@ namespace Odin.Api
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IReportService, ReportService>();
+            services.AddScoped<IMediaService, MediaService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.AddSignalR(options =>
@@ -431,6 +433,7 @@ namespace Odin.Api
             app.MapCatalogEndpoints();
             app.MapNotificationEndpoints();
             app.MapReportEndpoints();
+            app.MapMediaEndpoints();
             await app.RunAsync();
         }
 

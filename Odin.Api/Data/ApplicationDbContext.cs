@@ -27,6 +27,8 @@ namespace Odin.Api.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<Log> Logs { get; set; }
+        public DbSet<MusicTrackFile> MusicTrackFiles { get; set; }
+        public DbSet<PopulationVideoFile> PopulationVideoFiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

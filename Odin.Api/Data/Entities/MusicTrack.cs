@@ -9,6 +9,8 @@ namespace Odin.Api.Data.Entities
         public string Name { get; set; }
         public string FileName { get; set; }
         public int DisplayOrder { get; set; }
+        /// <summary>Binary audio file data. CAUTION: Never Include in bulk queries — contains large binary data.</summary>
+        public MusicTrackFile? MusicTrackFile { get; set; }
         public ICollection<Population> Populations { get; set; } = [];
     }
 

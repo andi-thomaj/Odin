@@ -10,6 +10,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
     public async Task SeedAsync()
     {
         await SeedReferenceCatalogAsync();
+        await SeedMediaFilesAsync();
     }
 
     /// <summary>Ethnicities, eras, geo backfill, commerce catalog — safe to re-run when tables are empty (e.g. integration tests after Respawn).</summary>
@@ -159,7 +160,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
                 {
                     ("Anatolian Neolithic Farmer",
                         "Represents the early farming populations of central and western Anatolia (c. 8500\u20136000 BCE) who showed approximately 80\u201390% genetic continuity with local pre-farming hunter-gatherers. These farmers carried deep Basal Eurasian ancestry, a lineage that diverged from other non-Africans before Neanderthal admixture occurred. Genomic evidence establishes Anatolia as the primary source of the European Neolithic gene pool, with these farmers spreading agriculture westward through the Aegean into mainland Europe. Multiple genetically differentiated farming populations coexisted across southwestern Asia, with the Anatolian lineage becoming foundational for subsequent Neolithic expansions. Their genetic legacy persists as a major ancestry component in modern European and West Asian populations.",
-                        "anatolian-neolithic-farmer.svg", ""),
+                        "anatolian-neolithic-farmer.svg", "Anatolian Neolithic Farmer.mp4"),
                     ("Western Steppe Herder",
                         "Descends from a merger of Eastern Hunter-Gatherers (EHG) and Caucasus Hunter-Gatherers (CHG) on the Pontic-Caspian steppe during the Chalcolithic period (~5th millennium BCE). This component is closely associated with the Yamnaya culture, whose massive expansion around 3000 BCE transformed the genetic and cultural landscape of Eurasia. Yamnaya-related migrations are linked to the dispersal of Indo-European languages across Europe, Central Asia, and South Asia. Individuals predominantly carried Y-chromosome haplogroup R1b-Z2103, and their genetic profile appears in both Corded Ware and Bell Beaker cultures. Western Steppe Herder ancestry remains a substantial component in modern European, Central Asian, and South Asian populations.",
                         "western-steppe-herder.svg", ""),
@@ -168,7 +169,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
                         "western-hunter-gatherer.svg", ""),
                     ("Caucasian Hunter Gatherer",
                         "A deeply divergent lineage of anatomically modern humans first identified from Upper Paleolithic and Mesolithic specimens in the southern Caucasus, including Satsurblia (~13,300 BP) and Kotias (~9,700 BP) from western Georgia. CHGs split from Western Hunter-Gatherers approximately 45,000 years ago, shortly after the initial expansion of modern humans into Europe. Their ancestry includes a significant Basal Eurasian component (~38\u201348%), with the remainder closer to Ancient North Eurasians. CHGs were a major contributor to the formation of the Yamnaya steppe herders who later migrated across Eurasia around 3,000 BCE. Modern populations in the Caucasus, Central Asia, and South Asia carry the highest proportions of CHG-related ancestry.",
-                        "caucasian-hunter-gatherer.svg", ""),
+                        "caucasian-hunter-gatherer.svg", "Caucasian Hunter Gatherer.mp4"),
                     ("Iranian Neolithic Farmer",
                         "Represents the early farming populations of the Zagros Mountains (~10,000 BCE), exemplified by individuals from Ganj Dareh who show evidence of early goat domestication. Though genetically closest to Caucasus Hunter-Gatherers, Zagros farmers were deeply divergent from contemporary Anatolian Neolithic Farmers, having separated approximately 46,000\u201377,000 years ago. They made little direct contribution to European populations, suggesting relative geographic isolation from other Fertile Crescent groups. Their genetic legacy instead flowed eastward, with modern Pakistani, Afghan, and Iranian Zoroastrian populations showing the closest affinities. The genetic data support a model of multiple, independent transitions to agriculture by distinct populations across southwestern Asia.",
                         "iranian-neolithic-farmer.svg", ""),
@@ -210,7 +211,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
                 {
                     ("Illyrian",
                         "An Indo-European-speaking confederation of tribes who inhabited the western Balkans during the Iron Age, occupying territory corresponding to modern Albania, Montenegro, Kosovo, Croatia, Bosnia, and western Serbia. Ancient DNA from Iron Age Balkan individuals reveals a genetic profile combining Neolithic farmer ancestry with Bronze Age steppe-derived contributions, reflecting Illyria's position at the crossroads of Mediterranean and continental European influences. Genomic analysis of over 6,000 ancient Balkan genomes demonstrates that modern Albanians descend in part from Roman-era western Balkan populations with genetic continuity traceable to Bronze Age Illyrians. Paternal lineages including J2b2a1-L283, E-V13, and R1b show pronounced continuity between ancient Illyrian-period and modern Albanian populations. Subsequent Roman imperial, Migration Period, and Slavic demographic changes significantly transformed the broader Balkan genetic landscape while Albanian populations retained substantial Illyrian-related ancestry.",
-                        "illyrian.svg", ""),
+                        "illyrian.svg", "Illyrian.mp4"),
                     ("Ancient Greek",
                         "Represents the Bronze Age and Classical populations of the Aegean and Greek mainland, whose genetic origins were illuminated by the landmark Lazaridis et al. (2017) study of Minoan and Mycenaean genomes. Both Minoans and Mycenaeans derived at least three-quarters of their ancestry from Neolithic farmers of western Anatolia, with an additional 9\u201317% from Caucasus/Iran-related sources. The key distinction was that Mycenaeans carried 4\u201316% steppe-related ancestry absent in Minoans, likely introduced during 3rd-millennium BCE migrations. These genetic inputs from both east and north may have served as cultural catalysts for the innovations associated with Mycenaean civilization. Modern Greeks closely resemble Mycenaeans but with additional dilution of Early Neolithic ancestry from subsequent admixture events.",
                         "ancient-greek.svg", "Ancient Greek.mp4"),
@@ -263,6 +264,18 @@ public class DatabaseSeeder(ApplicationDbContext context)
             },
         };
 
+        // Intro track (DisplayOrder 0, not linked to any population)
+        var introTrack = new MusicTrack
+        {
+            Name = "Intro",
+            FileName = "intro.wav",
+            DisplayOrder = 0,
+            CreatedAt = now,
+            CreatedBy = seeder,
+            UpdatedAt = now,
+        };
+        context.MusicTracks.Add(introTrack);
+
         // Music track data: (displayOrder, name, fileName, populationNames[])
         var musicTrackData = new (int Order, string Name, string FileName, string[] Populations)[]
         {
@@ -286,6 +299,10 @@ public class DatabaseSeeder(ApplicationDbContext context)
             (13, "Western Mediterranean", "western-mediterranean-pre-ie.wav", ["Iberian"]),
             (14, "Germanic", "germanic-sarmatian.wav", ["Germanic"]),
             (15, "Medieval Slavic", "medieval-slavic.wav", ["Medieval Slavic"]),
+
+            // Standalone tracks (not yet linked to seeded populations)
+            (16, "Central Asian Nomadic", "central-asian-nomadic.wav", Array.Empty<string>()),
+            (17, "North African Amazigh", "north-african-amazigh.wav", Array.Empty<string>()),
         };
 
         // Build reverse map: population name -> MusicTrack entity
@@ -414,6 +431,78 @@ public class DatabaseSeeder(ApplicationDbContext context)
             return $"{{\"type\":\"Polygon\",\"coordinates\":{polygonCoords[0]}}}";
 
         return $"{{\"type\":\"MultiPolygon\",\"coordinates\":[{string.Join(",", polygonCoords)}]}}";
+    }
+
+    /// <summary>
+    /// Seeds audio and video binary files into MusicTrackFile and PopulationVideoFile tables.
+    /// Reads from a <c>MediaSeed</c> directory next to the running assembly (if present).
+    /// No-op when the tables already contain rows or the source directory doesn't exist.
+    /// </summary>
+    private async Task SeedMediaFilesAsync()
+    {
+        if (await context.MusicTrackFiles.AnyAsync())
+            return;
+
+        var mediaRoot = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "media");
+        if (!Directory.Exists(mediaRoot))
+            return;
+
+        var audioDir = Path.Combine(mediaRoot, "audio");
+        var videoDir = Path.Combine(mediaRoot, "video");
+        var now = DateTime.UtcNow;
+        const string seeder = "DatabaseSeeder";
+
+        // Seed audio files one at a time to stay within the command timeout
+        if (Directory.Exists(audioDir))
+        {
+            var tracks = await context.MusicTracks.ToListAsync();
+            foreach (var track in tracks)
+            {
+                var filePath = Path.Combine(audioDir, track.FileName);
+                if (!File.Exists(filePath)) continue;
+
+                var data = await File.ReadAllBytesAsync(filePath);
+                context.MusicTrackFiles.Add(new Entities.MusicTrackFile
+                {
+                    MusicTrackId = track.Id,
+                    FileName = track.FileName,
+                    FileData = data,
+                    ContentType = "audio/wav",
+                    FileSizeBytes = data.Length,
+                    CreatedAt = now,
+                    CreatedBy = seeder,
+                    UpdatedAt = now,
+                });
+                await context.SaveChangesAsync();
+            }
+        }
+
+        // Seed video files one at a time
+        if (Directory.Exists(videoDir))
+        {
+            var populations = await context.Populations
+                .Where(p => p.VideoFileName != "")
+                .ToListAsync();
+            foreach (var pop in populations)
+            {
+                var filePath = Path.Combine(videoDir, pop.VideoFileName);
+                if (!File.Exists(filePath)) continue;
+
+                var data = await File.ReadAllBytesAsync(filePath);
+                context.PopulationVideoFiles.Add(new Entities.PopulationVideoFile
+                {
+                    PopulationId = pop.Id,
+                    FileName = pop.VideoFileName,
+                    FileData = data,
+                    ContentType = "video/mp4",
+                    FileSizeBytes = data.Length,
+                    CreatedAt = now,
+                    CreatedBy = seeder,
+                    UpdatedAt = now,
+                });
+                await context.SaveChangesAsync();
+            }
+        }
     }
 
 }
