@@ -194,12 +194,6 @@ public class DatabaseSeeder(ApplicationDbContext context)
                     ("Baltic",
                         "Represents the Mesolithic and Neolithic forager populations of the eastern Baltic region, positioned at the genetic boundary between Western Hunter-Gatherers (WHG) and Eastern Hunter-Gatherers (EHG). Baltic hunter-gatherers carried mixed WHG and EHG ancestry, with additional Ancient North Eurasian (ANE) admixture from the east. The eastern Baltic was one of the last regions in Europe to adopt farming, with Mesolithic forager ancestry persisting well into the Middle Neolithic without gene flow from Central European farmers. Later Siberian-related ancestry arrived in the Iron Age, linking Baltic populations to Uralic speakers further east. The region's position as a genetic contact zone makes Baltic ancestry an important reference component in admixture models of Northern and Eastern Europe.",
                         "", ""),
-                    ("Finno-Ugric",
-                        "Refers to the ancestral populations associated with the dispersal of Uralic languages, characterized by a distinctive blend of European and Siberian genetic ancestry. Ancient DNA shows that Siberian migrations into northern Europe began at least 3,500 years ago, admixing into populations that would become speakers of modern Finnic and Sami languages. This Siberian ancestry arrived at the eastern Baltic coast no later than the mid-first millennium BCE, coinciding with the diversification of west Uralic and Finnic languages. Bronze Age and Iron Age transitions in the eastern Baltic brought successive waves of hunter-gatherer and Siberian genetic input that distinguish Finno-Ugric speakers from other European populations. Modern Finns carry distinctive East Asian-related genetic contributions that reflect these ancient Siberian migrations.",
-                        "uralic.svg", ""),
-                    ("Saami",
-                        "The Sami are the indigenous Uralic-speaking people of northern Fennoscandia, with a genetic profile shaped by the convergence of ancient European and Siberian ancestries beginning at least 3,500 years ago. Their genome shows a predominantly European-derived base with approximately 6% East Asian ancestry, making them a genetic outlier among European populations. Mitochondrial DNA studies reveal both western (haplogroups V and U5b1b1) and eastern (haplogroup Z) maternal lineages, the latter indicating shared ancestry with Volga-Ural populations as recently as 2,700 years ago. Historically, Sami-related populations inhabited a much larger territory during the Iron Age than their present-day range in northern Scandinavia, Finland, and the Kola Peninsula. Their population isolate status and unique admixture history make them a valuable reference in studies of European genetic structure.",
-                        "", ""),
                 },
             },
             new
@@ -257,9 +251,6 @@ public class DatabaseSeeder(ApplicationDbContext context)
                     ("Roman North Africa",
                         "Encompasses the populations of North Africa during the period of Roman provincial administration (~146 BCE\u2013430s CE), a region inhabited by indigenous Berber (Amazigh) peoples shaped by millennia of local genetic continuity and successive Mediterranean contacts. Ancient DNA from the broader Maghreb shows that indigenous North African lineages trace back over 20,000 years to Iberomaurusian foragers, forming a deeply rooted genetic substrate. The Neolithic transition introduced European and Levantine farmer ancestry, and subsequent Phoenician colonization (from ~1200 BCE) added further Mediterranean diversity before Roman conquest. Under Roman rule, North Africa became one of the empire's most prosperous regions, with cosmopolitan cities like Carthage, Leptis Magna, and Hippo Regius facilitating continued demographic exchange across the Mediterranean. Later Vandal, Byzantine, and Arab demographic inputs further transformed the region's genetic landscape, though Berber-related ancestry remains prominent in modern Maghrebi populations.",
                         "berber.svg", ""),
-                    ("Roman West Anatolia",
-                        "Represents the populations of western Anatolia during the Roman provincial period, a region centered on major cities such as Ephesus, Pergamon, and Smyrna that had been shaped by millennia of Greek colonization and Hellenistic culture. Archaeogenomic studies reveal extraordinary genetic continuity in Anatolia from the Neolithic through the Roman and Byzantine periods, with local Anatolian populations serving as the demographic core of much of the eastern Roman Empire. Stable isotope and ancient DNA analyses from Roman Ephesus (2nd\u20133rd centuries CE) indicate a cosmopolitan population engaged in maritime trade, with evidence of migration into the city. The genetic profile of Roman western Anatolians combined a dominant local Anatolian Neolithic base with layers of Greek, Iranian/Caucasus, and broader eastern Mediterranean admixture accumulated over millennia. This region's demographic continuity and cosmopolitan character distinguish it from the more disrupted genetic histories of the western Mediterranean and Balkans during the same period.",
-                        "", ""),
                 },
             },
         };
@@ -280,7 +271,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
         var musicTrackData = new (int Order, string Name, string FileName, string[] Populations)[]
         {
             // Era 1 — Hunter Gatherer and Neolithic Farmer
-            (1, "European Foragers", "european-foragers.wav", ["Western Hunter Gatherer", "Baltic", "Finno-Ugric", "Saami"]),
+            (1, "European Foragers", "european-foragers.wav", ["Western Hunter Gatherer", "Baltic"]),
             (2, "Eurasian Steppe", "eurasian-steppe.wav", ["Western Steppe Herder"]),
             (3, "Near Eastern / Anatolian Farmers", "near-eastern-farmers.wav",
                 ["Anatolian Neolithic Farmer", "Iranian Neolithic Farmer", "Caucasian Hunter Gatherer", "Ancestral South Indian"]),
@@ -290,7 +281,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
             // Era 2 — Classical Antiquity
             (7, "Hellenic", "hellenic.wav",
-                ["Ancient Greek", "Roman West Anatolia", "Hellenistic Pontus", "Roman East Mediterranean"]),
+                ["Ancient Greek", "Hellenistic Pontus", "Roman East Mediterranean"]),
             (8, "Roman / Italic", "roman-italic.wav", ["Latin and Etruscan", "Roman Moesia Superior", "Roman North Africa"]),
             (9, "Balkan / Paleo-Balkan", "balkan-paleo-balkan.wav", ["Illyrian", "Thracian", "Medieval Albanian"]),
             (10, "Anatolian / Caucasian", "anatolian-caucasian.wav", ["Hittite & Phrygian"]),
