@@ -39,6 +39,22 @@ public class RawGeneticFileEndpointsTests(CustomWebApplicationFactory factory) :
         Assert.Contains(files, f => f.FileName == "file2.csv");
     }
 
+    [Fact]
+    public async Task GetAllFiles_DifferentUser_DoesNotSeeOtherUsersFiles()
+    {
+        var uploaded = await UploadTestFileAsync(fileName: "other-user-isolation.txt");
+
+        var otherUser = UserFaker.GenerateCreateRequest();
+        await Client.PostAsJsonAsync("/api/users", otherUser);
+        using var otherClient = CreateClientWithRole(Factory, otherUser.IdentityId, "User");
+
+        var response = await otherClient.GetAsync("/api/raw-genetic-files");
+        var files = await response.Content.ReadFromJsonAsync<List<GetGeneticFileContract.Response>>();
+
+        Assert.NotNull(files);
+        Assert.DoesNotContain(files!, f => f.Id == uploaded.Id);
+    }
+
     // ── POST /api/raw-genetic-files ────────────────────────────────
 
     [Fact]
@@ -126,6 +142,19 @@ public class RawGeneticFileEndpointsTests(CustomWebApplicationFactory factory) :
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Fact]
+    public async Task GetFileById_NonOwner_ReturnsNotFound()
+    {
+        var uploaded = await UploadTestFileAsync();
+
+        var otherUser = UserFaker.GenerateCreateRequest();
+        await Client.PostAsJsonAsync("/api/users", otherUser);
+        using var otherClient = CreateClientWithRole(Factory, otherUser.IdentityId, "User");
+
+        var response = await otherClient.GetAsync($"/api/raw-genetic-files/{uploaded.Id}");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
     // ── GET /api/raw-genetic-files/{id}/download ───────────────────
 
     [Fact]
@@ -147,6 +176,19 @@ public class RawGeneticFileEndpointsTests(CustomWebApplicationFactory factory) :
     {
         var response = await Client.GetAsync("/api/raw-genetic-files/99999/download");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DownloadFile_NonOwner_ReturnsForbidden()
+    {
+        var uploaded = await UploadTestFileAsync();
+
+        var otherUser = UserFaker.GenerateCreateRequest();
+        await Client.PostAsJsonAsync("/api/users", otherUser);
+        using var otherClient = CreateClientWithRole(Factory, otherUser.IdentityId, "User");
+
+        var response = await otherClient.GetAsync($"/api/raw-genetic-files/{uploaded.Id}/download");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     // ── DELETE /api/raw-genetic-files/{id} ──────────────────────────
@@ -172,9 +214,22 @@ public class RawGeneticFileEndpointsTests(CustomWebApplicationFactory factory) :
     }
 
     [Fact]
+    public async Task DeleteFile_NonOwner_ReturnsForbidden()
+    {
+        var uploaded = await UploadTestFileAsync();
+
+        var otherUser = UserFaker.GenerateCreateRequest();
+        await Client.PostAsJsonAsync("/api/users", otherUser);
+        using var otherClient = CreateClientWithRole(Factory, otherUser.IdentityId, "User");
+
+        var response = await otherClient.DeleteAsync($"/api/raw-genetic-files/{uploaded.Id}");
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
     public async Task DeleteFile_LinkedToPendingOrder_ReturnsBadRequest()
     {
-        var fileId = await SeedRawGeneticFileAsync(Factory.Services, "linked.txt");
+        var fileId = await SeedRawGeneticFileAsync(Factory.Services, "linked.txt", "auth0|integration-default");
         var (regionIds, _) = await SeedEthnicitiesAndRegionsAsync(Factory.Services);
 
         using var orderContent = new MultipartFormDataContent();

@@ -40,6 +40,22 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         Assert.True(orders!.Count >= 2);
     }
 
+    [Fact]
+    public async Task GetAll_DifferentUser_DoesNotSeeOtherUsersOrders()
+    {
+        var created = await CreateOrderViaApiAsync(Client, Factory.Services);
+
+        var otherUser = UserFaker.GenerateCreateRequest();
+        await Client.PostAsJsonAsync("/api/users", otherUser);
+        using var otherClient = CreateClientWithRole(Factory, otherUser.IdentityId, "User");
+
+        var response = await otherClient.GetAsync("/api/orders");
+        var orders = await response.Content.ReadFromJsonAsync<List<GetOrderContract.Response>>(JsonOptions);
+
+        Assert.NotNull(orders);
+        Assert.DoesNotContain(orders!, o => o.Id == created.Id);
+    }
+
     // ── GET /api/orders/{id} ───────────────────────────────────────
 
     [Fact]
@@ -62,6 +78,19 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
     public async Task GetById_WhenNotExists_ReturnsNotFound()
     {
         var response = await Client.GetAsync("/api/orders/99999");
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetById_NonOwner_ReturnsNotFound()
+    {
+        var created = await CreateOrderViaApiAsync(Client, Factory.Services);
+
+        var otherUser = UserFaker.GenerateCreateRequest();
+        await Client.PostAsJsonAsync("/api/users", otherUser);
+        using var otherClient = CreateClientWithRole(Factory, otherUser.IdentityId, "User");
+
+        var response = await otherClient.GetAsync($"/api/orders/{created.Id}");
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
@@ -161,7 +190,7 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
     [Fact]
     public async Task Create_WithExistingFile_ReusesUploadedFile()
     {
-        var fileId = await SeedRawGeneticFileAsync(Factory.Services);
+        var fileId = await SeedRawGeneticFileAsync(Factory.Services, createdBy: "auth0|integration-default");
         var (regionIds, _) = await SeedEthnicitiesAndRegionsAsync(Factory.Services);
 
         using var content = new MultipartFormDataContent();
@@ -306,6 +335,27 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         var response = await Client.PutAsync("/api/orders/99999", content);
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_NonOwner_ReturnsForbidden()
+    {
+        var created = await CreateOrderViaApiAsync(Client, Factory.Services);
+        var (regionIds, _) = await SeedEthnicitiesAndRegionsAsync(Factory.Services);
+
+        var otherUser = UserFaker.GenerateCreateRequest();
+        await Client.PostAsJsonAsync("/api/users", otherUser);
+        using var otherClient = CreateClientWithRole(Factory, otherUser.IdentityId, "User");
+
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent("Updated"), "FirstName");
+        content.Add(new StringContent("Name"), "LastName");
+        foreach (var rid in regionIds)
+            content.Add(new StringContent(rid.ToString()), "RegionIds");
+
+        var response = await otherClient.PutAsync($"/api/orders/{created.Id}", content);
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     // ── DELETE /api/orders/{id} ────────────────────────────────────
@@ -457,6 +507,20 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         var response = await Client.GetAsync($"/api/orders/{created.Id}/profile-picture");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetProfilePicture_NonOwner_ReturnsForbidden()
+    {
+        var created = await CreateOrderViaApiAsync(Client, Factory.Services);
+
+        var otherUser = UserFaker.GenerateCreateRequest();
+        await Client.PostAsJsonAsync("/api/users", otherUser);
+        using var otherClient = CreateClientWithRole(Factory, otherUser.IdentityId, "User");
+
+        var response = await otherClient.GetAsync($"/api/orders/{created.Id}/profile-picture");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
     // ── GET /api/orders/{id}/merged-data/download ──────────────────

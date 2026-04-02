@@ -8,16 +8,16 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 {
     public interface IRawGeneticFileService
     {
-        Task<UploadGeneticFileContract.Response> UploadFileAsync(UploadGeneticFileContract.Request request);
-        Task<GetGeneticFileContract.Response?> GetFileByIdAsync(int id);
-        Task<IEnumerable<GetGeneticFileContract.Response>> GetAllFilesAsync();
-        Task<(byte[] Data, string FileName)?> DownloadFileAsync(int id);
-        Task<bool> DeleteFileAsync(int id);
+        Task<UploadGeneticFileContract.Response> UploadFileAsync(UploadGeneticFileContract.Request request, string identityId);
+        Task<GetGeneticFileContract.Response?> GetFileByIdAsync(int id, string identityId);
+        Task<IEnumerable<GetGeneticFileContract.Response>> GetAllFilesAsync(string identityId);
+        Task<(byte[]? Data, string? FileName, int StatusCode)> DownloadFileAsync(int id, string identityId);
+        Task<(bool Deleted, int StatusCode)> DeleteFileAsync(int id, string identityId);
     }
 
     public class RawGeneticFileService(ApplicationDbContext dbContext) : IRawGeneticFileService
     {
-        public async Task<UploadGeneticFileContract.Response> UploadFileAsync(UploadGeneticFileContract.Request request)
+        public async Task<UploadGeneticFileContract.Response> UploadFileAsync(UploadGeneticFileContract.Request request, string identityId)
         {
             const long maxFileSize = 50 * 1024 * 1024; // 50 MB
             if (request.File.Length > maxFileSize)
@@ -28,7 +28,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
             var rawGeneticFile = new RawGeneticFile
             {
-                RawDataFileName = request.File.FileName, RawData = memoryStream.ToArray(), CreatedBy = string.Empty
+                RawDataFileName = request.File.FileName, RawData = memoryStream.ToArray(), CreatedBy = identityId
             };
 
             dbContext.RawGeneticFiles.Add(rawGeneticFile);
@@ -43,11 +43,11 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
             };
         }
 
-        public async Task<GetGeneticFileContract.Response?> GetFileByIdAsync(int id)
+        public async Task<GetGeneticFileContract.Response?> GetFileByIdAsync(int id, string identityId)
         {
             var file = await dbContext.RawGeneticFiles
                 .AsNoTracking()
-                .FirstOrDefaultAsync(f => f.Id == id);
+                .FirstOrDefaultAsync(f => f.Id == id && f.CreatedBy == identityId && !f.IsDeleted);
 
             if (file is null)
             {
@@ -60,10 +60,11 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
             };
         }
 
-        public async Task<IEnumerable<GetGeneticFileContract.Response>> GetAllFilesAsync()
+        public async Task<IEnumerable<GetGeneticFileContract.Response>> GetAllFilesAsync(string identityId)
         {
             return await dbContext.RawGeneticFiles
                 .AsNoTracking()
+                .Where(f => f.CreatedBy == identityId && !f.IsDeleted)
                 .Select(f => new GetGeneticFileContract.Response
                 {
                     Id = f.Id, FileName = f.RawDataFileName, FileSize = f.RawData.Length
@@ -71,27 +72,37 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
                 .ToListAsync();
         }
 
-        public async Task<(byte[] Data, string FileName)?> DownloadFileAsync(int id)
+        public async Task<(byte[]? Data, string? FileName, int StatusCode)> DownloadFileAsync(int id, string identityId)
         {
             var file = await dbContext.RawGeneticFiles
                 .AsNoTracking()
                 .FirstOrDefaultAsync(f => f.Id == id);
 
-            if (file is null)
+            if (file is null || file.IsDeleted)
             {
-                return null;
+                return (null, null, 404);
             }
 
-            return (file.RawData, file.RawDataFileName);
+            if (file.CreatedBy != identityId)
+            {
+                return (null, null, 403);
+            }
+
+            return (file.RawData, file.RawDataFileName, 200);
         }
 
-        public async Task<bool> DeleteFileAsync(int id)
+        public async Task<(bool Deleted, int StatusCode)> DeleteFileAsync(int id, string identityId)
         {
             var file = await dbContext.RawGeneticFiles.FindAsync(id);
 
             if (file is null)
             {
-                return false;
+                return (false, 404);
+            }
+
+            if (file.CreatedBy != identityId)
+            {
+                return (false, 403);
             }
 
             var inUse = await dbContext.GeneticInspections
@@ -104,7 +115,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
             file.IsDeleted = true;
             await dbContext.SaveChangesAsync();
-            return true;
+            return (true, 200);
         }
     }
 }

@@ -44,6 +44,16 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         Assert.Contains(inspections, i => i.FirstName == "Jane" && i.LastName == "Smith");
     }
 
+    [Fact]
+    public async Task GetAll_AsUser_ReturnsForbidden()
+    {
+        using var userClient = CreateClientWithRole(Factory, "auth0|integration-default", "User");
+
+        var response = await userClient.GetAsync("/api/genetic-inspections");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
     // ── POST /api/genetic-inspections (create) ─────────────────────
 
     [Fact]

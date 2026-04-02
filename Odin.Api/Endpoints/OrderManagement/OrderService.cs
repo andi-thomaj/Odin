@@ -10,13 +10,13 @@ namespace Odin.Api.Endpoints.OrderManagement;
 public interface IOrderService
 {
     Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null);
-    Task<GetOrderContract.Response?> GetByIdAsync(int id);
-    Task<IEnumerable<GetOrderContract.Response>> GetAllAsync();
-    Task<GetOrderContract.Response?> UpdateAsync(int id, UpdateOrderContract.Request request);
+    Task<GetOrderContract.Response?> GetByIdAsync(int id, string identityId);
+    Task<IEnumerable<GetOrderContract.Response>> GetAllAsync(string identityId);
+    Task<(GetOrderContract.Response? Response, int StatusCode)> UpdateAsync(int id, string identityId, UpdateOrderContract.Request request);
     Task<bool> DeleteAsync(int id);
     Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId);
     Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId);
-    Task<(byte[]? FileBytes, string? FileName)?> GetProfilePictureAsync(int orderId);
+    Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId);
     Task<(bool Success, int StatusCode, string? Error)> MarkResultsAsViewedAsync(int orderId, string identityId);
 }
 
@@ -69,6 +69,9 @@ public class OrderService(
 
                 if (existingFile is null)
                     throw new InvalidOperationException("The selected genetic file does not exist or has been deleted.");
+
+                if (existingFile.CreatedBy != identityId)
+                    throw new InvalidOperationException("The selected genetic file does not belong to your account.");
 
                 rawGeneticFileId = existingFile.Id;
             }
@@ -182,14 +185,14 @@ public class OrderService(
             };
         }
 
-        public async Task<GetOrderContract.Response?> GetByIdAsync(int id)
+        public async Task<GetOrderContract.Response?> GetByIdAsync(int id, string identityId)
         {
             var order = await dbContext.Orders
                 .AsNoTracking()
                 .Include(o => o.GeneticInspection)
                     .ThenInclude(gi => gi.GeneticInspectionRegions)
                     .ThenInclude(gir => gir.Region)
-                .FirstOrDefaultAsync(o => o.Id == id);
+                .FirstOrDefaultAsync(o => o.Id == id && o.CreatedBy == identityId);
 
             if (order is null)
             {
@@ -220,10 +223,11 @@ public class OrderService(
             };
         }
 
-        public async Task<IEnumerable<GetOrderContract.Response>> GetAllAsync()
+        public async Task<IEnumerable<GetOrderContract.Response>> GetAllAsync(string identityId)
         {
             return await dbContext.Orders
                 .AsNoTracking()
+                .Where(o => o.CreatedBy == identityId)
                 .Include(o => o.GeneticInspection)
                     .ThenInclude(gi => gi.GeneticInspectionRegions)
                     .ThenInclude(gir => gir.Region)
@@ -254,7 +258,7 @@ public class OrderService(
                 .ToListAsync();
         }
 
-        public async Task<GetOrderContract.Response?> UpdateAsync(int id, UpdateOrderContract.Request request)
+        public async Task<(GetOrderContract.Response? Response, int StatusCode)> UpdateAsync(int id, string identityId, UpdateOrderContract.Request request)
         {
             var order = await dbContext.Orders
                 .Include(o => o.GeneticInspection)
@@ -263,7 +267,12 @@ public class OrderService(
 
             if (order is null || order.GeneticInspection is null)
             {
-                return null;
+                return (null, 404);
+            }
+
+            if (order.CreatedBy != identityId)
+            {
+                return (null, 403);
             }
 
             if (order.Status != OrderStatus.Pending)
@@ -315,7 +324,7 @@ public class OrderService(
 
             await dbContext.SaveChangesAsync();
 
-            return new GetOrderContract.Response
+            return (new GetOrderContract.Response
             {
                 Id = order.Id,
                 Price = order.Price,
@@ -334,7 +343,7 @@ public class OrderService(
                 CreatedBy = order.CreatedBy,
                 UpdatedAt = order.UpdatedAt,
                 UpdatedBy = order.UpdatedBy
-            };
+            }, 200);
         }
 
         public async Task<bool> DeleteAsync(int id)
@@ -464,17 +473,23 @@ public class OrderService(
             return (mergedData, fileName, 200, null);
         }
 
-        public async Task<(byte[]? FileBytes, string? FileName)?> GetProfilePictureAsync(int orderId)
+        public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId)
         {
             var order = await dbContext.Orders
                 .AsNoTracking()
                 .Include(o => o.GeneticInspection)
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
-            if (order?.GeneticInspection?.ProfilePicture is not { Length: > 0 } pictureData)
-                return null;
+            if (order is null)
+                return (null, null, 404, $"Order with ID {orderId} not found.");
 
-            return (pictureData, order.GeneticInspection.ProfilePictureFileName ?? "profile-picture");
+            if (order.CreatedBy != identityId)
+                return (null, null, 403, "You do not have permission to access this order's profile picture.");
+
+            if (order.GeneticInspection?.ProfilePicture is not { Length: > 0 } pictureData)
+                return (null, null, 404, $"No profile picture found for order with ID {orderId}.");
+
+            return (pictureData, order.GeneticInspection.ProfilePictureFileName ?? "profile-picture", 200, null);
         }
 
         public async Task<(bool Success, int StatusCode, string? Error)> MarkResultsAsViewedAsync(int orderId, string identityId)

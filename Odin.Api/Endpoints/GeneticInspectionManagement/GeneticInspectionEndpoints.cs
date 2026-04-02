@@ -13,11 +13,11 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             var endpoints = app.MapGroup("api/genetic-inspections");
 
             endpoints.MapGet("/", GetAll)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapGet("/{id:int}", GetById)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapPost("/", Create)
@@ -35,11 +35,11 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
             
             endpoints.MapGet("/{id:int}/genetic-file/download", DownloadGeneticFile)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("authenticated");
 
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult)

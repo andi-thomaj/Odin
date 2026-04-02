@@ -87,7 +87,7 @@ public static class TestDataHelper
         return (regionIds, ethnicities);
     }
 
-    public static async Task<int> SeedRawGeneticFileAsync(IServiceProvider services, string? fileName = null)
+    public static async Task<int> SeedRawGeneticFileAsync(IServiceProvider services, string? fileName = null, string? createdBy = null)
     {
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -96,7 +96,7 @@ public static class TestDataHelper
         {
             RawDataFileName = fileName ?? "test_data.txt",
             RawData = "rsid,chromosome,position,genotype\nrs1,1,1,AA\n"u8.ToArray(),
-            CreatedBy = "test-seed"
+            CreatedBy = createdBy ?? "test-seed"
         };
         db.RawGeneticFiles.Add(file);
         await db.SaveChangesAsync();

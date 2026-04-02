@@ -59,15 +59,23 @@ namespace Odin.Api.Endpoints.OrderManagement
                 .RequireRateLimiting("authenticated");
         }
 
-        private static async Task<IResult> GetAll(IOrderService service)
+        private static async Task<IResult> GetAll(IOrderService service, HttpContext httpContext)
         {
-            var orders = await service.GetAllAsync();
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            var orders = await service.GetAllAsync(identityId);
             return Results.Ok(orders);
         }
 
-        private static async Task<IResult> GetById(IOrderService service, int id)
+        private static async Task<IResult> GetById(IOrderService service, HttpContext httpContext, int id)
         {
-            var order = await service.GetByIdAsync(id);
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            var order = await service.GetByIdAsync(id, identityId);
 
             return order is null
                 ? Results.NotFound(new { Message = $"Order with ID {id} not found." })
@@ -106,6 +114,7 @@ namespace Odin.Api.Endpoints.OrderManagement
 
         private static async Task<IResult> Update(
             IOrderService service,
+            HttpContext httpContext,
             int id,
             [FromForm] UpdateOrderContract.Request request)
         {
@@ -115,13 +124,20 @@ namespace Odin.Api.Endpoints.OrderManagement
                 return validationProblem;
             }
 
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
             try
             {
-                var response = await service.UpdateAsync(id, request);
+                var (response, statusCode) = await service.UpdateAsync(id, identityId, request);
 
-                return response is null
-                    ? Results.NotFound(new { Message = $"Order with ID {id} not found." })
-                    : Results.Ok(response);
+                return statusCode switch
+                {
+                    200 => Results.Ok(response),
+                    403 => Results.Forbid(),
+                    _ => Results.NotFound(new { Message = $"Order with ID {id} not found." })
+                };
             }
             catch (InvalidOperationException ex)
             {
@@ -172,17 +188,20 @@ namespace Odin.Api.Endpoints.OrderManagement
             };
         }
 
-        private static async Task<IResult> GetProfilePicture(IOrderService service, int id)
+        private static async Task<IResult> GetProfilePicture(IOrderService service, HttpContext httpContext, int id)
         {
-            var result = await service.GetProfilePictureAsync(id);
-            if (result is null)
-                return Results.NotFound(new { Message = $"No profile picture found for order with ID {id}." });
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
 
-            var (fileBytes, fileName) = result.Value;
-            var extension = Path.GetExtension(fileName ?? "").ToLowerInvariant();
-            var contentType = ImageContentTypes.GetValueOrDefault(extension, "application/octet-stream");
+            var (fileBytes, fileName, statusCode, error) = await service.GetProfilePictureAsync(id, identityId);
 
-            return Results.File(fileBytes!, contentType, fileName);
+            return statusCode switch
+            {
+                200 => Results.File(fileBytes!, ImageContentTypes.GetValueOrDefault(Path.GetExtension(fileName ?? "").ToLowerInvariant(), "application/octet-stream"), fileName),
+                403 => Results.Forbid(),
+                _ => Results.NotFound(new { Message = error })
+            };
         }
 
         private static async Task<IResult> MarkResultsAsViewed(IOrderService service, HttpContext httpContext, int id)
