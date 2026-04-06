@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Odin.Api.Data;
-using Odin.Api.Endpoints.AuthRegistration;
 using Odin.Api.IntegrationTests.Fakers;
 using Odin.Api.Services.Email;
 using Respawn;
@@ -47,11 +46,6 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
                 options.UseNpgsql(_connectionString));
 
             services.AddScoped<ApplicationDbContextInitializer>();
-
-            var auth0Signup = services.SingleOrDefault(d => d.ServiceType == typeof(IAuth0DatabaseSignupClient));
-            if (auth0Signup is not null)
-                services.Remove(auth0Signup);
-            services.AddSingleton<IAuth0DatabaseSignupClient, FakeAuth0DatabaseSignupClient>();
 
             foreach (var d in services.Where(x => x.ServiceType == typeof(IResendAudienceService)).ToList())
                 services.Remove(d);

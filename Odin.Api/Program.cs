@@ -8,6 +8,7 @@ using Odin.Api.Authentication;
 using Odin.Api.Services.Email;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Endpoints.ChangelogManagement;
 using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
@@ -16,7 +17,6 @@ using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
 using Odin.Api.Endpoints.MediaManagement;
 using Odin.Api.Endpoints.ReportManagement;
-using Odin.Api.Endpoints.AuthRegistration;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Hubs;
 using Odin.Api.Middleware;
@@ -103,6 +103,7 @@ namespace Odin.Api
                     {
                         // Keep Auth0 short claim names (e.g. email_verified) for RoleEnrichmentMiddleware.
                         options.MapInboundClaims = false;
+                        options.SaveToken = true;
                         options.Authority = auth0Domain;
                         options.Audience = auth0Audience;
                         options.TokenValidationParameters = new TokenValidationParameters
@@ -295,18 +296,6 @@ namespace Odin.Api
                             QueueLimit = 0
                         }));
 
-                // Email/password registration (anonymous) — low per-IP limit
-                options.AddPolicy("registration", httpContext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: GetClientIp(httpContext),
-                        factory: _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = 5,
-                            Window = TimeSpan.FromMinutes(1),
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                            QueueLimit = 0
-                        }));
-
                 // Concurrency limiter for resource-intensive operations
                 options.AddPolicy("concurrent", httpContext =>
                     RateLimitPartition.GetConcurrencyLimiter(
@@ -393,9 +382,9 @@ namespace Odin.Api
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IMediaService, MediaService>();
+            services.AddScoped<IChangelogService, ChangelogService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
-            services.Configure<Auth0SignupOptions>(configuration.GetSection(Auth0SignupOptions.SectionName));
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
             services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
             services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
@@ -403,15 +392,10 @@ namespace Odin.Api
                 client.BaseAddress = new Uri("https://api.resend.com/");
                 client.Timeout = TimeSpan.FromSeconds(30);
             });
-            services.AddHttpClient<IAuth0DatabaseSignupClient, Auth0DatabaseSignupClient>((sp, client) =>
+            services.AddHttpClient("Auth0UserInfo", client =>
             {
-                var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Auth0SignupOptions>>().Value;
-                if (!string.IsNullOrWhiteSpace(opts.Domain))
-                    client.BaseAddress = new Uri($"https://{opts.Domain.Trim().TrimEnd('/')}/");
-                client.Timeout = TimeSpan.FromSeconds(30);
+                client.Timeout = TimeSpan.FromSeconds(10);
             });
-            services.AddScoped<IAuthRegistrationService, AuthRegistrationService>();
-
             services.AddSignalR(options =>
             {
                 // Enable detailed error messages in development
@@ -462,7 +446,6 @@ namespace Odin.Api
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapHealthChecks("/health");
 
-            app.MapAuthRegistrationEndpoints();
             app.MapUserEndpoints();
             app.MapEthnicityEndpoints();
             app.MapEraEndpoints();
@@ -473,6 +456,7 @@ namespace Odin.Api
             app.MapNotificationEndpoints();
             app.MapReportEndpoints();
             app.MapMediaEndpoints();
+            app.MapChangelogEndpoints();
             await app.RunAsync();
         }
 
