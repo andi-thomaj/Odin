@@ -19,22 +19,22 @@ namespace Odin.Api.Endpoints.OrderManagement
             var endpoints = app.MapGroup("api/orders");
 
             endpoints.MapGet("/", GetAll)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapGet("/{id:int}", GetById)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapPost("/", Create)
                 .DisableAntiforgery()
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("file-upload")
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
             
             endpoints.MapPut("/{id:int}", Update)
                 .DisableAntiforgery()
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("file-upload")
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
             
@@ -43,19 +43,19 @@ namespace Odin.Api.Endpoints.OrderManagement
                 .RequireRateLimiting("strict");
             
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapGet("/{id:int}/merged-data/download", DownloadMergedData)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapGet("/{id:int}/profile-picture", GetProfilePicture)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapPatch("/{id:int}/viewed-status", MarkResultsAsViewed)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
         }
 

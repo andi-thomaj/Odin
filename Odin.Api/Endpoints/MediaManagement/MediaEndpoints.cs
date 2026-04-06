@@ -9,11 +9,11 @@ public static class MediaEndpoints
         var endpoints = app.MapGroup("api/media");
 
         endpoints.MapGet("/audio/{musicTrackId:int}", DownloadAudio)
-            .RequireAuthorization("Authenticated")
+            .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated");
 
         endpoints.MapGet("/video/{populationId:int}", DownloadVideo)
-            .RequireAuthorization("Authenticated")
+            .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated");
 
         endpoints.MapPut("/audio/{musicTrackId:int}", UploadAudio)

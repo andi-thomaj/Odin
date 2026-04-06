@@ -4,6 +4,7 @@ using Npgsql;
 using Odin.Api.Data;
 using Odin.Api.Endpoints.UserManagement.Models;
 using Respawn;
+using Respawn.Graph;
 
 namespace Odin.Api.IntegrationTests.Infrastructure;
 
@@ -26,7 +27,13 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         await connection.OpenAsync();
 
         _respawner = await Respawner.CreateAsync(connection,
-            new RespawnerOptions { DbAdapter = DbAdapter.Postgres, SchemasToInclude = ["public"] });
+            new RespawnerOptions
+            {
+                DbAdapter = DbAdapter.Postgres,
+                SchemasToInclude = ["public"],
+                // Do not clear migration history: next host startup would re-apply migrations while tables still exist (42P07).
+                TablesToIgnore = [new Table("public", "__EFMigrationsHistory")]
+            });
 
         await _respawner.ResetAsync(connection);
 
@@ -49,7 +56,12 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             Email = "integration-default@test.local"
         };
         var seedResponse = await Client.PostAsJsonAsync("/api/users", seedRequest);
-        seedResponse.EnsureSuccessStatusCode();
+        if (!seedResponse.IsSuccessStatusCode)
+        {
+            var body = await seedResponse.Content.ReadAsStringAsync();
+            throw new InvalidOperationException(
+                $"Seed POST /api/users failed: {(int)seedResponse.StatusCode}. Body: {body}");
+        }
     }
 
     public Task DisposeAsync()

@@ -19,11 +19,11 @@ namespace Odin.Api.Endpoints.UserManagement
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapGet("/{identityId}", GetUserByIdentityId)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapPut("/{identityId}", UpdateUser)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapDelete("/{identityId}", DeleteUser)

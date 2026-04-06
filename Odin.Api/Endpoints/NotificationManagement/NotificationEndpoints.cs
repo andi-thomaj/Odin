@@ -11,15 +11,15 @@ namespace Odin.Api.Endpoints.NotificationManagement
             var endpoints = app.MapGroup("api/notifications");
 
             endpoints.MapGet("/", GetAll)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapGet("/unread-count", GetUnreadCount)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapPatch("/read-status", MarkAllAsRead)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
         }
 

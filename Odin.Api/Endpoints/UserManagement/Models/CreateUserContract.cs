@@ -8,6 +8,7 @@ namespace Odin.Api.Endpoints.UserManagement.Models
         {
             public required string IdentityId { get; set; }
             public string? FirstName { get; set; }
+            public string? MiddleName { get; set; }
             public string? LastName { get; set; }
             public required string Email { get; set; }
             public string? Username { get; set; }
@@ -33,6 +34,12 @@ namespace Odin.Api.Endpoints.UserManagement.Models
                 {
                     yield return new ValidationResult("First name must not exceed 100 characters.",
                         [nameof(FirstName)]);
+                }
+
+                if (MiddleName is not null && MiddleName.Length > 100)
+                {
+                    yield return new ValidationResult("Middle name must not exceed 100 characters.",
+                        [nameof(MiddleName)]);
                 }
 
                 if (string.IsNullOrWhiteSpace(LastName))

@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using Odin.Api.Authentication;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 
@@ -12,6 +13,7 @@ namespace Odin.Api.Middleware
     /// Role is read from the database on every request (no in-memory cache) so promotions
     /// to Scientist/Admin take effect immediately; stale cached roles previously caused
     /// 403 on endpoints like qpAdm submission while the UI still showed the updated role.
+    /// <see cref="AppClaimTypes.EmailVerified"/> is taken from the Auth0 JWT (<c>email_verified</c>), not the database.
     /// </summary>
     public class RoleEnrichmentMiddleware(
         RequestDelegate next,
@@ -30,21 +32,29 @@ namespace Odin.Api.Middleware
 
             if (context.User.Identity?.IsAuthenticated == true)
             {
-                var identityId = ResolveIdentityId(context.User);
+                var identityId = context.User.GetIdentityId();
 
                 if (!string.IsNullOrEmpty(identityId))
                 {
+                    var emailVerified =
+                        Auth0EmailVerifiedClaims.GetAppEmailVerifiedValue(context.User);
+
                     var user = await FindUserByIdentityAsync(dbContext, identityId);
 
                     if (user is not null)
                     {
                         var roleClaim = new Claim("app_role", user.Role.ToString());
-                        var appIdentity = new ClaimsIdentity([roleClaim], "AppRoleEnrichment");
+                        var emailVerifiedClaim = new Claim(AppClaimTypes.EmailVerified, emailVerified);
+                        var appIdentity = new ClaimsIdentity([roleClaim, emailVerifiedClaim], "AppRoleEnrichment");
                         context.User.AddIdentity(appIdentity);
                     }
                     else
                     {
                         LogNoUserRow(identityId);
+                        var emailOnly = new ClaimsIdentity(
+                            [new Claim(AppClaimTypes.EmailVerified, emailVerified)],
+                            "AppEmailEnrichment");
+                        context.User.AddIdentity(emailOnly);
                     }
                 }
                 else
@@ -55,29 +65,6 @@ namespace Odin.Api.Middleware
             }
 
             await next(context);
-        }
-
-        /// <summary>
-        /// Access token subject must match <see cref="User.IdentityId"/>.
-        /// Prefer mapped NameIdentifier, then raw <c>sub</c>, then namespaced <c>*/sub</c> claims.
-        /// </summary>
-        private static string? ResolveIdentityId(ClaimsPrincipal principal)
-        {
-            var id = principal.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!string.IsNullOrWhiteSpace(id))
-                return id.Trim();
-
-            id = principal.FindFirstValue("sub");
-            if (!string.IsNullOrWhiteSpace(id))
-                return id.Trim();
-
-            foreach (var claim in principal.Claims)
-            {
-                if (claim.Type.EndsWith("/sub", StringComparison.Ordinal))
-                    return claim.Value.Trim();
-            }
-
-            return null;
         }
 
         private async Task<User?> FindUserByIdentityAsync(

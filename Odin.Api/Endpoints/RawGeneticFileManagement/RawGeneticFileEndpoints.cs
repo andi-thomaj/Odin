@@ -11,15 +11,15 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
             var endpoints = app.MapGroup("api/raw-genetic-files");
 
             endpoints.MapGet("/", GetAllFiles)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapGet("/{id:int}", GetFileById)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapGet("/{id:int}/download", DownloadFile)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapPost("/", UploadFile)
@@ -29,7 +29,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
             
             endpoints.MapDelete("/{id:int}", DeleteFile)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
         }
 

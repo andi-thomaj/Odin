@@ -14,11 +14,11 @@ public static class CatalogEndpoints
         var group = app.MapGroup("api/catalog");
 
         group.MapGet("/products", GetProducts)
-            .RequireAuthorization("Authenticated")
+            .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated");
 
         group.MapPost("/preview-price", PreviewPrice)
-            .RequireAuthorization("Authenticated")
+            .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated");
     }
 

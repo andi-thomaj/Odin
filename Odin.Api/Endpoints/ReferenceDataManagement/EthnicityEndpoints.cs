@@ -7,7 +7,7 @@ namespace Odin.Api.Endpoints.ReferenceDataManagement
             var endpoints = app.MapGroup("api/ethnicities");
 
             endpoints.MapGet("/", GetAll)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
         }
 

@@ -30,12 +30,18 @@ public sealed class TestAuthHandler(
             ? parsed.ToString()
             : AppRole.User.ToString();
 
+        var emailVerifiedHeader = Request.Headers["X-Test-Email-Verified"].FirstOrDefault();
+        var emailVerified = string.Equals(emailVerifiedHeader, "false", StringComparison.OrdinalIgnoreCase)
+            ? "false"
+            : "true";
+
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, identityId),
             new("sub", identityId),
             new(ClaimTypes.Name, identityId),
-            new("app_role", role)
+            new("app_role", role),
+            new(AppClaimTypes.EmailVerified, emailVerified)
         };
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);

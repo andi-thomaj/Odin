@@ -20,7 +20,9 @@ namespace Odin.Api.Endpoints.UserManagement
         Task<ListUsersContract.Response> ListUsersAsync(int skip, int take);
     }
 
-    public class UserService(ApplicationDbContext dbContext, IGeoLocationService geoLocationService) : IUserService
+    public class UserService(
+        ApplicationDbContext dbContext,
+        IGeoLocationService geoLocationService) : IUserService
     {
         public async Task<CreateUserContract.Response> CreateUserAsync(CreateUserContract.Request request,
             string? ipAddress = null)
@@ -46,7 +48,7 @@ namespace Odin.Api.Endpoints.UserManagement
                     LastName = existingUser.LastName,
                     Email = existingUser.Email,
                     Role = existingUser.Role.ToString(),
-                    IsNewUser = false
+                    IsNewUser = false,
                 };
             }
 
@@ -58,6 +60,7 @@ namespace Odin.Api.Endpoints.UserManagement
                 Username = request.Username ?? request.Email,
                 Email = request.Email,
                 FirstName = request.FirstName ?? string.Empty,
+                MiddleName = string.IsNullOrWhiteSpace(request.MiddleName) ? string.Empty : request.MiddleName.Trim(),
                 LastName = request.LastName ?? string.Empty,
                 Role = AppRole.User,
                 Country = geoResult?.Country,
@@ -79,7 +82,7 @@ namespace Odin.Api.Endpoints.UserManagement
                 LastName = user.LastName,
                 Email = user.Email,
                 Role = user.Role.ToString(),
-                IsNewUser = true
+                IsNewUser = true,
             };
         }
 
@@ -101,7 +104,7 @@ namespace Odin.Api.Endpoints.UserManagement
                 MiddleName = user.MiddleName,
                 LastName = user.LastName,
                 Role = user.Role.ToString(),
-                CreatedAt = user.CreatedAt
+                CreatedAt = user.CreatedAt,
             };
         }
 

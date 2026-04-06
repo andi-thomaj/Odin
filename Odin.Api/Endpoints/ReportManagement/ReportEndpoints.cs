@@ -16,17 +16,17 @@ namespace Odin.Api.Endpoints.ReportManagement
             var endpoints = app.MapGroup("api/reports");
 
             endpoints.MapPost("/", Create)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .DisableAntiforgery()
                 .RequireRateLimiting("file-upload")
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
             
             endpoints.MapGet("/", GetAll)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapGet("/{id:int}", GetDetail)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
             endpoints.MapPatch("/{id:int}/status", UpdateStatus)
@@ -34,7 +34,7 @@ namespace Odin.Api.Endpoints.ReportManagement
                 .RequireRateLimiting("strict");
             
             endpoints.MapGet("/{id:int}/file", DownloadFile)
-                .RequireAuthorization("Authenticated")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
         }
 

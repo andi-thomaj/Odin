@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Odin.Api.Authentication;
+using Odin.Api.Services.Email;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.CatalogManagement;
@@ -15,6 +16,7 @@ using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
 using Odin.Api.Endpoints.MediaManagement;
 using Odin.Api.Endpoints.ReportManagement;
+using Odin.Api.Endpoints.AuthRegistration;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Hubs;
 using Odin.Api.Middleware;
@@ -99,6 +101,8 @@ namespace Odin.Api
                 services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     .AddJwtBearer(options =>
                     {
+                        // Keep Auth0 short claim names (e.g. email_verified) for RoleEnrichmentMiddleware.
+                        options.MapInboundClaims = false;
                         options.Authority = auth0Domain;
                         options.Audience = auth0Audience;
                         options.TokenValidationParameters = new TokenValidationParameters
@@ -129,16 +133,22 @@ namespace Odin.Api
             {
                 options.AddPolicy("AdminOnly", policy =>
                     policy.RequireAuthenticatedUser()
-                        .RequireClaim("app_role", AppRole.Admin.ToString()));
+                        .RequireClaim("app_role", AppRole.Admin.ToString())
+                        .RequireClaim(AppClaimTypes.EmailVerified, "true"));
 
                 options.AddPolicy("ScientistOrAdmin", policy =>
                     policy.RequireAuthenticatedUser()
                         .RequireClaim("app_role",
                             AppRole.Scientist.ToString(),
-                            AppRole.Admin.ToString()));
+                            AppRole.Admin.ToString())
+                        .RequireClaim(AppClaimTypes.EmailVerified, "true"));
 
                 options.AddPolicy("Authenticated", policy =>
                     policy.RequireAuthenticatedUser());
+
+                options.AddPolicy("EmailVerified", policy =>
+                    policy.RequireAuthenticatedUser()
+                        .RequireClaim(AppClaimTypes.EmailVerified, "true"));
             });
 
             services.AddMemoryCache();
@@ -285,6 +295,18 @@ namespace Odin.Api
                             QueueLimit = 0
                         }));
 
+                // Email/password registration (anonymous) — low per-IP limit
+                options.AddPolicy("registration", httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: GetClientIp(httpContext),
+                        factory: _ => new FixedWindowRateLimiterOptions
+                        {
+                            PermitLimit = 5,
+                            Window = TimeSpan.FromMinutes(1),
+                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                            QueueLimit = 0
+                        }));
+
                 // Concurrency limiter for resource-intensive operations
                 options.AddPolicy("concurrent", httpContext =>
                     RateLimitPartition.GetConcurrencyLimiter(
@@ -323,7 +345,6 @@ namespace Odin.Api
                             "x-requested-with", // Common header SignalR may use
                             "Accept", // SignalR may send Accept header
                             "Cache-Control", // SignalR may send Cache-Control
-                            "sentry-trace", // Browser may send (e.g. Sentry trace propagation to API)
                             "baggage"
                         )
                         .AllowCredentials()
@@ -373,6 +394,23 @@ namespace Odin.Api
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IMediaService, MediaService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
+
+            services.Configure<Auth0SignupOptions>(configuration.GetSection(Auth0SignupOptions.SectionName));
+            services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
+            services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
+            services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
+            {
+                client.BaseAddress = new Uri("https://api.resend.com/");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+            services.AddHttpClient<IAuth0DatabaseSignupClient, Auth0DatabaseSignupClient>((sp, client) =>
+            {
+                var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Auth0SignupOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(opts.Domain))
+                    client.BaseAddress = new Uri($"https://{opts.Domain.Trim().TrimEnd('/')}/");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
+            services.AddScoped<IAuthRegistrationService, AuthRegistrationService>();
 
             services.AddSignalR(options =>
             {
@@ -424,6 +462,7 @@ namespace Odin.Api
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapHealthChecks("/health");
 
+            app.MapAuthRegistrationEndpoints();
             app.MapUserEndpoints();
             app.MapEthnicityEndpoints();
             app.MapEraEndpoints();

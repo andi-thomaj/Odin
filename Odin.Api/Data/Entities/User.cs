@@ -15,6 +15,7 @@ namespace Odin.Api.Data.Entities
         public AppRole Role { get; set; } = AppRole.User;
         public string? Country { get; set; }
         public string? CountryCode { get; set; }
+
         public List<GeneticInspection> GeneticInspections { get; set; } = [];
         public List<Notification> Notifications { get; set; } = [];
         public List<Report> Reports { get; set; } = [];

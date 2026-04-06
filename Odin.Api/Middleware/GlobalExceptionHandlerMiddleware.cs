@@ -59,8 +59,8 @@ namespace Odin.Api.Middleware
                 ErrorCode = errorCode
             };
 
-            // Include stack trace only in development
-            if (_environment.IsDevelopment())
+            // Include diagnostics in development and in automated integration tests (host env "Testing").
+            if (_environment.IsDevelopment() || _environment.IsEnvironment("Testing"))
             {
                 errorResponse.Details = exception.ToString();
             }

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.SignalR;
 
 namespace Odin.Api.Hubs
 {
-    [Authorize(Policy = "Authenticated")]
+    [Authorize(Policy = "EmailVerified")]
     public class NotificationHub : Hub
     {
         public override async Task OnConnectedAsync()
