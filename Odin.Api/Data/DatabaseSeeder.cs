@@ -19,6 +19,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
         await SeedEthnicitiesAndRegionsAsync();
         await SeedErasAndPopulationsAsync();
         await SeedCatalogCommerceAsync();
+        await SeedG25AncientsAsync();
     }
 
     public async Task SeedCatalogCommerceAsync()
@@ -422,6 +423,61 @@ public class DatabaseSeeder(ApplicationDbContext context)
             return $"{{\"type\":\"Polygon\",\"coordinates\":{polygonCoords[0]}}}";
 
         return $"{{\"type\":\"MultiPolygon\",\"coordinates\":[{string.Join(",", polygonCoords)}]}}";
+    }
+
+    private async Task SeedG25AncientsAsync()
+    {
+        if (await context.G25Ancients.AnyAsync())
+            return;
+
+        var path = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "g25-ancients.txt");
+        if (!File.Exists(path))
+            return;
+
+        var now = DateTime.UtcNow;
+        const string seeder = "DatabaseSeeder";
+        const int batchSize = 1000;
+
+        var lines = await File.ReadAllLinesAsync(path);
+        var batch = new List<G25Ancient>();
+
+        foreach (var line in lines)
+        {
+            if (string.IsNullOrWhiteSpace(line))
+                continue;
+
+            var idx = line.IndexOf(':');
+            if (idx <= 0 || idx >= line.Length - 1)
+                continue;
+
+            var label = line[..idx].Trim();
+            var coords = line[(idx + 1)..].Trim();
+            if (label.Length == 0 || coords.Length == 0)
+                continue;
+
+            batch.Add(new G25Ancient
+            {
+                Label = label,
+                Coordinates = coords,
+                CreatedAt = now,
+                CreatedBy = seeder,
+                UpdatedAt = now,
+                UpdatedBy = seeder
+            });
+
+            if (batch.Count < batchSize)
+                continue;
+
+            context.G25Ancients.AddRange(batch);
+            await context.SaveChangesAsync();
+            batch.Clear();
+        }
+
+        if (batch.Count > 0)
+        {
+            context.G25Ancients.AddRange(batch);
+            await context.SaveChangesAsync();
+        }
     }
 
     /// <summary>

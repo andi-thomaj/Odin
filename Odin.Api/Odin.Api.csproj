@@ -28,6 +28,9 @@
     <None Update="Data\SeedData\population-geojson.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Data\SeedData\g25-ancients.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\SeedData\media\audio\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

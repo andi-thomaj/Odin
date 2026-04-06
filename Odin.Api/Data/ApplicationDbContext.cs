@@ -31,6 +31,7 @@ namespace Odin.Api.Data
         public DbSet<PopulationVideoFile> PopulationVideoFiles { get; set; }
         public DbSet<ChangelogVersion> ChangelogVersions { get; set; }
         public DbSet<ChangelogEntry> ChangelogEntries { get; set; }
+        public DbSet<G25Ancient> G25Ancients { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

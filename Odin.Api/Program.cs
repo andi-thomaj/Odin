@@ -10,6 +10,7 @@ using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.ChangelogManagement;
 using Odin.Api.Endpoints.CatalogManagement;
+using Odin.Api.Endpoints.G25AncientManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.OrderManagement;
@@ -383,6 +384,7 @@ namespace Odin.Api
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IMediaService, MediaService>();
             services.AddScoped<IChangelogService, ChangelogService>();
+            services.AddScoped<IG25AncientService, G25AncientService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
@@ -457,6 +459,7 @@ namespace Odin.Api
             app.MapReportEndpoints();
             app.MapMediaEndpoints();
             app.MapChangelogEndpoints();
+            app.MapG25AncientEndpoints();
             await app.RunAsync();
         }
 

@@ -221,6 +221,44 @@ namespace Odin.Api.Data.Migrations
                     b.ToTable("ethnicities", (string)null);
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25Ancient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Coordinates")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Label");
+
+                    b.ToTable("g25_ancients", (string)null);
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.GeneticInspection", b =>
                 {
                     b.Property<int>("Id")
