@@ -10,9 +10,8 @@ namespace Odin.Api.Data.Entities
         public QpadmResult QpadmResult { get; set; } = null!;
         public int EraId { get; set; }
         public Era Era { get; set; } = null!;
-        public decimal PiValue { get; set; }
+        public decimal PValue { get; set; }
         public string RightSources { get; set; } = string.Empty;
-        public string LeftSources { get; set; } = string.Empty;
         public List<QpadmResultPopulation> QpadmResultPopulations { get; set; } = [];
     }
 
@@ -22,7 +21,7 @@ namespace Odin.Api.Data.Entities
         {
             builder.HasKey(e => e.Id);
 
-            builder.Property(e => e.PiValue).HasPrecision(3, 2);
+            builder.Property(e => e.PValue).HasPrecision(3, 2);
 
             builder.HasOne(e => e.QpadmResult)
                 .WithMany(e => e.QpadmResultEraGroups)

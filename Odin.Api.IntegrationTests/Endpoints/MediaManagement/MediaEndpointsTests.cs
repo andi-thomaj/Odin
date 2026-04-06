@@ -283,9 +283,8 @@ public class MediaEndpointsTests(CustomWebApplicationFactory factory) : Integrat
             {
                 QpadmResultId = qr.Id,
                 EraId = popWithVideo.EraId,
-                PiValue = 0.05m,
+                PValue = 0.05m,
                 RightSources = "WHG",
-                LeftSources = "Anatolia_N",
             };
             db.Set<QpadmResultEraGroup>().Add(eg);
             await db.SaveChangesAsync();
@@ -369,9 +368,8 @@ public class MediaEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         {
             QpadmResultId = qpadmResult.Id,
             EraId = era.Id,
-            PiValue = 0.05m,
-            RightSources = "WHG, EHG",
-            LeftSources = "Anatolia_N"
+            PValue = 0.05m,
+            RightSources = "WHG, EHG"
         };
         db.Set<QpadmResultEraGroup>().Add(eraGroup);
         await db.SaveChangesAsync();

@@ -13,9 +13,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
     public class EraGroupItem
     {
         public int EraId { get; set; }
-        public decimal PiValue { get; set; }
+        public decimal PValue { get; set; }
         public string RightSources { get; set; } = string.Empty;
-        public string LeftSources { get; set; } = string.Empty;
         public List<PopulationPercentageItem> Populations { get; set; } = [];
     }
 
@@ -44,10 +43,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
 
                 foreach (var group in EraGroups)
                 {
-                    if (group.PiValue < 0 || group.PiValue > 9.00m)
+                    if (group.PValue < 0 || group.PValue > 9.00m)
                     {
                         yield return new ValidationResult(
-                            $"Pi value for era {group.EraId} must be between 0 and 9.00.",
+                            $"P value for era {group.EraId} must be between 0 and 9.00.",
                             [nameof(EraGroups)]);
                     }
 
@@ -98,9 +97,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
     {
         public int EraId { get; set; }
         public required string EraName { get; set; }
-        public decimal PiValue { get; set; }
+        public decimal PValue { get; set; }
         public string RightSources { get; set; } = string.Empty;
-        public string LeftSources { get; set; } = string.Empty;
         public List<PopulationResponse> Populations { get; set; } = [];
     }
 

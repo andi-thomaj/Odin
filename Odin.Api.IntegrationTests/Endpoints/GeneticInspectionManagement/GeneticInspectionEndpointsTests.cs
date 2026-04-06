@@ -303,9 +303,8 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         using var form = new MultipartFormDataContent();
         form.Add(new StringContent(era.Id.ToString()), "EraGroups[0].EraId");
-        form.Add(new StringContent("0.05"), "EraGroups[0].PiValue");
+        form.Add(new StringContent("0.05"), "EraGroups[0].PValue");
         form.Add(new StringContent("WHG, EHG"), "EraGroups[0].RightSources");
-        form.Add(new StringContent("Anatolia_N"), "EraGroups[0].LeftSources");
         form.Add(new StringContent(pops[0].Id.ToString()), "EraGroups[0].Populations[0].PopulationId");
         form.Add(new StringContent("60"), "EraGroups[0].Populations[0].Percentage");
         form.Add(new StringContent("1.2"), "EraGroups[0].Populations[0].StandardError");
@@ -341,7 +340,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         using var form = new MultipartFormDataContent();
         form.Add(new StringContent(era.Id.ToString()), "EraGroups[0].EraId");
-        form.Add(new StringContent("0.05"), "EraGroups[0].PiValue");
+        form.Add(new StringContent("0.05"), "EraGroups[0].PValue");
         form.Add(new StringContent(pop.Id.ToString()), "EraGroups[0].Populations[0].PopulationId");
         form.Add(new StringContent("50"), "EraGroups[0].Populations[0].Percentage");
         form.Add(new StringContent("1.0"), "EraGroups[0].Populations[0].StandardError");
@@ -395,9 +394,8 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         {
             QpadmResultId = qpadmResult.Id,
             EraId = era.Id,
-            PiValue = 0.05m,
-            RightSources = "WHG, EHG",
-            LeftSources = "Anatolia_N"
+            PValue = 0.05m,
+            RightSources = "WHG, EHG"
         };
         db.Set<QpadmResultEraGroup>().Add(eraGroup);
         await db.SaveChangesAsync();

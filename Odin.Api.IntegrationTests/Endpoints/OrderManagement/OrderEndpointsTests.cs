@@ -616,9 +616,8 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         {
             QpadmResultId = qpadmResult.Id,
             EraId = era.Id,
-            PiValue = 0.05m,
-            RightSources = "WHG, EHG",
-            LeftSources = "Anatolia_N"
+            PValue = 0.05m,
+            RightSources = "WHG, EHG"
         };
         db.Set<QpadmResultEraGroup>().Add(eraGroup);
         await db.SaveChangesAsync();

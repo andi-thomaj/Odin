@@ -203,9 +203,8 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
         {
             public int EraId { get; set; }
             public required string EraName { get; set; }
-            public decimal PiValue { get; set; }
+            public decimal PValue { get; set; }
             public string RightSources { get; set; } = string.Empty;
-            public string LeftSources { get; set; } = string.Empty;
             public List<PopulationResult> Populations { get; set; } = [];
         }
 

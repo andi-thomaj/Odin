@@ -301,9 +301,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 var eraGroup = new QpadmResultEraGroup
                 {
                     EraId = g.EraId,
-                    PiValue = g.PiValue,
+                    PValue = g.PValue,
                     RightSources = g.RightSources,
-                    LeftSources = g.LeftSources,
                 };
                 foreach (var p in g.Populations)
                 {
@@ -370,9 +369,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 {
                     EraId = eg.EraId,
                     EraName = eras.GetValueOrDefault(eg.EraId)?.Name ?? string.Empty,
-                    PiValue = eg.PiValue,
+                    PValue = eg.PValue,
                     RightSources = eg.RightSources,
-                    LeftSources = eg.LeftSources,
                     Populations = eg.QpadmResultPopulations
                         .OrderByDescending(qrp => qrp.Percentage)
                         .ThenBy(qrp => qrp.PopulationId)
@@ -413,9 +411,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 {
                     EraId = eg.EraId,
                     EraName = eg.Era.Name,
-                    PiValue = eg.PiValue,
+                    PValue = eg.PValue,
                     RightSources = eg.RightSources,
-                    LeftSources = eg.LeftSources,
                     Populations = eg.QpadmResultPopulations
                         .OrderByDescending(qrp => qrp.Percentage)
                         .ThenBy(qrp => qrp.PopulationId)

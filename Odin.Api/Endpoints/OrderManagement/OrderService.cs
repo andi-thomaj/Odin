@@ -423,9 +423,8 @@ public class OrderService(
                 {
                     EraId = eg.EraId,
                     EraName = eg.Era.Name,
-                    PiValue = eg.PiValue,
+                    PValue = eg.PValue,
                     RightSources = eg.RightSources,
-                    LeftSources = eg.LeftSources,
                     Populations = eg.QpadmResultPopulations
                         .OrderByDescending(qrp => qrp.Percentage)
                         .ThenBy(qrp => qrp.PopulationId)
