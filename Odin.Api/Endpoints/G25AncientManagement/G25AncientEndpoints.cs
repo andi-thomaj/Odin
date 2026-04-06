@@ -13,6 +13,10 @@ public static class G25AncientEndpoints
             .RequireAuthorization("ScientistOrAdmin")
             .RequireRateLimiting("authenticated");
 
+        endpoints.MapGet("/all", GetAll)
+            .RequireAuthorization("ScientistOrAdmin")
+            .RequireRateLimiting("authenticated");
+
         endpoints.MapGet("/{id:int}", GetById)
             .RequireAuthorization("ScientistOrAdmin")
             .RequireRateLimiting("authenticated");
@@ -34,6 +38,12 @@ public static class G25AncientEndpoints
     {
         var result = await service.GetPagedAsync(page, pageSize);
         return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetAll(IG25AncientService service)
+    {
+        var list = await service.GetAllAsync();
+        return Results.Ok(list);
     }
 
     private static async Task<IResult> GetById(IG25AncientService service, int id)

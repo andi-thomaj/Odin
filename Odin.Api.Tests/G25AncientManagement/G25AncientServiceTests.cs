@@ -9,6 +9,40 @@ namespace Odin.Api.Tests.G25AncientManagement;
 public class G25AncientServiceTests
 {
     [Fact]
+    public async Task GetAllAsync_ReturnsAllRowsOrderedById()
+    {
+        await using var db = CreateDbContext();
+        var now = DateTime.UtcNow;
+        db.G25Ancients.AddRange(
+            new G25Ancient
+            {
+                Label = "A",
+                Coordinates = "c1",
+                CreatedAt = now,
+                CreatedBy = "t",
+                UpdatedAt = now,
+                UpdatedBy = "t"
+            },
+            new G25Ancient
+            {
+                Label = "B",
+                Coordinates = "c2",
+                CreatedAt = now,
+                CreatedBy = "t",
+                UpdatedAt = now,
+                UpdatedBy = "t"
+            });
+        await db.SaveChangesAsync();
+
+        var service = new G25AncientService(db);
+        var all = await service.GetAllAsync();
+
+        Assert.Equal(2, all.Count);
+        Assert.Equal("A", all[0].Label);
+        Assert.Equal("B", all[1].Label);
+    }
+
+    [Fact]
     public async Task GetPagedAsync_ReturnsPageAndTotal()
     {
         await using var db = CreateDbContext();

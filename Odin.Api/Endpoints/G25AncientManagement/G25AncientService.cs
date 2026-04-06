@@ -7,6 +7,7 @@ namespace Odin.Api.Endpoints.G25AncientManagement;
 
 public interface IG25AncientService
 {
+    Task<IReadOnlyList<GetG25AncientContract.Response>> GetAllAsync(CancellationToken cancellationToken = default);
     Task<GetG25AncientContract.PagedResponse> GetPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default);
     Task<GetG25AncientContract.Response?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<CreateG25AncientContract.Response> CreateAsync(string identityId, CreateG25AncientContract.Request request,
@@ -19,6 +20,20 @@ public interface IG25AncientService
 public class G25AncientService(ApplicationDbContext dbContext) : IG25AncientService
 {
     private const int MaxPageSize = 200;
+
+    public async Task<IReadOnlyList<GetG25AncientContract.Response>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.G25Ancients
+            .AsNoTracking()
+            .OrderBy(e => e.Id)
+            .Select(e => new GetG25AncientContract.Response
+            {
+                Id = e.Id,
+                Label = e.Label,
+                Coordinates = e.Coordinates
+            })
+            .ToListAsync(cancellationToken);
+    }
 
     public async Task<GetG25AncientContract.PagedResponse> GetPagedAsync(int page, int pageSize,
         CancellationToken cancellationToken = default)
