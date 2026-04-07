@@ -13,16 +13,20 @@ using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.G25AncientManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
+using Odin.Api.Endpoints.CheckoutManagement;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
 using Odin.Api.Endpoints.MediaManagement;
 using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
+using Odin.Api.Endpoints.Webhooks;
+using Odin.Api.Configuration;
 using Odin.Api.Hubs;
 using Odin.Api.Middleware;
 using Odin.Api.Models;
 using Odin.Api.Services;
+using Odin.Api.Services.LemonSqueezy;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
 using System.Threading.RateLimiting;
@@ -244,6 +248,10 @@ namespace Odin.Api
                         // Return a no-op limiter for SignalR endpoints
                         return RateLimitPartition.GetNoLimiter(partitionKey: "");
                     }
+
+                    // Lemon Squeezy webhooks may come from varying IPs; avoid accidental 429 on bursts/retries.
+                    if (string.Equals(path, LemonSqueezyWebhookEndpoints.Path, StringComparison.OrdinalIgnoreCase))
+                        return RateLimitPartition.GetNoLimiter(partitionKey: "");
                     
                     return RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: GetPartitionKey(context),
@@ -386,9 +394,14 @@ namespace Odin.Api
             services.AddScoped<IChangelogService, ChangelogService>();
             services.AddScoped<IG25AncientService, G25AncientService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
+            services.AddHttpClient<ILemonSqueezyService, LemonSqueezyService>((_,  client) =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(30);
+            });
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
             services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
+            services.Configure<LemonSqueezyOptions>(configuration.GetSection(LemonSqueezyOptions.SectionName));
             services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
             {
                 client.BaseAddress = new Uri("https://api.resend.com/");
@@ -454,6 +467,8 @@ namespace Odin.Api
             app.MapRawGeneticFileEndpoints();
             app.MapGeneticInspectionEndpoints();
             app.MapOrderEndpoints();
+            app.MapCheckoutEndpoints();
+            app.MapLemonSqueezyWebhookEndpoints();
             app.MapCatalogEndpoints();
             app.MapNotificationEndpoints();
             app.MapReportEndpoints();

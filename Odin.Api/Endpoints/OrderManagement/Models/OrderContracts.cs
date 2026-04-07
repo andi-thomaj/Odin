@@ -24,6 +24,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public IFormFile? File { get; set; }
             public int? ExistingFileId { get; set; }
             public IFormFile? ProfilePicture { get; set; }
+            public int? LemonSqueezyPaymentId { get; set; }
 
             public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
             {

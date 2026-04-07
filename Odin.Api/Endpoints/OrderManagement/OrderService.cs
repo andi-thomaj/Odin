@@ -96,6 +96,22 @@ public class OrderService(
                 rawGeneticFileId = rawGeneticFile.Id;
             }
 
+            Data.Entities.LemonSqueezyPayment? lsPayment = null;
+            if (request.LemonSqueezyPaymentId.HasValue)
+            {
+                lsPayment = await dbContext.LemonSqueezyPayments
+                    .FirstOrDefaultAsync(p => p.Id == request.LemonSqueezyPaymentId.Value);
+
+                if (lsPayment is null)
+                    throw new InvalidOperationException("The specified payment was not found.");
+                if (lsPayment.UserId != identityId)
+                    throw new InvalidOperationException("The specified payment does not belong to your account.");
+                if (lsPayment.Status != "paid")
+                    throw new InvalidOperationException("The specified payment is not in a valid state.");
+                if (lsPayment.OrderId is not null)
+                    throw new InvalidOperationException("The specified payment has already been used for an order.");
+            }
+
             var pricing = await orderPricingService.ComputeAsync(
                 request.Service,
                 request.AddonIds,
@@ -119,6 +135,12 @@ public class OrderService(
             };
             dbContext.Orders.Add(order);
             await dbContext.SaveChangesAsync();
+
+            if (lsPayment is not null)
+            {
+                lsPayment.OrderId = order.Id;
+                lsPayment.UpdatedAt = now;
+            }
 
             foreach (var line in pricing.AddonLines)
             {
