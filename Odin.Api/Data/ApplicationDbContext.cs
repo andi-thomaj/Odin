@@ -28,7 +28,6 @@ namespace Odin.Api.Data
         public DbSet<Report> Reports { get; set; }
         public DbSet<Log> Logs { get; set; }
         public DbSet<MusicTrackFile> MusicTrackFiles { get; set; }
-        public DbSet<PopulationVideoFile> PopulationVideoFiles { get; set; }
         public DbSet<ChangelogVersion> ChangelogVersions { get; set; }
         public DbSet<ChangelogEntry> ChangelogEntries { get; set; }
         public DbSet<G25Ancient> G25Ancients { get; set; }

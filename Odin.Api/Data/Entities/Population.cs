@@ -10,13 +10,10 @@ namespace Odin.Api.Data.Entities
         public string Description { get; set; }
         public string GeoJson { get; set; }
         public string IconFileName { get; set; }
-        public string VideoFileName { get; set; }
         public int EraId { get; set; }
         public Era Era { get; set; }
         public int MusicTrackId { get; set; }
         public MusicTrack MusicTrack { get; set; }
-        /// <summary>Binary video file data. CAUTION: Never Include in bulk queries — contains large binary data.</summary>
-        public PopulationVideoFile? PopulationVideoFile { get; set; }
     }
 
     public class PopulationConfiguration : IEntityTypeConfiguration<Population>
@@ -28,7 +25,6 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.Description).IsRequired().HasMaxLength(2000);
             builder.Property(e => e.GeoJson).IsRequired();
             builder.Property(e => e.IconFileName).IsRequired().HasMaxLength(200);
-            builder.Property(e => e.VideoFileName).IsRequired().HasMaxLength(200);
             builder.HasOne(e => e.Era)
                 .WithMany(e => e.Populations)
                 .HasForeignKey(e => e.EraId);

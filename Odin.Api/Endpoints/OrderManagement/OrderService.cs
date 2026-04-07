@@ -405,8 +405,6 @@ public class OrderService(
             // in-memory .Select() below where navigation properties aren't loaded.
             var trackIdsWithAudio = new HashSet<int>(
                 await dbContext.MusicTrackFiles.Select(f => f.MusicTrackId).ToListAsync());
-            var popIdsWithVideo = new HashSet<int>(
-                await dbContext.PopulationVideoFiles.Select(f => f.PopulationId).ToListAsync());
 
             var response = new GetOrderQpadmResultContract.Response
             {
@@ -437,9 +435,7 @@ public class OrderService(
                             IconFileName = qrp.Population.IconFileName,
                             MusicTrackId = qrp.Population.MusicTrackId,
                             MusicTrackFileName = qrp.Population.MusicTrack.FileName,
-                            VideoFileName = qrp.Population.VideoFileName,
                             HasAudioFile = trackIdsWithAudio.Contains(qrp.Population.MusicTrackId),
-                            HasVideoFile = popIdsWithVideo.Contains(qrp.Population.Id),
                             Percentage = qrp.Percentage,
                             StandardError = qrp.StandardError,
                             ZScore = qrp.ZScore,

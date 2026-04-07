@@ -16,7 +16,6 @@ namespace Odin.Api.Endpoints.UserManagement.Models
             public required string Name { get; set; }
             public string Description { get; set; }
             public string IconFileName { get; set; }
-            public string VideoFileName { get; set; }
             public MusicTrackItem? MusicTrack { get; set; }
         }
 

@@ -191,9 +191,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string IconFileName { get; set; } = string.Empty;
             public int MusicTrackId { get; set; }
             public string MusicTrackFileName { get; set; } = string.Empty;
-            public string VideoFileName { get; set; } = string.Empty;
             public bool HasAudioFile { get; set; }
-            public bool HasVideoFile { get; set; }
             public decimal Percentage { get; set; }
             public decimal StandardError { get; set; }
             public decimal ZScore { get; set; }

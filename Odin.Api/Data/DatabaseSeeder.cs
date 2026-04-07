@@ -328,7 +328,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
             };
             context.Eras.Add(era);
 
-            foreach (var (popName, popDescription, iconFile, videoFile) in eraData.Populations)
+            foreach (var (popName, popDescription, iconFile, _) in eraData.Populations)
             {
                 context.Populations.Add(new Population
                 {
@@ -337,7 +337,6 @@ public class DatabaseSeeder(ApplicationDbContext context)
                     Era = era,
                     GeoJson = geoJsonMap.GetValueOrDefault(popName, ""),
                     IconFileName = iconFile,
-                    VideoFileName = videoFile,
                     MusicTrack = popToTrack[popName],
                     CreatedAt = now,
                     CreatedBy = seeder,
@@ -481,9 +480,9 @@ public class DatabaseSeeder(ApplicationDbContext context)
     }
 
     /// <summary>
-    /// Seeds audio and video binary files into MusicTrackFile and PopulationVideoFile tables.
+    /// Seeds audio binary files into MusicTrackFile table.
     /// Reads from a <c>MediaSeed</c> directory next to the running assembly (if present).
-    /// No-op when the tables already contain rows or the source directory doesn't exist.
+    /// No-op when the table already contains rows or the source directory doesn't exist.
     /// </summary>
     private async Task SeedMediaFilesAsync()
     {
@@ -495,7 +494,6 @@ public class DatabaseSeeder(ApplicationDbContext context)
             return;
 
         var audioDir = Path.Combine(mediaRoot, "audio");
-        var videoDir = Path.Combine(mediaRoot, "video");
         var now = DateTime.UtcNow;
         const string seeder = "DatabaseSeeder";
 
@@ -524,32 +522,6 @@ public class DatabaseSeeder(ApplicationDbContext context)
             }
         }
 
-        // Seed video files one at a time
-        if (Directory.Exists(videoDir))
-        {
-            var populations = await context.Populations
-                .Where(p => p.VideoFileName != "")
-                .ToListAsync();
-            foreach (var pop in populations)
-            {
-                var filePath = Path.Combine(videoDir, pop.VideoFileName);
-                if (!File.Exists(filePath)) continue;
-
-                var data = await File.ReadAllBytesAsync(filePath);
-                context.PopulationVideoFiles.Add(new Entities.PopulationVideoFile
-                {
-                    PopulationId = pop.Id,
-                    FileName = pop.VideoFileName,
-                    FileData = data,
-                    ContentType = "video/mp4",
-                    FileSizeBytes = data.Length,
-                    CreatedAt = now,
-                    CreatedBy = seeder,
-                    UpdatedAt = now,
-                });
-                await context.SaveChangesAsync();
-            }
-        }
     }
 
 }
