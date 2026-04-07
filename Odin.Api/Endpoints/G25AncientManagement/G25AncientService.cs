@@ -15,11 +15,13 @@ public interface IG25AncientService
     Task<GetG25AncientContract.Response?> UpdateAsync(int id, string identityId, UpdateG25AncientContract.Request request,
         CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<string>> SearchLabelsAsync(string query, int limit = 50, CancellationToken cancellationToken = default);
 }
 
 public class G25AncientService(ApplicationDbContext dbContext) : IG25AncientService
 {
     private const int MaxPageSize = 200;
+    private const int MaxSearchLimit = 200;
 
     public async Task<IReadOnlyList<GetG25AncientContract.Response>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -79,6 +81,27 @@ public class G25AncientService(ApplicationDbContext dbContext) : IG25AncientServ
                 Coordinates = e.Coordinates
             })
             .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<string>> SearchLabelsAsync(string query, int limit = 50,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+            return Array.Empty<string>();
+
+        if (limit < 1) limit = 50;
+        if (limit > MaxSearchLimit) limit = MaxSearchLimit;
+
+        var normalized = query.Trim();
+        var lower = normalized.ToLowerInvariant();
+
+        return await dbContext.G25Ancients
+            .AsNoTracking()
+            .Where(e => e.Label.ToLower().Contains(lower))
+            .OrderBy(e => e.Id)
+            .Take(limit)
+            .Select(e => e.Label)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<CreateG25AncientContract.Response> CreateAsync(string identityId, CreateG25AncientContract.Request request,

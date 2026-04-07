@@ -73,6 +73,41 @@ public class G25AncientServiceTests
     }
 
     [Fact]
+    public async Task SearchLabelsAsync_FiltersCaseInsensitiveAndRespectsLimit()
+    {
+        await using var db = CreateDbContext();
+        var now = DateTime.UtcNow;
+        db.G25Ancients.AddRange(
+            new G25Ancient
+            {
+                Label = "Mbuti.DG",
+                Coordinates = "c1",
+                CreatedAt = now,
+                CreatedBy = "t",
+                UpdatedAt = now,
+                UpdatedBy = "t"
+            },
+            new G25Ancient
+            {
+                Label = "Other",
+                Coordinates = "c2",
+                CreatedAt = now,
+                CreatedBy = "t",
+                UpdatedAt = now,
+                UpdatedBy = "t"
+            });
+        await db.SaveChangesAsync();
+
+        var service = new G25AncientService(db);
+        var empty = await service.SearchLabelsAsync("   ");
+        Assert.Empty(empty);
+
+        var hits = await service.SearchLabelsAsync("mbu", limit: 10);
+        Assert.Single(hits);
+        Assert.Equal("Mbuti.DG", hits[0]);
+    }
+
+    [Fact]
     public async Task CreateUpdateDelete_RoundTrips()
     {
         await using var db = CreateDbContext();

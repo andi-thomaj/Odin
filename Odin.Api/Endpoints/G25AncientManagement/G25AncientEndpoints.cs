@@ -17,6 +17,10 @@ public static class G25AncientEndpoints
             .RequireAuthorization("ScientistOrAdmin")
             .RequireRateLimiting("authenticated");
 
+        endpoints.MapGet("/labels/search", SearchLabels)
+            .RequireAuthorization("ScientistOrAdmin")
+            .RequireRateLimiting("authenticated");
+
         endpoints.MapGet("/{id:int}", GetById)
             .RequireAuthorization("ScientistOrAdmin")
             .RequireRateLimiting("authenticated");
@@ -43,6 +47,12 @@ public static class G25AncientEndpoints
     private static async Task<IResult> GetAll(IG25AncientService service)
     {
         var list = await service.GetAllAsync();
+        return Results.Ok(list);
+    }
+
+    private static async Task<IResult> SearchLabels(IG25AncientService service, string? q, int limit = 50)
+    {
+        var list = await service.SearchLabelsAsync(q ?? string.Empty, limit);
         return Results.Ok(list);
     }
 
