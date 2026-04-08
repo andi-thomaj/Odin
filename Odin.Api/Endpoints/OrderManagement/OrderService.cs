@@ -96,19 +96,19 @@ public class OrderService(
                 rawGeneticFileId = rawGeneticFile.Id;
             }
 
-            Data.Entities.LemonSqueezyPayment? lsPayment = null;
-            if (request.LemonSqueezyPaymentId.HasValue)
+            Data.Entities.PaddlePayment? paddlePayment = null;
+            if (request.PaddlePaymentId.HasValue)
             {
-                lsPayment = await dbContext.LemonSqueezyPayments
-                    .FirstOrDefaultAsync(p => p.Id == request.LemonSqueezyPaymentId.Value);
+                paddlePayment = await dbContext.PaddlePayments
+                    .FirstOrDefaultAsync(p => p.Id == request.PaddlePaymentId.Value);
 
-                if (lsPayment is null)
+                if (paddlePayment is null)
                     throw new InvalidOperationException("The specified payment was not found.");
-                if (lsPayment.UserId != identityId)
+                if (paddlePayment.UserId != identityId)
                     throw new InvalidOperationException("The specified payment does not belong to your account.");
-                if (lsPayment.Status != "paid")
+                if (paddlePayment.Status != "paid")
                     throw new InvalidOperationException("The specified payment is not in a valid state.");
-                if (lsPayment.OrderId is not null)
+                if (paddlePayment.OrderId is not null)
                     throw new InvalidOperationException("The specified payment has already been used for an order.");
             }
 
@@ -136,10 +136,10 @@ public class OrderService(
             dbContext.Orders.Add(order);
             await dbContext.SaveChangesAsync();
 
-            if (lsPayment is not null)
+            if (paddlePayment is not null)
             {
-                lsPayment.OrderId = order.Id;
-                lsPayment.UpdatedAt = now;
+                paddlePayment.OrderId = order.Id;
+                paddlePayment.UpdatedAt = now;
             }
 
             foreach (var line in pricing.AddonLines)

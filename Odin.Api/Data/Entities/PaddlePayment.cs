@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities;
 
-public class LemonSqueezyPayment
+public class PaddlePayment
 {
     public int Id { get; set; }
-    public required string LemonSqueezyOrderId { get; set; }
+    public required string PaddleTransactionId { get; set; }
     public required string UserId { get; set; }
     public required string Status { get; set; }
     public decimal TotalAmount { get; set; }
@@ -18,13 +18,13 @@ public class LemonSqueezyPayment
     public DateTime UpdatedAt { get; set; }
 }
 
-public class LemonSqueezyPaymentConfiguration : IEntityTypeConfiguration<LemonSqueezyPayment>
+public class PaddlePaymentConfiguration : IEntityTypeConfiguration<PaddlePayment>
 {
-    public void Configure(EntityTypeBuilder<LemonSqueezyPayment> builder)
+    public void Configure(EntityTypeBuilder<PaddlePayment> builder)
     {
         builder.HasKey(e => e.Id);
-        builder.Property(e => e.LemonSqueezyOrderId).IsRequired().HasMaxLength(64);
-        builder.HasIndex(e => e.LemonSqueezyOrderId).IsUnique();
+        builder.Property(e => e.PaddleTransactionId).IsRequired().HasMaxLength(64);
+        builder.HasIndex(e => e.PaddleTransactionId).IsUnique();
         builder.Property(e => e.UserId).IsRequired().HasMaxLength(256);
         builder.HasIndex(e => e.UserId);
         builder.Property(e => e.Status).IsRequired().HasMaxLength(32);
@@ -37,6 +37,6 @@ public class LemonSqueezyPaymentConfiguration : IEntityTypeConfiguration<LemonSq
             .HasForeignKey(e => e.OrderId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        builder.ToTable("lemon_squeezy_payments");
+        builder.ToTable("paddle_payments");
     }
 }

@@ -26,7 +26,6 @@ using Odin.Api.Hubs;
 using Odin.Api.Middleware;
 using Odin.Api.Models;
 using Odin.Api.Services;
-using Odin.Api.Services.LemonSqueezy;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
 using System.Threading.RateLimiting;
@@ -249,8 +248,8 @@ namespace Odin.Api
                         return RateLimitPartition.GetNoLimiter(partitionKey: "");
                     }
 
-                    // Lemon Squeezy webhooks may come from varying IPs; avoid accidental 429 on bursts/retries.
-                    if (string.Equals(path, LemonSqueezyWebhookEndpoints.Path, StringComparison.OrdinalIgnoreCase))
+                    // Paddle webhooks may come from varying IPs; avoid accidental 429 on bursts/retries.
+                    if (string.Equals(path, PaddleWebhookEndpoints.Path, StringComparison.OrdinalIgnoreCase))
                         return RateLimitPartition.GetNoLimiter(partitionKey: "");
                     
                     return RateLimitPartition.GetFixedWindowLimiter(
@@ -394,14 +393,11 @@ namespace Odin.Api
             services.AddScoped<IChangelogService, ChangelogService>();
             services.AddScoped<IG25AncientService, G25AncientService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
-            services.AddHttpClient<ILemonSqueezyService, LemonSqueezyService>((_,  client) =>
-            {
-                client.Timeout = TimeSpan.FromSeconds(30);
-            });
+            services.AddHttpClient("Paddle", client => { client.Timeout = TimeSpan.FromSeconds(15); });
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
             services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
-            services.Configure<LemonSqueezyOptions>(configuration.GetSection(LemonSqueezyOptions.SectionName));
+            services.Configure<PaddleOptions>(configuration.GetSection(PaddleOptions.SectionName));
             services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
             {
                 client.BaseAddress = new Uri("https://api.resend.com/");
@@ -468,7 +464,7 @@ namespace Odin.Api
             app.MapGeneticInspectionEndpoints();
             app.MapOrderEndpoints();
             app.MapCheckoutEndpoints();
-            app.MapLemonSqueezyWebhookEndpoints();
+            app.MapPaddleWebhookEndpoints();
             app.MapCatalogEndpoints();
             app.MapNotificationEndpoints();
             app.MapReportEndpoints();
