@@ -17,7 +17,6 @@ using Odin.Api.Endpoints.CheckoutManagement;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
-using Odin.Api.Endpoints.MapImageManagement;
 using Odin.Api.Endpoints.MediaManagement;
 using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
@@ -472,7 +471,6 @@ namespace Odin.Api
             app.MapMediaEndpoints();
             app.MapChangelogEndpoints();
             app.MapG25AncientEndpoints();
-            app.MapMapImageEndpoints();
             await app.RunAsync();
         }
 
