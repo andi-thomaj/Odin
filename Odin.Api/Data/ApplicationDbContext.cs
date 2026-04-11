@@ -32,6 +32,7 @@ namespace Odin.Api.Data
         public DbSet<ChangelogEntry> ChangelogEntries { get; set; }
         public DbSet<G25Ancient> G25Ancients { get; set; }
         public DbSet<PaddlePayment> PaddlePayments { get; set; }
+        public DbSet<MapImage> MapImages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

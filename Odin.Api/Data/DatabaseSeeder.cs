@@ -11,6 +11,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
     {
         await SeedReferenceCatalogAsync();
         await SeedMediaFilesAsync();
+        await SeedMapImagesAsync();
     }
 
     /// <summary>Ethnicities, eras, geo backfill, commerce catalog — safe to re-run when tables are empty (e.g. integration tests after Respawn).</summary>
@@ -522,6 +523,42 @@ public class DatabaseSeeder(ApplicationDbContext context)
             }
         }
 
+    }
+
+    private async Task SeedMapImagesAsync()
+    {
+        if (await context.MapImages.AnyAsync())
+            return;
+
+        var now = DateTime.UtcNow;
+        const string seeder = "DatabaseSeeder";
+
+        var maps = new (string Name, string FileName, int Width, int Height)[]
+        {
+            ("Balkans", "balkans.png", 9921, 7015),
+            ("Europe", "europe.png", 4960, 3507),
+            ("Iberia", "iberia.png", 9921, 7015),
+            ("Middle East", "middle-east.png", 9987, 7062),
+            ("Norseland", "norseland.png", 9921, 7015),
+            ("North Africa", "north-africa.png", 9921, 7015),
+            ("West Europe", "west-europe.png", 9921, 7015),
+        };
+
+        foreach (var (name, fileName, width, height) in maps)
+        {
+            context.MapImages.Add(new Entities.MapImage
+            {
+                Name = name,
+                FileName = fileName,
+                Width = width,
+                Height = height,
+                CreatedAt = now,
+                CreatedBy = seeder,
+                UpdatedAt = now,
+            });
+        }
+
+        await context.SaveChangesAsync();
     }
 
 }
