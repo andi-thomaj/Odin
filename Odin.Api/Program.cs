@@ -8,6 +8,7 @@ using Odin.Api.Authentication;
 using Odin.Api.Services.Email;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Endpoints.AdmixtureSavedFileManagement;
 using Odin.Api.Endpoints.ChangelogManagement;
 using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.G25AncientManagement;
@@ -394,6 +395,7 @@ namespace Odin.Api
             services.AddScoped<IChangelogService, ChangelogService>();
             services.AddScoped<IG25AncientService, G25AncientService>();
             services.AddScoped<IG25SavedCoordinateService, G25SavedCoordinateService>();
+            services.AddScoped<IAdmixtureSavedFileService, AdmixtureSavedFileService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
             services.AddHttpClient("Paddle", client => { client.Timeout = TimeSpan.FromSeconds(15); });
 
@@ -474,6 +476,7 @@ namespace Odin.Api
             app.MapChangelogEndpoints();
             app.MapG25AncientEndpoints();
             app.MapG25SavedCoordinateEndpoints();
+            app.MapAdmixtureSavedFileEndpoints();
             await app.RunAsync();
         }
 
