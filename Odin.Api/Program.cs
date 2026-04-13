@@ -11,6 +11,7 @@ using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.ChangelogManagement;
 using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.G25AncientManagement;
+using Odin.Api.Endpoints.G25SavedCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.CheckoutManagement;
@@ -392,6 +393,7 @@ namespace Odin.Api
             services.AddScoped<IMediaService, MediaService>();
             services.AddScoped<IChangelogService, ChangelogService>();
             services.AddScoped<IG25AncientService, G25AncientService>();
+            services.AddScoped<IG25SavedCoordinateService, G25SavedCoordinateService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
             services.AddHttpClient("Paddle", client => { client.Timeout = TimeSpan.FromSeconds(15); });
 
@@ -471,6 +473,7 @@ namespace Odin.Api
             app.MapMediaEndpoints();
             app.MapChangelogEndpoints();
             app.MapG25AncientEndpoints();
+            app.MapG25SavedCoordinateEndpoints();
             await app.RunAsync();
         }
 
