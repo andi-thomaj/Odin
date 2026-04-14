@@ -8,13 +8,14 @@ namespace Odin.Api.Endpoints.AdmixtureSavedFileManagement;
 public interface IAdmixtureSavedFileService
 {
     Task<IReadOnlyList<GetAdmixtureSavedFileContract.Summary>> GetAllForUserAsync(int userId,
-        CancellationToken cancellationToken = default);
+        string kind, CancellationToken cancellationToken = default);
 
     Task<GetAdmixtureSavedFileContract.Response?> GetByIdForUserAsync(int id, int userId,
         CancellationToken cancellationToken = default);
 
     Task<GetAdmixtureSavedFileContract.Summary> CreateAsync(int userId, string identityId,
-        CreateAdmixtureSavedFileContract.Request request, CancellationToken cancellationToken = default);
+        CreateAdmixtureSavedFileContract.Request request, string kind,
+        CancellationToken cancellationToken = default);
 
     Task<GetAdmixtureSavedFileContract.Summary?> UpdateAsync(int id, int userId, string identityId,
         UpdateAdmixtureSavedFileContract.Request request, CancellationToken cancellationToken = default);
@@ -27,11 +28,11 @@ public class AdmixtureSavedFileService(ApplicationDbContext dbContext) : IAdmixt
     private const int MaxTitleLength = 200;
 
     public async Task<IReadOnlyList<GetAdmixtureSavedFileContract.Summary>> GetAllForUserAsync(int userId,
-        CancellationToken cancellationToken = default)
+        string kind, CancellationToken cancellationToken = default)
     {
         return await dbContext.AdmixtureSavedFiles
             .AsNoTracking()
-            .Where(e => e.UserId == userId)
+            .Where(e => e.UserId == userId && e.Kind == kind)
             .OrderByDescending(e => e.UpdatedAt)
             .Select(e => new GetAdmixtureSavedFileContract.Summary
             {
@@ -40,6 +41,7 @@ public class AdmixtureSavedFileService(ApplicationDbContext dbContext) : IAdmixt
                 LineCount = e.Content.Length == 0
                     ? 0
                     : e.Content.Length - e.Content.Replace("\n", "").Length + 1,
+                Kind = e.Kind,
                 CreatedAt = e.CreatedAt,
                 UpdatedAt = e.UpdatedAt
             })
@@ -57,6 +59,7 @@ public class AdmixtureSavedFileService(ApplicationDbContext dbContext) : IAdmixt
                 Id = e.Id,
                 Title = e.Title,
                 Content = e.Content,
+                Kind = e.Kind,
                 CreatedAt = e.CreatedAt,
                 UpdatedAt = e.UpdatedAt
             })
@@ -64,7 +67,8 @@ public class AdmixtureSavedFileService(ApplicationDbContext dbContext) : IAdmixt
     }
 
     public async Task<GetAdmixtureSavedFileContract.Summary> CreateAsync(int userId, string identityId,
-        CreateAdmixtureSavedFileContract.Request request, CancellationToken cancellationToken = default)
+        CreateAdmixtureSavedFileContract.Request request, string kind,
+        CancellationToken cancellationToken = default)
     {
         var now = DateTime.UtcNow;
         var content = request.Content ?? string.Empty;
@@ -73,6 +77,7 @@ public class AdmixtureSavedFileService(ApplicationDbContext dbContext) : IAdmixt
             UserId = userId,
             Title = Truncate(request.Title.Trim(), MaxTitleLength),
             Content = content,
+            Kind = kind,
             CreatedAt = now,
             CreatedBy = identityId,
             UpdatedAt = now,
@@ -87,6 +92,7 @@ public class AdmixtureSavedFileService(ApplicationDbContext dbContext) : IAdmixt
             Id = entity.Id,
             Title = entity.Title,
             LineCount = content.Length == 0 ? 0 : content.Count(c => c == '\n') + 1,
+            Kind = entity.Kind,
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt
         };
@@ -111,6 +117,7 @@ public class AdmixtureSavedFileService(ApplicationDbContext dbContext) : IAdmixt
             Id = entity.Id,
             Title = entity.Title,
             LineCount = entity.Content.Length == 0 ? 0 : entity.Content.Count(c => c == '\n') + 1,
+            Kind = entity.Kind,
             CreatedAt = entity.CreatedAt,
             UpdatedAt = entity.UpdatedAt
         };

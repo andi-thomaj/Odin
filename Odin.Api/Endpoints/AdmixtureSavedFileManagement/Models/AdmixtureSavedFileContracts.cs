@@ -7,6 +7,7 @@ public static class GetAdmixtureSavedFileContract
         public int Id { get; set; }
         public required string Title { get; set; }
         public required string Content { get; set; }
+        public required string Kind { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -16,6 +17,7 @@ public static class GetAdmixtureSavedFileContract
         public int Id { get; set; }
         public required string Title { get; set; }
         public int LineCount { get; set; }
+        public required string Kind { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -27,6 +29,7 @@ public static class CreateAdmixtureSavedFileContract
     {
         public required string Title { get; set; }
         public required string Content { get; set; }
+        public string? Kind { get; set; }
     }
 }
 

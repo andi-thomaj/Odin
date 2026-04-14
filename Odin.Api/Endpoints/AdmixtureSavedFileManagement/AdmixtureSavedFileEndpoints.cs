@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
+using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.AdmixtureSavedFileManagement.Models;
 
 namespace Odin.Api.Endpoints.AdmixtureSavedFileManagement;
@@ -37,12 +38,16 @@ public static class AdmixtureSavedFileEndpoints
     private static async Task<IResult> GetAll(
         HttpContext httpContext,
         ApplicationDbContext dbContext,
-        IAdmixtureSavedFileService service)
+        IAdmixtureSavedFileService service,
+        string? kind)
     {
         var userId = await ResolveUserId(httpContext, dbContext);
         if (userId is null) return Results.Unauthorized();
 
-        var list = await service.GetAllForUserAsync(userId.Value);
+        var resolvedKind = NormalizeKind(kind);
+        if (resolvedKind is null) return Results.BadRequest("Invalid kind.");
+
+        var list = await service.GetAllForUserAsync(userId.Value, resolvedKind);
         return Results.Ok(list);
     }
 
@@ -74,7 +79,10 @@ public static class AdmixtureSavedFileEndpoints
         var validation = ValidateCreate(request);
         if (validation is not null) return validation;
 
-        var result = await service.CreateAsync(userId.Value, identityId, request);
+        var resolvedKind = NormalizeKind(request.Kind);
+        if (resolvedKind is null) return Results.BadRequest("Invalid kind.");
+
+        var result = await service.CreateAsync(userId.Value, identityId, request, resolvedKind);
         return Results.Created($"/api/admixture-saved-files/{result.Id}", result);
     }
 
@@ -124,6 +132,13 @@ public static class AdmixtureSavedFileEndpoints
         if (System.Text.Encoding.UTF8.GetByteCount(request.Content) > MaxContentBytes)
             return Results.BadRequest("Content exceeds maximum allowed size.");
         return null;
+    }
+
+    private static string? NormalizeKind(string? kind)
+    {
+        if (string.IsNullOrWhiteSpace(kind)) return AdmixtureSavedFileKind.Source;
+        var lower = kind.Trim().ToLowerInvariant();
+        return AdmixtureSavedFileKind.IsValid(lower) ? lower : null;
     }
 
     private static string? ResolveIdentityId(HttpContext httpContext) =>
