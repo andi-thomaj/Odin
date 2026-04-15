@@ -190,6 +190,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string Description { get; set; } = string.Empty;
             public string GeoJson { get; set; } = string.Empty;
             public string IconFileName { get; set; } = string.Empty;
+            public string Color { get; set; } = string.Empty;
             public int MusicTrackId { get; set; }
             public string MusicTrackFileName { get; set; } = string.Empty;
             public bool HasAudioFile { get; set; }

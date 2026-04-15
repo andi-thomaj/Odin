@@ -17,6 +17,7 @@ using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.CheckoutManagement;
 using Odin.Api.Endpoints.OrderManagement;
+using Odin.Api.Endpoints.PopulationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
 using Odin.Api.Endpoints.MediaManagement;
@@ -385,6 +386,7 @@ namespace Odin.Api
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IEthnicityService, EthnicityService>();
             services.AddScoped<IEraService, EraService>();
+            services.AddScoped<IPopulationService, PopulationService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
             services.AddScoped<IOrderPricingService, OrderPricingService>();
@@ -464,6 +466,7 @@ namespace Odin.Api
             app.MapUserEndpoints();
             app.MapEthnicityEndpoints();
             app.MapEraEndpoints();
+            app.MapPopulationEndpoints();
             app.MapRawGeneticFileEndpoints();
             app.MapGeneticInspectionEndpoints();
             app.MapOrderEndpoints();

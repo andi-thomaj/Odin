@@ -455,6 +455,7 @@ public class OrderService(
                             Description = qrp.Population.Description,
                             GeoJson = qrp.Population.GeoJson,
                             IconFileName = qrp.Population.IconFileName,
+                            Color = qrp.Population.Color,
                             MusicTrackId = qrp.Population.MusicTrackId,
                             MusicTrackFileName = qrp.Population.MusicTrack.FileName,
                             HasAudioFile = trackIdsWithAudio.Contains(qrp.Population.MusicTrackId),

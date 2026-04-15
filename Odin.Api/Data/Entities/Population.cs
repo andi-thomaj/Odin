@@ -10,6 +10,7 @@ namespace Odin.Api.Data.Entities
         public string Description { get; set; }
         public string GeoJson { get; set; }
         public string IconFileName { get; set; }
+        public string Color { get; set; }
         public int EraId { get; set; }
         public Era Era { get; set; }
         public int MusicTrackId { get; set; }
@@ -25,6 +26,7 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.Description).IsRequired().HasMaxLength(2000);
             builder.Property(e => e.GeoJson).IsRequired();
             builder.Property(e => e.IconFileName).IsRequired().HasMaxLength(200);
+            builder.Property(e => e.Color).IsRequired().HasMaxLength(7);
             builder.HasOne(e => e.Era)
                 .WithMany(e => e.Populations)
                 .HasForeignKey(e => e.EraId);

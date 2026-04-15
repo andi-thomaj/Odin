@@ -36,18 +36,18 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
     // ── Seeding: Populations ───────────────────────────────────────
 
     [Fact]
-    public async Task Seed_Creates28Populations()
+    public async Task Seed_Creates30Populations()
     {
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
         var count = await db.Populations.CountAsync();
 
-        Assert.Equal(28, count);
+        Assert.Equal(30, count);
     }
 
     [Fact]
-    public async Task Seed_Era1Contains12Populations()
+    public async Task Seed_Era1Contains11Populations()
     {
         await SeedReferenceDataAsync();
 
@@ -55,14 +55,14 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         var era = await db.Eras.Include(e => e.Populations)
             .SingleAsync(e => e.Name == "Hunter Gatherer and Neolithic Farmer");
 
-        Assert.Equal(12, era.Populations.Count);
+        Assert.Equal(11, era.Populations.Count);
 
         var expectedNames = new[]
         {
             "Anatolian Neolithic Farmer", "Western Steppe Herder", "Western Hunter Gatherer",
             "Caucasian Hunter Gatherer", "Iranian Neolithic Farmer", "Natufian",
             "North African Farmer", "Northeast Asian", "Native American",
-            "Ancestral South Indian", "Sub Saharan Africans", "Baltic",
+            "Ancestral South Indian", "Sub Saharan Africans",
         };
 
         var actualNames = era.Populations.Select(p => p.Name).OrderBy(n => n).ToList();
@@ -70,7 +70,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
     }
 
     [Fact]
-    public async Task Seed_Era2Contains16Populations()
+    public async Task Seed_Era2Contains19Populations()
     {
         await SeedReferenceDataAsync();
 
@@ -78,15 +78,16 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         var era = await db.Eras.Include(e => e.Populations)
             .SingleAsync(e => e.Name == "Classical Antiquity");
 
-        Assert.Equal(16, era.Populations.Count);
+        Assert.Equal(19, era.Populations.Count);
 
         var expectedNames = new[]
         {
             "Illyrian", "Ancient Greek", "Thracian", "Hittite & Phrygian",
             "Phoenician", "Celtic", "Iberian", "Punic Carthage",
-            "Hellenistic Pontus", "Latin and Etruscan", "Roman Moesia Superior",
-            "Medieval Albanian", "Roman East Mediterranean", "Germanic",
+            "Hellenistic Pontus", "Roman West Anatolia", "Latin and Etruscan",
+            "Roman Moesia Superior", "Roman East Mediterranean", "Germanic",
             "Medieval Slavic", "Roman North Africa",
+            "Baltic", "Finno-Ugric", "Saami",
         };
 
         var actualNames = era.Populations.Select(p => p.Name).OrderBy(n => n).ToList();
@@ -231,7 +232,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         var db = await GetDbContextAsync();
 
         Assert.Equal(2, await db.Eras.CountAsync());
-        Assert.Equal(28, await db.Populations.CountAsync());
+        Assert.Equal(30, await db.Populations.CountAsync());
         Assert.Equal(18, await db.MusicTracks.CountAsync());
     }
 
@@ -251,7 +252,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
     }
 
     [Fact]
-    public async Task GetEras_Returns28PopulationsTotal()
+    public async Task GetEras_Returns30PopulationsTotal()
     {
         await SeedReferenceDataAsync();
 
@@ -259,7 +260,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         var eras = await response.Content.ReadFromJsonAsync<List<GetErasContract.Response>>();
 
         Assert.NotNull(eras);
-        Assert.Equal(28, eras.Sum(e => e.Populations.Count));
+        Assert.Equal(30, eras.Sum(e => e.Populations.Count));
     }
 
     [Fact]
@@ -307,6 +308,40 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         var withIcon = eras.SelectMany(e => e.Populations).Where(p => !string.IsNullOrEmpty(p.IconFileName)).ToList();
         Assert.True(withIcon.Count > 0, "At least one population should have an IconFileName");
         Assert.All(withIcon, p => Assert.EndsWith(".svg", p.IconFileName!));
+    }
+
+    [Fact]
+    public async Task Seed_AllPopulationsHaveColor()
+    {
+        await SeedReferenceDataAsync();
+
+        var db = await GetDbContextAsync();
+        var populations = await db.Populations.ToListAsync();
+
+        Assert.All(populations, p =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(p.Color),
+                $"Population '{p.Name}' has empty Color");
+            Assert.Matches("^#[0-9A-Fa-f]{6}$", p.Color);
+        });
+    }
+
+    [Fact]
+    public async Task GetEras_PopulationsIncludeColor()
+    {
+        await SeedReferenceDataAsync();
+
+        var response = await Client.GetAsync("/api/eras");
+        var eras = await response.Content.ReadFromJsonAsync<List<GetErasContract.Response>>();
+
+        Assert.NotNull(eras);
+        var allPopulations = eras.SelectMany(e => e.Populations).ToList();
+        Assert.All(allPopulations, p =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(p.Color),
+                $"Population '{p.Name}' has empty Color in API response");
+            Assert.Matches("^#[0-9A-Fa-f]{6}$", p.Color);
+        });
     }
 
     [Fact]

@@ -41,6 +41,7 @@ public class EraService(
                     Name = p.Name,
                     Description = p.Description,
                     IconFileName = p.IconFileName,
+                    Color = p.Color,
                     MusicTrack = new GetErasContract.MusicTrackItem
                     {
                         Id = p.MusicTrack.Id,
