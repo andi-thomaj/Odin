@@ -2,6 +2,7 @@ namespace Odin.Api.Data.Enums
 {
     public enum OrderService
     {
-        qpAdm
+        qpAdm,
+        g25
     }
 }

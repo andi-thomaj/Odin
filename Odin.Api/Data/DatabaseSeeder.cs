@@ -20,6 +20,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
         await SeedErasAndPopulationsAsync();
         await SeedCatalogCommerceAsync();
         await SeedG25AncientsAsync();
+        await SeedG25ServiceAsync();
     }
 
     public async Task SeedCatalogCommerceAsync()
@@ -85,6 +86,20 @@ public class DatabaseSeeder(ApplicationDbContext context)
         });
 
         await context.SaveChangesAsync();
+
+        if (!await context.CatalogProducts.AnyAsync(p => p.ServiceType == OrderService.g25))
+        {
+            var g25Product = new CatalogProduct
+            {
+                ServiceType = OrderService.g25,
+                DisplayName = "G25 ancestry analysis",
+                Description = "G25 coordinate-based distance and admixture analysis.",
+                BasePrice = 29.99m,
+                IsActive = true
+            };
+            context.CatalogProducts.Add(g25Product);
+            await context.SaveChangesAsync();
+        }
     }
 
     private async Task SeedEthnicitiesAndRegionsAsync()
@@ -566,6 +581,22 @@ public class DatabaseSeeder(ApplicationDbContext context)
             }
         }
 
+    }
+
+    private async Task SeedG25ServiceAsync()
+    {
+        if (await context.G25Ethnicities.AnyAsync())
+            return;
+
+        var now = DateTime.UtcNow;
+        var ethnicities = new[]
+        {
+            new G25Ethnicity { Name = "Albanian", CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
+            new G25Ethnicity { Name = "Greek", CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
+            new G25Ethnicity { Name = "Italian", CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
+        };
+        context.G25Ethnicities.AddRange(ethnicities);
+        await context.SaveChangesAsync();
     }
 
 }

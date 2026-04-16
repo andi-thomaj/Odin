@@ -16,6 +16,7 @@ namespace Odin.Api.Data.Entities
         public Gender? Gender { get; set; }
         public string? G25Coordinates { get; set; }
         public List<GeneticInspectionRegion> GeneticInspectionRegions { get; set; } = [];
+        public List<GeneticInspectionG25Ethnicity> GeneticInspectionG25Ethnicities { get; set; } = [];
         public int RawGeneticFileId { get; set; }
         public RawGeneticFile? RawGeneticFile { get; set; }
         public byte[]? ProfilePicture { get; set; }

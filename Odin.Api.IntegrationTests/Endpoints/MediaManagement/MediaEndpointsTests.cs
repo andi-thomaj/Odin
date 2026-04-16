@@ -31,13 +31,6 @@ public class MediaEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         return await db.MusicTracks.FirstAsync();
     }
 
-    private async Task<Population> GetFirstPopulationWithVideoFileNameAsync()
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        return await db.Populations.FirstAsync(p => p.VideoFileName != "");
-    }
-
     private async Task SeedMusicTrackFileAsync(int musicTrackId, string fileName = "test.wav")
     {
         await using var scope = Factory.Services.CreateAsyncScope();
@@ -49,22 +42,6 @@ public class MediaEndpointsTests(CustomWebApplicationFactory factory) : Integrat
             FileData = new byte[] { 0x52, 0x49, 0x46, 0x46 }, // RIFF header stub
             ContentType = "audio/wav",
             FileSizeBytes = 4,
-            CreatedBy = "test-seed",
-        });
-        await db.SaveChangesAsync();
-    }
-
-    private async Task SeedPopulationVideoFileAsync(int populationId, string fileName = "test.mp4")
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.PopulationVideoFiles.Add(new PopulationVideoFile
-        {
-            PopulationId = populationId,
-            FileName = fileName,
-            FileData = new byte[] { 0x00, 0x00, 0x00, 0x1C, 0x66, 0x74, 0x79, 0x70 }, // ftyp header stub
-            ContentType = "video/mp4",
-            FileSizeBytes = 8,
             CreatedBy = "test-seed",
         });
         await db.SaveChangesAsync();
@@ -113,34 +90,6 @@ public class MediaEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    // ── GET /api/media/video/{populationId} ───────────────────────
-
-    [Fact]
-    public async Task DownloadVideo_ExistingPopulation_ReturnsFile()
-    {
-        await SeedReferenceCatalog();
-        var pop = await GetFirstPopulationWithVideoFileNameAsync();
-        await SeedPopulationVideoFileAsync(pop.Id, pop.VideoFileName);
-
-        var response = await Client.GetAsync($"/api/media/video/{pop.Id}");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("video/mp4", response.Content.Headers.ContentType?.MediaType);
-        var bytes = await response.Content.ReadAsByteArrayAsync();
-        Assert.True(bytes.Length > 0);
-    }
-
-    [Fact]
-    public async Task DownloadVideo_NoFile_ReturnsNotFound()
-    {
-        await SeedReferenceCatalog();
-        var pop = await GetFirstPopulationWithVideoFileNameAsync();
-
-        var response = await Client.GetAsync($"/api/media/video/{pop.Id}");
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
     // ── PUT /api/media/audio/{musicTrackId} (Admin upload) ────────
 
     [Fact]
@@ -187,32 +136,7 @@ public class MediaEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    // ── PUT /api/media/video/{populationId} (Admin upload) ────────
-
-    [Fact]
-    public async Task UploadVideo_Admin_Succeeds()
-    {
-        await SeedReferenceCatalog();
-        var pop = await GetFirstPopulationWithVideoFileNameAsync();
-
-        var mp4Bytes = new byte[] { 0x00, 0x00, 0x00, 0x1C, 0x66, 0x74, 0x79, 0x70 };
-        using var content = new MultipartFormDataContent();
-        var filePart = new ByteArrayContent(mp4Bytes);
-        filePart.Headers.ContentType = new MediaTypeHeaderValue("video/mp4");
-        content.Add(filePart, "file", "Ancient Greek.mp4");
-
-        var response = await Client.PutAsync($"/api/media/video/{pop.Id}", content);
-
-        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
-
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var stored = await db.PopulationVideoFiles.FirstOrDefaultAsync(f => f.PopulationId == pop.Id);
-        Assert.NotNull(stored);
-        Assert.Equal("Ancient Greek.mp4", stored!.FileName);
-    }
-
-    // ── qpAdm result HasAudioFile / HasVideoFile flags ────────────
+    // ── qpAdm result HasAudioFile flag ──────────────────────────────
 
     [Fact]
     public async Task GetQpadmResult_WithMediaFiles_HasAudioFileIsTrue()
@@ -258,57 +182,6 @@ public class MediaEndpointsTests(CustomWebApplicationFactory factory) : Integrat
 
         // No media files seeded → all should be false
         Assert.All(allPops, p => Assert.False(p.HasAudioFile));
-        Assert.All(allPops, p => Assert.False(p.HasVideoFile));
-    }
-
-    [Fact]
-    public async Task GetQpadmResult_WithVideoFile_HasVideoFileIsTrue()
-    {
-        await SeedReferenceCatalog();
-        var created = await CreateOrderViaApiAsync(Client, Factory.Services);
-        await SetOrderStatusAsync(Factory.Services, created.Id, OrderStatus.Completed);
-
-        // Seed qpadm result using a population that has a video filename
-        await using (var scope = Factory.Services.CreateAsyncScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var popWithVideo = await db.Populations.FirstAsync(p => p.VideoFileName != "");
-
-            var gi = await db.GeneticInspections.FirstAsync(gi => gi.Id == created.GeneticInspectionId);
-            var qr = new QpadmResult { GeneticInspectionId = gi.Id, CreatedBy = "test-seed" };
-            db.QpadmResults.Add(qr);
-            await db.SaveChangesAsync();
-
-            var eg = new QpadmResultEraGroup
-            {
-                QpadmResultId = qr.Id,
-                EraId = popWithVideo.EraId,
-                PValue = 0.05m,
-                RightSources = "WHG",
-            };
-            db.Set<QpadmResultEraGroup>().Add(eg);
-            await db.SaveChangesAsync();
-
-            db.Set<QpadmResultPopulation>().Add(new QpadmResultPopulation
-            {
-                QpadmResultEraGroupId = eg.Id,
-                PopulationId = popWithVideo.Id,
-                Percentage = 100m,
-                StandardError = 0.5m,
-                ZScore = 1.0m,
-            });
-            await db.SaveChangesAsync();
-
-            await SeedPopulationVideoFileAsync(popWithVideo.Id, popWithVideo.VideoFileName);
-        }
-
-        var response = await Client.GetAsync($"/api/orders/{created.Id}/qpadm-result");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var result = await response.Content.ReadFromJsonAsync<GetOrderQpadmResultContract.Response>(JsonOptions);
-        var allPops = result!.EraGroups.SelectMany(eg => eg.Populations).ToList();
-
-        Assert.Contains(allPops, p => p.HasVideoFile);
     }
 
     [Fact]

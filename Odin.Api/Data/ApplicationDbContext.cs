@@ -34,6 +34,11 @@ namespace Odin.Api.Data
         public DbSet<G25SavedCoordinate> G25SavedCoordinates { get; set; }
         public DbSet<AdmixtureSavedFile> AdmixtureSavedFiles { get; set; }
         public DbSet<PaddlePayment> PaddlePayments { get; set; }
+        public DbSet<G25Ethnicity> G25Ethnicities { get; set; }
+        public DbSet<G25Era> G25Eras { get; set; }
+        public DbSet<G25DistanceFile> G25DistanceFiles { get; set; }
+        public DbSet<G25AdmixtureFile> G25AdmixtureFiles { get; set; }
+        public DbSet<GeneticInspectionG25Ethnicity> GeneticInspectionG25Ethnicities { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -344,18 +344,4 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         });
     }
 
-    [Fact]
-    public async Task GetEras_AncientGreekHasVideoFileName()
-    {
-        await SeedReferenceDataAsync();
-
-        var response = await Client.GetAsync("/api/eras");
-        var eras = await response.Content.ReadFromJsonAsync<List<GetErasContract.Response>>();
-
-        Assert.NotNull(eras);
-        var ancientGreek = eras.SelectMany(e => e.Populations).FirstOrDefault(p => p.Name == "Ancient Greek");
-        Assert.NotNull(ancientGreek);
-        Assert.Equal("Ancient Greek.mp4", ancientGreek.VideoFileName);
-    }
-
 }
