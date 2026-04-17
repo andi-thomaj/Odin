@@ -13,11 +13,11 @@ public static class G25AdmixtureFileEndpoints
             .RequireRateLimiting("authenticated");
 
         endpoints.MapGet("/{id:int}", GetById)
-            .RequireAuthorization("EmailVerified")
+            .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("authenticated");
 
         endpoints.MapGet("/by-ethnicity/{g25EthnicityId:int}", GetByEthnicityId)
-            .RequireAuthorization("EmailVerified")
+            .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("authenticated");
 
         endpoints.MapPost("/", Create)

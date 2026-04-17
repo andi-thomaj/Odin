@@ -13,7 +13,7 @@ public static class G25DistanceFileEndpoints
             .RequireRateLimiting("authenticated");
 
         endpoints.MapGet("/{id:int}", GetById)
-            .RequireAuthorization("EmailVerified")
+            .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("authenticated");
 
         endpoints.MapPost("/", Create)
