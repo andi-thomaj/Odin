@@ -20,14 +20,15 @@ public class G25EraService(ApplicationDbContext dbContext) : IG25EraService
     {
         return await dbContext.G25Eras
             .AsNoTracking()
-            .Include(e => e.DistanceFile)
             .OrderBy(e => e.Name)
             .Select(e => new GetG25EraContract.Response
             {
                 Id = e.Id,
                 Name = e.Name,
-                G25DistanceFileId = e.G25DistanceFileId,
-                DistanceFileTitle = e.DistanceFile.Title
+                DistanceFiles = e.DistanceFiles
+                    .OrderBy(f => f.Title)
+                    .Select(f => new GetG25EraContract.DistanceFileSummary { Id = f.Id, Title = f.Title })
+                    .ToList()
             })
             .ToListAsync(ct);
     }
@@ -36,14 +37,15 @@ public class G25EraService(ApplicationDbContext dbContext) : IG25EraService
     {
         return await dbContext.G25Eras
             .AsNoTracking()
-            .Include(e => e.DistanceFile)
             .Where(e => e.Id == id)
             .Select(e => new GetG25EraContract.Response
             {
                 Id = e.Id,
                 Name = e.Name,
-                G25DistanceFileId = e.G25DistanceFileId,
-                DistanceFileTitle = e.DistanceFile.Title
+                DistanceFiles = e.DistanceFiles
+                    .OrderBy(f => f.Title)
+                    .Select(f => new GetG25EraContract.DistanceFileSummary { Id = f.Id, Title = f.Title })
+                    .ToList()
             })
             .FirstOrDefaultAsync(ct);
     }
@@ -54,16 +56,9 @@ public class G25EraService(ApplicationDbContext dbContext) : IG25EraService
         var error = await ValidateNameAsync(request.Name, null, ct);
         if (error is not null) return (null, error);
 
-        var distFileExists = await dbContext.G25DistanceFiles.AnyAsync(f => f.Id == request.G25DistanceFileId, ct);
-        if (!distFileExists) return (null, "The specified distance file does not exist.");
-
-        var alreadyLinked = await dbContext.G25Eras.AnyAsync(e => e.G25DistanceFileId == request.G25DistanceFileId, ct);
-        if (alreadyLinked) return (null, "That distance file is already linked to another era.");
-
         var entity = new G25Era
         {
             Name = request.Name.Trim(),
-            G25DistanceFileId = request.G25DistanceFileId,
             CreatedBy = "system",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -84,14 +79,7 @@ public class G25EraService(ApplicationDbContext dbContext) : IG25EraService
         var error = await ValidateNameAsync(request.Name, id, ct);
         if (error is not null) return (null, error, false);
 
-        var distFileExists = await dbContext.G25DistanceFiles.AnyAsync(f => f.Id == request.G25DistanceFileId, ct);
-        if (!distFileExists) return (null, "The specified distance file does not exist.", false);
-
-        var alreadyLinked = await dbContext.G25Eras.AnyAsync(e => e.G25DistanceFileId == request.G25DistanceFileId && e.Id != id, ct);
-        if (alreadyLinked) return (null, "That distance file is already linked to another era.", false);
-
         entity.Name = request.Name.Trim();
-        entity.G25DistanceFileId = request.G25DistanceFileId;
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(ct);
 

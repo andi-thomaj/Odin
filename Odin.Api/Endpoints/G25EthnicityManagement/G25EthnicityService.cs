@@ -21,8 +21,15 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
     {
         return await dbContext.G25Ethnicities
             .AsNoTracking()
+            .Include(e => e.G25Region)
             .OrderBy(e => e.Name)
-            .Select(e => new GetG25EthnicityContract.Response { Id = e.Id, Name = e.Name })
+            .Select(e => new GetG25EthnicityContract.Response
+            {
+                Id = e.Id,
+                Name = e.Name,
+                G25RegionId = e.G25RegionId,
+                G25RegionName = e.G25Region.Name
+            })
             .ToListAsync(ct);
     }
 
@@ -30,11 +37,14 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
     {
         return await dbContext.G25Ethnicities
             .AsNoTracking()
+            .Include(e => e.G25Region)
             .OrderBy(e => e.Name)
             .Select(e => new GetG25EthnicityAdminContract.Response
             {
                 Id = e.Id,
                 Name = e.Name,
+                G25RegionId = e.G25RegionId,
+                G25RegionName = e.G25Region.Name,
                 HasAdmixtureFile = e.AdmixtureFile != null
             })
             .ToListAsync(ct);
@@ -44,11 +54,14 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
     {
         return await dbContext.G25Ethnicities
             .AsNoTracking()
+            .Include(e => e.G25Region)
             .Where(e => e.Id == id)
             .Select(e => new GetG25EthnicityAdminContract.Response
             {
                 Id = e.Id,
                 Name = e.Name,
+                G25RegionId = e.G25RegionId,
+                G25RegionName = e.G25Region.Name,
                 HasAdmixtureFile = e.AdmixtureFile != null
             })
             .FirstOrDefaultAsync(ct);
@@ -60,9 +73,13 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
         var error = await ValidateNameAsync(request.Name, null, ct);
         if (error is not null) return (null, error);
 
+        var regionExists = await dbContext.G25Regions.AnyAsync(r => r.Id == request.G25RegionId, ct);
+        if (!regionExists) return (null, "The specified G25 region does not exist.");
+
         var entity = new G25Ethnicity
         {
             Name = request.Name.Trim(),
+            G25RegionId = request.G25RegionId,
             CreatedBy = "system",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -83,7 +100,11 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
         var error = await ValidateNameAsync(request.Name, id, ct);
         if (error is not null) return (null, error, false);
 
+        var regionExists = await dbContext.G25Regions.AnyAsync(r => r.Id == request.G25RegionId, ct);
+        if (!regionExists) return (null, "The specified G25 region does not exist.", false);
+
         entity.Name = request.Name.Trim();
+        entity.G25RegionId = request.G25RegionId;
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(ct);
 

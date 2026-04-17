@@ -20,8 +20,15 @@ public class G25DistanceFileService(ApplicationDbContext dbContext) : IG25Distan
     {
         return await dbContext.G25DistanceFiles
             .AsNoTracking()
+            .Include(e => e.Era)
             .OrderBy(e => e.Title)
-            .Select(e => new GetG25DistanceFileContract.ListItem { Id = e.Id, Title = e.Title })
+            .Select(e => new GetG25DistanceFileContract.ListItem
+            {
+                Id = e.Id,
+                Title = e.Title,
+                G25EraId = e.G25EraId,
+                G25EraName = e.Era.Name
+            })
             .ToListAsync(ct);
     }
 
@@ -29,8 +36,16 @@ public class G25DistanceFileService(ApplicationDbContext dbContext) : IG25Distan
     {
         return await dbContext.G25DistanceFiles
             .AsNoTracking()
+            .Include(e => e.Era)
             .Where(e => e.Id == id)
-            .Select(e => new GetG25DistanceFileContract.Response { Id = e.Id, Title = e.Title, Content = e.Content })
+            .Select(e => new GetG25DistanceFileContract.Response
+            {
+                Id = e.Id,
+                Title = e.Title,
+                Content = e.Content,
+                G25EraId = e.G25EraId,
+                G25EraName = e.Era.Name
+            })
             .FirstOrDefaultAsync(ct);
     }
 
@@ -41,10 +56,14 @@ public class G25DistanceFileService(ApplicationDbContext dbContext) : IG25Distan
         if (error is not null) return (null, error);
         if (string.IsNullOrWhiteSpace(request.Content)) return (null, "Content is required.");
 
+        var eraExists = await dbContext.G25Eras.AnyAsync(e => e.Id == request.G25EraId, ct);
+        if (!eraExists) return (null, "The specified G25 era does not exist.");
+
         var entity = new G25DistanceFile
         {
             Title = request.Title.Trim(),
             Content = request.Content,
+            G25EraId = request.G25EraId,
             CreatedBy = "system",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -66,8 +85,12 @@ public class G25DistanceFileService(ApplicationDbContext dbContext) : IG25Distan
         if (error is not null) return (null, error, false);
         if (string.IsNullOrWhiteSpace(request.Content)) return (null, "Content is required.", false);
 
+        var eraExists = await dbContext.G25Eras.AnyAsync(e => e.Id == request.G25EraId, ct);
+        if (!eraExists) return (null, "The specified G25 era does not exist.", false);
+
         entity.Title = request.Title.Trim();
         entity.Content = request.Content;
+        entity.G25EraId = request.G25EraId;
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(ct);
 

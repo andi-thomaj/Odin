@@ -589,11 +589,20 @@ public class DatabaseSeeder(ApplicationDbContext context)
             return;
 
         var now = DateTime.UtcNow;
+
+        var defaultRegion = await context.G25Regions.FirstOrDefaultAsync(r => r.Name == "Europe");
+        if (defaultRegion is null)
+        {
+            defaultRegion = new G25Region { Name = "Europe", CreatedBy = "seed", CreatedAt = now, UpdatedAt = now };
+            context.G25Regions.Add(defaultRegion);
+            await context.SaveChangesAsync();
+        }
+
         var ethnicities = new[]
         {
-            new G25Ethnicity { Name = "Albanian", CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
-            new G25Ethnicity { Name = "Greek", CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
-            new G25Ethnicity { Name = "Italian", CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
+            new G25Ethnicity { Name = "Albanian", G25RegionId = defaultRegion.Id, CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
+            new G25Ethnicity { Name = "Greek", G25RegionId = defaultRegion.Id, CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
+            new G25Ethnicity { Name = "Italian", G25RegionId = defaultRegion.Id, CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
         };
         context.G25Ethnicities.AddRange(ethnicities);
         await context.SaveChangesAsync();
