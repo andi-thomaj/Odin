@@ -460,14 +460,14 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         Assert.All(allPops, p => Assert.NotNull(p.MusicTrackFileName));
     }
 
-    // ── PATCH /api/orders/{id}/viewed-status ───────────────────────
+    // ── PATCH /api/qpadm-orders/{id}/viewed-status ───────────────────
 
     [Fact]
     public async Task MarkViewed_OwnerOrder_ReturnsOk()
     {
         var created = await CreateOrderViaApiAsync(Client, Factory.Services);
 
-        var response = await Client.PatchAsync($"/api/orders/{created.Id}/viewed-status", null);
+        var response = await Client.PatchAsync($"/api/qpadm-orders/{created.Id}/viewed-status", null);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
 
@@ -485,7 +485,7 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         await Client.PostAsJsonAsync("/api/users", otherUser);
         using var otherClient = CreateClientWithRole(Factory, otherUser.IdentityId, "Admin");
 
-        var response = await otherClient.PatchAsync($"/api/orders/{created.Id}/viewed-status", null);
+        var response = await otherClient.PatchAsync($"/api/qpadm-orders/{created.Id}/viewed-status", null);
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
@@ -493,7 +493,7 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
     [Fact]
     public async Task MarkViewed_NonExistentOrder_ReturnsNotFound()
     {
-        var response = await Client.PatchAsync("/api/orders/99999/viewed-status", null);
+        var response = await Client.PatchAsync("/api/qpadm-orders/99999/viewed-status", null);
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 

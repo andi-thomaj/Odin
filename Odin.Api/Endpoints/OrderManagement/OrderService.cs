@@ -23,7 +23,8 @@ public interface IOrderService
     Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId);
     Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId);
     Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId);
-    Task<(bool Success, int StatusCode, string? Error)> MarkResultsAsViewedAsync(int orderId, string identityId);
+    Task<(bool Success, int StatusCode, string? Error)> MarkQpadmResultsAsViewedAsync(int orderId, string identityId);
+    Task<(bool Success, int StatusCode, string? Error)> MarkG25ResultsAsViewedAsync(int orderId, string identityId);
     Task<RecomputeG25DistancesContract.Response> RecomputeG25DistanceResultsAsync(string identityId, IReadOnlyList<int>? inspectionIds = null);
     Task<List<AdminG25InspectionContract.ListItem>> GetAdminG25InspectionsAsync();
 }
@@ -918,13 +919,30 @@ public class OrderService(
             return (pictureData, order.GeneticInspection.ProfilePictureFileName ?? "profile-picture", 200, null);
         }
 
-        public async Task<(bool Success, int StatusCode, string? Error)> MarkResultsAsViewedAsync(int orderId, string identityId)
+        public async Task<(bool Success, int StatusCode, string? Error)> MarkQpadmResultsAsViewedAsync(int orderId, string identityId)
         {
             var order = await dbContext.QpadmOrders
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
             if (order is null)
-                return (false, 404, $"Order with ID {orderId} not found.");
+                return (false, 404, $"qpAdm order with ID {orderId} not found.");
+
+            if (order.CreatedBy != identityId)
+                return (false, 403, "You do not have permission to modify this order.");
+
+            order.HasViewedResults = true;
+            await dbContext.SaveChangesAsync();
+
+            return (true, 200, null);
+        }
+
+        public async Task<(bool Success, int StatusCode, string? Error)> MarkG25ResultsAsViewedAsync(int orderId, string identityId)
+        {
+            var order = await dbContext.G25Orders
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+
+            if (order is null)
+                return (false, 404, $"G25 order with ID {orderId} not found.");
 
             if (order.CreatedBy != identityId)
                 return (false, 403, "You do not have permission to modify this order.");

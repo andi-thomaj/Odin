@@ -58,7 +58,11 @@ namespace Odin.Api.Endpoints.OrderManagement
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
             
-            endpoints.MapPatch("/{id:int}/viewed-status", MarkResultsAsViewed)
+            app.MapPatch("api/qpadm-orders/{id:int}/viewed-status", MarkQpadmResultsAsViewed)
+                .RequireAuthorization("EmailVerified")
+                .RequireRateLimiting("authenticated");
+
+            app.MapPatch("api/g25-orders/{id:int}/viewed-status", MarkG25ResultsAsViewed)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
         }
@@ -225,13 +229,29 @@ namespace Odin.Api.Endpoints.OrderManagement
             };
         }
 
-        private static async Task<IResult> MarkResultsAsViewed(IOrderService service, HttpContext httpContext, int id)
+        private static async Task<IResult> MarkQpadmResultsAsViewed(IOrderService service, HttpContext httpContext, int id)
         {
             var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
                              ?? httpContext.User.FindFirstValue("sub")
                              ?? string.Empty;
 
-            var (success, statusCode, error) = await service.MarkResultsAsViewedAsync(id, identityId);
+            var (success, statusCode, error) = await service.MarkQpadmResultsAsViewedAsync(id, identityId);
+
+            return statusCode switch
+            {
+                200 => Results.Ok(new { Success = success }),
+                403 => Results.Forbid(),
+                _ => Results.NotFound(new { Message = error })
+            };
+        }
+
+        private static async Task<IResult> MarkG25ResultsAsViewed(IOrderService service, HttpContext httpContext, int id)
+        {
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            var (success, statusCode, error) = await service.MarkG25ResultsAsViewedAsync(id, identityId);
 
             return statusCode switch
             {
