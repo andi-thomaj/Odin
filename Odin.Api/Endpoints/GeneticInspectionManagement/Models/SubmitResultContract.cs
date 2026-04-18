@@ -24,16 +24,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
         {
             public List<EraGroupItem> EraGroups { get; set; } = [];
             public string? OrderStatus { get; set; }
-            public string? PaternalHaplogroup { get; set; }
             public IFormFile? MergedRawDataFile { get; set; }
 
             public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
             {
-                if (PaternalHaplogroup?.Length > 50)
-                    yield return new ValidationResult(
-                        "Paternal haplogroup must not exceed 50 characters.",
-                        [nameof(PaternalHaplogroup)]);
-
                 if (EraGroups.Count == 0)
                 {
                     yield return new ValidationResult(

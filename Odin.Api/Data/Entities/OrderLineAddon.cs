@@ -7,7 +7,7 @@ public class OrderLineAddon
 {
     public int Id { get; set; }
     public int OrderId { get; set; }
-    public Order Order { get; set; } = null!;
+    public QpadmOrder Order { get; set; } = null!;
     public int ProductAddonId { get; set; }
     public ProductAddon ProductAddon { get; set; } = null!;
     public decimal UnitPriceSnapshot { get; set; }

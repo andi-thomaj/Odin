@@ -8,7 +8,7 @@ namespace Odin.Api.Data.Entities
         public int QpadmResultEraGroupId { get; set; }
         public QpadmResultEraGroup QpadmResultEraGroup { get; set; } = null!;
         public int PopulationId { get; set; }
-        public Population Population { get; set; } = null!;
+        public QpadmPopulation Population { get; set; } = null!;
         public decimal Percentage { get; set; }
         public decimal StandardError { get; set; }
         public decimal ZScore { get; set; }

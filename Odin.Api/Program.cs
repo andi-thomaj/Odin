@@ -25,9 +25,11 @@ using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Endpoints.G25AdmixtureFileManagement;
 using Odin.Api.Endpoints.G25Calculations;
+using Odin.Api.Endpoints.G25ContinentManagement;
 using Odin.Api.Endpoints.G25DistanceFileManagement;
 using Odin.Api.Endpoints.G25EraManagement;
 using Odin.Api.Endpoints.G25EthnicityManagement;
+using Odin.Api.Endpoints.G25PcaFileManagement;
 using Odin.Api.Endpoints.G25RegionManagement;
 using Odin.Api.Endpoints.Webhooks;
 using Odin.Api.Configuration;
@@ -406,9 +408,11 @@ namespace Odin.Api
             services.AddScoped<IAdmixtureSavedFileService, AdmixtureSavedFileService>();
             services.AddScoped<IG25RegionService, G25RegionService>();
             services.AddScoped<IG25EthnicityService, G25EthnicityService>();
+            services.AddScoped<IG25ContinentService, G25ContinentService>();
             services.AddScoped<IG25DistanceFileService, G25DistanceFileService>();
             services.AddScoped<IG25EraService, G25EraService>();
             services.AddScoped<IG25AdmixtureFileService, G25AdmixtureFileService>();
+            services.AddScoped<IG25PcaFileService, G25PcaFileService>();
             services.AddScoped<IG25CalculationService, G25CalculationService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
             services.AddHttpClient("Paddle", client => { client.Timeout = TimeSpan.FromSeconds(15); });
@@ -494,9 +498,11 @@ namespace Odin.Api
             app.MapAdmixtureSavedFileEndpoints();
             app.MapG25RegionEndpoints();
             app.MapG25EthnicityEndpoints();
+            app.MapG25ContinentEndpoints();
             app.MapG25DistanceFileEndpoints();
             app.MapG25EraEndpoints();
             app.MapG25AdmixtureFileEndpoints();
+            app.MapG25PcaFileEndpoints();
             app.MapG25CalculationEndpoints();
             await app.RunAsync();
         }

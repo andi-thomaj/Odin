@@ -11,7 +11,7 @@ namespace Odin.Api.Data.Entities
         public int DisplayOrder { get; set; }
         /// <summary>Binary audio file data. CAUTION: Never Include in bulk queries — contains large binary data.</summary>
         public MusicTrackFile? MusicTrackFile { get; set; }
-        public ICollection<Population> Populations { get; set; } = [];
+        public ICollection<QpadmPopulation> Populations { get; set; } = [];
     }
 
     public class MusicTrackConfiguration : IEntityTypeConfiguration<MusicTrack>

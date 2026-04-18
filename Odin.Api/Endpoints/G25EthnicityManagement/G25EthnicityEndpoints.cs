@@ -12,6 +12,10 @@ public static class G25EthnicityEndpoints
             .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated");
 
+        endpoints.MapGet("/by-continent/{g25ContinentId:int}", GetByContinentId)
+            .RequireAuthorization("EmailVerified")
+            .RequireRateLimiting("authenticated");
+
         endpoints.MapGet("/admin", GetAllAdmin)
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("authenticated");
@@ -36,6 +40,12 @@ public static class G25EthnicityEndpoints
     private static async Task<IResult> GetAll(IG25EthnicityService service)
     {
         var items = await service.GetAllAsync();
+        return Results.Ok(items);
+    }
+
+    private static async Task<IResult> GetByContinentId(IG25EthnicityService service, int g25ContinentId)
+    {
+        var items = await service.GetByContinentIdAsync(g25ContinentId);
         return Results.Ok(items);
     }
 

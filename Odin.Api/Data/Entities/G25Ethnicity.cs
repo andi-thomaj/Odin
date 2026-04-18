@@ -7,10 +7,9 @@ namespace Odin.Api.Data.Entities
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public int G25RegionId { get; set; }
-        public G25Region G25Region { get; set; } = null!;
-        public G25AdmixtureFile? AdmixtureFile { get; set; }
-        public List<GeneticInspectionG25Ethnicity> GeneticInspectionG25Ethnicities { get; set; } = [];
+        public int G25ContinentId { get; set; }
+        public G25Continent G25Continent { get; set; } = null!;
+        public List<G25Region> G25Regions { get; set; } = [];
     }
 
     public class G25EthnicityConfiguration : IEntityTypeConfiguration<G25Ethnicity>
@@ -21,11 +20,10 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.Name).IsRequired().HasMaxLength(100);
             builder.HasIndex(e => e.Name).IsUnique();
 
-            builder.HasOne(e => e.G25Region)
-                .WithMany(r => r.Ethnicities)
-                .HasForeignKey(e => e.G25RegionId)
-                .OnDelete(DeleteBehavior.Restrict);
-            builder.HasIndex(e => e.G25RegionId);
+            builder.HasOne(e => e.G25Continent)
+                .WithMany(c => c.G25Ethnicities)
+                .HasForeignKey(e => e.G25ContinentId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             builder.ToTable("g25_ethnicities");
         }

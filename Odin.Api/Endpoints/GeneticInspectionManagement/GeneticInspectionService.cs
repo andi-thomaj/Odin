@@ -40,10 +40,9 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 ?? throw new InvalidOperationException("Authenticated user not found in the database.");
 
             var utc = DateTime.UtcNow;
-            var order = new Order
+            var order = new QpadmOrder
             {
                 Price = 0,
-                Service = OrderService.qpAdm,
                 Status = OrderStatus.Pending,
                 HasViewedResults = false,
                 CreatedAt = utc,
@@ -51,10 +50,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 UpdatedAt = utc,
                 UpdatedBy = identityId
             };
-            dbContext.Orders.Add(order);
+            dbContext.QpadmOrders.Add(order);
             await dbContext.SaveChangesAsync();
 
-            var geneticInspection = new GeneticInspection
+            var geneticInspection = new QpadmGeneticInspection
             {
                 UserId = user.Id,
                 OrderId = order.Id,
@@ -68,16 +67,16 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 UpdatedBy = identityId
             };
 
-            var regions = await dbContext.Regions
+            var regions = await dbContext.QpadmRegions
                 .Include(r => r.Ethnicity)
                 .Where(r => request.RegionIds.Contains(r.Id))
                 .ToListAsync();
 
-            dbContext.GeneticInspections.Add(geneticInspection);
+            dbContext.QpadmGeneticInspections.Add(geneticInspection);
             await dbContext.SaveChangesAsync();
 
             // Add region associations in bulk
-            var regionAssociations = regions.Select(region => new GeneticInspectionRegion
+            var regionAssociations = regions.Select(region => new QpadmGeneticInspectionRegion
             {
                 GeneticInspectionId = geneticInspection.Id,
                 GeneticInspection = geneticInspection,
@@ -85,7 +84,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 Region = region
             }).ToList();
 
-            dbContext.GeneticInspectionRegions.AddRange(regionAssociations);
+            dbContext.QpadmGeneticInspectionRegions.AddRange(regionAssociations);
             await dbContext.SaveChangesAsync();
 
             return new CreateGeneticInspectionContract.Response
@@ -104,7 +103,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
         public async Task<GetGeneticInspectionContract.Response?> GetByIdAsync(int id)
         {
-            var inspection = await dbContext.GeneticInspections
+            var inspection = await dbContext.QpadmGeneticInspections
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(gi => gi.RawGeneticFile)
@@ -133,7 +132,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 Country = inspection.User?.Country,
                 CountryCode = inspection.User?.CountryCode,
                 HasQpadmResult = inspection.QpadmResult != null,
-                PaternalHaplogroup = inspection.PaternalHaplogroup,
                 Regions = inspection.GeneticInspectionRegions.Select(gir => new RegionResponse
                 {
                     Id = gir.Region.Id, Name = gir.Region.Name, EthnicityName = gir.Region.Ethnicity.Name
@@ -143,7 +141,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
         public async Task<IEnumerable<GetGeneticInspectionContract.Response>> GetAllAsync()
         {
-            return await dbContext.GeneticInspections
+            return await dbContext.QpadmGeneticInspections
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(gi => gi.RawGeneticFile)
@@ -165,7 +163,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     Country = inspection.User.Country,
                     CountryCode = inspection.User.CountryCode,
                     HasQpadmResult = inspection.QpadmResult != null,
-                    PaternalHaplogroup = inspection.PaternalHaplogroup,
                     Regions = inspection.GeneticInspectionRegions.Select(gir => new RegionResponse
                     {
                         Id = gir.Region.Id, Name = gir.Region.Name, EthnicityName = gir.Region.Ethnicity.Name
@@ -176,14 +173,14 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var inspection = await dbContext.GeneticInspections.FindAsync(id);
+            var inspection = await dbContext.QpadmGeneticInspections.FindAsync(id);
 
             if (inspection is null)
             {
                 return false;
             }
 
-            dbContext.GeneticInspections.Remove(inspection);
+            dbContext.QpadmGeneticInspections.Remove(inspection);
             await dbContext.SaveChangesAsync();
             return true;
         }
@@ -191,7 +188,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         public async Task<UploadGeneticFileContract.Response?> UploadGeneticFileAsync(int inspectionId,
             UploadGeneticFileContract.Request request)
         {
-            var inspection = await dbContext.GeneticInspections.FindAsync(inspectionId);
+            var inspection = await dbContext.QpadmGeneticInspections.FindAsync(inspectionId);
 
             if (inspection is null)
             {
@@ -225,7 +222,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
         public async Task<(byte[] Data, string FileName)?> DownloadGeneticFileAsync(int inspectionId)
         {
-            var inspection = await dbContext.GeneticInspections
+            var inspection = await dbContext.QpadmGeneticInspections
                 .AsNoTracking()
                 .Include(gi => gi.RawGeneticFile)
                 .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
@@ -240,7 +237,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
         public async Task<bool> DeleteGeneticFileAsync(int inspectionId)
         {
-            var inspection = await dbContext.GeneticInspections
+            var inspection = await dbContext.QpadmGeneticInspections
                 .Include(gi => gi.RawGeneticFile)
                 .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
 
@@ -257,7 +254,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         public async Task<SubmitQpadmResultContract.Response?> SubmitQpadmResultAsync(int inspectionId,
             SubmitQpadmResultContract.Request request)
         {
-            var inspection = await dbContext.GeneticInspections
+            var inspection = await dbContext.QpadmGeneticInspections
                 .AsSplitQuery()
                 .Include(gi => gi.Order)
                 .Include(gi => gi.User)
@@ -272,8 +269,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return null;
             }
 
-            inspection.PaternalHaplogroup = request.PaternalHaplogroup;
-
             if (request.MergedRawDataFile is { Length: > 0 } mergedFile)
             {
                 using var ms = new MemoryStream();
@@ -287,7 +282,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .Distinct()
                 .ToList();
 
-            var populations = await dbContext.Populations
+            var populations = await dbContext.QpadmPopulations
                 .Include(p => p.Era)
                 .Where(p => allPopulationIds.Contains(p.Id))
                 .ToListAsync();
@@ -352,11 +347,11 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     inspection.UserId,
                     NotificationType.OrderCompleted,
                     "Order Completed",
-                    $"Your {inspection.Order.Service} analysis results are ready.",
+                    "Your qpAdm analysis results are ready.",
                     inspection.Order.Id.ToString());
             }
 
-            var eras = await dbContext.Eras
+            var eras = await dbContext.QpadmEras
                 .AsNoTracking()
                 .Where(e => request.EraGroups.Select(g => g.EraId).Contains(e.Id))
                 .ToDictionaryAsync(e => e.Id);

@@ -4,11 +4,10 @@ using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
-    public class Order : BaseEntity
+    public class QpadmOrder : BaseEntity
     {
         public int Id { get; set; }
         public decimal Price { get; set; }
-        public OrderService Service { get; set; }
         public OrderStatus Status { get; set; }
         public bool HasViewedResults { get; set; }
         public int? PromoCodeId { get; set; }
@@ -17,17 +16,16 @@ namespace Odin.Api.Data.Entities
         public bool ExpeditedProcessing { get; set; }
         public bool IncludesYHaplogroup { get; set; }
         public bool IncludesRawMerge { get; set; }
-        public GeneticInspection GeneticInspection { get; set; }
+        public QpadmGeneticInspection GeneticInspection { get; set; }
         public List<OrderLineAddon> OrderLineAddons { get; set; } = [];
     }
 
-    public class OrderConfiguration : IEntityTypeConfiguration<Order>
+    public class QpadmOrderConfiguration : IEntityTypeConfiguration<QpadmOrder>
     {
-        public void Configure(EntityTypeBuilder<Order> builder)
+        public void Configure(EntityTypeBuilder<QpadmOrder> builder)
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Price).IsRequired().HasPrecision(18, 2);
-            builder.Property(e => e.Service).IsRequired().HasConversion<string>();
             builder.Property(e => e.Status).IsRequired().HasConversion<string>();
             builder.Property(e => e.HasViewedResults).IsRequired().HasDefaultValue(false);
             builder.Property(e => e.DiscountAmount).IsRequired().HasPrecision(18, 2).HasDefaultValue(0m);
@@ -42,9 +40,9 @@ namespace Odin.Api.Data.Entities
 
             builder.HasOne(e => e.GeneticInspection)
                 .WithOne(gi => gi.Order)
-                .HasForeignKey<GeneticInspection>(gi => gi.OrderId);
+                .HasForeignKey<QpadmGeneticInspection>(gi => gi.OrderId);
 
-            builder.ToTable("orders");
+            builder.ToTable("qpadm_orders");
         }
     }
 }

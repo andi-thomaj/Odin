@@ -11,7 +11,7 @@ namespace Odin.Api.Data.Entities
         public byte[]? MergedRawData { get; set; }
         public string? MergedRawDataFileName { get; set; }
         public bool IsDeleted { get; set; }
-        public List<GeneticInspection> GeneticInspections { get; set; } = [];
+        public List<QpadmGeneticInspection> GeneticInspections { get; set; } = [];
     }
 
     public class RawGeneticFileConfiguration : IEntityTypeConfiguration<RawGeneticFile>

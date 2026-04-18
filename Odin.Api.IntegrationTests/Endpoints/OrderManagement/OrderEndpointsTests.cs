@@ -605,7 +605,7 @@ public class OrderEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
         await seeder.SeedReferenceCatalogAsync();
 
-        var era = await db.Eras.Include(e => e.Populations).FirstAsync();
+        var era = await db.QpadmEras.Include(e => e.Populations).FirstAsync();
         var populations = era.Populations.Take(2).ToList();
 
         var qpadmResult = new QpadmResult { GeneticInspectionId = geneticInspectionId, CreatedBy = "test-seed" };

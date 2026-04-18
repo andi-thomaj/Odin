@@ -26,7 +26,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var eras = await db.Eras.OrderBy(e => e.Id).ToListAsync();
+        var eras = await db.QpadmEras.OrderBy(e => e.Id).ToListAsync();
 
         Assert.Equal(2, eras.Count);
         Assert.Equal("Hunter Gatherer and Neolithic Farmer", eras[0].Name);
@@ -41,7 +41,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var count = await db.Populations.CountAsync();
+        var count = await db.QpadmPopulations.CountAsync();
 
         Assert.Equal(30, count);
     }
@@ -52,7 +52,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var era = await db.Eras.Include(e => e.Populations)
+        var era = await db.QpadmEras.Include(e => e.Populations)
             .SingleAsync(e => e.Name == "Hunter Gatherer and Neolithic Farmer");
 
         Assert.Equal(11, era.Populations.Count);
@@ -75,7 +75,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var era = await db.Eras.Include(e => e.Populations)
+        var era = await db.QpadmEras.Include(e => e.Populations)
             .SingleAsync(e => e.Name == "Classical Antiquity");
 
         Assert.Equal(19, era.Populations.Count);
@@ -102,7 +102,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var populations = await db.Populations.ToListAsync();
+        var populations = await db.QpadmPopulations.ToListAsync();
 
         Assert.All(populations, p =>
         {
@@ -117,7 +117,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var populations = await db.Populations.ToListAsync();
+        var populations = await db.QpadmPopulations.ToListAsync();
 
         Assert.All(populations, p =>
         {
@@ -141,7 +141,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var populations = await db.Populations.ToListAsync();
+        var populations = await db.QpadmPopulations.ToListAsync();
 
         Assert.All(populations, p =>
         {
@@ -156,7 +156,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var populations = await db.Populations.ToListAsync();
+        var populations = await db.QpadmPopulations.ToListAsync();
 
         Assert.All(populations, p =>
         {
@@ -173,7 +173,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var nativeAmerican = await db.Populations.SingleAsync(p => p.Name == "Native American");
+        var nativeAmerican = await db.QpadmPopulations.SingleAsync(p => p.Name == "Native American");
 
         Assert.NotNull(nativeAmerican.GeoJson);
         var doc = JsonDocument.Parse(nativeAmerican.GeoJson!);
@@ -216,7 +216,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var withoutTrack = await db.Populations.CountAsync(p => p.MusicTrackId == 0);
+        var withoutTrack = await db.QpadmPopulations.CountAsync(p => p.MusicTrackId == 0);
 
         Assert.Equal(0, withoutTrack);
     }
@@ -231,8 +231,8 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
 
         var db = await GetDbContextAsync();
 
-        Assert.Equal(2, await db.Eras.CountAsync());
-        Assert.Equal(30, await db.Populations.CountAsync());
+        Assert.Equal(2, await db.QpadmEras.CountAsync());
+        Assert.Equal(30, await db.QpadmPopulations.CountAsync());
         Assert.Equal(18, await db.MusicTracks.CountAsync());
     }
 
@@ -316,7 +316,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
         await SeedReferenceDataAsync();
 
         var db = await GetDbContextAsync();
-        var populations = await db.Populations.ToListAsync();
+        var populations = await db.QpadmPopulations.ToListAsync();
 
         Assert.All(populations, p =>
         {

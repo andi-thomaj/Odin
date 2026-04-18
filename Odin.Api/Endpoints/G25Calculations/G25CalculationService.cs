@@ -21,14 +21,15 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
     private const int MaxTargetCsvLength = 64 * 1024;
     private const int MaxTargetRows = 100;
     private const int MaxInlineSourceCsvLength = 4 * 1024 * 1024;
+    private const int MaxSelectedRegions = 16;
 
     public async Task<(ComputeDistancesContract.Response? Response, string? Error, bool NotFound)> ComputeDistancesAsync(
         ComputeDistancesContract.Request request, CancellationToken ct = default)
     {
-        var sourceFields = CountSet(request.SourceContent, request.SourceDistanceFileId);
+        var sourceFields = CountSet(request.SourceContent, request.SourceDistanceFileId, request.G25EraId);
         if (sourceFields != 1)
         {
-            return (null, "Exactly one of sourceContent or sourceDistanceFileId must be provided.", false);
+            return (null, "Exactly one of sourceContent, sourceDistanceFileId, or g25EraId must be provided.", false);
         }
 
         var (sizeError, _) = ValidateTargetSize(request.TargetCoordinates);
@@ -43,6 +44,16 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
                 .Select(f => f.Content)
                 .FirstOrDefaultAsync(ct);
             if (content is null) return (null, null, true);
+            sourceText = content;
+        }
+        else if (request.G25EraId is { } eraId)
+        {
+            var content = await dbContext.G25DistanceFiles
+                .AsNoTracking()
+                .Where(f => f.G25EraId == eraId)
+                .Select(f => f.Content)
+                .FirstOrDefaultAsync(ct);
+            if (content is null) return (null, $"No distance file found for era id {eraId}.", true);
             sourceText = content;
         }
         else
@@ -72,10 +83,11 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
     public async Task<(ComputeAdmixtureSingleContract.Response? Response, string? Error, bool NotFound)> ComputeAdmixtureSingleAsync(
         ComputeAdmixtureSingleContract.Request request, CancellationToken ct = default)
     {
-        var sourceFields = CountSet(request.SourceContent, request.SourceAdmixtureFileId, request.SourceEthnicityId);
+        var hasRegions = request.SourceRegionIds is { Count: > 0 };
+        var sourceFields = CountSet(request.SourceContent, request.SourceAdmixtureFileId, hasRegions ? (object)true : null);
         if (sourceFields != 1)
         {
-            return (null, "Exactly one of sourceContent, sourceAdmixtureFileId, or sourceEthnicityId must be provided.", false);
+            return (null, "Exactly one of sourceContent, sourceAdmixtureFileId, or sourceRegionIds must be provided.", false);
         }
 
         var (sizeError, _) = ValidateTargetSize(request.TargetCoordinates);
@@ -92,15 +104,31 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
             if (content is null) return (null, null, true);
             sourceText = content;
         }
-        else if (request.SourceEthnicityId is { } ethId)
+        else if (hasRegions)
         {
-            var content = await dbContext.G25AdmixtureFiles
+            var regionIds = request.SourceRegionIds!.Distinct().ToList();
+            if (regionIds.Count > MaxSelectedRegions)
+            {
+                return (null, $"At most {MaxSelectedRegions} regions can be selected.", false);
+            }
+
+            var files = await dbContext.G25AdmixtureFiles
                 .AsNoTracking()
-                .Where(f => f.G25EthnicityId == ethId)
-                .Select(f => f.Content)
-                .FirstOrDefaultAsync(ct);
-            if (content is null) return (null, null, true);
-            sourceText = content;
+                .Where(f => regionIds.Contains(f.G25RegionId))
+                .ToListAsync(ct);
+
+            if (files.Count != regionIds.Count)
+            {
+                var found = files.Select(f => f.G25RegionId).ToHashSet();
+                var missing = regionIds.Where(id => !found.Contains(id)).ToList();
+                return (null, $"No admixture file(s) found for region id(s) [{string.Join(", ", missing)}].", true);
+            }
+
+            sourceText = MergeAdmixtureFileContents(files.Select(f => f.Content));
+            if (sourceText.Length > MaxInlineSourceCsvLength)
+            {
+                return (null, "Merged source content exceeds the maximum allowed size.", false);
+            }
         }
         else
         {
@@ -209,6 +237,26 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
             Target = target;
             Error = error;
         }
+    }
+
+    private static string MergeAdmixtureFileContents(IEnumerable<string> contents)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var merged = new List<string>();
+        foreach (var content in contents)
+        {
+            if (string.IsNullOrWhiteSpace(content)) continue;
+            var normalized = content.Replace("\r\n", "\n");
+            foreach (var line in normalized.Split('\n'))
+            {
+                var trimmed = line.Trim();
+                if (trimmed.Length == 0) continue;
+                var commaIdx = trimmed.IndexOf(',');
+                var name = commaIdx >= 0 ? trimmed[..commaIdx].Trim() : trimmed;
+                if (seen.Add(name)) merged.Add(trimmed);
+            }
+        }
+        return string.Join('\n', merged);
     }
 
     private static ParsedInput ParseBoth(string sourceText, string targetText)

@@ -27,7 +27,7 @@ public class PreviewOrderPriceContract
 {
     public class Request : IValidatableObject
     {
-        public OrderService Service { get; set; } = OrderService.qpAdm;
+        public ServiceType Service { get; set; } = ServiceType.qpAdm;
         public List<int> AddonIds { get; set; } = [];
         public string? PromoCode { get; set; }
 

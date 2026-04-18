@@ -16,7 +16,7 @@ namespace Odin.Api.Data.Entities
         public string? Country { get; set; }
         public string? CountryCode { get; set; }
 
-        public List<GeneticInspection> GeneticInspections { get; set; } = [];
+        public List<QpadmGeneticInspection> GeneticInspections { get; set; } = [];
         public List<Notification> Notifications { get; set; } = [];
         public List<Report> Reports { get; set; } = [];
     }

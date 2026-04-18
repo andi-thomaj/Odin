@@ -37,7 +37,7 @@ public class EthnicityService(
             cache.TryGetValue(CacheKey, out List<GetEthnicitiesContract.Response>? cached))
             return cached!;
 
-        var result = await dbContext.Ethnicities
+        var result = await dbContext.QpadmEthnicities
             .AsNoTracking()
             .Include(e => e.Regions)
             .Select(e => new GetEthnicitiesContract.Response
@@ -64,7 +64,7 @@ public class EthnicityService(
 
     public async Task<IReadOnlyList<GetEthnicityAdminContract.Response>> GetAllAdminAsync(CancellationToken cancellationToken = default)
     {
-        return await dbContext.Ethnicities
+        return await dbContext.QpadmEthnicities
             .AsNoTracking()
             .OrderBy(e => e.Name)
             .Select(e => new GetEthnicityAdminContract.Response
@@ -81,7 +81,7 @@ public class EthnicityService(
 
     public async Task<GetEthnicityAdminContract.Response?> GetByIdAdminAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await dbContext.Ethnicities
+        return await dbContext.QpadmEthnicities
             .AsNoTracking()
             .Where(e => e.Id == id)
             .Select(e => new GetEthnicityAdminContract.Response
@@ -102,8 +102,8 @@ public class EthnicityService(
         var error = await ValidateEthnicityNameAsync(request.Name, existingId: null, cancellationToken);
         if (error is not null) return (null, error);
 
-        var entity = new Ethnicity { Name = request.Name.Trim() };
-        dbContext.Ethnicities.Add(entity);
+        var entity = new QpadmEthnicity { Name = request.Name.Trim() };
+        dbContext.QpadmEthnicities.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         InvalidateCache();
 
@@ -114,7 +114,7 @@ public class EthnicityService(
     public async Task<(GetEthnicityAdminContract.Response? Response, string? Error, bool NotFound)> UpdateEthnicityAsync(
         int id, UpdateEthnicityContract.Request request, CancellationToken cancellationToken = default)
     {
-        var entity = await dbContext.Ethnicities.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        var entity = await dbContext.QpadmEthnicities.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity is null) return (null, null, true);
 
         var error = await ValidateEthnicityNameAsync(request.Name, existingId: id, cancellationToken);
@@ -130,13 +130,13 @@ public class EthnicityService(
 
     public async Task<bool> DeleteEthnicityAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await dbContext.Ethnicities
+        var entity = await dbContext.QpadmEthnicities
             .Include(e => e.Regions)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity is null) return false;
 
-        if (entity.Regions.Count > 0) dbContext.Regions.RemoveRange(entity.Regions);
-        dbContext.Ethnicities.Remove(entity);
+        if (entity.Regions.Count > 0) dbContext.QpadmRegions.RemoveRange(entity.Regions);
+        dbContext.QpadmEthnicities.Remove(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         InvalidateCache();
         return true;
@@ -145,14 +145,14 @@ public class EthnicityService(
     public async Task<(GetEthnicityAdminContract.RegionItem? Region, string? Error, bool EthnicityNotFound)> CreateRegionAsync(
         int ethnicityId, CreateRegionContract.Request request, CancellationToken cancellationToken = default)
     {
-        var ethnicity = await dbContext.Ethnicities.FirstOrDefaultAsync(e => e.Id == ethnicityId, cancellationToken);
+        var ethnicity = await dbContext.QpadmEthnicities.FirstOrDefaultAsync(e => e.Id == ethnicityId, cancellationToken);
         if (ethnicity is null) return (null, null, true);
 
         var error = await ValidateRegionNameAsync(ethnicityId, request.Name, existingId: null, cancellationToken);
         if (error is not null) return (null, error, false);
 
-        var region = new Region { Name = request.Name.Trim(), EthnicityId = ethnicityId, Ethnicity = ethnicity };
-        dbContext.Regions.Add(region);
+        var region = new QpadmRegion { Name = request.Name.Trim(), EthnicityId = ethnicityId, Ethnicity = ethnicity };
+        dbContext.QpadmRegions.Add(region);
         await dbContext.SaveChangesAsync(cancellationToken);
         InvalidateCache();
 
@@ -162,7 +162,7 @@ public class EthnicityService(
     public async Task<(GetEthnicityAdminContract.RegionItem? Region, string? Error, bool NotFound)> UpdateRegionAsync(
         int ethnicityId, int regionId, UpdateRegionContract.Request request, CancellationToken cancellationToken = default)
     {
-        var region = await dbContext.Regions
+        var region = await dbContext.QpadmRegions
             .FirstOrDefaultAsync(r => r.Id == regionId && r.EthnicityId == ethnicityId, cancellationToken);
         if (region is null) return (null, null, true);
 
@@ -178,11 +178,11 @@ public class EthnicityService(
 
     public async Task<bool> DeleteRegionAsync(int ethnicityId, int regionId, CancellationToken cancellationToken = default)
     {
-        var region = await dbContext.Regions
+        var region = await dbContext.QpadmRegions
             .FirstOrDefaultAsync(r => r.Id == regionId && r.EthnicityId == ethnicityId, cancellationToken);
         if (region is null) return false;
 
-        dbContext.Regions.Remove(region);
+        dbContext.QpadmRegions.Remove(region);
         await dbContext.SaveChangesAsync(cancellationToken);
         InvalidateCache();
         return true;
@@ -194,7 +194,7 @@ public class EthnicityService(
             return "Name is required and must be 1–100 characters.";
 
         var trimmed = name.Trim();
-        var nameExists = await dbContext.Ethnicities
+        var nameExists = await dbContext.QpadmEthnicities
             .AsNoTracking()
             .AnyAsync(e => e.Name == trimmed && (existingId == null || e.Id != existingId), cancellationToken);
         if (nameExists) return $"An ethnicity named '{trimmed}' already exists.";
@@ -208,7 +208,7 @@ public class EthnicityService(
             return "Name is required and must be 1–100 characters.";
 
         var trimmed = name.Trim();
-        var nameExists = await dbContext.Regions
+        var nameExists = await dbContext.QpadmRegions
             .AsNoTracking()
             .AnyAsync(r => r.EthnicityId == ethnicityId && r.Name == trimmed && (existingId == null || r.Id != existingId), cancellationToken);
         if (nameExists) return $"A region named '{trimmed}' already exists for this ethnicity.";

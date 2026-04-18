@@ -45,7 +45,11 @@ namespace Odin.Api.Endpoints.OrderManagement
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
-            
+
+            endpoints.MapGet("/{id:int}/g25-result", GetG25Result)
+                .RequireAuthorization("EmailVerified")
+                .RequireRateLimiting("authenticated");
+
             endpoints.MapGet("/{id:int}/merged-data/download", DownloadMergedData)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
@@ -161,6 +165,23 @@ namespace Odin.Api.Endpoints.OrderManagement
                              ?? string.Empty;
 
             var (result, statusCode, error) = await service.GetQpadmResultForOrderAsync(id, identityId);
+
+            return statusCode switch
+            {
+                200 => Results.Ok(result),
+                403 => Results.Forbid(),
+                400 => Results.BadRequest(new { Message = error }),
+                _ => Results.NotFound(new { Message = error })
+            };
+        }
+
+        private static async Task<IResult> GetG25Result(IOrderService service, HttpContext httpContext, int id)
+        {
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            var (result, statusCode, error) = await service.GetG25ResultForOrderAsync(id, identityId);
 
             return statusCode switch
             {

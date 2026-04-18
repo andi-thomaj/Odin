@@ -46,7 +46,7 @@ public class CatalogEndpointsTests(CustomWebApplicationFactory factory) : Integr
     {
         var preview = await PostPreviewAsync(new PreviewOrderPriceContract.Request
         {
-            Service = OrderService.qpAdm,
+            Service = ServiceType.qpAdm,
             AddonIds = [],
             PromoCode = null
         });
@@ -69,7 +69,7 @@ public class CatalogEndpointsTests(CustomWebApplicationFactory factory) : Integr
 
         var preview = await PostPreviewAsync(new PreviewOrderPriceContract.Request
         {
-            Service = OrderService.qpAdm,
+            Service = ServiceType.qpAdm,
             AddonIds = allAddonIds
         });
 
@@ -89,7 +89,7 @@ public class CatalogEndpointsTests(CustomWebApplicationFactory factory) : Integr
 
         var preview = await PostPreviewAsync(new PreviewOrderPriceContract.Request
         {
-            Service = OrderService.qpAdm,
+            Service = ServiceType.qpAdm,
             AddonIds = [expeditedId],
             PromoCode = "WELCOME10"
         });
@@ -110,7 +110,7 @@ public class CatalogEndpointsTests(CustomWebApplicationFactory factory) : Integr
     {
         var preview = await PostPreviewAsync(new PreviewOrderPriceContract.Request
         {
-            Service = OrderService.qpAdm,
+            Service = ServiceType.qpAdm,
             AddonIds = [],
             PromoCode = "NOPE"
         });
@@ -123,11 +123,11 @@ public class CatalogEndpointsTests(CustomWebApplicationFactory factory) : Integr
     {
         await SeedPromoCodeAsync(Factory.Services, "EXPIRED10",
             validUntilUtc: DateTime.UtcNow.AddDays(-1),
-            applicableService: OrderService.qpAdm);
+            applicableService: ServiceType.qpAdm);
 
         var preview = await PostPreviewAsync(new PreviewOrderPriceContract.Request
         {
-            Service = OrderService.qpAdm,
+            Service = ServiceType.qpAdm,
             PromoCode = "EXPIRED10"
         });
 
@@ -139,11 +139,11 @@ public class CatalogEndpointsTests(CustomWebApplicationFactory factory) : Integr
     {
         await SeedPromoCodeAsync(Factory.Services, "FUTURE10",
             validFromUtc: DateTime.UtcNow.AddDays(30),
-            applicableService: OrderService.qpAdm);
+            applicableService: ServiceType.qpAdm);
 
         var preview = await PostPreviewAsync(new PreviewOrderPriceContract.Request
         {
-            Service = OrderService.qpAdm,
+            Service = ServiceType.qpAdm,
             PromoCode = "FUTURE10"
         });
 
@@ -156,11 +156,11 @@ public class CatalogEndpointsTests(CustomWebApplicationFactory factory) : Integr
         await SeedPromoCodeAsync(Factory.Services, "MAXED10",
             maxRedemptions: 5,
             redemptionCount: 5,
-            applicableService: OrderService.qpAdm);
+            applicableService: ServiceType.qpAdm);
 
         var preview = await PostPreviewAsync(new PreviewOrderPriceContract.Request
         {
-            Service = OrderService.qpAdm,
+            Service = ServiceType.qpAdm,
             PromoCode = "MAXED10"
         });
 
@@ -172,7 +172,7 @@ public class CatalogEndpointsTests(CustomWebApplicationFactory factory) : Integr
     {
         var preview = await PostPreviewAsync(new PreviewOrderPriceContract.Request
         {
-            Service = OrderService.qpAdm,
+            Service = ServiceType.qpAdm,
             AddonIds = [99999]
         });
 
@@ -185,11 +185,11 @@ public class CatalogEndpointsTests(CustomWebApplicationFactory factory) : Integr
         await SeedPromoCodeAsync(Factory.Services, "FIXED999",
             discountType: PromoDiscountType.FixedAmount,
             value: 999m,
-            applicableService: OrderService.qpAdm);
+            applicableService: ServiceType.qpAdm);
 
         var preview = await PostPreviewAsync(new PreviewOrderPriceContract.Request
         {
-            Service = OrderService.qpAdm,
+            Service = ServiceType.qpAdm,
             AddonIds = [],
             PromoCode = "FIXED999"
         });

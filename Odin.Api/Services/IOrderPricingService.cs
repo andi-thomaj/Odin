@@ -27,7 +27,7 @@ public sealed class PricedAddonLine
 public interface IOrderPricingService
 {
     Task<OrderPricingComputation> ComputeAsync(
-        OrderService service,
+        ServiceType service,
         IReadOnlyList<int>? addonIds,
         string? promoCode,
         CancellationToken cancellationToken = default);

@@ -25,7 +25,7 @@ public class EraService(
             cache.TryGetValue(CacheKey, out List<GetErasContract.Response>? cached))
             return cached!;
 
-        var result = await dbContext.Eras
+        var result = await dbContext.QpadmEras
             .AsNoTracking()
             .AsSplitQuery()
             .Include(e => e.Populations)

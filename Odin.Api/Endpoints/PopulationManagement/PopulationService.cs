@@ -23,7 +23,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
 
     public async Task<IReadOnlyList<GetPopulationContract.AdminResponse>> GetAllAdminAsync(CancellationToken cancellationToken = default)
     {
-        return await dbContext.Populations
+        return await dbContext.QpadmPopulations
             .AsNoTracking()
             .OrderBy(p => p.Era.Id).ThenBy(p => p.Name)
             .Select(p => new GetPopulationContract.AdminResponse
@@ -44,7 +44,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
 
     public async Task<GetPopulationContract.AdminResponse?> GetByIdAdminAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await dbContext.Populations
+        return await dbContext.QpadmPopulations
             .AsNoTracking()
             .Where(p => p.Id == id)
             .Select(p => new GetPopulationContract.AdminResponse
@@ -70,7 +70,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
         if (error is not null) return (null, error);
 
         var now = DateTime.UtcNow;
-        var entity = new Population
+        var entity = new QpadmPopulation
         {
             Name = request.Name.Trim(),
             Description = request.Description?.Trim() ?? string.Empty,
@@ -85,7 +85,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
             UpdatedBy = identityId,
         };
 
-        dbContext.Populations.Add(entity);
+        dbContext.QpadmPopulations.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         cache.Remove(ErasCacheKey);
 
@@ -96,7 +96,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
     public async Task<(GetPopulationContract.AdminResponse? Response, string? Error, bool NotFound)> UpdateAsync(
         int id, string identityId, UpdatePopulationContract.Request request, CancellationToken cancellationToken = default)
     {
-        var entity = await dbContext.Populations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        var entity = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         if (entity is null) return (null, null, true);
 
         var error = await ValidateAsync(request.Name, request.GeoJson, request.Color, request.EraId, request.MusicTrackId, existingId: id, cancellationToken);
@@ -121,10 +121,10 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await dbContext.Populations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        var entity = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         if (entity is null) return false;
 
-        dbContext.Populations.Remove(entity);
+        dbContext.QpadmPopulations.Remove(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         cache.Remove(ErasCacheKey);
         return true;
@@ -143,12 +143,12 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
             return "Color must be a 7-character hex value (e.g. #RRGGBB).";
 
         var nameTrim = name.Trim();
-        var nameExists = await dbContext.Populations
+        var nameExists = await dbContext.QpadmPopulations
             .AsNoTracking()
             .AnyAsync(p => p.Name == nameTrim && (existingId == null || p.Id != existingId), cancellationToken);
         if (nameExists) return $"A population named '{nameTrim}' already exists.";
 
-        var eraExists = await dbContext.Eras.AsNoTracking().AnyAsync(e => e.Id == eraId, cancellationToken);
+        var eraExists = await dbContext.QpadmEras.AsNoTracking().AnyAsync(e => e.Id == eraId, cancellationToken);
         if (!eraExists) return $"Era with id {eraId} does not exist.";
 
         var trackExists = await dbContext.MusicTracks.AsNoTracking().AnyAsync(t => t.Id == musicTrackId, cancellationToken);

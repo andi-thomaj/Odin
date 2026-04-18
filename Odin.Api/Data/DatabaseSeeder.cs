@@ -21,6 +21,8 @@ public class DatabaseSeeder(ApplicationDbContext context)
         await SeedCatalogCommerceAsync();
         await SeedG25AncientsAsync();
         await SeedG25ServiceAsync();
+        await SeedG25ErasAsync();
+        await SeedG25AddonsAsync();
     }
 
     public async Task SeedCatalogCommerceAsync()
@@ -30,7 +32,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
         var product = new CatalogProduct
         {
-            ServiceType = OrderService.qpAdm,
+            ServiceType = ServiceType.qpAdm,
             DisplayName = "qpAdm ancestry analysis",
             Description = "Deep ancestry modeling with reference populations.",
             BasePrice = 49.99m,
@@ -81,17 +83,17 @@ public class DatabaseSeeder(ApplicationDbContext context)
             DiscountType = PromoDiscountType.Percent,
             Value = 10m,
             IsActive = true,
-            ApplicableService = OrderService.qpAdm,
+            ApplicableService = ServiceType.qpAdm,
             RedemptionCount = 0
         });
 
         await context.SaveChangesAsync();
 
-        if (!await context.CatalogProducts.AnyAsync(p => p.ServiceType == OrderService.g25))
+        if (!await context.CatalogProducts.AnyAsync(p => p.ServiceType == ServiceType.g25))
         {
             var g25Product = new CatalogProduct
             {
-                ServiceType = OrderService.g25,
+                ServiceType = ServiceType.g25,
                 DisplayName = "G25 ancestry analysis",
                 Description = "G25 coordinate-based distance and admixture analysis.",
                 BasePrice = 29.99m,
@@ -102,9 +104,50 @@ public class DatabaseSeeder(ApplicationDbContext context)
         }
     }
 
+    private async Task SeedG25AddonsAsync()
+    {
+        var g25Product = await context.CatalogProducts
+            .Include(p => p.CatalogProductAddons)
+            .FirstOrDefaultAsync(p => p.ServiceType == ServiceType.g25);
+
+        if (g25Product is null || g25Product.CatalogProductAddons.Count > 0)
+            return;
+
+        var g25Addons = new[]
+        {
+            new ProductAddon
+            {
+                Code = "G25_ADMIXTURE",
+                DisplayName = "G25 Admixture",
+                Price = 15m,
+                IsActive = true
+            },
+            new ProductAddon
+            {
+                Code = "G25_PCA",
+                DisplayName = "G25 PCA Analysis",
+                Price = 15m,
+                IsActive = true
+            }
+        };
+        context.ProductAddons.AddRange(g25Addons);
+        await context.SaveChangesAsync();
+
+        foreach (var addon in g25Addons)
+        {
+            context.CatalogProductAddons.Add(new CatalogProductAddon
+            {
+                CatalogProductId = g25Product.Id,
+                ProductAddonId = addon.Id
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
     private async Task SeedEthnicitiesAndRegionsAsync()
     {
-        if (await context.Ethnicities.AnyAsync())
+        if (await context.QpadmEthnicities.AnyAsync())
             return;
 
         var seedData = new Dictionary<string, string[]>
@@ -143,12 +186,12 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
         foreach (var (ethnicityName, regionNames) in seedData)
         {
-            var ethnicity = new Ethnicity { Name = ethnicityName };
-            context.Ethnicities.Add(ethnicity);
+            var ethnicity = new QpadmEthnicity { Name = ethnicityName };
+            context.QpadmEthnicities.Add(ethnicity);
 
             foreach (var regionName in regionNames)
             {
-                context.Regions.Add(new Region { Name = regionName, Ethnicity = ethnicity });
+                context.QpadmRegions.Add(new QpadmRegion { Name = regionName, Ethnicity = ethnicity });
             }
         }
 
@@ -157,7 +200,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
     private async Task SeedErasAndPopulationsAsync()
     {
-        if (await context.Eras.AnyAsync())
+        if (await context.QpadmEras.AnyAsync())
             return;
 
         var now = DateTime.UtcNow;
@@ -376,7 +419,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
         foreach (var eraData in eras)
         {
-            var era = new Era
+            var era = new QpadmEra
             {
                 Name = eraData.Name,
                 Description = eraData.Description,
@@ -384,11 +427,11 @@ public class DatabaseSeeder(ApplicationDbContext context)
                 CreatedBy = seeder,
                 UpdatedAt = now,
             };
-            context.Eras.Add(era);
+            context.QpadmEras.Add(era);
 
             foreach (var (popName, popDescription, iconFile, _) in eraData.Populations)
             {
-                context.Populations.Add(new Population
+                context.QpadmPopulations.Add(new QpadmPopulation
                 {
                     Name = popName,
                     Description = popDescription,
@@ -583,6 +626,39 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
     }
 
+    private async Task SeedG25ErasAsync()
+    {
+        if (await context.G25Eras.AnyAsync())
+            return;
+
+        var now = DateTime.UtcNow;
+        const string seeder = "DatabaseSeeder";
+
+        var eraNames = new[]
+        {
+            "Late Bronze Age (3000\u20131200 BC)",
+            "Pre-Classical Iron Age (1200\u20130 BC)",
+            "Imperial Antiquity (0\u2013600 AD)",
+            "Middle Ages (600\u20131400 AD)",
+            "Early Modern Period (1400\u20132000 AD)",
+            "Modern Era (2000\u20132026 AD)",
+        };
+
+        foreach (var name in eraNames)
+        {
+            context.G25Eras.Add(new G25Era
+            {
+                Name = name,
+                CreatedAt = now,
+                CreatedBy = seeder,
+                UpdatedAt = now,
+                UpdatedBy = seeder,
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
     private async Task SeedG25ServiceAsync()
     {
         if (await context.G25Ethnicities.AnyAsync())
@@ -590,19 +666,15 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
         var now = DateTime.UtcNow;
 
-        var defaultRegion = await context.G25Regions.FirstOrDefaultAsync(r => r.Name == "Europe");
-        if (defaultRegion is null)
-        {
-            defaultRegion = new G25Region { Name = "Europe", CreatedBy = "seed", CreatedAt = now, UpdatedAt = now };
-            context.G25Regions.Add(defaultRegion);
-            await context.SaveChangesAsync();
-        }
+        var europe = new G25Continent { Name = "Europe", CreatedBy = "seed", CreatedAt = now, UpdatedAt = now };
+        context.G25Continents.Add(europe);
+        await context.SaveChangesAsync();
 
         var ethnicities = new[]
         {
-            new G25Ethnicity { Name = "Albanian", G25RegionId = defaultRegion.Id, CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
-            new G25Ethnicity { Name = "Greek", G25RegionId = defaultRegion.Id, CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
-            new G25Ethnicity { Name = "Italian", G25RegionId = defaultRegion.Id, CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
+            new G25Ethnicity { Name = "Albanian", G25ContinentId = europe.Id, CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
+            new G25Ethnicity { Name = "Greek", G25ContinentId = europe.Id, CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
+            new G25Ethnicity { Name = "Italian", G25ContinentId = europe.Id, CreatedBy = "seed", CreatedAt = now, UpdatedAt = now },
         };
         context.G25Ethnicities.AddRange(ethnicities);
         await context.SaveChangesAsync();

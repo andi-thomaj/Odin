@@ -12,7 +12,7 @@ public static class GetG25EraContract
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public List<DistanceFileSummary> DistanceFiles { get; set; } = [];
+        public DistanceFileSummary? DistanceFile { get; set; }
     }
 }
 

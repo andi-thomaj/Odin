@@ -105,7 +105,7 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
                 return (false, 403);
             }
 
-            var inUse = await dbContext.GeneticInspections
+            var inUse = await dbContext.QpadmGeneticInspections
                 .AnyAsync(gi => gi.RawGeneticFileId == id
                     && (gi.Order.Status == OrderStatus.Pending || gi.Order.Status == OrderStatus.InProcess));
 

@@ -12,7 +12,7 @@ public class OrderPricingService(ApplicationDbContext dbContext) : IOrderPricing
     private static readonly HashSet<string> MergeCodes = new(StringComparer.OrdinalIgnoreCase) { "MERGE_RAW" };
 
     public async Task<OrderPricingComputation> ComputeAsync(
-        OrderService service,
+        ServiceType service,
         IReadOnlyList<int>? addonIds,
         string? promoCode,
         CancellationToken cancellationToken = default)

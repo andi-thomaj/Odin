@@ -59,6 +59,9 @@ public class G25DistanceFileService(ApplicationDbContext dbContext) : IG25Distan
         var eraExists = await dbContext.G25Eras.AnyAsync(e => e.Id == request.G25EraId, ct);
         if (!eraExists) return (null, "The specified G25 era does not exist.");
 
+        var alreadyLinked = await dbContext.G25DistanceFiles.AnyAsync(f => f.G25EraId == request.G25EraId, ct);
+        if (alreadyLinked) return (null, "That G25 era already has a distance file.");
+
         var entity = new G25DistanceFile
         {
             Title = request.Title.Trim(),
@@ -87,6 +90,10 @@ public class G25DistanceFileService(ApplicationDbContext dbContext) : IG25Distan
 
         var eraExists = await dbContext.G25Eras.AnyAsync(e => e.Id == request.G25EraId, ct);
         if (!eraExists) return (null, "The specified G25 era does not exist.", false);
+
+        var alreadyLinked = await dbContext.G25DistanceFiles.AnyAsync(
+            f => f.G25EraId == request.G25EraId && f.Id != id, ct);
+        if (alreadyLinked) return (null, "That G25 era already has a distance file.", false);
 
         entity.Title = request.Title.Trim();
         entity.Content = request.Content;

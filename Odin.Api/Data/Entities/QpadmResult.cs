@@ -7,7 +7,7 @@ namespace Odin.Api.Data.Entities
     {
         public int Id { get; set; }
         public int GeneticInspectionId { get; set; }
-        public GeneticInspection GeneticInspection { get; set; }
+        public QpadmGeneticInspection GeneticInspection { get; set; }
         public List<QpadmResultEraGroup> QpadmResultEraGroups { get; set; } = [];
         public List<QpadmResultResearchLink> QpadmResultResearchLinks { get; set; } = [];
     }

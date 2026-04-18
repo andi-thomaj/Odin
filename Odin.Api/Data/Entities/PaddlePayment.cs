@@ -13,7 +13,7 @@ public class PaddlePayment
     public required string Currency { get; set; }
     public string? ReceiptUrl { get; set; }
     public int? OrderId { get; set; }
-    public Order? Order { get; set; }
+    public QpadmOrder? Order { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

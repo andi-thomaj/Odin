@@ -7,8 +7,7 @@ namespace Odin.Api.Data.Entities;
 public class CatalogProduct
 {
     public int Id { get; set; }
-    /// <summary>Aligns with <see cref="Order.Service"/> (same persisted string as <c>Odin.Api.Data.Enums.OrderService</c>, e.g. qpAdm).</summary>
-    public OrderService ServiceType { get; set; }
+    public ServiceType ServiceType { get; set; }
     public required string DisplayName { get; set; }
     public string? Description { get; set; }
     public decimal BasePrice { get; set; }

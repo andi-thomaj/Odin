@@ -53,7 +53,7 @@ public static class TestDataHelper
         return (await response.Content.ReadFromJsonAsync<CreateUserContract.Response>())!;
     }
 
-    public static async Task<(List<int> RegionIds, List<Ethnicity> Ethnicities)> SeedEthnicitiesAndRegionsAsync(
+    public static async Task<(List<int> RegionIds, List<QpadmEthnicity> Ethnicities)> SeedEthnicitiesAndRegionsAsync(
         IServiceProvider services,
         int ethnicityCount = 1,
         int regionsPerEthnicity = 2)
@@ -61,24 +61,24 @@ public static class TestDataHelper
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var ethnicities = new List<Ethnicity>();
+        var ethnicities = new List<QpadmEthnicity>();
         var regionIds = new List<int>();
 
         for (var i = 0; i < ethnicityCount; i++)
         {
-            var eth = new Ethnicity { Name = Faker.Address.Country() + $"_{Guid.NewGuid():N}"[..8] };
-            db.Ethnicities.Add(eth);
+            var eth = new QpadmEthnicity { Name = Faker.Address.Country() + $"_{Guid.NewGuid():N}"[..8] };
+            db.QpadmEthnicities.Add(eth);
             await db.SaveChangesAsync();
             ethnicities.Add(eth);
 
             for (var j = 0; j < regionsPerEthnicity; j++)
             {
-                var region = new Region
+                var region = new QpadmRegion
                 {
                     Name = Faker.Address.State() + $"_{Guid.NewGuid():N}"[..8],
                     Ethnicity = eth
                 };
-                db.Regions.Add(region);
+                db.QpadmRegions.Add(region);
                 await db.SaveChangesAsync();
                 regionIds.Add(region.Id);
             }
@@ -166,7 +166,7 @@ public static class TestDataHelper
     {
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var order = await db.Orders.FirstAsync(o => o.Id == orderId);
+        var order = await db.QpadmOrders.FirstAsync(o => o.Id == orderId);
         order.Status = status;
         await db.SaveChangesAsync();
     }
@@ -181,7 +181,7 @@ public static class TestDataHelper
         DateTime? validUntilUtc = null,
         int? maxRedemptions = null,
         int redemptionCount = 0,
-        OrderService? applicableService = null)
+        ServiceType? applicableService = null)
     {
         await using var scope = services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

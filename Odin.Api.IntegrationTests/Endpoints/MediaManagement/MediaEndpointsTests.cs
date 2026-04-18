@@ -150,7 +150,7 @@ public class MediaEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         await using (var scope = Factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var era = await db.Eras.Include(e => e.Populations).ThenInclude(p => p.MusicTrack).FirstAsync();
+            var era = await db.QpadmEras.Include(e => e.Populations).ThenInclude(p => p.MusicTrack).FirstAsync();
             var pop = era.Populations.First();
             await SeedMusicTrackFileAsync(pop.MusicTrackId, pop.MusicTrack.FileName);
         }
@@ -230,7 +230,7 @@ public class MediaEndpointsTests(CustomWebApplicationFactory factory) : Integrat
         var seeder = scope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
         await seeder.SeedReferenceCatalogAsync();
 
-        var era = await db.Eras.Include(e => e.Populations).FirstAsync();
+        var era = await db.QpadmEras.Include(e => e.Populations).FirstAsync();
         var populations = era.Populations.Take(2).ToList();
 
         var qpadmResult = new QpadmResult { GeneticInspectionId = geneticInspectionId, CreatedBy = "test-seed" };

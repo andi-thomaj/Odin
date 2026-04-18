@@ -89,7 +89,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
             public string? Country { get; set; }
             public string? CountryCode { get; set; }
             public bool HasQpadmResult { get; set; }
-            public string? PaternalHaplogroup { get; set; }
             public List<RegionResponse> Regions { get; set; } = [];
         }
     }

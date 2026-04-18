@@ -16,6 +16,10 @@ public static class G25RegionEndpoints
             .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated");
 
+        endpoints.MapGet("/by-ethnicity/{g25EthnicityId:int}", GetByEthnicityId)
+            .RequireAuthorization("EmailVerified")
+            .RequireRateLimiting("authenticated");
+
         endpoints.MapPost("/", Create)
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("strict");
@@ -39,6 +43,12 @@ public static class G25RegionEndpoints
     {
         var item = await service.GetByIdAsync(id);
         return item is null ? Results.NotFound() : Results.Ok(item);
+    }
+
+    private static async Task<IResult> GetByEthnicityId(IG25RegionService service, int g25EthnicityId)
+    {
+        var items = await service.GetByEthnicityIdAsync(g25EthnicityId);
+        return Results.Ok(items);
     }
 
     private static async Task<IResult> Create(IG25RegionService service, CreateG25RegionContract.Request request)

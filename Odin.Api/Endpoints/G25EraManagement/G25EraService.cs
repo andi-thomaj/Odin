@@ -25,10 +25,9 @@ public class G25EraService(ApplicationDbContext dbContext) : IG25EraService
             {
                 Id = e.Id,
                 Name = e.Name,
-                DistanceFiles = e.DistanceFiles
-                    .OrderBy(f => f.Title)
-                    .Select(f => new GetG25EraContract.DistanceFileSummary { Id = f.Id, Title = f.Title })
-                    .ToList()
+                DistanceFile = e.DistanceFile == null
+                    ? null
+                    : new GetG25EraContract.DistanceFileSummary { Id = e.DistanceFile.Id, Title = e.DistanceFile.Title }
             })
             .ToListAsync(ct);
     }
@@ -42,10 +41,9 @@ public class G25EraService(ApplicationDbContext dbContext) : IG25EraService
             {
                 Id = e.Id,
                 Name = e.Name,
-                DistanceFiles = e.DistanceFiles
-                    .OrderBy(f => f.Title)
-                    .Select(f => new GetG25EraContract.DistanceFileSummary { Id = f.Id, Title = f.Title })
-                    .ToList()
+                DistanceFile = e.DistanceFile == null
+                    ? null
+                    : new GetG25EraContract.DistanceFileSummary { Id = e.DistanceFile.Id, Title = e.DistanceFile.Title }
             })
             .FirstOrDefaultAsync(ct);
     }

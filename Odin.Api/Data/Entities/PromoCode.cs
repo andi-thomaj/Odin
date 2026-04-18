@@ -18,8 +18,8 @@ public class PromoCode
     public int RedemptionCount { get; set; }
     public bool IsActive { get; set; } = true;
     /// <summary>When set, code applies only to this product line.</summary>
-    public OrderService? ApplicableService { get; set; }
-    public List<Order> Orders { get; set; } = [];
+    public ServiceType? ApplicableService { get; set; }
+    public List<QpadmOrder> Orders { get; set; } = [];
 }
 
 public class PromoCodeConfiguration : IEntityTypeConfiguration<PromoCode>

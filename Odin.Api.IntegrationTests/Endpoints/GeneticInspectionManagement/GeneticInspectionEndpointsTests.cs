@@ -298,7 +298,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var era = await db.Eras.Include(e => e.Populations).FirstAsync();
+        var era = await db.QpadmEras.Include(e => e.Populations).FirstAsync();
         var pops = era.Populations.Take(2).ToList();
 
         using var form = new MultipartFormDataContent();
@@ -313,7 +313,6 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         form.Add(new StringContent("40"), "EraGroups[0].Populations[1].Percentage");
         form.Add(new StringContent("0.8"), "EraGroups[0].Populations[1].StandardError");
         form.Add(new StringContent("1.9"), "EraGroups[0].Populations[1].ZScore");
-        form.Add(new StringContent("R1b-M343"), "PaternalHaplogroup");
 
         var response = await Client.PostAsync(
             $"/api/genetic-inspections/{createdInspection.Id}/qpadm-result", form);
@@ -335,7 +334,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var era = await db.Eras.Include(e => e.Populations).FirstAsync();
+        var era = await db.QpadmEras.Include(e => e.Populations).FirstAsync();
         var pop = era.Populations.First();
 
         using var form = new MultipartFormDataContent();
@@ -379,7 +378,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var era = await db.Eras.Include(e => e.Populations).FirstAsync();
+        var era = await db.QpadmEras.Include(e => e.Populations).FirstAsync();
         var pops = era.Populations.Take(2).ToList();
 
         var qpadmResult = new QpadmResult

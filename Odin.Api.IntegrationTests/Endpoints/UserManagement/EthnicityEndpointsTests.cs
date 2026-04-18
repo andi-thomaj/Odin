@@ -51,7 +51,7 @@ public class EthnicityEndpointsTests(CustomWebApplicationFactory factory) : Inte
         // Arrange
         using var scope = CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        dbContext.Ethnicities.Add(new Ethnicity { Name = "Pomak" });
+        dbContext.QpadmEthnicities.Add(new QpadmEthnicity { Name = "Pomak" });
         await dbContext.SaveChangesAsync();
 
         // Act
@@ -90,15 +90,15 @@ public class EthnicityEndpointsTests(CustomWebApplicationFactory factory) : Inte
         using var scope = CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
-        var greek = new Ethnicity { Name = "Greek" };
-        var albanian = new Ethnicity { Name = "Albanian" };
-        dbContext.Ethnicities.AddRange(greek, albanian);
+        var greek = new QpadmEthnicity { Name = "Greek" };
+        var albanian = new QpadmEthnicity { Name = "Albanian" };
+        dbContext.QpadmEthnicities.AddRange(greek, albanian);
         await dbContext.SaveChangesAsync();
 
-        dbContext.Regions.AddRange(
-            new Region { Name = "Attica", Ethnicity = greek },
-            new Region { Name = "Peloponnese", Ethnicity = greek },
-            new Region { Name = "South Albanian", Ethnicity = albanian }
+        dbContext.QpadmRegions.AddRange(
+            new QpadmRegion { Name = "Attica", Ethnicity = greek },
+            new QpadmRegion { Name = "Peloponnese", Ethnicity = greek },
+            new QpadmRegion { Name = "South Albanian", Ethnicity = albanian }
         );
         await dbContext.SaveChangesAsync();
     }

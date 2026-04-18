@@ -9,7 +9,7 @@ namespace Odin.Api.Data.Entities
         public int QpadmResultId { get; set; }
         public QpadmResult QpadmResult { get; set; } = null!;
         public int EraId { get; set; }
-        public Era Era { get; set; } = null!;
+        public QpadmEra Era { get; set; } = null!;
         public decimal PValue { get; set; }
         public string RightSources { get; set; } = string.Empty;
         public List<QpadmResultPopulation> QpadmResultPopulations { get; set; } = [];

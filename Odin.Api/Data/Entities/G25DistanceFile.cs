@@ -22,10 +22,10 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.Content).IsRequired().HasColumnType("text");
 
             builder.HasOne(e => e.Era)
-                .WithMany(er => er.DistanceFiles)
-                .HasForeignKey(e => e.G25EraId)
+                .WithOne(er => er.DistanceFile)
+                .HasForeignKey<G25DistanceFile>(e => e.G25EraId)
                 .OnDelete(DeleteBehavior.Cascade);
-            builder.HasIndex(e => e.G25EraId);
+            builder.HasIndex(e => e.G25EraId).IsUnique();
 
             builder.ToTable("g25_distance_files");
         }

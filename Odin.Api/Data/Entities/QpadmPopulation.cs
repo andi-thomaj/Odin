@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities
 {
-    public class Population : BaseEntity
+    public class QpadmPopulation : BaseEntity
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -12,14 +12,14 @@ namespace Odin.Api.Data.Entities
         public string IconFileName { get; set; }
         public string Color { get; set; }
         public int EraId { get; set; }
-        public Era Era { get; set; }
+        public QpadmEra Era { get; set; }
         public int MusicTrackId { get; set; }
         public MusicTrack MusicTrack { get; set; }
     }
 
-    public class PopulationConfiguration : IEntityTypeConfiguration<Population>
+    public class QpadmPopulationConfiguration : IEntityTypeConfiguration<QpadmPopulation>
     {
-        public void Configure(EntityTypeBuilder<Population> builder)
+        public void Configure(EntityTypeBuilder<QpadmPopulation> builder)
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.Name).IsRequired().HasMaxLength(100);
@@ -34,7 +34,7 @@ namespace Odin.Api.Data.Entities
                 .WithMany(e => e.Populations)
                 .HasForeignKey(e => e.MusicTrackId);
 
-            builder.ToTable("populations");
+            builder.ToTable("qpadm_populations");
         }
     }
 }

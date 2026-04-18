@@ -16,7 +16,7 @@ public static class G25AdmixtureFileEndpoints
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("authenticated");
 
-        endpoints.MapGet("/by-ethnicity/{g25EthnicityId:int}", GetByEthnicityId)
+        endpoints.MapGet("/by-region/{g25RegionId:int}", GetByRegionId)
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("authenticated");
 
@@ -45,9 +45,9 @@ public static class G25AdmixtureFileEndpoints
         return item is null ? Results.NotFound() : Results.Ok(item);
     }
 
-    private static async Task<IResult> GetByEthnicityId(IG25AdmixtureFileService service, int g25EthnicityId)
+    private static async Task<IResult> GetByRegionId(IG25AdmixtureFileService service, int g25RegionId)
     {
-        var item = await service.GetByEthnicityIdAsync(g25EthnicityId);
+        var item = await service.GetByRegionIdAsync(g25RegionId);
         return item is null ? Results.NotFound() : Results.Ok(item);
     }
 

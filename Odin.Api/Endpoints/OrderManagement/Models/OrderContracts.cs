@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using Odin.Api.Data.Enums;
-using OrderServiceEnum = Odin.Api.Data.Enums.OrderService;
 
 namespace Odin.Api.Endpoints.OrderManagement.Models
 {
@@ -17,12 +16,13 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string? MiddleName { get; set; }
             public required string LastName { get; set; }
             public required string Gender { get; set; }
-            public OrderServiceEnum Service { get; set; } = OrderServiceEnum.qpAdm;
+            public ServiceType Service { get; set; } = ServiceType.qpAdm;
             public List<int> RegionIds { get; set; } = [];
             public List<int> AddonIds { get; set; } = [];
             public string? PromoCode { get; set; }
             public IFormFile? File { get; set; }
             public int? ExistingFileId { get; set; }
+            public string? G25Coordinates { get; set; }
             public IFormFile? ProfilePicture { get; set; }
             public int? PaddlePaymentId { get; set; }
 
@@ -51,13 +51,30 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
                 if (!Enum.IsDefined(Service))
                     yield return new ValidationResult("Invalid service type.", [nameof(Service)]);
 
-                if (RegionIds.Count == 0)
+                if (Service == ServiceType.qpAdm && RegionIds.Count == 0)
                     yield return new ValidationResult("At least one region must be selected.", [nameof(RegionIds)]);
 
                 var hasFile = File is not null && File.Length > 0;
                 var hasExistingId = ExistingFileId.HasValue && ExistingFileId.Value > 0;
+                var hasCoordinates = !string.IsNullOrWhiteSpace(G25Coordinates);
 
-                if (!hasFile && !hasExistingId)
+                if (Service == ServiceType.g25)
+                {
+                    if (!hasFile && !hasExistingId && !hasCoordinates)
+                    {
+                        yield return new ValidationResult(
+                            "Provide G25 coordinates, or upload a genetic file, or select an existing one.",
+                            [nameof(File), nameof(ExistingFileId), nameof(G25Coordinates)]);
+                    }
+
+                    if (hasCoordinates && G25Coordinates!.Length > 500)
+                    {
+                        yield return new ValidationResult(
+                            "G25 coordinates must not exceed 500 characters.",
+                            [nameof(G25Coordinates)]);
+                    }
+                }
+                else if (!hasFile && !hasExistingId)
                 {
                     yield return new ValidationResult(
                         "A genetic file is required — upload a new file or select an existing one.",
@@ -181,6 +198,61 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
         }
     }
 
+    public class GetOrderG25ResultContract
+    {
+        public class DistancePopulationResult
+        {
+            public required string Name { get; set; }
+            public double Distance { get; set; }
+            public int Rank { get; set; }
+        }
+
+        public class DistanceEraResult
+        {
+            public int EraId { get; set; }
+            public required string EraName { get; set; }
+            public List<DistancePopulationResult> Populations { get; set; } = [];
+        }
+
+        public class AdmixtureAncestorResult
+        {
+            public required string Name { get; set; }
+            public double Percentage { get; set; }
+        }
+
+        public class AdmixtureResult
+        {
+            public double FitDistance { get; set; }
+            public List<AdmixtureAncestorResult> Ancestors { get; set; } = [];
+        }
+
+        public class PcaFileResult
+        {
+            public int Id { get; set; }
+            public required string FileName { get; set; }
+        }
+
+        public class PcaContinentResult
+        {
+            public int ContinentId { get; set; }
+            public required string ContinentName { get; set; }
+            public List<PcaFileResult> Files { get; set; } = [];
+        }
+
+        public class Response
+        {
+            public string FirstName { get; set; } = string.Empty;
+            public string MiddleName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+            public string? Gender { get; set; }
+            public bool HasProfilePicture { get; set; }
+            public string? G25Coordinates { get; set; }
+            public List<DistanceEraResult> DistanceEras { get; set; } = [];
+            public AdmixtureResult? Admixture { get; set; }
+            public List<PcaContinentResult> Pca { get; set; } = [];
+        }
+    }
+
     public class GetOrderQpadmResultContract
     {
         public class PopulationResult
@@ -213,7 +285,6 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string FirstName { get; set; } = string.Empty;
             public string MiddleName { get; set; } = string.Empty;
             public string LastName { get; set; } = string.Empty;
-            public string? PaternalHaplogroup { get; set; }
             public bool HasMergedRawData { get; set; }
             public bool HasProfilePicture { get; set; }
             public string? Gender { get; set; }

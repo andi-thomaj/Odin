@@ -8,6 +8,7 @@ namespace Odin.Api.Endpoints.G25EthnicityManagement;
 public interface IG25EthnicityService
 {
     Task<IReadOnlyList<GetG25EthnicityContract.Response>> GetAllAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<GetG25EthnicityContract.Response>> GetByContinentIdAsync(int g25ContinentId, CancellationToken ct = default);
     Task<IReadOnlyList<GetG25EthnicityAdminContract.Response>> GetAllAdminAsync(CancellationToken ct = default);
     Task<GetG25EthnicityAdminContract.Response?> GetByIdAdminAsync(int id, CancellationToken ct = default);
     Task<(GetG25EthnicityAdminContract.Response? Response, string? Error)> CreateAsync(CreateG25EthnicityContract.Request request, CancellationToken ct = default);
@@ -21,14 +22,47 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
     {
         return await dbContext.G25Ethnicities
             .AsNoTracking()
-            .Include(e => e.G25Region)
             .OrderBy(e => e.Name)
             .Select(e => new GetG25EthnicityContract.Response
             {
                 Id = e.Id,
                 Name = e.Name,
-                G25RegionId = e.G25RegionId,
-                G25RegionName = e.G25Region.Name
+                G25ContinentId = e.G25ContinentId,
+                G25ContinentName = e.G25Continent.Name,
+                Regions = e.G25Regions
+                    .OrderBy(r => r.Name)
+                    .Select(r => new GetG25EthnicityContract.RegionSummary
+                    {
+                        Id = r.Id,
+                        Name = r.Name,
+                        HasAdmixtureFile = r.AdmixtureFile != null
+                    })
+                    .ToList()
+            })
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<GetG25EthnicityContract.Response>> GetByContinentIdAsync(int g25ContinentId, CancellationToken ct = default)
+    {
+        return await dbContext.G25Ethnicities
+            .AsNoTracking()
+            .Where(e => e.G25ContinentId == g25ContinentId)
+            .OrderBy(e => e.Name)
+            .Select(e => new GetG25EthnicityContract.Response
+            {
+                Id = e.Id,
+                Name = e.Name,
+                G25ContinentId = e.G25ContinentId,
+                G25ContinentName = e.G25Continent.Name,
+                Regions = e.G25Regions
+                    .OrderBy(r => r.Name)
+                    .Select(r => new GetG25EthnicityContract.RegionSummary
+                    {
+                        Id = r.Id,
+                        Name = r.Name,
+                        HasAdmixtureFile = r.AdmixtureFile != null
+                    })
+                    .ToList()
             })
             .ToListAsync(ct);
     }
@@ -37,15 +71,22 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
     {
         return await dbContext.G25Ethnicities
             .AsNoTracking()
-            .Include(e => e.G25Region)
             .OrderBy(e => e.Name)
             .Select(e => new GetG25EthnicityAdminContract.Response
             {
                 Id = e.Id,
                 Name = e.Name,
-                G25RegionId = e.G25RegionId,
-                G25RegionName = e.G25Region.Name,
-                HasAdmixtureFile = e.AdmixtureFile != null
+                G25ContinentId = e.G25ContinentId,
+                G25ContinentName = e.G25Continent.Name,
+                Regions = e.G25Regions
+                    .OrderBy(r => r.Name)
+                    .Select(r => new GetG25EthnicityContract.RegionSummary
+                    {
+                        Id = r.Id,
+                        Name = r.Name,
+                        HasAdmixtureFile = r.AdmixtureFile != null
+                    })
+                    .ToList()
             })
             .ToListAsync(ct);
     }
@@ -54,15 +95,22 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
     {
         return await dbContext.G25Ethnicities
             .AsNoTracking()
-            .Include(e => e.G25Region)
             .Where(e => e.Id == id)
             .Select(e => new GetG25EthnicityAdminContract.Response
             {
                 Id = e.Id,
                 Name = e.Name,
-                G25RegionId = e.G25RegionId,
-                G25RegionName = e.G25Region.Name,
-                HasAdmixtureFile = e.AdmixtureFile != null
+                G25ContinentId = e.G25ContinentId,
+                G25ContinentName = e.G25Continent.Name,
+                Regions = e.G25Regions
+                    .OrderBy(r => r.Name)
+                    .Select(r => new GetG25EthnicityContract.RegionSummary
+                    {
+                        Id = r.Id,
+                        Name = r.Name,
+                        HasAdmixtureFile = r.AdmixtureFile != null
+                    })
+                    .ToList()
             })
             .FirstOrDefaultAsync(ct);
     }
@@ -70,16 +118,13 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
     public async Task<(GetG25EthnicityAdminContract.Response? Response, string? Error)> CreateAsync(
         CreateG25EthnicityContract.Request request, CancellationToken ct = default)
     {
-        var error = await ValidateNameAsync(request.Name, null, ct);
+        var error = await ValidateAsync(request.Name, request.G25ContinentId, null, ct);
         if (error is not null) return (null, error);
-
-        var regionExists = await dbContext.G25Regions.AnyAsync(r => r.Id == request.G25RegionId, ct);
-        if (!regionExists) return (null, "The specified G25 region does not exist.");
 
         var entity = new G25Ethnicity
         {
             Name = request.Name.Trim(),
-            G25RegionId = request.G25RegionId,
+            G25ContinentId = request.G25ContinentId,
             CreatedBy = "system",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -97,14 +142,11 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
         var entity = await dbContext.G25Ethnicities.FirstOrDefaultAsync(e => e.Id == id, ct);
         if (entity is null) return (null, null, true);
 
-        var error = await ValidateNameAsync(request.Name, id, ct);
+        var error = await ValidateAsync(request.Name, request.G25ContinentId, id, ct);
         if (error is not null) return (null, error, false);
 
-        var regionExists = await dbContext.G25Regions.AnyAsync(r => r.Id == request.G25RegionId, ct);
-        if (!regionExists) return (null, "The specified G25 region does not exist.", false);
-
         entity.Name = request.Name.Trim();
-        entity.G25RegionId = request.G25RegionId;
+        entity.G25ContinentId = request.G25ContinentId;
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(ct);
 
@@ -115,22 +157,23 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
     public async Task<bool> DeleteAsync(int id, CancellationToken ct = default)
     {
         var entity = await dbContext.G25Ethnicities
-            .Include(e => e.AdmixtureFile)
+            .Include(e => e.G25Regions)
+                .ThenInclude(r => r.AdmixtureFile)
             .FirstOrDefaultAsync(e => e.Id == id, ct);
         if (entity is null) return false;
-
-        if (entity.AdmixtureFile is not null)
-            dbContext.G25AdmixtureFiles.Remove(entity.AdmixtureFile);
 
         dbContext.G25Ethnicities.Remove(entity);
         await dbContext.SaveChangesAsync(ct);
         return true;
     }
 
-    private async Task<string?> ValidateNameAsync(string name, int? existingId, CancellationToken ct)
+    private async Task<string?> ValidateAsync(string name, int continentId, int? existingId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(name) || name.Trim().Length > 100)
             return "Name is required and must be 1-100 characters.";
+
+        var continentExists = await dbContext.G25Continents.AnyAsync(c => c.Id == continentId, ct);
+        if (!continentExists) return "The specified G25 continent does not exist.";
 
         var trimmed = name.Trim();
         var exists = await dbContext.G25Ethnicities
