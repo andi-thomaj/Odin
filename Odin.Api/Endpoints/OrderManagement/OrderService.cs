@@ -1,8 +1,10 @@
+using System.Diagnostics;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
+using Odin.Api.Endpoints.Admin.Models;
 using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25Calculations.Models;
 using Odin.Api.Endpoints.OrderManagement.Models;
@@ -22,6 +24,8 @@ public interface IOrderService
     Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId);
     Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId);
     Task<(bool Success, int StatusCode, string? Error)> MarkResultsAsViewedAsync(int orderId, string identityId);
+    Task<RecomputeG25DistancesContract.Response> RecomputeG25DistanceResultsAsync(string identityId, IReadOnlyList<int>? inspectionIds = null);
+    Task<List<AdminG25InspectionContract.ListItem>> GetAdminG25InspectionsAsync();
 }
 
 public class OrderService(
@@ -929,5 +933,166 @@ public class OrderService(
             await dbContext.SaveChangesAsync();
 
             return (true, 200, null);
+        }
+
+        public async Task<RecomputeG25DistancesContract.Response> RecomputeG25DistanceResultsAsync(string identityId, IReadOnlyList<int>? inspectionIds = null)
+        {
+            var startedAt = DateTime.UtcNow;
+            var stopwatch = Stopwatch.StartNew();
+            var version = $"v{startedAt:yyyyMMddHHmmss}";
+
+            var eras = await dbContext.G25Eras
+                .AsNoTracking()
+                .Where(e => e.DistanceFile != null)
+                .Select(e => new { e.Id, e.Name })
+                .ToListAsync();
+
+            var response = new RecomputeG25DistancesContract.Response
+            {
+                Version = version,
+                ErasConsidered = eras.Count,
+                InspectionsRequested = inspectionIds?.Count ?? 0,
+            };
+
+            if (eras.Count == 0)
+            {
+                logger.LogWarning("G25 distance recompute aborted: no eras with an attached distance file.");
+                stopwatch.Stop();
+                response.DurationMs = stopwatch.ElapsedMilliseconds;
+                return response;
+            }
+
+            var inspectionsQuery = dbContext.G25GeneticInspections
+                .Where(gi => gi.G25Coordinates != null && gi.G25Coordinates != "");
+
+            if (inspectionIds is { Count: > 0 })
+            {
+                var idSet = inspectionIds.ToHashSet();
+                inspectionsQuery = inspectionsQuery.Where(gi => idSet.Contains(gi.Id));
+            }
+
+            var inspections = await inspectionsQuery
+                .Select(gi => new { gi.Id, gi.FirstName, gi.LastName, gi.G25Coordinates })
+                .ToListAsync();
+
+            if (response.InspectionsRequested == 0)
+            {
+                response.InspectionsRequested = inspections.Count;
+            }
+
+            foreach (var inspection in inspections)
+            {
+                var existingByEra = await dbContext.G25DistanceResults
+                    .Where(r => r.GeneticInspectionId == inspection.Id)
+                    .ToDictionaryAsync(r => r.G25EraId);
+
+                var targetName = BuildTargetName(inspection.FirstName, inspection.LastName);
+                var normalizedTarget = NormalizeCoordinatesForTarget(inspection.G25Coordinates!, targetName);
+                var changedForInspection = 0;
+
+                foreach (var era in eras)
+                {
+                    var (computeResponse, error, notFound) = await g25CalculationService.ComputeDistancesAsync(
+                        new ComputeDistancesContract.Request
+                        {
+                            TargetCoordinates = normalizedTarget,
+                            G25EraId = era.Id,
+                            MaxResults = G25DistanceMaxResults
+                        });
+
+                    if (computeResponse is null)
+                    {
+                        logger.LogWarning(
+                            "G25 distance recompute failed for inspection {InspectionId}, era {EraId} ({EraName}). NotFound={NotFound}. Error={Error}",
+                            inspection.Id, era.Id, era.Name, notFound, error);
+                        continue;
+                    }
+
+                    if (computeResponse.Results.Count == 0)
+                        continue;
+
+                    var populations = computeResponse.Results[0].Rows
+                        .Select((row, index) => new G25DistancePopulation
+                        {
+                            Name = row.Name,
+                            Distance = row.Distance,
+                            Rank = index + 1
+                        })
+                        .ToList();
+
+                    if (populations.Count == 0)
+                        continue;
+
+                    var now = DateTime.UtcNow;
+                    if (existingByEra.TryGetValue(era.Id, out var existing))
+                    {
+                        existing.Populations = populations;
+                        existing.ResultsVersion = version;
+                        existing.UpdatedBy = identityId;
+                        existing.UpdatedAt = now;
+                    }
+                    else
+                    {
+                        dbContext.G25DistanceResults.Add(new G25DistanceResult
+                        {
+                            GeneticInspectionId = inspection.Id,
+                            G25EraId = era.Id,
+                            ResultsVersion = version,
+                            Populations = populations,
+                            CreatedBy = identityId,
+                            CreatedAt = now,
+                            UpdatedAt = now,
+                        });
+                    }
+
+                    changedForInspection++;
+                }
+
+                if (changedForInspection > 0)
+                {
+                    await dbContext.SaveChangesAsync();
+                    response.InspectionsProcessed++;
+                    response.ResultsUpserted += changedForInspection;
+                }
+                else
+                {
+                    response.InspectionsSkipped++;
+                }
+            }
+
+            stopwatch.Stop();
+            response.DurationMs = stopwatch.ElapsedMilliseconds;
+            logger.LogInformation(
+                "G25 distance recompute complete. Version={Version}, Inspections processed={Processed}, skipped={Skipped}, Results upserted={Results}, Duration={DurationMs}ms",
+                response.Version, response.InspectionsProcessed, response.InspectionsSkipped, response.ResultsUpserted, response.DurationMs);
+
+            return response;
+        }
+
+        public async Task<List<AdminG25InspectionContract.ListItem>> GetAdminG25InspectionsAsync()
+        {
+            return await dbContext.G25GeneticInspections
+                .AsNoTracking()
+                .OrderByDescending(gi => gi.Id)
+                .Select(gi => new AdminG25InspectionContract.ListItem
+                {
+                    Id = gi.Id,
+                    OrderId = gi.OrderId,
+                    FirstName = gi.FirstName,
+                    MiddleName = gi.MiddleName,
+                    LastName = gi.LastName,
+                    UserEmail = gi.User != null ? gi.User.Email : null,
+                    HasCoordinates = gi.G25Coordinates != null && gi.G25Coordinates != "",
+                    ResultCount = gi.G25DistanceResults.Count,
+                    LatestResultsVersion = gi.G25DistanceResults
+                        .OrderByDescending(r => r.UpdatedAt)
+                        .Select(r => r.ResultsVersion)
+                        .FirstOrDefault(),
+                    LatestResultsUpdatedAt = gi.G25DistanceResults
+                        .OrderByDescending(r => r.UpdatedAt)
+                        .Select(r => (DateTime?)r.UpdatedAt)
+                        .FirstOrDefault(),
+                })
+                .ToListAsync();
         }
 }

@@ -8,6 +8,7 @@ using Odin.Api.Authentication;
 using Odin.Api.Services.Email;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Endpoints.Admin;
 using Odin.Api.Endpoints.AdmixtureSavedFileManagement;
 using Odin.Api.Endpoints.ChangelogManagement;
 using Odin.Api.Endpoints.CatalogManagement;
@@ -504,6 +505,7 @@ namespace Odin.Api
             app.MapG25AdmixtureFileEndpoints();
             app.MapG25PcaFileEndpoints();
             app.MapG25CalculationEndpoints();
+            app.MapG25AdminEndpoints();
             await app.RunAsync();
         }
 
