@@ -744,6 +744,7 @@ public class OrderService(
                 Gender = order.GeneticInspection.Gender?.ToString(),
                 IntroTrackId = introTrack?.Id,
                 HasIntroAudioFile = introTrack?.HasFile ?? false,
+                ResultsVersion = qpadmResult.ResultsVersion,
                 EraGroups = qpadmResult.QpadmResultEraGroups.Select(eg => new GetOrderQpadmResultContract.EraGroupResult
                 {
                     EraId = eg.EraId,

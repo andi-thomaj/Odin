@@ -290,6 +290,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string? Gender { get; set; }
             public int? IntroTrackId { get; set; }
             public bool HasIntroAudioFile { get; set; }
+            public string ResultsVersion { get; set; } = string.Empty;
             public List<EraGroupResult> EraGroups { get; set; } = [];
         }
     }

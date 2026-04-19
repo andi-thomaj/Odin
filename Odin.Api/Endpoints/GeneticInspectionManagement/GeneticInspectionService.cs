@@ -315,6 +315,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             if (inspection.QpadmResult is not null)
             {
                 inspection.QpadmResult.UpdatedAt = DateTime.UtcNow;
+                inspection.QpadmResult.ResultsVersion = NextQpadmVersion(inspection.QpadmResult.ResultsVersion);
 
                 foreach (var existing in inspection.QpadmResult.QpadmResultEraGroups.ToList())
                     dbContext.RemoveRange(existing.QpadmResultPopulations);
@@ -331,7 +332,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 {
                     GeneticInspectionId = inspectionId,
                     QpadmResultEraGroups = eraGroupEntities,
-                    CreatedBy = string.Empty
+                    CreatedBy = string.Empty,
+                    ResultsVersion = "v1"
                 };
             }
 
@@ -360,6 +362,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             {
                 Id = inspection.QpadmResult.Id,
                 GeneticInspectionId = inspectionId,
+                ResultsVersion = inspection.QpadmResult.ResultsVersion,
                 EraGroups = eraGroupEntities.Select(eg => new EraGroupResponse
                 {
                     EraId = eg.EraId,
@@ -402,6 +405,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             {
                 Id = result.Id,
                 GeneticInspectionId = inspectionId,
+                ResultsVersion = result.ResultsVersion,
                 EraGroups = result.QpadmResultEraGroups.Select(eg => new EraGroupResponse
                 {
                     EraId = eg.EraId,
@@ -421,6 +425,16 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                         }).ToList()
                 }).ToList()
             };
+        }
+
+        private static string NextQpadmVersion(string current)
+        {
+            if (string.IsNullOrWhiteSpace(current) ||
+                !current.StartsWith("v", StringComparison.OrdinalIgnoreCase))
+                return "v1";
+            if (int.TryParse(current.AsSpan(1), out var n) && n > 0)
+                return $"v{n + 1}";
+            return "v1";
         }
 
     }

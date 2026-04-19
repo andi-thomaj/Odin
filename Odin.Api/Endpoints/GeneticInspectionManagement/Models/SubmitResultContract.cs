@@ -83,6 +83,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
         {
             public int Id { get; set; }
             public int GeneticInspectionId { get; set; }
+            public string ResultsVersion { get; set; } = string.Empty;
             public List<EraGroupResponse> EraGroups { get; set; } = [];
         }
     }

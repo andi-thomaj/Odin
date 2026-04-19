@@ -8,6 +8,7 @@ namespace Odin.Api.Data.Entities
         public int Id { get; set; }
         public int GeneticInspectionId { get; set; }
         public QpadmGeneticInspection GeneticInspection { get; set; }
+        public string ResultsVersion { get; set; } = string.Empty;
         public List<QpadmResultEraGroup> QpadmResultEraGroups { get; set; } = [];
         public List<QpadmResultResearchLink> QpadmResultResearchLinks { get; set; } = [];
     }
@@ -17,6 +18,7 @@ namespace Odin.Api.Data.Entities
         public void Configure(EntityTypeBuilder<QpadmResult> builder)
         {
             builder.HasKey(e => e.Id);
+            builder.Property(e => e.ResultsVersion).IsRequired().HasMaxLength(50);
 
             builder.HasOne(e => e.GeneticInspection)
                 .WithOne(e => e.QpadmResult)
