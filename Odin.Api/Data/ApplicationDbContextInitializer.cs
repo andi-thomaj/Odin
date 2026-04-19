@@ -72,6 +72,34 @@ namespace Odin.Api.Data
             if (initialCreate is null)
                 return;
 
+            // If the database has a non-empty migration history, we're on the normal migration
+            // path — later migrations (not InitialCreate) own any schema differences. Ensure the
+            // InitialCreate entry is present (a prior failed run of this method may have deleted
+            // it) and return so MigrateAsync() applies any pending later migrations.
+            List<string> applied;
+            try
+            {
+                applied = (await context.Database.GetAppliedMigrationsAsync()).ToList();
+            }
+            catch
+            {
+                applied = [];
+            }
+
+            if (applied.Count > 0)
+            {
+                if (!applied.Contains(initialCreate))
+                {
+                    logger.LogInformation(
+                        "Restoring missing '{Migration}' entry in migration history", initialCreate);
+                    await context.Database.ExecuteSqlRawAsync(
+                        "INSERT INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") " +
+                        "VALUES ({0}, {1}) ON CONFLICT DO NOTHING",
+                        initialCreate, ProductInfo.GetVersion());
+                }
+                return;
+            }
+
             var conn = context.Database.GetDbConnection();
             await conn.OpenAsync();
             try
@@ -99,9 +127,7 @@ namespace Odin.Api.Data
                         existingTables.Add(reader.GetString(0));
                 }
 
-                var pending = (await context.Database.GetPendingMigrationsAsync()).ToList();
-
-                if (modelTables.IsSubsetOf(existingTables) && pending.Contains(initialCreate))
+                if (modelTables.IsSubsetOf(existingTables))
                 {
                     // All tables exist — just record the migration
                     logger.LogInformation(
@@ -121,11 +147,6 @@ namespace Odin.Api.Data
                 logger.LogWarning(
                     "Missing {Count} table(s): {Tables} — applying idempotent migration",
                     missing.Count, string.Join(", ", missing));
-
-                // Remove any incorrect migration record from a prior run
-                await context.Database.ExecuteSqlRawAsync(
-                    "DELETE FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = {0}",
-                    initialCreate);
 
                 var migrator = context.GetService<IMigrator>();
                 var sql = migrator.GenerateScript(
