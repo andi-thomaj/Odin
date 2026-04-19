@@ -357,7 +357,7 @@ public class OrderService(
                 else
                 {
                     logger.LogWarning(
-                        "G25 order {OrderId} (inspection {InspectionId}) produced no distance results; leaving status Pending. Verify that at least one G25Era has an attached G25DistanceFile with matching column count.",
+                        "G25 order {OrderId} (inspection {InspectionId}) produced no distance results; leaving status Pending. Verify that at least one G25DistanceEra has an attached G25DistanceFile with matching column count.",
                         order.Id, geneticInspection.Id);
                 }
             }
@@ -379,7 +379,7 @@ public class OrderService(
             string lastName,
             string identityId)
         {
-            var eras = await dbContext.G25Eras
+            var eras = await dbContext.G25DistanceEras
                 .AsNoTracking()
                 .Where(e => e.DistanceFile != null)
                 .Select(e => new { e.Id, e.Name })
@@ -388,7 +388,7 @@ public class OrderService(
             if (eras.Count == 0)
             {
                 logger.LogWarning(
-                    "G25 distance compute skipped for inspection {InspectionId}: no G25Eras have an attached G25DistanceFile.",
+                    "G25 distance compute skipped for inspection {InspectionId}: no G25DistanceEras have an attached G25DistanceFile.",
                     geneticInspectionId);
                 return 0;
             }
@@ -403,7 +403,7 @@ public class OrderService(
                     new ComputeDistancesContract.Request
                     {
                         TargetCoordinates = normalizedTarget,
-                        G25EraId = era.Id,
+                        G25DistanceEraId = era.Id,
                         MaxResults = G25DistanceMaxResults
                     });
 
@@ -444,7 +444,7 @@ public class OrderService(
                 dbContext.G25DistanceResults.Add(new G25DistanceResult
                 {
                     GeneticInspectionId = geneticInspectionId,
-                    G25EraId = era.Id,
+                    G25DistanceEraId = era.Id,
                     ResultsVersion = G25DistanceResultsVersion,
                     Populations = populations,
                     CreatedBy = identityId
@@ -797,7 +797,7 @@ public class OrderService(
             var distanceResults = await dbContext.G25DistanceResults
                 .AsNoTracking()
                 .Where(r => r.GeneticInspectionId == inspection.Id)
-                .Include(r => r.Era)
+                .Include(r => r.DistanceEra)
                 .ToListAsync();
 
             var admixtureResult = await dbContext.G25AdmixtureResults
@@ -813,11 +813,11 @@ public class OrderService(
                 .ToListAsync();
 
             var distanceEras = distanceResults
-                .OrderBy(r => r.Era.Name)
+                .OrderBy(r => r.DistanceEra.Name)
                 .Select(r => new GetOrderG25ResultContract.DistanceEraResult
                 {
-                    EraId = r.G25EraId,
-                    EraName = r.Era.Name,
+                    EraId = r.G25DistanceEraId,
+                    EraName = r.DistanceEra.Name,
                     Populations = r.Populations
                         .OrderBy(p => p.Rank)
                         .Select(p => new GetOrderG25ResultContract.DistancePopulationResult
@@ -960,7 +960,7 @@ public class OrderService(
             var stopwatch = Stopwatch.StartNew();
             var version = $"v{startedAt:yyyyMMddHHmmss}";
 
-            var eras = await dbContext.G25Eras
+            var eras = await dbContext.G25DistanceEras
                 .AsNoTracking()
                 .Where(e => e.DistanceFile != null)
                 .Select(e => new { e.Id, e.Name })
@@ -1003,7 +1003,7 @@ public class OrderService(
             {
                 var existingByEra = await dbContext.G25DistanceResults
                     .Where(r => r.GeneticInspectionId == inspection.Id)
-                    .ToDictionaryAsync(r => r.G25EraId);
+                    .ToDictionaryAsync(r => r.G25DistanceEraId);
 
                 var targetName = BuildTargetName(inspection.FirstName, inspection.LastName);
                 var normalizedTarget = NormalizeCoordinatesForTarget(inspection.G25Coordinates!, targetName);
@@ -1015,7 +1015,7 @@ public class OrderService(
                         new ComputeDistancesContract.Request
                         {
                             TargetCoordinates = normalizedTarget,
-                            G25EraId = era.Id,
+                            G25DistanceEraId = era.Id,
                             MaxResults = G25DistanceMaxResults
                         });
 
@@ -1055,7 +1055,7 @@ public class OrderService(
                         dbContext.G25DistanceResults.Add(new G25DistanceResult
                         {
                             GeneticInspectionId = inspection.Id,
-                            G25EraId = era.Id,
+                            G25DistanceEraId = era.Id,
                             ResultsVersion = version,
                             Populations = populations,
                             CreatedBy = identityId,

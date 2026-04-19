@@ -29,19 +29,19 @@ public class G25CalculationEndpointsTests(CustomWebApplicationFactory factory) :
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var now = DateTime.UtcNow;
 
-        var era = new G25Era
+        var era = new G25DistanceEra
         {
             Name = $"Era-{Guid.NewGuid():N}",
             CreatedAt = now, CreatedBy = "test", UpdatedAt = now, UpdatedBy = "test"
         };
-        db.G25Eras.Add(era);
+        db.G25DistanceEras.Add(era);
         await db.SaveChangesAsync();
 
         var distFile = new G25DistanceFile
         {
             Title = $"Dist-{Guid.NewGuid():N}",
             Content = SourceCsv,
-            G25EraId = era.Id,
+            G25DistanceEraId = era.Id,
             CreatedAt = now, CreatedBy = "test", UpdatedAt = now, UpdatedBy = "test"
         };
         db.G25DistanceFiles.Add(distFile);

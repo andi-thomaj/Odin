@@ -7,7 +7,7 @@ public static class ComputeDistancesContract
         public required string TargetCoordinates { get; set; }
         public string? SourceContent { get; set; }
         public int? SourceDistanceFileId { get; set; }
-        public int? G25EraId { get; set; }
+        public int? G25DistanceEraId { get; set; }
         public int? MaxResults { get; set; }
     }
 

@@ -8,8 +8,8 @@ namespace Odin.Api.Data.Entities
         public int Id { get; set; }
         public required string Title { get; set; }
         public required string Content { get; set; }
-        public int G25EraId { get; set; }
-        public G25Era Era { get; set; } = null!;
+        public int G25DistanceEraId { get; set; }
+        public G25DistanceEra DistanceEra { get; set; } = null!;
     }
 
     public class G25DistanceFileConfiguration : IEntityTypeConfiguration<G25DistanceFile>
@@ -21,11 +21,11 @@ namespace Odin.Api.Data.Entities
             builder.HasIndex(e => e.Title).IsUnique();
             builder.Property(e => e.Content).IsRequired().HasColumnType("text");
 
-            builder.HasOne(e => e.Era)
+            builder.HasOne(e => e.DistanceEra)
                 .WithOne(er => er.DistanceFile)
-                .HasForeignKey<G25DistanceFile>(e => e.G25EraId)
+                .HasForeignKey<G25DistanceFile>(e => e.G25DistanceEraId)
                 .OnDelete(DeleteBehavior.Cascade);
-            builder.HasIndex(e => e.G25EraId).IsUnique();
+            builder.HasIndex(e => e.G25DistanceEraId).IsUnique();
 
             builder.ToTable("g25_distance_files");
         }

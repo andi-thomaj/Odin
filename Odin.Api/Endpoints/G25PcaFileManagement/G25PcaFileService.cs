@@ -9,7 +9,7 @@ public interface IG25PcaFileService
 {
     Task<IReadOnlyList<GetG25PcaFileContract.ListItem>> GetAllAsync(CancellationToken ct = default);
     Task<GetG25PcaFileContract.Response?> GetByIdAsync(int id, CancellationToken ct = default);
-    Task<GetG25PcaFileContract.Response?> GetByEraIdAsync(int g25EraId, CancellationToken ct = default);
+    Task<GetG25PcaFileContract.Response?> GetByEraIdAsync(int g25DistanceEraId, CancellationToken ct = default);
     Task<(GetG25PcaFileContract.Response? Response, string? Error)> CreateAsync(CreateG25PcaFileContract.Request request, CancellationToken ct = default);
     Task<(GetG25PcaFileContract.Response? Response, string? Error, bool NotFound)> UpdateAsync(int id, UpdateG25PcaFileContract.Request request, CancellationToken ct = default);
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
@@ -22,13 +22,13 @@ public class G25PcaFileService(ApplicationDbContext dbContext) : IG25PcaFileServ
     {
         return await dbContext.G25PcaFiles
             .AsNoTracking()
-            .OrderBy(e => e.Era.Name)
+            .OrderBy(e => e.DistanceEra.Name)
             .Select(e => new GetG25PcaFileContract.ListItem
             {
                 Id = e.Id,
                 Title = e.Title,
-                G25EraId = e.G25EraId,
-                G25EraName = e.Era.Name
+                G25DistanceEraId = e.G25DistanceEraId,
+                G25DistanceEraName = e.DistanceEra.Name
             })
             .ToListAsync(ct);
     }
@@ -43,24 +43,24 @@ public class G25PcaFileService(ApplicationDbContext dbContext) : IG25PcaFileServ
                 Id = e.Id,
                 Title = e.Title,
                 Content = e.Content,
-                G25EraId = e.G25EraId,
-                G25EraName = e.Era.Name
+                G25DistanceEraId = e.G25DistanceEraId,
+                G25DistanceEraName = e.DistanceEra.Name
             })
             .FirstOrDefaultAsync(ct);
     }
 
-    public async Task<GetG25PcaFileContract.Response?> GetByEraIdAsync(int g25EraId, CancellationToken ct = default)
+    public async Task<GetG25PcaFileContract.Response?> GetByEraIdAsync(int g25DistanceEraId, CancellationToken ct = default)
     {
         return await dbContext.G25PcaFiles
             .AsNoTracking()
-            .Where(e => e.G25EraId == g25EraId)
+            .Where(e => e.G25DistanceEraId == g25DistanceEraId)
             .Select(e => new GetG25PcaFileContract.Response
             {
                 Id = e.Id,
                 Title = e.Title,
                 Content = e.Content,
-                G25EraId = e.G25EraId,
-                G25EraName = e.Era.Name
+                G25DistanceEraId = e.G25DistanceEraId,
+                G25DistanceEraName = e.DistanceEra.Name
             })
             .FirstOrDefaultAsync(ct);
     }
@@ -68,14 +68,14 @@ public class G25PcaFileService(ApplicationDbContext dbContext) : IG25PcaFileServ
     public async Task<(GetG25PcaFileContract.Response? Response, string? Error)> CreateAsync(
         CreateG25PcaFileContract.Request request, CancellationToken ct = default)
     {
-        var error = await ValidateAsync(request.Title, request.Content, request.G25EraId, null, ct);
+        var error = await ValidateAsync(request.Title, request.Content, request.G25DistanceEraId, null, ct);
         if (error is not null) return (null, error);
 
         var entity = new G25PcaFile
         {
             Title = request.Title.Trim(),
             Content = request.Content,
-            G25EraId = request.G25EraId,
+            G25DistanceEraId = request.G25DistanceEraId,
             CreatedBy = "system",
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -93,12 +93,12 @@ public class G25PcaFileService(ApplicationDbContext dbContext) : IG25PcaFileServ
         var entity = await dbContext.G25PcaFiles.FirstOrDefaultAsync(e => e.Id == id, ct);
         if (entity is null) return (null, null, true);
 
-        var error = await ValidateAsync(request.Title, request.Content, request.G25EraId, id, ct);
+        var error = await ValidateAsync(request.Title, request.Content, request.G25DistanceEraId, id, ct);
         if (error is not null) return (null, error, false);
 
         entity.Title = request.Title.Trim();
         entity.Content = request.Content;
-        entity.G25EraId = request.G25EraId;
+        entity.G25DistanceEraId = request.G25DistanceEraId;
         entity.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(ct);
 
@@ -147,13 +147,13 @@ public class G25PcaFileService(ApplicationDbContext dbContext) : IG25PcaFileServ
 
         var pcaFiles = await dbContext.G25PcaFiles
             .AsNoTracking()
-            .OrderBy(f => f.Era.Name)
+            .OrderBy(f => f.DistanceEra.Name)
             .Select(f => new GetG25PcaFilesByContinentsContract.PcaFileEntry
             {
                 Id = f.Id,
                 Title = f.Title,
-                G25EraId = f.G25EraId,
-                G25EraName = f.Era.Name,
+                G25DistanceEraId = f.G25DistanceEraId,
+                G25DistanceEraName = f.DistanceEra.Name,
                 Content = f.Content
             })
             .ToListAsync(ct);
@@ -181,8 +181,8 @@ public class G25PcaFileService(ApplicationDbContext dbContext) : IG25PcaFileServ
         if (string.IsNullOrWhiteSpace(content))
             return "Content is required.";
 
-        var eraExists = await dbContext.G25Eras.AnyAsync(e => e.Id == eraId, ct);
-        if (!eraExists) return "The specified G25 era does not exist.";
+        var eraExists = await dbContext.G25DistanceEras.AnyAsync(e => e.Id == eraId, ct);
+        if (!eraExists) return "The specified G25 distance era does not exist.";
 
         var trimmed = title.Trim();
         var titleExists = await dbContext.G25PcaFiles
@@ -192,8 +192,8 @@ public class G25PcaFileService(ApplicationDbContext dbContext) : IG25PcaFileServ
 
         var alreadyLinked = await dbContext.G25PcaFiles
             .AsNoTracking()
-            .AnyAsync(e => e.G25EraId == eraId && (existingId == null || e.Id != existingId), ct);
-        if (alreadyLinked) return "That G25 era already has a PCA file.";
+            .AnyAsync(e => e.G25DistanceEraId == eraId && (existingId == null || e.Id != existingId), ct);
+        if (alreadyLinked) return "That G25 distance era already has a PCA file.";
 
         return null;
     }

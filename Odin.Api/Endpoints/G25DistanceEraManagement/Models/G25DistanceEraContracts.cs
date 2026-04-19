@@ -1,6 +1,6 @@
-namespace Odin.Api.Endpoints.G25EraManagement.Models;
+namespace Odin.Api.Endpoints.G25DistanceEraManagement.Models;
 
-public static class GetG25EraContract
+public static class GetG25DistanceEraContract
 {
     public class DistanceFileSummary
     {
@@ -16,7 +16,7 @@ public static class GetG25EraContract
     }
 }
 
-public static class CreateG25EraContract
+public static class CreateG25DistanceEraContract
 {
     public class Request
     {
@@ -24,7 +24,7 @@ public static class CreateG25EraContract
     }
 }
 
-public static class UpdateG25EraContract
+public static class UpdateG25DistanceEraContract
 {
     public class Request
     {

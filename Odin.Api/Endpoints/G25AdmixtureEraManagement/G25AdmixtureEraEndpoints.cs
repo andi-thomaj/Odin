@@ -1,12 +1,12 @@
-using Odin.Api.Endpoints.G25EraManagement.Models;
+using Odin.Api.Endpoints.G25AdmixtureEraManagement.Models;
 
-namespace Odin.Api.Endpoints.G25EraManagement;
+namespace Odin.Api.Endpoints.G25AdmixtureEraManagement;
 
-public static class G25EraEndpoints
+public static class G25AdmixtureEraEndpoints
 {
-    public static void MapG25EraEndpoints(this IEndpointRouteBuilder app)
+    public static void MapG25AdmixtureEraEndpoints(this IEndpointRouteBuilder app)
     {
-        var endpoints = app.MapGroup("api/g25-eras");
+        var endpoints = app.MapGroup("api/g25-admixture-eras");
 
         endpoints.MapGet("/", GetAll)
             .RequireAuthorization("EmailVerified")
@@ -29,26 +29,26 @@ public static class G25EraEndpoints
             .RequireRateLimiting("strict");
     }
 
-    private static async Task<IResult> GetAll(IG25EraService service)
+    private static async Task<IResult> GetAll(IG25AdmixtureEraService service)
     {
         var items = await service.GetAllAsync();
         return Results.Ok(items);
     }
 
-    private static async Task<IResult> GetById(IG25EraService service, int id)
+    private static async Task<IResult> GetById(IG25AdmixtureEraService service, int id)
     {
         var item = await service.GetByIdAsync(id);
         return item is null ? Results.NotFound() : Results.Ok(item);
     }
 
-    private static async Task<IResult> Create(IG25EraService service, CreateG25EraContract.Request request)
+    private static async Task<IResult> Create(IG25AdmixtureEraService service, CreateG25AdmixtureEraContract.Request request)
     {
         var (response, error) = await service.CreateAsync(request);
         if (error is not null) return Results.BadRequest(error);
-        return Results.Created($"/api/g25-eras/{response!.Id}", response);
+        return Results.Created($"/api/g25-admixture-eras/{response!.Id}", response);
     }
 
-    private static async Task<IResult> Update(IG25EraService service, int id, UpdateG25EraContract.Request request)
+    private static async Task<IResult> Update(IG25AdmixtureEraService service, int id, UpdateG25AdmixtureEraContract.Request request)
     {
         var (response, error, notFound) = await service.UpdateAsync(id, request);
         if (notFound) return Results.NotFound();
@@ -56,7 +56,7 @@ public static class G25EraEndpoints
         return Results.Ok(response);
     }
 
-    private static async Task<IResult> Delete(IG25EraService service, int id)
+    private static async Task<IResult> Delete(IG25AdmixtureEraService service, int id)
     {
         var ok = await service.DeleteAsync(id);
         return ok ? Results.NoContent() : Results.NotFound();

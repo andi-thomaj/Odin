@@ -38,7 +38,8 @@ namespace Odin.Api.Data
         public DbSet<G25Region> G25Regions { get; set; }
         public DbSet<G25Ethnicity> G25Ethnicities { get; set; }
         public DbSet<G25Continent> G25Continents { get; set; }
-        public DbSet<G25Era> G25Eras { get; set; }
+        public DbSet<G25DistanceEra> G25DistanceEras { get; set; }
+        public DbSet<G25AdmixtureEra> G25AdmixtureEras { get; set; }
         public DbSet<G25DistanceFile> G25DistanceFiles { get; set; }
         public DbSet<G25AdmixtureFile> G25AdmixtureFiles { get; set; }
         public DbSet<G25PcaFile> G25PcaFiles { get; set; }

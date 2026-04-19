@@ -6,8 +6,8 @@ public static class GetG25PcaFileContract
     {
         public int Id { get; set; }
         public required string Title { get; set; }
-        public int G25EraId { get; set; }
-        public required string G25EraName { get; set; }
+        public int G25DistanceEraId { get; set; }
+        public required string G25DistanceEraName { get; set; }
     }
 
     public class Response
@@ -15,8 +15,8 @@ public static class GetG25PcaFileContract
         public int Id { get; set; }
         public required string Title { get; set; }
         public required string Content { get; set; }
-        public int G25EraId { get; set; }
-        public required string G25EraName { get; set; }
+        public int G25DistanceEraId { get; set; }
+        public required string G25DistanceEraName { get; set; }
     }
 }
 
@@ -26,7 +26,7 @@ public static class CreateG25PcaFileContract
     {
         public required string Title { get; set; }
         public required string Content { get; set; }
-        public int G25EraId { get; set; }
+        public int G25DistanceEraId { get; set; }
     }
 }
 
@@ -36,7 +36,7 @@ public static class UpdateG25PcaFileContract
     {
         public required string Title { get; set; }
         public required string Content { get; set; }
-        public int G25EraId { get; set; }
+        public int G25DistanceEraId { get; set; }
     }
 }
 
@@ -58,8 +58,8 @@ public static class GetG25PcaFilesByContinentsContract
     {
         public int Id { get; set; }
         public required string Title { get; set; }
-        public int G25EraId { get; set; }
-        public required string G25EraName { get; set; }
+        public int G25DistanceEraId { get; set; }
+        public required string G25DistanceEraName { get; set; }
         public required string Content { get; set; }
     }
 }

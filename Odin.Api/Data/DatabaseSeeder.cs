@@ -21,7 +21,8 @@ public class DatabaseSeeder(ApplicationDbContext context)
         await SeedCatalogCommerceAsync();
         await SeedG25AncientsAsync();
         await SeedG25ServiceAsync();
-        await SeedG25ErasAsync();
+        await SeedG25DistanceErasAsync();
+        await SeedG25AdmixtureErasAsync();
         await SeedG25AddonsAsync();
     }
 
@@ -626,9 +627,9 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
     }
 
-    private async Task SeedG25ErasAsync()
+    private async Task SeedG25DistanceErasAsync()
     {
-        if (await context.G25Eras.AnyAsync())
+        if (await context.G25DistanceEras.AnyAsync())
             return;
 
         var now = DateTime.UtcNow;
@@ -646,7 +647,38 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
         foreach (var name in eraNames)
         {
-            context.G25Eras.Add(new G25Era
+            context.G25DistanceEras.Add(new G25DistanceEra
+            {
+                Name = name,
+                CreatedAt = now,
+                CreatedBy = seeder,
+                UpdatedAt = now,
+                UpdatedBy = seeder,
+            });
+        }
+
+        await context.SaveChangesAsync();
+    }
+
+    private async Task SeedG25AdmixtureErasAsync()
+    {
+        if (await context.G25AdmixtureEras.AnyAsync())
+            return;
+
+        var now = DateTime.UtcNow;
+        const string seeder = "DatabaseSeeder";
+
+        var eraNames = new[]
+        {
+            "Bronze & Iron Age (2000\u20130 BC)",
+            "Imperial Antiquity (0\u2013600 AD)",
+            "Middle Ages (600\u20131400 AD)",
+            "Early Modern (1400\u20131900 AD)",
+        };
+
+        foreach (var name in eraNames)
+        {
+            context.G25AdmixtureEras.Add(new G25AdmixtureEra
             {
                 Name = name,
                 CreatedAt = now,

@@ -26,10 +26,10 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
     public async Task<(ComputeDistancesContract.Response? Response, string? Error, bool NotFound)> ComputeDistancesAsync(
         ComputeDistancesContract.Request request, CancellationToken ct = default)
     {
-        var sourceFields = CountSet(request.SourceContent, request.SourceDistanceFileId, request.G25EraId);
+        var sourceFields = CountSet(request.SourceContent, request.SourceDistanceFileId, request.G25DistanceEraId);
         if (sourceFields != 1)
         {
-            return (null, "Exactly one of sourceContent, sourceDistanceFileId, or g25EraId must be provided.", false);
+            return (null, "Exactly one of sourceContent, sourceDistanceFileId, or g25DistanceEraId must be provided.", false);
         }
 
         var (sizeError, _) = ValidateTargetSize(request.TargetCoordinates);
@@ -46,11 +46,11 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
             if (content is null) return (null, null, true);
             sourceText = content;
         }
-        else if (request.G25EraId is { } eraId)
+        else if (request.G25DistanceEraId is { } eraId)
         {
             var content = await dbContext.G25DistanceFiles
                 .AsNoTracking()
-                .Where(f => f.G25EraId == eraId)
+                .Where(f => f.G25DistanceEraId == eraId)
                 .Select(f => f.Content)
                 .FirstOrDefaultAsync(ct);
             if (content is null) return (null, $"No distance file found for era id {eraId}.", true);

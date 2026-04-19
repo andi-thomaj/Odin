@@ -44,7 +44,7 @@ public class G25OrderEndpointsTests(CustomWebApplicationFactory factory) : Integ
             .Where(r => r.GeneticInspectionId == inspection.Id)
             .ToListAsync();
         Assert.Single(results);
-        Assert.Equal(eraId, results[0].G25EraId);
+        Assert.Equal(eraId, results[0].G25DistanceEraId);
         Assert.NotEmpty(results[0].Populations);
         Assert.All(results[0].Populations, p => Assert.False(string.IsNullOrEmpty(p.Name)));
     }
@@ -141,7 +141,7 @@ public class G25OrderEndpointsTests(CustomWebApplicationFactory factory) : Integ
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var now = DateTime.UtcNow;
 
-        var era = new G25Era
+        var era = new G25DistanceEra
         {
             Name = $"Era-{Guid.NewGuid():N}",
             CreatedAt = now,
@@ -149,14 +149,14 @@ public class G25OrderEndpointsTests(CustomWebApplicationFactory factory) : Integ
             UpdatedAt = now,
             UpdatedBy = "test"
         };
-        db.G25Eras.Add(era);
+        db.G25DistanceEras.Add(era);
         await db.SaveChangesAsync();
 
         db.G25DistanceFiles.Add(new G25DistanceFile
         {
             Title = $"Dist-{Guid.NewGuid():N}",
             Content = DistanceSourceCsv,
-            G25EraId = era.Id,
+            G25DistanceEraId = era.Id,
             CreatedAt = now,
             CreatedBy = "test",
             UpdatedAt = now,

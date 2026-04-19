@@ -6,8 +6,8 @@ public static class GetG25DistanceFileContract
     {
         public int Id { get; set; }
         public required string Title { get; set; }
-        public int G25EraId { get; set; }
-        public string? G25EraName { get; set; }
+        public int G25DistanceEraId { get; set; }
+        public string? G25DistanceEraName { get; set; }
     }
 
     public class Response
@@ -15,8 +15,8 @@ public static class GetG25DistanceFileContract
         public int Id { get; set; }
         public required string Title { get; set; }
         public required string Content { get; set; }
-        public int G25EraId { get; set; }
-        public string? G25EraName { get; set; }
+        public int G25DistanceEraId { get; set; }
+        public string? G25DistanceEraName { get; set; }
     }
 }
 
@@ -26,7 +26,7 @@ public static class CreateG25DistanceFileContract
     {
         public required string Title { get; set; }
         public required string Content { get; set; }
-        public int G25EraId { get; set; }
+        public int G25DistanceEraId { get; set; }
     }
 }
 
@@ -36,6 +36,6 @@ public static class UpdateG25DistanceFileContract
     {
         public required string Title { get; set; }
         public required string Content { get; set; }
-        public int G25EraId { get; set; }
+        public int G25DistanceEraId { get; set; }
     }
 }

@@ -16,7 +16,7 @@ public static class G25PcaFileEndpoints
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("authenticated");
 
-        endpoints.MapGet("/by-era/{g25EraId:int}", GetByEraId)
+        endpoints.MapGet("/by-era/{g25DistanceEraId:int}", GetByEraId)
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("authenticated");
 
@@ -49,9 +49,9 @@ public static class G25PcaFileEndpoints
         return item is null ? Results.NotFound() : Results.Ok(item);
     }
 
-    private static async Task<IResult> GetByEraId(IG25PcaFileService service, int g25EraId)
+    private static async Task<IResult> GetByEraId(IG25PcaFileService service, int g25DistanceEraId)
     {
-        var item = await service.GetByEraIdAsync(g25EraId);
+        var item = await service.GetByEraIdAsync(g25DistanceEraId);
         return item is null ? Results.NotFound() : Results.Ok(item);
     }
 

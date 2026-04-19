@@ -8,8 +8,8 @@ public class G25DistanceResult : BaseEntity
     public int Id { get; set; }
     public int GeneticInspectionId { get; set; }
     public G25GeneticInspection GeneticInspection { get; set; }
-    public int G25EraId { get; set; }
-    public G25Era Era { get; set; }
+    public int G25DistanceEraId { get; set; }
+    public G25DistanceEra DistanceEra { get; set; }
     public string ResultsVersion { get; set; } = string.Empty;
     public List<G25DistancePopulation> Populations { get; set; } = [];
 }
@@ -33,12 +33,12 @@ public class G25DistanceResultConfiguration : IEntityTypeConfiguration<G25Distan
             .HasForeignKey(e => e.GeneticInspectionId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(e => e.Era)
+        builder.HasOne(e => e.DistanceEra)
             .WithMany()
-            .HasForeignKey(e => e.G25EraId)
+            .HasForeignKey(e => e.G25DistanceEraId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasIndex(e => new { e.GeneticInspectionId, e.G25EraId }).IsUnique();
+        builder.HasIndex(e => new { e.GeneticInspectionId, e.G25DistanceEraId }).IsUnique();
 
         builder.OwnsMany(e => e.Populations, b =>
         {
