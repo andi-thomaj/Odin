@@ -40,6 +40,7 @@ public static class GetG25PopulationSampleContract
         public int Id { get; set; }
         public required string Label { get; set; }
         public required string Coordinates { get; set; }
+        public required string Ids { get; set; }
         public int? G25AdmixtureEraId { get; set; }
         public G25AdmixtureEraSummaryDto? G25AdmixtureEra { get; set; }
         public List<ResearchLinkDto.Response> ResearchLinks { get; set; } = [];
@@ -60,6 +61,7 @@ public static class CreateG25PopulationSampleContract
     {
         public required string Label { get; set; }
         public required string Coordinates { get; set; }
+        public string? Ids { get; set; }
         public int? G25AdmixtureEraId { get; set; }
         public List<ResearchLinkDto.CreateRequest>? ResearchLinks { get; set; }
     }
@@ -69,6 +71,7 @@ public static class CreateG25PopulationSampleContract
         public int Id { get; set; }
         public required string Label { get; set; }
         public required string Coordinates { get; set; }
+        public required string Ids { get; set; }
         public int? G25AdmixtureEraId { get; set; }
         public G25AdmixtureEraSummaryDto? G25AdmixtureEra { get; set; }
         public List<ResearchLinkDto.Response> ResearchLinks { get; set; } = [];
@@ -81,6 +84,7 @@ public static class UpdateG25PopulationSampleContract
     {
         public required string Label { get; set; }
         public required string Coordinates { get; set; }
+        public string? Ids { get; set; }
         public int? G25AdmixtureEraId { get; set; }
         public List<ResearchLinkDto.UpdateRequest>? ResearchLinks { get; set; }
     }

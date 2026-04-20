@@ -529,7 +529,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
     private async Task SeedG25PopulationSamplesAsync()
     {
-        if (await context.G25PopulationSamples.AnyAsync())
+        if (await context.G25AdmixturePopulationSamples.AnyAsync())
             return;
 
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "g25-ancients.txt");
@@ -541,7 +541,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
         const int batchSize = 1000;
 
         var lines = await File.ReadAllLinesAsync(path);
-        var batch = new List<G25PopulationSample>();
+        var batch = new List<G25AdmixturePopulationSample>();
 
         foreach (var line in lines)
         {
@@ -557,7 +557,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
             if (label.Length == 0 || coords.Length == 0)
                 continue;
 
-            batch.Add(new G25PopulationSample
+            batch.Add(new G25AdmixturePopulationSample
             {
                 Label = label,
                 Coordinates = coords,
@@ -570,14 +570,14 @@ public class DatabaseSeeder(ApplicationDbContext context)
             if (batch.Count < batchSize)
                 continue;
 
-            context.G25PopulationSamples.AddRange(batch);
+            context.G25AdmixturePopulationSamples.AddRange(batch);
             await context.SaveChangesAsync();
             batch.Clear();
         }
 
         if (batch.Count > 0)
         {
-            context.G25PopulationSamples.AddRange(batch);
+            context.G25AdmixturePopulationSamples.AddRange(batch);
             await context.SaveChangesAsync();
         }
     }

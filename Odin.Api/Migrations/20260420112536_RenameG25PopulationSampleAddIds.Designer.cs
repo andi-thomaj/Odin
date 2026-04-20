@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Odin.Api.Data;
@@ -11,9 +12,11 @@ using Odin.Api.Data;
 namespace Odin.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260420112536_RenameG25PopulationSampleAddIds")]
+    partial class RenameG25PopulationSampleAddIds
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -495,53 +498,6 @@ namespace Odin.Api.Migrations
                     b.ToTable("g25_distance_files", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistancePopulationSample", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Coordinates")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int?>("G25DistanceEraId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Ids")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("G25DistanceEraId");
-
-                    b.HasIndex("Label");
-
-                    b.ToTable("g25_distance_population_samples", (string)null);
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.G25DistanceResult", b =>
                 {
                     b.Property<int>("Id")
@@ -892,53 +848,6 @@ namespace Odin.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("g25_pca_files", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaPopulationsSample", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Coordinates")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int?>("G25DistanceEraId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Ids")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("G25DistanceEraId");
-
-                    b.HasIndex("Label");
-
-                    b.ToTable("g25_pca_populations_samples", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaResult", b =>
@@ -2036,12 +1945,6 @@ namespace Odin.Api.Migrations
                     b.Property<int?>("G25AdmixturePopulationSampleId")
                         .HasColumnType("integer");
 
-                    b.Property<int?>("G25DistancePopulationSampleId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("G25PcaPopulationsSampleId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -2065,10 +1968,6 @@ namespace Odin.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("G25AdmixturePopulationSampleId");
-
-                    b.HasIndex("G25DistancePopulationSampleId");
-
-                    b.HasIndex("G25PcaPopulationsSampleId");
 
                     b.HasIndex("QpadmPopulationSampleId");
 
@@ -2254,16 +2153,6 @@ namespace Odin.Api.Migrations
                     b.Navigation("DistanceEra");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistancePopulationSample", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.G25DistanceEra", "G25DistanceEra")
-                        .WithMany("G25DistancePopulationSamples")
-                        .HasForeignKey("G25DistanceEraId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("G25DistanceEra");
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.G25DistanceResult", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.G25DistanceEra", "DistanceEra")
@@ -2416,16 +2305,6 @@ namespace Odin.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("DistanceEra");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaPopulationsSample", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.G25DistanceEra", "G25DistanceEra")
-                        .WithMany("G25PcaPopulationsSamples")
-                        .HasForeignKey("G25DistanceEraId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("G25DistanceEra");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaResult", b =>
@@ -2692,26 +2571,12 @@ namespace Odin.Api.Migrations
                         .HasForeignKey("G25AdmixturePopulationSampleId")
                         .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasOne("Odin.Api.Data.Entities.G25DistancePopulationSample", "G25DistancePopulationSample")
-                        .WithMany("ResearchLinks")
-                        .HasForeignKey("G25DistancePopulationSampleId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
-                    b.HasOne("Odin.Api.Data.Entities.G25PcaPopulationsSample", "G25PcaPopulationsSample")
-                        .WithMany("ResearchLinks")
-                        .HasForeignKey("G25PcaPopulationsSampleId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("Odin.Api.Data.Entities.QpadmPopulationSample", "QpadmPopulationSample")
                         .WithMany("ResearchLinks")
                         .HasForeignKey("QpadmPopulationSampleId")
                         .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("G25AdmixturePopulationSample");
-
-                    b.Navigation("G25DistancePopulationSample");
-
-                    b.Navigation("G25PcaPopulationsSample");
 
                     b.Navigation("QpadmPopulationSample");
                 });
@@ -2745,16 +2610,7 @@ namespace Odin.Api.Migrations
                 {
                     b.Navigation("DistanceFile");
 
-                    b.Navigation("G25DistancePopulationSamples");
-
-                    b.Navigation("G25PcaPopulationsSamples");
-
                     b.Navigation("PcaFile");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistancePopulationSample", b =>
-                {
-                    b.Navigation("ResearchLinks");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25Ethnicity", b =>
@@ -2781,11 +2637,6 @@ namespace Odin.Api.Migrations
                 {
                     b.Navigation("GeneticInspection")
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaPopulationsSample", b =>
-                {
-                    b.Navigation("ResearchLinks");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaResult", b =>

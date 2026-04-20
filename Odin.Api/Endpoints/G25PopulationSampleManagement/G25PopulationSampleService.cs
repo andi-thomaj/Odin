@@ -25,7 +25,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
 
     public async Task<IReadOnlyList<GetG25PopulationSampleContract.Response>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await dbContext.G25PopulationSamples
+        return await dbContext.G25AdmixturePopulationSamples
             .AsNoTracking()
             .OrderBy(e => e.Id)
             .Select(e => new GetG25PopulationSampleContract.Response
@@ -33,6 +33,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
                 Id = e.Id,
                 Label = e.Label,
                 Coordinates = e.Coordinates,
+                Ids = e.Ids,
                 G25AdmixtureEraId = e.G25AdmixtureEraId,
                 G25AdmixtureEra = e.G25AdmixtureEra == null
                     ? null
@@ -61,7 +62,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
         if (pageSize < 1) pageSize = 25;
         if (pageSize > MaxPageSize) pageSize = MaxPageSize;
 
-        var query = dbContext.G25PopulationSamples.AsNoTracking();
+        var query = dbContext.G25AdmixturePopulationSamples.AsNoTracking();
 
         var totalCount = await query.CountAsync(cancellationToken);
 
@@ -74,6 +75,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
                 Id = e.Id,
                 Label = e.Label,
                 Coordinates = e.Coordinates,
+                Ids = e.Ids,
                 G25AdmixtureEraId = e.G25AdmixtureEraId,
                 G25AdmixtureEra = e.G25AdmixtureEra == null
                     ? null
@@ -105,7 +107,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
 
     public async Task<GetG25PopulationSampleContract.Response?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await dbContext.G25PopulationSamples
+        return await dbContext.G25AdmixturePopulationSamples
             .AsNoTracking()
             .Where(e => e.Id == id)
             .Select(e => new GetG25PopulationSampleContract.Response
@@ -113,6 +115,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
                 Id = e.Id,
                 Label = e.Label,
                 Coordinates = e.Coordinates,
+                Ids = e.Ids,
                 G25AdmixtureEraId = e.G25AdmixtureEraId,
                 G25AdmixtureEra = e.G25AdmixtureEra == null
                     ? null
@@ -146,7 +149,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
         var normalized = query.Trim();
         var lower = normalized.ToLowerInvariant();
 
-        return await dbContext.G25PopulationSamples
+        return await dbContext.G25AdmixturePopulationSamples
             .AsNoTracking()
             .Where(e => e.Label.ToLower().Contains(lower))
             .OrderBy(e => e.Id)
@@ -167,10 +170,11 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
         }
 
         var now = DateTime.UtcNow;
-        var entity = new G25PopulationSample
+        var entity = new G25AdmixturePopulationSample
         {
             Label = request.Label.Trim(),
             Coordinates = request.Coordinates.Trim(),
+            Ids = request.Ids?.Trim() ?? string.Empty,
             G25AdmixtureEraId = era?.Id,
             CreatedAt = now,
             CreatedBy = identityId,
@@ -197,7 +201,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
             }
         }
 
-        dbContext.G25PopulationSamples.Add(entity);
+        dbContext.G25AdmixturePopulationSamples.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return new CreateG25PopulationSampleContract.Response
@@ -205,6 +209,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
             Id = entity.Id,
             Label = entity.Label,
             Coordinates = entity.Coordinates,
+            Ids = entity.Ids,
             G25AdmixtureEraId = entity.G25AdmixtureEraId,
             G25AdmixtureEra = era is null
                 ? null
@@ -224,7 +229,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
     public async Task<GetG25PopulationSampleContract.Response?> UpdateAsync(int id, string identityId, UpdateG25PopulationSampleContract.Request request,
         CancellationToken cancellationToken = default)
     {
-        var entity = await dbContext.G25PopulationSamples
+        var entity = await dbContext.G25AdmixturePopulationSamples
             .Include(e => e.G25AdmixtureEra)
             .Include(e => e.ResearchLinks)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
@@ -241,6 +246,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
         var now = DateTime.UtcNow;
         entity.Label = request.Label.Trim();
         entity.Coordinates = request.Coordinates.Trim();
+        entity.Ids = request.Ids?.Trim() ?? string.Empty;
         entity.G25AdmixtureEraId = era?.Id;
         entity.UpdatedAt = now;
         entity.UpdatedBy = identityId;
@@ -298,6 +304,7 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
             Id = entity.Id,
             Label = entity.Label,
             Coordinates = entity.Coordinates,
+            Ids = entity.Ids,
             G25AdmixtureEraId = entity.G25AdmixtureEraId,
             G25AdmixtureEra = era is null
                 ? null
@@ -316,10 +323,10 @@ public class G25PopulationSampleService(ApplicationDbContext dbContext) : IG25Po
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var entity = await dbContext.G25PopulationSamples.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+        var entity = await dbContext.G25AdmixturePopulationSamples.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity is null) return false;
 
-        dbContext.G25PopulationSamples.Remove(entity);
+        dbContext.G25AdmixturePopulationSamples.Remove(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         return true;
     }

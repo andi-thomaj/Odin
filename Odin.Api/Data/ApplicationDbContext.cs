@@ -29,7 +29,9 @@ namespace Odin.Api.Data
         public DbSet<MusicTrackFile> MusicTrackFiles { get; set; }
         public DbSet<ChangelogVersion> ChangelogVersions { get; set; }
         public DbSet<ChangelogEntry> ChangelogEntries { get; set; }
-        public DbSet<G25PopulationSample> G25PopulationSamples { get; set; }
+        public DbSet<G25AdmixturePopulationSample> G25AdmixturePopulationSamples { get; set; }
+        public DbSet<G25DistancePopulationSample> G25DistancePopulationSamples { get; set; }
+        public DbSet<G25PcaPopulationsSample> G25PcaPopulationsSamples { get; set; }
         public DbSet<QpadmPopulationSample> QpadmPopulationSamples { get; set; }
         public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<G25SavedCoordinate> G25SavedCoordinates { get; set; }

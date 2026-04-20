@@ -13,8 +13,8 @@ public class G25PopulationSampleServiceTests
     {
         await using var db = CreateDbContext();
         var now = DateTime.UtcNow;
-        db.G25PopulationSamples.AddRange(
-            new G25PopulationSample
+        db.G25AdmixturePopulationSamples.AddRange(
+            new G25AdmixturePopulationSample
             {
                 Label = "A",
                 Coordinates = "c1",
@@ -23,7 +23,7 @@ public class G25PopulationSampleServiceTests
                 UpdatedAt = now,
                 UpdatedBy = "t"
             },
-            new G25PopulationSample
+            new G25AdmixturePopulationSample
             {
                 Label = "B",
                 Coordinates = "c2",
@@ -49,7 +49,7 @@ public class G25PopulationSampleServiceTests
         var now = DateTime.UtcNow;
         for (var i = 0; i < 5; i++)
         {
-            db.G25PopulationSamples.Add(new G25PopulationSample
+            db.G25AdmixturePopulationSamples.Add(new G25AdmixturePopulationSample
             {
                 Label = $"L{i}",
                 Coordinates = $"c{i}",
@@ -77,8 +77,8 @@ public class G25PopulationSampleServiceTests
     {
         await using var db = CreateDbContext();
         var now = DateTime.UtcNow;
-        db.G25PopulationSamples.AddRange(
-            new G25PopulationSample
+        db.G25AdmixturePopulationSamples.AddRange(
+            new G25AdmixturePopulationSample
             {
                 Label = "Mbuti.DG",
                 Coordinates = "c1",
@@ -87,7 +87,7 @@ public class G25PopulationSampleServiceTests
                 UpdatedAt = now,
                 UpdatedBy = "t"
             },
-            new G25PopulationSample
+            new G25AdmixturePopulationSample
             {
                 Label = "Other",
                 Coordinates = "c2",
