@@ -13,6 +13,8 @@ using Odin.Api.Endpoints.AdmixtureSavedFileManagement;
 using Odin.Api.Endpoints.ChangelogManagement;
 using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.G25PopulationSampleManagement;
+using Odin.Api.Endpoints.G25DistancePopulationSampleManagement;
+using Odin.Api.Endpoints.G25PcaPopulationsSampleManagement;
 using Odin.Api.Endpoints.QpadmPopulationSampleManagement;
 using Odin.Api.Endpoints.G25SavedCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
@@ -407,6 +409,8 @@ namespace Odin.Api
             services.AddScoped<IMediaService, MediaService>();
             services.AddScoped<IChangelogService, ChangelogService>();
             services.AddScoped<IG25PopulationSampleService, G25PopulationSampleService>();
+            services.AddScoped<IG25DistancePopulationSampleService, G25DistancePopulationSampleService>();
+            services.AddScoped<IG25PcaPopulationsSampleService, G25PcaPopulationsSampleService>();
             services.AddScoped<IQpadmPopulationSampleService, QpadmPopulationSampleService>();
             services.AddScoped<IG25SavedCoordinateService, G25SavedCoordinateService>();
             services.AddScoped<IAdmixtureSavedFileService, AdmixtureSavedFileService>();
@@ -499,6 +503,8 @@ namespace Odin.Api
             app.MapMediaEndpoints();
             app.MapChangelogEndpoints();
             app.MapG25PopulationSampleEndpoints();
+            app.MapG25DistancePopulationSampleEndpoints();
+            app.MapG25PcaPopulationsSampleEndpoints();
             app.MapQpadmPopulationSampleEndpoints();
             app.MapG25SavedCoordinateEndpoints();
             app.MapAdmixtureSavedFileEndpoints();

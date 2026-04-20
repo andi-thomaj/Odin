@@ -32,6 +32,6 @@ public class G25AdmixturePopulationSampleConfiguration : IEntityTypeConfiguratio
 
         builder.HasIndex(e => e.G25AdmixtureEraId);
 
-        builder.ToTable("g25_population_samples");
+        builder.ToTable("g25_admixture_population_samples");
     }
 }
