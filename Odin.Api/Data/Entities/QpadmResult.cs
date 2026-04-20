@@ -10,7 +10,6 @@ namespace Odin.Api.Data.Entities
         public QpadmGeneticInspection GeneticInspection { get; set; }
         public string ResultsVersion { get; set; } = string.Empty;
         public List<QpadmResultEraGroup> QpadmResultEraGroups { get; set; } = [];
-        public List<QpadmResultResearchLink> QpadmResultResearchLinks { get; set; } = [];
     }
 
     public class QpadmResultConfiguration : IEntityTypeConfiguration<QpadmResult>

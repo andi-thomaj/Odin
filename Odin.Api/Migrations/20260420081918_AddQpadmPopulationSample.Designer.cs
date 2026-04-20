@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Odin.Api.Data;
@@ -11,9 +12,11 @@ using Odin.Api.Data;
 namespace Odin.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260420081918_AddQpadmPopulationSample")]
+    partial class AddQpadmPopulationSample
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -900,9 +903,6 @@ namespace Odin.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int?>("G25AdmixtureEraId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -916,8 +916,6 @@ namespace Odin.Api.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("G25AdmixtureEraId");
 
                     b.HasIndex("Label");
 
@@ -2328,16 +2326,6 @@ namespace Odin.Api.Migrations
                     b.Navigation("G25PcaResult");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25PopulationSample", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.G25AdmixtureEra", "G25AdmixtureEra")
-                        .WithMany("G25PopulationSamples")
-                        .HasForeignKey("G25AdmixtureEraId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("G25AdmixtureEra");
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.G25Region", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.G25Ethnicity", "G25Ethnicity")
@@ -2582,11 +2570,6 @@ namespace Odin.Api.Migrations
             modelBuilder.Entity("Odin.Api.Data.Entities.ChangelogVersion", b =>
                 {
                     b.Navigation("Entries");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixtureEra", b =>
-                {
-                    b.Navigation("G25PopulationSamples");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25Continent", b =>

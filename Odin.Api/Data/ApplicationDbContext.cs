@@ -16,8 +16,6 @@ namespace Odin.Api.Data
         public DbSet<MusicTrack> MusicTracks { get; set; }
         public DbSet<QpadmResult> QpadmResults { get; set; }
         public DbSet<QpadmResultEraGroup> QpadmResultEraGroups { get; set; }
-        public DbSet<ResearchLink> ResearchLinks { get; set; }
-        public DbSet<QpadmResultResearchLink> QpadmResultResearchLinks { get; set; }
         public DbSet<QpadmOrder> QpadmOrders { get; set; }
         public DbSet<G25Order> G25Orders { get; set; }
         public DbSet<CatalogProduct> CatalogProducts { get; set; }
@@ -31,7 +29,9 @@ namespace Odin.Api.Data
         public DbSet<MusicTrackFile> MusicTrackFiles { get; set; }
         public DbSet<ChangelogVersion> ChangelogVersions { get; set; }
         public DbSet<ChangelogEntry> ChangelogEntries { get; set; }
-        public DbSet<G25Ancient> G25Ancients { get; set; }
+        public DbSet<G25PopulationSample> G25PopulationSamples { get; set; }
+        public DbSet<QpadmPopulationSample> QpadmPopulationSamples { get; set; }
+        public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<G25SavedCoordinate> G25SavedCoordinates { get; set; }
         public DbSet<AdmixtureSavedFile> AdmixtureSavedFiles { get; set; }
         public DbSet<PaddlePayment> PaddlePayments { get; set; }

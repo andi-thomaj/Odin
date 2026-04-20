@@ -7,6 +7,7 @@ namespace Odin.Api.Data.Entities
     {
         public int Id { get; set; }
         public required string Name { get; set; }
+        public List<G25PopulationSample> G25PopulationSamples { get; set; } = [];
     }
 
     public class G25AdmixtureEraConfiguration : IEntityTypeConfiguration<G25AdmixtureEra>

@@ -1,20 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
-using Odin.Api.Endpoints.G25AncientManagement;
-using Odin.Api.Endpoints.G25AncientManagement.Models;
+using Odin.Api.Endpoints.G25PopulationSampleManagement;
+using Odin.Api.Endpoints.G25PopulationSampleManagement.Models;
 
-namespace Odin.Api.Tests.G25AncientManagement;
+namespace Odin.Api.Tests.G25PopulationSampleManagement;
 
-public class G25AncientServiceTests
+public class G25PopulationSampleServiceTests
 {
     [Fact]
     public async Task GetAllAsync_ReturnsAllRowsOrderedById()
     {
         await using var db = CreateDbContext();
         var now = DateTime.UtcNow;
-        db.G25Ancients.AddRange(
-            new G25Ancient
+        db.G25PopulationSamples.AddRange(
+            new G25PopulationSample
             {
                 Label = "A",
                 Coordinates = "c1",
@@ -23,7 +23,7 @@ public class G25AncientServiceTests
                 UpdatedAt = now,
                 UpdatedBy = "t"
             },
-            new G25Ancient
+            new G25PopulationSample
             {
                 Label = "B",
                 Coordinates = "c2",
@@ -34,7 +34,7 @@ public class G25AncientServiceTests
             });
         await db.SaveChangesAsync();
 
-        var service = new G25AncientService(db);
+        var service = new G25PopulationSampleService(db);
         var all = await service.GetAllAsync();
 
         Assert.Equal(2, all.Count);
@@ -49,7 +49,7 @@ public class G25AncientServiceTests
         var now = DateTime.UtcNow;
         for (var i = 0; i < 5; i++)
         {
-            db.G25Ancients.Add(new G25Ancient
+            db.G25PopulationSamples.Add(new G25PopulationSample
             {
                 Label = $"L{i}",
                 Coordinates = $"c{i}",
@@ -62,7 +62,7 @@ public class G25AncientServiceTests
 
         await db.SaveChangesAsync();
 
-        var service = new G25AncientService(db);
+        var service = new G25PopulationSampleService(db);
         var p1 = await service.GetPagedAsync(1, 2);
 
         Assert.Equal(5, p1.TotalCount);
@@ -77,8 +77,8 @@ public class G25AncientServiceTests
     {
         await using var db = CreateDbContext();
         var now = DateTime.UtcNow;
-        db.G25Ancients.AddRange(
-            new G25Ancient
+        db.G25PopulationSamples.AddRange(
+            new G25PopulationSample
             {
                 Label = "Mbuti.DG",
                 Coordinates = "c1",
@@ -87,7 +87,7 @@ public class G25AncientServiceTests
                 UpdatedAt = now,
                 UpdatedBy = "t"
             },
-            new G25Ancient
+            new G25PopulationSample
             {
                 Label = "Other",
                 Coordinates = "c2",
@@ -98,7 +98,7 @@ public class G25AncientServiceTests
             });
         await db.SaveChangesAsync();
 
-        var service = new G25AncientService(db);
+        var service = new G25PopulationSampleService(db);
         var empty = await service.SearchLabelsAsync("   ");
         Assert.Empty(empty);
 
@@ -111,9 +111,9 @@ public class G25AncientServiceTests
     public async Task CreateUpdateDelete_RoundTrips()
     {
         await using var db = CreateDbContext();
-        var service = new G25AncientService(db);
+        var service = new G25PopulationSampleService(db);
 
-        var created = await service.CreateAsync("user1", new CreateG25AncientContract.Request
+        var created = await service.CreateAsync("user1", new CreateG25PopulationSampleContract.Request
         {
             Label = "Denisova25",
             Coordinates = "sample,1,2"
@@ -125,7 +125,7 @@ public class G25AncientServiceTests
         Assert.NotNull(byId);
         Assert.Equal("Denisova25", byId!.Label);
 
-        var updated = await service.UpdateAsync(created.Id, "user1", new UpdateG25AncientContract.Request
+        var updated = await service.UpdateAsync(created.Id, "user1", new UpdateG25PopulationSampleContract.Request
         {
             Label = "Denisova25b",
             Coordinates = "sample,2,3"

@@ -19,7 +19,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
         await SeedEthnicitiesAndRegionsAsync();
         await SeedErasAndPopulationsAsync();
         await SeedCatalogCommerceAsync();
-        await SeedG25AncientsAsync();
+        await SeedG25PopulationSamplesAsync();
         await SeedG25ServiceAsync();
         await SeedG25DistanceErasAsync();
         await SeedG25AdmixtureErasAsync();
@@ -527,9 +527,9 @@ public class DatabaseSeeder(ApplicationDbContext context)
         return $"{{\"type\":\"MultiPolygon\",\"coordinates\":[{string.Join(",", polygonCoords)}]}}";
     }
 
-    private async Task SeedG25AncientsAsync()
+    private async Task SeedG25PopulationSamplesAsync()
     {
-        if (await context.G25Ancients.AnyAsync())
+        if (await context.G25PopulationSamples.AnyAsync())
             return;
 
         var path = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "g25-ancients.txt");
@@ -541,7 +541,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
         const int batchSize = 1000;
 
         var lines = await File.ReadAllLinesAsync(path);
-        var batch = new List<G25Ancient>();
+        var batch = new List<G25PopulationSample>();
 
         foreach (var line in lines)
         {
@@ -557,7 +557,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
             if (label.Length == 0 || coords.Length == 0)
                 continue;
 
-            batch.Add(new G25Ancient
+            batch.Add(new G25PopulationSample
             {
                 Label = label,
                 Coordinates = coords,
@@ -570,14 +570,14 @@ public class DatabaseSeeder(ApplicationDbContext context)
             if (batch.Count < batchSize)
                 continue;
 
-            context.G25Ancients.AddRange(batch);
+            context.G25PopulationSamples.AddRange(batch);
             await context.SaveChangesAsync();
             batch.Clear();
         }
 
         if (batch.Count > 0)
         {
-            context.G25Ancients.AddRange(batch);
+            context.G25PopulationSamples.AddRange(batch);
             await context.SaveChangesAsync();
         }
     }

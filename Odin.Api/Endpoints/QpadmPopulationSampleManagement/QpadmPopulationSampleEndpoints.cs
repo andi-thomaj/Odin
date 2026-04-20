@@ -1,13 +1,13 @@
 using System.Security.Claims;
-using Odin.Api.Endpoints.G25AncientManagement.Models;
+using Odin.Api.Endpoints.QpadmPopulationSampleManagement.Models;
 
-namespace Odin.Api.Endpoints.G25AncientManagement;
+namespace Odin.Api.Endpoints.QpadmPopulationSampleManagement;
 
-public static class G25AncientEndpoints
+public static class QpadmPopulationSampleEndpoints
 {
-    public static void MapG25AncientEndpoints(this IEndpointRouteBuilder app)
+    public static void MapQpadmPopulationSampleEndpoints(this IEndpointRouteBuilder app)
     {
-        var endpoints = app.MapGroup("api/g25-ancients");
+        var endpoints = app.MapGroup("api/qpadm-population-samples");
 
         endpoints.MapGet("/", GetPaged)
             .RequireAuthorization("ScientistOrAdmin")
@@ -38,31 +38,31 @@ public static class G25AncientEndpoints
             .RequireRateLimiting("strict");
     }
 
-    private static async Task<IResult> GetPaged(IG25AncientService service, int page = 1, int pageSize = 25)
+    private static async Task<IResult> GetPaged(IQpadmPopulationSampleService service, int page = 1, int pageSize = 25)
     {
         var result = await service.GetPagedAsync(page, pageSize);
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetAll(IG25AncientService service)
+    private static async Task<IResult> GetAll(IQpadmPopulationSampleService service)
     {
         var list = await service.GetAllAsync();
         return Results.Ok(list);
     }
 
-    private static async Task<IResult> SearchLabels(IG25AncientService service, string? q, int limit = 50)
+    private static async Task<IResult> SearchLabels(IQpadmPopulationSampleService service, string? q, int limit = 50)
     {
         var list = await service.SearchLabelsAsync(q ?? string.Empty, limit);
         return Results.Ok(list);
     }
 
-    private static async Task<IResult> GetById(IG25AncientService service, int id)
+    private static async Task<IResult> GetById(IQpadmPopulationSampleService service, int id)
     {
         var row = await service.GetByIdAsync(id);
         return row is null ? Results.NotFound() : Results.Ok(row);
     }
 
-    private static async Task<IResult> Create(HttpContext httpContext, IG25AncientService service, CreateG25AncientContract.Request request)
+    private static async Task<IResult> Create(HttpContext httpContext, IQpadmPopulationSampleService service, CreateQpadmPopulationSampleContract.Request request)
     {
         var identityId = ResolveIdentityId(httpContext);
         if (identityId is null) return Results.Unauthorized();
@@ -71,14 +71,14 @@ public static class G25AncientEndpoints
             return Results.BadRequest("Label and Coordinates are required.");
 
         var result = await service.CreateAsync(identityId, request);
-        return Results.Created($"/api/g25-ancients/{result.Id}", result);
+        return Results.Created($"/api/qpadm-population-samples/{result.Id}", result);
     }
 
     private static async Task<IResult> Update(
         HttpContext httpContext,
-        IG25AncientService service,
+        IQpadmPopulationSampleService service,
         int id,
-        UpdateG25AncientContract.Request request)
+        UpdateQpadmPopulationSampleContract.Request request)
     {
         var identityId = ResolveIdentityId(httpContext);
         if (identityId is null) return Results.Unauthorized();
@@ -90,7 +90,7 @@ public static class G25AncientEndpoints
         return result is null ? Results.NotFound() : Results.Ok(result);
     }
 
-    private static async Task<IResult> Delete(IG25AncientService service, int id)
+    private static async Task<IResult> Delete(IQpadmPopulationSampleService service, int id)
     {
         var ok = await service.DeleteAsync(id);
         return ok ? Results.NoContent() : Results.NotFound();
