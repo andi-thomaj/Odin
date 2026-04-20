@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Endpoints.G25Calculations.Models;
@@ -21,40 +22,32 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
     private const int MaxTargetCsvLength = 64 * 1024;
     private const int MaxTargetRows = 100;
     private const int MaxInlineSourceCsvLength = 4 * 1024 * 1024;
-    private const int MaxSelectedRegions = 16;
 
     public async Task<(ComputeDistancesContract.Response? Response, string? Error, bool NotFound)> ComputeDistancesAsync(
         ComputeDistancesContract.Request request, CancellationToken ct = default)
     {
-        var sourceFields = CountSet(request.SourceContent, request.SourceDistanceFileId, request.G25DistanceEraId);
+        var sourceFields = CountSet(request.SourceContent, request.G25DistanceEraId);
         if (sourceFields != 1)
         {
-            return (null, "Exactly one of sourceContent, sourceDistanceFileId, or g25DistanceEraId must be provided.", false);
+            return (null, "Exactly one of sourceContent or g25DistanceEraId must be provided.", false);
         }
 
         var (sizeError, _) = ValidateTargetSize(request.TargetCoordinates);
         if (sizeError is not null) return (null, sizeError, false);
 
         string sourceText;
-        if (request.SourceDistanceFileId is { } fileId)
+        if (request.G25DistanceEraId is { } eraId)
         {
-            var content = await dbContext.G25DistanceFiles
+            var samples = await dbContext.G25DistancePopulationSamples
                 .AsNoTracking()
-                .Where(f => f.Id == fileId)
-                .Select(f => f.Content)
-                .FirstOrDefaultAsync(ct);
-            if (content is null) return (null, null, true);
-            sourceText = content;
-        }
-        else if (request.G25DistanceEraId is { } eraId)
-        {
-            var content = await dbContext.G25DistanceFiles
-                .AsNoTracking()
-                .Where(f => f.G25DistanceEraId == eraId)
-                .Select(f => f.Content)
-                .FirstOrDefaultAsync(ct);
-            if (content is null) return (null, $"No distance file found for era id {eraId}.", true);
-            sourceText = content;
+                .Where(s => s.G25DistanceEraId == eraId)
+                .Select(s => new { s.Label, s.Coordinates })
+                .ToListAsync(ct);
+            if (samples.Count == 0)
+            {
+                return (null, $"No distance population samples found for era id {eraId}.", true);
+            }
+            sourceText = string.Join('\n', samples.Select(s => BuildSampleLine(s.Label, s.Coordinates)));
         }
         else
         {
@@ -83,63 +76,20 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
     public async Task<(ComputeAdmixtureSingleContract.Response? Response, string? Error, bool NotFound)> ComputeAdmixtureSingleAsync(
         ComputeAdmixtureSingleContract.Request request, CancellationToken ct = default)
     {
-        var hasRegions = request.SourceRegionIds is { Count: > 0 };
-        var sourceFields = CountSet(request.SourceContent, request.SourceAdmixtureFileId, hasRegions ? (object)true : null);
-        if (sourceFields != 1)
+        if (string.IsNullOrEmpty(request.SourceContent))
         {
-            return (null, "Exactly one of sourceContent, sourceAdmixtureFileId, or sourceRegionIds must be provided.", false);
+            return (null, "sourceContent is required for single admixture.", false);
         }
 
         var (sizeError, _) = ValidateTargetSize(request.TargetCoordinates);
         if (sizeError is not null) return (null, sizeError, false);
 
-        string sourceText;
-        if (request.SourceAdmixtureFileId is { } fileId)
+        if (request.SourceContent.Length > MaxInlineSourceCsvLength)
         {
-            var content = await dbContext.G25AdmixtureFiles
-                .AsNoTracking()
-                .Where(f => f.Id == fileId)
-                .Select(f => f.Content)
-                .FirstOrDefaultAsync(ct);
-            if (content is null) return (null, null, true);
-            sourceText = content;
-        }
-        else if (hasRegions)
-        {
-            var regionIds = request.SourceRegionIds!.Distinct().ToList();
-            if (regionIds.Count > MaxSelectedRegions)
-            {
-                return (null, $"At most {MaxSelectedRegions} regions can be selected.", false);
-            }
-
-            var files = await dbContext.G25AdmixtureFiles
-                .AsNoTracking()
-                .Where(f => regionIds.Contains(f.G25RegionId))
-                .ToListAsync(ct);
-
-            if (files.Count != regionIds.Count)
-            {
-                var found = files.Select(f => f.G25RegionId).ToHashSet();
-                var missing = regionIds.Where(id => !found.Contains(id)).ToList();
-                return (null, $"No admixture file(s) found for region id(s) [{string.Join(", ", missing)}].", true);
-            }
-
-            sourceText = MergeAdmixtureFileContents(files.Select(f => f.Content));
-            if (sourceText.Length > MaxInlineSourceCsvLength)
-            {
-                return (null, "Merged source content exceeds the maximum allowed size.", false);
-            }
-        }
-        else
-        {
-            sourceText = request.SourceContent!;
-            if (sourceText.Length > MaxInlineSourceCsvLength)
-            {
-                return (null, "Source content exceeds the maximum allowed size.", false);
-            }
+            return (null, "Source content exceeds the maximum allowed size.", false);
         }
 
-        var parsed = ParseBoth(sourceText, request.TargetCoordinates);
+        var parsed = ParseBoth(request.SourceContent, request.TargetCoordinates);
         if (parsed.Error is not null) return (null, parsed.Error, false);
 
         var cyclesMultiplier = request.CyclesMultiplier is > 0 ? request.CyclesMultiplier.Value : 1.0;
@@ -193,6 +143,26 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
         return (response, null);
     }
 
+    private static string BuildSampleLine(string label, string coordinates)
+    {
+        var trimmed = coordinates.Trim();
+        var firstBreak = trimmed.IndexOfAny(['\r', '\n']);
+        if (firstBreak >= 0)
+        {
+            trimmed = trimmed[..firstBreak].TrimEnd();
+        }
+        var firstComma = trimmed.IndexOf(',');
+        if (firstComma < 0) return $"{label},{trimmed}";
+        if (firstComma == 0) return $"{label}{trimmed}";
+
+        var leader = trimmed[..firstComma].Trim();
+        if (double.TryParse(leader, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+        {
+            return $"{label},{trimmed}";
+        }
+        return $"{label},{trimmed[(firstComma + 1)..]}";
+    }
+
     private static int CountSet(params object?[] fields)
     {
         var n = 0;
@@ -237,26 +207,6 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
             Target = target;
             Error = error;
         }
-    }
-
-    private static string MergeAdmixtureFileContents(IEnumerable<string> contents)
-    {
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var merged = new List<string>();
-        foreach (var content in contents)
-        {
-            if (string.IsNullOrWhiteSpace(content)) continue;
-            var normalized = content.Replace("\r\n", "\n");
-            foreach (var line in normalized.Split('\n'))
-            {
-                var trimmed = line.Trim();
-                if (trimmed.Length == 0) continue;
-                var commaIdx = trimmed.IndexOf(',');
-                var name = commaIdx >= 0 ? trimmed[..commaIdx].Trim() : trimmed;
-                if (seen.Add(name)) merged.Add(trimmed);
-            }
-        }
-        return string.Join('\n', merged);
     }
 
     private static ParsedInput ParseBoth(string sourceText, string targetText)

@@ -15,18 +15,20 @@ namespace Odin.Api.IntegrationTests.Endpoints.OrderManagement;
 
 public class G25OrderEndpointsTests(CustomWebApplicationFactory factory) : IntegrationTestBase(factory)
 {
-    private const string DistanceSourceCsv =
-        "PopA,0.01,0.02,0.03\n" +
-        "PopB,0.1,0.2,0.3\n" +
-        "PopC,0.5,0.4,0.3\n" +
-        "PopD,1.0,1.0,1.0";
+    private static readonly (string Label, string Coords)[] DistanceSamples =
+    [
+        ("PopA", "0.01,0.02,0.03"),
+        ("PopB", "0.1,0.2,0.3"),
+        ("PopC", "0.5,0.4,0.3"),
+        ("PopD", "1.0,1.0,1.0"),
+    ];
 
     private const string TargetCoordinates = "TestTarget,0.02,0.03,0.04";
 
     [Fact]
-    public async Task CreateG25_WithCoordinatesAndSeededDistanceFile_MarksCompletedAndPersistsResults()
+    public async Task CreateG25_WithCoordinatesAndSeededDistanceSamples_MarksCompletedAndPersistsResults()
     {
-        var (eraId, _) = await SeedG25EraWithDistanceFileAsync();
+        var (eraId, _) = await SeedG25EraWithDistanceSamplesAsync();
 
         using var content = BuildG25OrderForm(TargetCoordinates);
         var response = await Client.PostAsync("/api/orders", content);
@@ -50,7 +52,7 @@ public class G25OrderEndpointsTests(CustomWebApplicationFactory factory) : Integ
     }
 
     [Fact]
-    public async Task CreateG25_WithCoordinatesButNoEraWithDistanceFile_StaysPendingAndPersistsNoResults()
+    public async Task CreateG25_WithCoordinatesButNoEraWithDistanceSamples_StaysPendingAndPersistsNoResults()
     {
         using var content = BuildG25OrderForm(TargetCoordinates);
         var response = await Client.PostAsync("/api/orders", content);
@@ -72,7 +74,7 @@ public class G25OrderEndpointsTests(CustomWebApplicationFactory factory) : Integ
     [Fact]
     public async Task GetG25Result_AfterSuccessfulCompute_ReturnsPopulatedDistanceEras()
     {
-        var (_, eraName) = await SeedG25EraWithDistanceFileAsync();
+        var (_, eraName) = await SeedG25EraWithDistanceSamplesAsync();
 
         using var content = BuildG25OrderForm(TargetCoordinates);
         var create = await Client.PostAsync("/api/orders", content);
@@ -120,7 +122,7 @@ public class G25OrderEndpointsTests(CustomWebApplicationFactory factory) : Integ
     [Fact]
     public async Task GetG25Result_OtherUsersOrder_ReturnsForbidden()
     {
-        await SeedG25EraWithDistanceFileAsync();
+        await SeedG25EraWithDistanceSamplesAsync();
 
         using var content = BuildG25OrderForm(TargetCoordinates);
         var create = await Client.PostAsync("/api/orders", content);
@@ -135,7 +137,7 @@ public class G25OrderEndpointsTests(CustomWebApplicationFactory factory) : Integ
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 
-    private async Task<(int EraId, string EraName)> SeedG25EraWithDistanceFileAsync()
+    private async Task<(int EraId, string EraName)> SeedG25EraWithDistanceSamplesAsync()
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -152,16 +154,20 @@ public class G25OrderEndpointsTests(CustomWebApplicationFactory factory) : Integ
         db.G25DistanceEras.Add(era);
         await db.SaveChangesAsync();
 
-        db.G25DistanceFiles.Add(new G25DistanceFile
+        foreach (var sample in DistanceSamples)
         {
-            Title = $"Dist-{Guid.NewGuid():N}",
-            Content = DistanceSourceCsv,
-            G25DistanceEraId = era.Id,
-            CreatedAt = now,
-            CreatedBy = "test",
-            UpdatedAt = now,
-            UpdatedBy = "test"
-        });
+            db.G25DistancePopulationSamples.Add(new G25DistancePopulationSample
+            {
+                Label = sample.Label,
+                Coordinates = sample.Coords,
+                Ids = string.Empty,
+                G25DistanceEraId = era.Id,
+                CreatedAt = now,
+                CreatedBy = "test",
+                UpdatedAt = now,
+                UpdatedBy = "test"
+            });
+        }
         await db.SaveChangesAsync();
 
         return (era.Id, era.Name);

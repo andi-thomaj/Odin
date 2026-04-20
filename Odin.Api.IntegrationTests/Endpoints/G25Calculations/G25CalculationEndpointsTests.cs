@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
@@ -23,7 +22,15 @@ public class G25CalculationEndpointsTests(CustomWebApplicationFactory factory) :
         "TargetX,0.02,0.03,0.04\n" +
         "TargetY,0.5,0.5,0.5";
 
-    private async Task<(int eraId, int distanceFileId, int ethnicityId, int regionId, int admixtureFileId)> SeedG25ReferencesAsync()
+    private static readonly (string Label, string Coords)[] DistanceSamples =
+    [
+        ("PopA", "0.01,0.02,0.03"),
+        ("PopB", "0.1,0.2,0.3"),
+        ("PopC", "0.5,0.4,0.3"),
+        ("PopD", "1.0,1.0,1.0"),
+    ];
+
+    private async Task<int> SeedG25DistanceEraWithSamplesAsync()
     {
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -37,58 +44,20 @@ public class G25CalculationEndpointsTests(CustomWebApplicationFactory factory) :
         db.G25DistanceEras.Add(era);
         await db.SaveChangesAsync();
 
-        var distFile = new G25DistanceFile
+        foreach (var sample in DistanceSamples)
         {
-            Title = $"Dist-{Guid.NewGuid():N}",
-            Content = SourceCsv,
-            G25DistanceEraId = era.Id,
-            CreatedAt = now, CreatedBy = "test", UpdatedAt = now, UpdatedBy = "test"
-        };
-        db.G25DistanceFiles.Add(distFile);
-
-        var continent = new G25Continent
-        {
-            Name = $"Cont-{Guid.NewGuid():N}",
-            CreatedAt = now, CreatedBy = "test", UpdatedAt = now, UpdatedBy = "test"
-        };
-        db.G25Continents.Add(continent);
+            db.G25DistancePopulationSamples.Add(new G25DistancePopulationSample
+            {
+                Label = sample.Label,
+                Coordinates = sample.Coords,
+                Ids = string.Empty,
+                G25DistanceEraId = era.Id,
+                CreatedAt = now, CreatedBy = "test", UpdatedAt = now, UpdatedBy = "test"
+            });
+        }
         await db.SaveChangesAsync();
 
-        var ethnicity = new G25Ethnicity
-        {
-            Name = $"Ethn-{Guid.NewGuid():N}",
-            G25ContinentId = continent.Id,
-            CreatedAt = now, CreatedBy = "test", UpdatedAt = now, UpdatedBy = "test"
-        };
-        db.G25Ethnicities.Add(ethnicity);
-        await db.SaveChangesAsync();
-
-        var region = new G25Region
-        {
-            Name = $"Region-{Guid.NewGuid():N}",
-            G25EthnicityId = ethnicity.Id,
-            CreatedAt = now, CreatedBy = "test", UpdatedAt = now, UpdatedBy = "test"
-        };
-        db.G25Regions.Add(region);
-        await db.SaveChangesAsync();
-
-        var admixFile = new G25AdmixtureFile
-        {
-            Name = $"Admix-{Guid.NewGuid():N}",
-            Content = SourceCsv,
-            G25RegionId = region.Id,
-            CreatedAt = now, CreatedBy = "test", UpdatedAt = now, UpdatedBy = "test"
-        };
-        db.G25AdmixtureFiles.Add(admixFile);
-        await db.SaveChangesAsync();
-
-        return (era.Id, distFile.Id, ethnicity.Id, region.Id, admixFile.Id);
-    }
-
-    private void SetAppRole(string role)
-    {
-        Client.DefaultRequestHeaders.Remove("X-Test-App-Role");
-        Client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-App-Role", role);
+        return era.Id;
     }
 
     // ── POST /api/g25-calculations/distances ────────────────────────
@@ -115,13 +84,13 @@ public class G25CalculationEndpointsTests(CustomWebApplicationFactory factory) :
     }
 
     [Fact]
-    public async Task Distances_WithSourceDistanceFileId_Returns200()
+    public async Task Distances_WithG25DistanceEraId_Returns200()
     {
-        var (_, distFileId, _, _, _) = await SeedG25ReferencesAsync();
+        var eraId = await SeedG25DistanceEraWithSamplesAsync();
         var body = new ComputeDistancesContract.Request
         {
             TargetCoordinates = TargetCsv,
-            SourceDistanceFileId = distFileId,
+            G25DistanceEraId = eraId,
             MaxResults = 10
         };
 
@@ -135,12 +104,12 @@ public class G25CalculationEndpointsTests(CustomWebApplicationFactory factory) :
     }
 
     [Fact]
-    public async Task Distances_WithUnknownFileId_Returns404()
+    public async Task Distances_WithUnknownEraId_Returns404()
     {
         var body = new ComputeDistancesContract.Request
         {
             TargetCoordinates = TargetCsv,
-            SourceDistanceFileId = 999_999
+            G25DistanceEraId = 999_999
         };
 
         var response = await Client.PostAsJsonAsync("/api/g25-calculations/distances", body);
@@ -164,12 +133,12 @@ public class G25CalculationEndpointsTests(CustomWebApplicationFactory factory) :
     [Fact]
     public async Task Distances_WithBothSources_Returns400()
     {
-        var (_, distFileId, _, _, _) = await SeedG25ReferencesAsync();
+        var eraId = await SeedG25DistanceEraWithSamplesAsync();
         var body = new ComputeDistancesContract.Request
         {
             TargetCoordinates = TargetCsv,
             SourceContent = SourceCsv,
-            SourceDistanceFileId = distFileId
+            G25DistanceEraId = eraId
         };
 
         var response = await Client.PostAsJsonAsync("/api/g25-calculations/distances", body);
@@ -235,89 +204,13 @@ public class G25CalculationEndpointsTests(CustomWebApplicationFactory factory) :
     }
 
     [Fact]
-    public async Task AdmixtureSingle_WithSourceAdmixtureFileId_Returns200()
+    public async Task AdmixtureSingle_WithoutSourceContent_Returns400()
     {
-        var (_, _, _, _, admixFileId) = await SeedG25ReferencesAsync();
         var body = new ComputeAdmixtureSingleContract.Request
         {
             TargetCoordinates = TargetCsv,
-            SourceAdmixtureFileId = admixFileId,
+            SourceContent = "",
             CyclesMultiplier = 1
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/g25-calculations/admixture/single", body);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task AdmixtureSingle_WithSourceRegionIds_Returns200()
-    {
-        var (_, _, _, regionId, _) = await SeedG25ReferencesAsync();
-        var body = new ComputeAdmixtureSingleContract.Request
-        {
-            TargetCoordinates = TargetCsv,
-            SourceRegionIds = [regionId],
-            CyclesMultiplier = 1
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/g25-calculations/admixture/single", body);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task AdmixtureSingle_WithRegionMissingAdmixtureFile_Returns404()
-    {
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var now = DateTime.UtcNow;
-        var continent = new G25Continent
-        {
-            Name = $"Cont-{Guid.NewGuid():N}",
-            CreatedAt = now, CreatedBy = "t", UpdatedAt = now, UpdatedBy = "t"
-        };
-        db.G25Continents.Add(continent);
-        await db.SaveChangesAsync();
-        var ethnicity = new G25Ethnicity
-        {
-            Name = $"Ethn-{Guid.NewGuid():N}",
-            G25ContinentId = continent.Id,
-            CreatedAt = now, CreatedBy = "t", UpdatedAt = now, UpdatedBy = "t"
-        };
-        db.G25Ethnicities.Add(ethnicity);
-        await db.SaveChangesAsync();
-        var region = new G25Region
-        {
-            Name = $"Region-{Guid.NewGuid():N}",
-            G25EthnicityId = ethnicity.Id,
-            CreatedAt = now, CreatedBy = "t", UpdatedAt = now, UpdatedBy = "t"
-        };
-        db.G25Regions.Add(region);
-        await db.SaveChangesAsync();
-
-        var body = new ComputeAdmixtureSingleContract.Request
-        {
-            TargetCoordinates = TargetCsv,
-            SourceRegionIds = [region.Id],
-            CyclesMultiplier = 1
-        };
-
-        var response = await Client.PostAsJsonAsync("/api/g25-calculations/admixture/single", body);
-
-        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task AdmixtureSingle_WithAllThreeSources_Returns400()
-    {
-        var (_, _, _, regionId, admixFileId) = await SeedG25ReferencesAsync();
-        var body = new ComputeAdmixtureSingleContract.Request
-        {
-            TargetCoordinates = TargetCsv,
-            SourceContent = SourceCsv,
-            SourceAdmixtureFileId = admixFileId,
-            SourceRegionIds = [regionId]
         };
 
         var response = await Client.PostAsJsonAsync("/api/g25-calculations/admixture/single", body);
@@ -361,62 +254,5 @@ public class G25CalculationEndpointsTests(CustomWebApplicationFactory factory) :
         var response = await Client.PostAsJsonAsync("/api/g25-calculations/admixture/multi", body);
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-    }
-
-    // ── Access-control hardening ────────────────────────────────────
-
-    [Fact]
-    public async Task GetDistanceFileById_AsEmailVerifiedUser_ReturnsForbidden()
-    {
-        var (_, distFileId, _, _, _) = await SeedG25ReferencesAsync();
-        SetAppRole("User");
-
-        var response = await Client.GetAsync($"/api/g25-distance-files/{distFileId}");
-
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetDistanceFileById_AsAdmin_Returns200()
-    {
-        var (_, distFileId, _, _, _) = await SeedG25ReferencesAsync();
-        SetAppRole("Admin");
-
-        var response = await Client.GetAsync($"/api/g25-distance-files/{distFileId}");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetAdmixtureFileById_AsEmailVerifiedUser_ReturnsForbidden()
-    {
-        var (_, _, _, _, admixFileId) = await SeedG25ReferencesAsync();
-        SetAppRole("User");
-
-        var response = await Client.GetAsync($"/api/g25-admixture-files/{admixFileId}");
-
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetAdmixtureFileByRegionId_AsEmailVerifiedUser_ReturnsForbidden()
-    {
-        var (_, _, _, regionId, _) = await SeedG25ReferencesAsync();
-        SetAppRole("User");
-
-        var response = await Client.GetAsync($"/api/g25-admixture-files/by-region/{regionId}");
-
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
-
-    [Fact]
-    public async Task GetAdmixtureFileByRegionId_AsAdmin_Returns200()
-    {
-        var (_, _, _, regionId, _) = await SeedG25ReferencesAsync();
-        SetAppRole("Admin");
-
-        var response = await Client.GetAsync($"/api/g25-admixture-files/by-region/{regionId}");
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
     }
 }

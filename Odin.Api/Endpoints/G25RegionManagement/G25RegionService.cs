@@ -30,8 +30,7 @@ public class G25RegionService(ApplicationDbContext dbContext) : IG25RegionServic
                 Id = e.Id,
                 Name = e.Name,
                 G25EthnicityId = e.G25EthnicityId,
-                G25EthnicityName = e.G25Ethnicity.Name,
-                HasAdmixtureFile = e.AdmixtureFile != null
+                G25EthnicityName = e.G25Ethnicity.Name
             })
             .ToListAsync(ct);
     }
@@ -47,8 +46,7 @@ public class G25RegionService(ApplicationDbContext dbContext) : IG25RegionServic
                 Id = e.Id,
                 Name = e.Name,
                 G25EthnicityId = e.G25EthnicityId,
-                G25EthnicityName = e.G25Ethnicity.Name,
-                HasAdmixtureFile = e.AdmixtureFile != null
+                G25EthnicityName = e.G25Ethnicity.Name
             })
             .ToListAsync(ct);
     }
@@ -63,8 +61,7 @@ public class G25RegionService(ApplicationDbContext dbContext) : IG25RegionServic
                 Id = e.Id,
                 Name = e.Name,
                 G25EthnicityId = e.G25EthnicityId,
-                G25EthnicityName = e.G25Ethnicity.Name,
-                HasAdmixtureFile = e.AdmixtureFile != null
+                G25EthnicityName = e.G25Ethnicity.Name
             })
             .FirstOrDefaultAsync(ct);
     }
@@ -128,9 +125,7 @@ public class G25RegionService(ApplicationDbContext dbContext) : IG25RegionServic
 
     public async Task<(bool Deleted, string? Error, bool NotFound)> DeleteAsync(int id, CancellationToken ct = default)
     {
-        var entity = await dbContext.G25Regions
-            .Include(r => r.AdmixtureFile)
-            .FirstOrDefaultAsync(e => e.Id == id, ct);
+        var entity = await dbContext.G25Regions.FirstOrDefaultAsync(e => e.Id == id, ct);
         if (entity is null) return (false, null, true);
 
         dbContext.G25Regions.Remove(entity);

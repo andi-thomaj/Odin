@@ -42,9 +42,6 @@ namespace Odin.Api.Data
         public DbSet<G25Continent> G25Continents { get; set; }
         public DbSet<G25DistanceEra> G25DistanceEras { get; set; }
         public DbSet<G25AdmixtureEra> G25AdmixtureEras { get; set; }
-        public DbSet<G25DistanceFile> G25DistanceFiles { get; set; }
-        public DbSet<G25AdmixtureFile> G25AdmixtureFiles { get; set; }
-        public DbSet<G25PcaFile> G25PcaFiles { get; set; }
         public DbSet<G25GeneticInspection> G25GeneticInspections { get; set; }
         public DbSet<G25GeneticInspectionEthnicity> G25GeneticInspectionEthnicities { get; set; }
         public DbSet<G25GeneticInspectionRegion> G25GeneticInspectionRegions { get; set; }
@@ -52,7 +49,6 @@ namespace Odin.Api.Data
         public DbSet<G25DistanceResult> G25DistanceResults { get; set; }
         public DbSet<G25AdmixtureResult> G25AdmixtureResults { get; set; }
         public DbSet<G25PcaResult> G25PcaResults { get; set; }
-        public DbSet<G25PcaResultFile> G25PcaResultFiles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

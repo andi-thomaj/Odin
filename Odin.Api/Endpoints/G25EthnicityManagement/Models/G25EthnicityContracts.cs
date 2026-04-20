@@ -15,7 +15,6 @@ public static class GetG25EthnicityContract
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public bool HasAdmixtureFile { get; set; }
     }
 }
 

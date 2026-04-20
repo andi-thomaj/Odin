@@ -34,8 +34,7 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
                     .Select(r => new GetG25EthnicityContract.RegionSummary
                     {
                         Id = r.Id,
-                        Name = r.Name,
-                        HasAdmixtureFile = r.AdmixtureFile != null
+                        Name = r.Name
                     })
                     .ToList()
             })
@@ -59,8 +58,7 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
                     .Select(r => new GetG25EthnicityContract.RegionSummary
                     {
                         Id = r.Id,
-                        Name = r.Name,
-                        HasAdmixtureFile = r.AdmixtureFile != null
+                        Name = r.Name
                     })
                     .ToList()
             })
@@ -83,8 +81,7 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
                     .Select(r => new GetG25EthnicityContract.RegionSummary
                     {
                         Id = r.Id,
-                        Name = r.Name,
-                        HasAdmixtureFile = r.AdmixtureFile != null
+                        Name = r.Name
                     })
                     .ToList()
             })
@@ -107,8 +104,7 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
                     .Select(r => new GetG25EthnicityContract.RegionSummary
                     {
                         Id = r.Id,
-                        Name = r.Name,
-                        HasAdmixtureFile = r.AdmixtureFile != null
+                        Name = r.Name
                     })
                     .ToList()
             })
@@ -158,7 +154,6 @@ public class G25EthnicityService(ApplicationDbContext dbContext) : IG25Ethnicity
     {
         var entity = await dbContext.G25Ethnicities
             .Include(e => e.G25Regions)
-                .ThenInclude(r => r.AdmixtureFile)
             .FirstOrDefaultAsync(e => e.Id == id, ct);
         if (entity is null) return false;
 

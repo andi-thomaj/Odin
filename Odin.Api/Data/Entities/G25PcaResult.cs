@@ -11,7 +11,6 @@ public class G25PcaResult : BaseEntity
     public int G25ContinentId { get; set; }
     public G25Continent G25Continent { get; set; } = null!;
     public string ResultsVersion { get; set; } = string.Empty;
-    public List<G25PcaResultFile> PcaFiles { get; set; } = [];
 }
 
 public class G25PcaResultConfiguration : IEntityTypeConfiguration<G25PcaResult>

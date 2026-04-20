@@ -25,9 +25,7 @@ public class G25DistanceEraService(ApplicationDbContext dbContext) : IG25Distanc
             {
                 Id = e.Id,
                 Name = e.Name,
-                DistanceFile = e.DistanceFile == null
-                    ? null
-                    : new GetG25DistanceEraContract.DistanceFileSummary { Id = e.DistanceFile.Id, Title = e.DistanceFile.Title }
+                SampleCount = e.G25DistancePopulationSamples.Count
             })
             .ToListAsync(ct);
     }
@@ -41,9 +39,7 @@ public class G25DistanceEraService(ApplicationDbContext dbContext) : IG25Distanc
             {
                 Id = e.Id,
                 Name = e.Name,
-                DistanceFile = e.DistanceFile == null
-                    ? null
-                    : new GetG25DistanceEraContract.DistanceFileSummary { Id = e.DistanceFile.Id, Title = e.DistanceFile.Title }
+                SampleCount = e.G25DistancePopulationSamples.Count
             })
             .FirstOrDefaultAsync(ct);
     }

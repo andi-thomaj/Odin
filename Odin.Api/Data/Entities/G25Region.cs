@@ -9,7 +9,6 @@ namespace Odin.Api.Data.Entities
         public required string Name { get; set; }
         public int G25EthnicityId { get; set; }
         public G25Ethnicity G25Ethnicity { get; set; } = null!;
-        public G25AdmixtureFile? AdmixtureFile { get; set; }
     }
 
     public class G25RegionConfiguration : IEntityTypeConfiguration<G25Region>

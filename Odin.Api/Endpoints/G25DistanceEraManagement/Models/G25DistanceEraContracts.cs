@@ -2,17 +2,11 @@ namespace Odin.Api.Endpoints.G25DistanceEraManagement.Models;
 
 public static class GetG25DistanceEraContract
 {
-    public class DistanceFileSummary
-    {
-        public int Id { get; set; }
-        public required string Title { get; set; }
-    }
-
     public class Response
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public DistanceFileSummary? DistanceFile { get; set; }
+        public int SampleCount { get; set; }
     }
 }
 

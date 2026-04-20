@@ -7,8 +7,6 @@ namespace Odin.Api.Data.Entities
     {
         public int Id { get; set; }
         public required string Name { get; set; }
-        public G25DistanceFile? DistanceFile { get; set; }
-        public G25PcaFile? PcaFile { get; set; }
         public List<G25DistancePopulationSample> G25DistancePopulationSamples { get; set; } = [];
         public List<G25PcaPopulationsSample> G25PcaPopulationsSamples { get; set; } = [];
     }

@@ -226,17 +226,10 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public List<AdmixtureAncestorResult> Ancestors { get; set; } = [];
         }
 
-        public class PcaFileResult
-        {
-            public int Id { get; set; }
-            public required string FileName { get; set; }
-        }
-
         public class PcaContinentResult
         {
             public int ContinentId { get; set; }
             public required string ContinentName { get; set; }
-            public List<PcaFileResult> Files { get; set; } = [];
         }
 
         public class Response

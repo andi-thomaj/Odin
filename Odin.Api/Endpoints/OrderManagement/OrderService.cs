@@ -357,7 +357,7 @@ public class OrderService(
                 else
                 {
                     logger.LogWarning(
-                        "G25 order {OrderId} (inspection {InspectionId}) produced no distance results; leaving status Pending. Verify that at least one G25DistanceEra has an attached G25DistanceFile with matching column count.",
+                        "G25 order {OrderId} (inspection {InspectionId}) produced no distance results; leaving status Pending. Verify that at least one G25DistanceEra has attached G25DistancePopulationSamples with matching column count.",
                         order.Id, geneticInspection.Id);
                 }
             }
@@ -381,14 +381,14 @@ public class OrderService(
         {
             var eras = await dbContext.G25DistanceEras
                 .AsNoTracking()
-                .Where(e => e.DistanceFile != null)
+                .Where(e => e.G25DistancePopulationSamples.Any())
                 .Select(e => new { e.Id, e.Name })
                 .ToListAsync();
 
             if (eras.Count == 0)
             {
                 logger.LogWarning(
-                    "G25 distance compute skipped for inspection {InspectionId}: no G25DistanceEras have an attached G25DistanceFile.",
+                    "G25 distance compute skipped for inspection {InspectionId}: no G25DistanceEras have attached G25DistancePopulationSamples.",
                     geneticInspectionId);
                 return 0;
             }
@@ -808,8 +808,6 @@ public class OrderService(
                 .AsNoTracking()
                 .Where(r => r.GeneticInspectionId == inspection.Id)
                 .Include(r => r.G25Continent)
-                .Include(r => r.PcaFiles)
-                    .ThenInclude(f => f.G25PcaFile)
                 .ToListAsync();
 
             var distanceEras = distanceResults
@@ -853,13 +851,6 @@ public class OrderService(
                 {
                     ContinentId = r.G25ContinentId,
                     ContinentName = r.G25Continent.Name,
-                    Files = r.PcaFiles
-                        .Select(f => new GetOrderG25ResultContract.PcaFileResult
-                        {
-                            Id = f.G25PcaFileId,
-                            FileName = f.G25PcaFile.Title
-                        })
-                        .ToList()
                 })
                 .ToList();
 
@@ -962,7 +953,7 @@ public class OrderService(
 
             var eras = await dbContext.G25DistanceEras
                 .AsNoTracking()
-                .Where(e => e.DistanceFile != null)
+                .Where(e => e.G25DistancePopulationSamples.Any())
                 .Select(e => new { e.Id, e.Name })
                 .ToListAsync();
 
@@ -975,7 +966,7 @@ public class OrderService(
 
             if (eras.Count == 0)
             {
-                logger.LogWarning("G25 distance recompute aborted: no eras with an attached distance file.");
+                logger.LogWarning("G25 distance recompute aborted: no eras with attached population samples.");
                 stopwatch.Stop();
                 response.DurationMs = stopwatch.ElapsedMilliseconds;
                 return response;

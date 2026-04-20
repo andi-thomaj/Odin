@@ -102,7 +102,7 @@ public static class G25CoordinateParser
 
             parsed.Add(new CoordinateRow
             {
-                Name = cols[0].Trim().Replace(' ', '>'),
+                Name = cols[0].Trim(),
                 Values = values
             });
         }

@@ -6,7 +6,6 @@ public static class ComputeDistancesContract
     {
         public required string TargetCoordinates { get; set; }
         public string? SourceContent { get; set; }
-        public int? SourceDistanceFileId { get; set; }
         public int? G25DistanceEraId { get; set; }
         public int? MaxResults { get; set; }
     }
@@ -34,9 +33,7 @@ public static class ComputeAdmixtureSingleContract
     public class Request
     {
         public required string TargetCoordinates { get; set; }
-        public string? SourceContent { get; set; }
-        public int? SourceAdmixtureFileId { get; set; }
-        public IReadOnlyList<int>? SourceRegionIds { get; set; }
+        public required string SourceContent { get; set; }
         public double? CyclesMultiplier { get; set; }
         public int? Slots { get; set; }
         public bool? Aggregate { get; set; }
