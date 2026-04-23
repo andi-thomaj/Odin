@@ -260,6 +260,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string MusicTrackFileName { get; set; } = string.Empty;
             public bool HasAudioFile { get; set; }
             public bool HasGifAvatarImage { get; set; }
+            public bool HasVideoAvatarImage { get; set; }
             public decimal Percentage { get; set; }
             public decimal StandardError { get; set; }
             public decimal ZScore { get; set; }

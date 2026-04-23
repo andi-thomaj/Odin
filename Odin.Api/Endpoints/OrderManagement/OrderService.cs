@@ -766,6 +766,7 @@ public class OrderService(
                             MusicTrackFileName = qrp.Population.MusicTrack.FileName,
                             HasAudioFile = trackIdsWithAudio.Contains(qrp.Population.MusicTrackId),
                             HasGifAvatarImage = qrp.Population.GifAvatarImage != null,
+                            HasVideoAvatarImage = qrp.Population.VideoAvatarImage != null,
                             Percentage = qrp.Percentage,
                             StandardError = qrp.StandardError,
                             ZScore = qrp.ZScore,
