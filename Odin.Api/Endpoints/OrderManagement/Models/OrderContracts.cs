@@ -261,6 +261,7 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public bool HasAudioFile { get; set; }
             public bool HasGifAvatarImage { get; set; }
             public bool HasVideoAvatarImage { get; set; }
+            public string? GifVersion { get; set; }
             public decimal Percentage { get; set; }
             public decimal StandardError { get; set; }
             public decimal ZScore { get; set; }
