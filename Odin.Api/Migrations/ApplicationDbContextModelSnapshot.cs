@@ -1541,6 +1541,9 @@ namespace Odin.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<byte[]>("GifAvatarImage")
+                        .HasColumnType("bytea");
+
                     b.Property<string>("IconFileName")
                         .IsRequired()
                         .HasMaxLength(200)

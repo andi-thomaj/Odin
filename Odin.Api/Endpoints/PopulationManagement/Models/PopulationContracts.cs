@@ -14,6 +14,7 @@ public static class GetPopulationContract
         public string EraName { get; set; } = string.Empty;
         public int MusicTrackId { get; set; }
         public string MusicTrackName { get; set; } = string.Empty;
+        public bool HasGifAvatarImage { get; set; }
     }
 }
 

@@ -4,5 +4,6 @@
     <File Path="Directory.Packages.props" />
   </Folder>
   <Project Path="Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj" />
+  <Project Path="Odin.Api.Tests/Odin.Api.Tests.csproj" />
   <Project Path="Odin.Api/Odin.Api.csproj" />
 </Solution>

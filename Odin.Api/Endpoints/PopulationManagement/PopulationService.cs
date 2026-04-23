@@ -15,11 +15,20 @@ public interface IPopulationService
     Task<(GetPopulationContract.AdminResponse? Response, string? Error)> CreateAsync(string identityId, CreatePopulationContract.Request request, CancellationToken cancellationToken = default);
     Task<(GetPopulationContract.AdminResponse? Response, string? Error, bool NotFound)> UpdateAsync(int id, string identityId, UpdatePopulationContract.Request request, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task<byte[]?> GetGifAvatarImageAsync(int id, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error, bool NotFound)> UploadGifAvatarImageAsync(int id, IFormFile file, string identityId, CancellationToken cancellationToken = default);
+    Task<bool> DeleteGifAvatarImageAsync(int id, string identityId, CancellationToken cancellationToken = default);
+    Task<(int Updated, int Unmatched, int MissingOnDisk)> SyncGifAvatarsFromDiskAsync(string identityId, CancellationToken cancellationToken = default);
 }
 
 public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCache cache) : IPopulationService
 {
     private const string ErasCacheKey = "AllEras";
+    private const long MaxGifAvatarBytes = 25 * 1024 * 1024;
+    private static readonly HashSet<string> AllowedGifContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "image/gif"
+    };
 
     public async Task<IReadOnlyList<GetPopulationContract.AdminResponse>> GetAllAdminAsync(CancellationToken cancellationToken = default)
     {
@@ -38,6 +47,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
                 EraName = p.Era.Name,
                 MusicTrackId = p.MusicTrackId,
                 MusicTrackName = p.MusicTrack.Name,
+                HasGifAvatarImage = p.GifAvatarImage != null,
             })
             .ToListAsync(cancellationToken);
     }
@@ -59,6 +69,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
                 EraName = p.Era.Name,
                 MusicTrackId = p.MusicTrackId,
                 MusicTrackName = p.MusicTrack.Name,
+                HasGifAvatarImage = p.GifAvatarImage != null,
             })
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -178,4 +189,93 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
 
     [GeneratedRegex(@"^#[0-9A-Fa-f]{6}$")]
     private static partial Regex HexColorRegex();
+
+    public async Task<byte[]?> GetGifAvatarImageAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.QpadmPopulations
+            .AsNoTracking()
+            .Where(p => p.Id == id)
+            .Select(p => p.GifAvatarImage)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<(bool Success, string? Error, bool NotFound)> UploadGifAvatarImageAsync(
+        int id, IFormFile file, string identityId, CancellationToken cancellationToken = default)
+    {
+        if (file.Length == 0)
+            return (false, "Uploaded file is empty.", false);
+        if (file.Length > MaxGifAvatarBytes)
+            return (false, $"File exceeds the {MaxGifAvatarBytes / (1024 * 1024)} MB limit.", false);
+        if (!AllowedGifContentTypes.Contains(file.ContentType))
+            return (false, $"Invalid content type '{file.ContentType}'. Allowed: image/gif.", false);
+
+        var population = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        if (population is null) return (false, null, true);
+
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms, cancellationToken);
+
+        population.GifAvatarImage = ms.ToArray();
+        population.UpdatedAt = DateTime.UtcNow;
+        population.UpdatedBy = identityId;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        cache.Remove(ErasCacheKey);
+        return (true, null, false);
+    }
+
+    public async Task<bool> DeleteGifAvatarImageAsync(int id, string identityId, CancellationToken cancellationToken = default)
+    {
+        var population = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        if (population is null) return false;
+
+        population.GifAvatarImage = null;
+        population.UpdatedAt = DateTime.UtcNow;
+        population.UpdatedBy = identityId;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        cache.Remove(ErasCacheKey);
+        return true;
+    }
+
+    public async Task<(int Updated, int Unmatched, int MissingOnDisk)> SyncGifAvatarsFromDiskAsync(
+        string identityId, CancellationToken cancellationToken = default)
+    {
+        var gifDir = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "population-gifs");
+        if (!Directory.Exists(gifDir))
+            return (0, 0, 0);
+
+        var populations = await dbContext.QpadmPopulations.ToListAsync(cancellationToken);
+        var now = DateTime.UtcNow;
+        var updated = 0;
+        var missingOnDisk = 0;
+
+        foreach (var population in populations)
+        {
+            var filePath = Path.Combine(gifDir, $"{population.Name}.gif");
+            if (!File.Exists(filePath))
+            {
+                missingOnDisk++;
+                continue;
+            }
+
+            population.GifAvatarImage = await File.ReadAllBytesAsync(filePath, cancellationToken);
+            population.UpdatedAt = now;
+            population.UpdatedBy = identityId;
+            updated++;
+        }
+
+        if (updated > 0)
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            cache.Remove(ErasCacheKey);
+        }
+
+        var populationNames = new HashSet<string>(populations.Select(p => p.Name), StringComparer.Ordinal);
+        var unmatched = Directory.EnumerateFiles(gifDir, "*.gif")
+            .Select(Path.GetFileNameWithoutExtension)
+            .Count(name => name is not null && !populationNames.Contains(name));
+
+        return (updated, unmatched, missingOnDisk);
+    }
 }

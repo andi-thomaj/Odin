@@ -28,6 +28,25 @@ public static class PopulationEndpoints
         endpoints.MapDelete("/{id:int}", Delete)
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("strict");
+
+        endpoints.MapGet("/{id:int}/gif-avatar-image", GetGifAvatarImage)
+            .RequireAuthorization("EmailVerified")
+            .RequireRateLimiting("authenticated");
+
+        endpoints.MapPut("/{id:int}/gif-avatar-image", UploadGifAvatarImage)
+            .DisableAntiforgery()
+            .RequireAuthorization("AdminOnly")
+            .RequireRateLimiting("file-upload")
+            .WithRequestTimeout(TimeSpan.FromMinutes(5));
+
+        endpoints.MapDelete("/{id:int}/gif-avatar-image", DeleteGifAvatarImage)
+            .RequireAuthorization("AdminOnly")
+            .RequireRateLimiting("strict");
+
+        endpoints.MapPost("/gif-avatar-images/sync-from-disk", SyncGifAvatarsFromDisk)
+            .RequireAuthorization("AdminOnly")
+            .RequireRateLimiting("strict")
+            .WithRequestTimeout(TimeSpan.FromMinutes(5));
     }
 
     private static async Task<IResult> GetAllAdmin(IPopulationService service)
@@ -67,6 +86,48 @@ public static class PopulationEndpoints
     {
         var ok = await service.DeleteAsync(id);
         return ok ? Results.NoContent() : Results.NotFound();
+    }
+
+    private static async Task<IResult> GetGifAvatarImage(IPopulationService service, int id, CancellationToken cancellationToken)
+    {
+        var data = await service.GetGifAvatarImageAsync(id, cancellationToken);
+        if (data is null || data.Length == 0)
+            return Results.NotFound(new { Message = $"GIF avatar for population {id} not found." });
+
+        return Results.File(data, "image/gif", $"population-{id}.gif",
+            lastModified: null,
+            entityTag: null,
+            enableRangeProcessing: true);
+    }
+
+    private static async Task<IResult> UploadGifAvatarImage(HttpContext httpContext, IPopulationService service, int id, IFormFile file, CancellationToken cancellationToken)
+    {
+        var identityId = ResolveIdentityId(httpContext);
+        if (identityId is null) return Results.Unauthorized();
+
+        var (success, error, notFound) = await service.UploadGifAvatarImageAsync(id, file, identityId, cancellationToken);
+        if (notFound) return Results.NotFound();
+        return success
+            ? Results.NoContent()
+            : Results.BadRequest(new { Message = error });
+    }
+
+    private static async Task<IResult> DeleteGifAvatarImage(HttpContext httpContext, IPopulationService service, int id, CancellationToken cancellationToken)
+    {
+        var identityId = ResolveIdentityId(httpContext);
+        if (identityId is null) return Results.Unauthorized();
+
+        var ok = await service.DeleteGifAvatarImageAsync(id, identityId, cancellationToken);
+        return ok ? Results.NoContent() : Results.NotFound();
+    }
+
+    private static async Task<IResult> SyncGifAvatarsFromDisk(HttpContext httpContext, IPopulationService service, CancellationToken cancellationToken)
+    {
+        var identityId = ResolveIdentityId(httpContext);
+        if (identityId is null) return Results.Unauthorized();
+
+        var (updated, unmatched, missingOnDisk) = await service.SyncGifAvatarsFromDiskAsync(identityId, cancellationToken);
+        return Results.Ok(new { Updated = updated, Unmatched = unmatched, MissingOnDisk = missingOnDisk });
     }
 
     private static string? ResolveIdentityId(HttpContext httpContext) =>

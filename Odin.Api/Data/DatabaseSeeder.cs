@@ -11,6 +11,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
     {
         await SeedReferenceCatalogAsync();
         await SeedMediaFilesAsync();
+        await SeedPopulationGifAvatarsAsync();
     }
 
     /// <summary>Ethnicities, eras, geo backfill, commerce catalog — safe to re-run when tables are empty (e.g. integration tests after Respawn).</summary>
@@ -529,6 +530,7 @@ public class DatabaseSeeder(ApplicationDbContext context)
 
     private async Task SeedG25PopulationSamplesAsync()
     {
+        return;
         if (await context.G25AdmixturePopulationSamples.AnyAsync())
             return;
 
@@ -625,6 +627,35 @@ public class DatabaseSeeder(ApplicationDbContext context)
             }
         }
 
+    }
+
+    /// <summary>
+    /// Seeds GIF avatar binaries into QpadmPopulation.GifAvatarImage.
+    /// Reads from Data/SeedData/population-gifs/{PopulationName}.gif next to the running assembly.
+    /// Populates any row that currently has no GifAvatarImage and has a matching file on disk;
+    /// existing non-null values are left untouched so admin uploads aren't overwritten on restart.
+    /// </summary>
+    private async Task SeedPopulationGifAvatarsAsync()
+    {
+        var gifDir = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "population-gifs");
+        if (!Directory.Exists(gifDir))
+            return;
+
+        var populations = await context.QpadmPopulations
+            .Where(p => p.GifAvatarImage == null)
+            .ToListAsync();
+
+        if (populations.Count == 0)
+            return;
+
+        foreach (var population in populations)
+        {
+            var filePath = Path.Combine(gifDir, $"{population.Name}.gif");
+            if (!File.Exists(filePath)) continue;
+
+            population.GifAvatarImage = await File.ReadAllBytesAsync(filePath);
+            await context.SaveChangesAsync();
+        }
     }
 
     private async Task SeedG25DistanceErasAsync()
