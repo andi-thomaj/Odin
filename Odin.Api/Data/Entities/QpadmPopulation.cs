@@ -16,6 +16,7 @@ namespace Odin.Api.Data.Entities
         public int MusicTrackId { get; set; }
         public MusicTrack MusicTrack { get; set; }
         public byte[]? GifAvatarImage { get; set; }
+        public byte[]? VideoAvatarImage { get; set; }
     }
 
     public class QpadmPopulationConfiguration : IEntityTypeConfiguration<QpadmPopulation>

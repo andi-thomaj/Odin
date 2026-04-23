@@ -397,6 +397,7 @@ namespace Odin.Api
             services.AddScoped<IEthnicityService, EthnicityService>();
             services.AddScoped<IEraService, EraService>();
             services.AddScoped<IPopulationService, PopulationService>();
+            services.AddSingleton<Services.IVideoTranscodeService, Services.VideoTranscodeService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
             services.AddScoped<IOrderPricingService, OrderPricingService>();

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.PopulationManagement.Models;
+using Odin.Api.Services;
 
 namespace Odin.Api.Endpoints.PopulationManagement;
 
@@ -19,9 +20,12 @@ public interface IPopulationService
     Task<(bool Success, string? Error, bool NotFound)> UploadGifAvatarImageAsync(int id, IFormFile file, string identityId, CancellationToken cancellationToken = default);
     Task<bool> DeleteGifAvatarImageAsync(int id, string identityId, CancellationToken cancellationToken = default);
     Task<(int Updated, int Unmatched, int MissingOnDisk)> SyncGifAvatarsFromDiskAsync(string identityId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<GetPopulationContract.GifAvatarListItem>> GetGifAvatarsListAsync(CancellationToken cancellationToken = default);
+    Task<byte[]?> GetVideoAvatarImageAsync(int id, CancellationToken cancellationToken = default);
+    Task<(int Updated, int Skipped, int Failed)> BackfillVideoAvatarsAsync(string identityId, CancellationToken cancellationToken = default);
 }
 
-public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCache cache) : IPopulationService
+public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCache cache, IVideoTranscodeService transcoder, ILogger<PopulationService> logger) : IPopulationService
 {
     private const string ErasCacheKey = "AllEras";
     private const long MaxGifAvatarBytes = 25 * 1024 * 1024;
@@ -214,8 +218,10 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
 
         using var ms = new MemoryStream();
         await file.CopyToAsync(ms, cancellationToken);
+        var gifBytes = ms.ToArray();
 
-        population.GifAvatarImage = ms.ToArray();
+        population.GifAvatarImage = gifBytes;
+        population.VideoAvatarImage = await TryTranscodeAsync(gifBytes, population.Name, cancellationToken);
         population.UpdatedAt = DateTime.UtcNow;
         population.UpdatedBy = identityId;
 
@@ -224,18 +230,102 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
         return (true, null, false);
     }
 
+    private async Task<byte[]?> TryTranscodeAsync(byte[] gifBytes, string populationName, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await transcoder.GifToMp4Async(gifBytes, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to transcode GIF to MP4 for population {Name}", populationName);
+            return null;
+        }
+    }
+
     public async Task<bool> DeleteGifAvatarImageAsync(int id, string identityId, CancellationToken cancellationToken = default)
     {
         var population = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         if (population is null) return false;
 
         population.GifAvatarImage = null;
+        population.VideoAvatarImage = null;
         population.UpdatedAt = DateTime.UtcNow;
         population.UpdatedBy = identityId;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         cache.Remove(ErasCacheKey);
         return true;
+    }
+
+    public async Task<IReadOnlyList<GetPopulationContract.GifAvatarListItem>> GetGifAvatarsListAsync(CancellationToken cancellationToken = default)
+    {
+        return await dbContext.QpadmPopulations
+            .AsNoTracking()
+            .Where(p => p.GifAvatarImage != null)
+            .OrderBy(p => p.Era.Id).ThenBy(p => p.Name)
+            .Select(p => new GetPopulationContract.GifAvatarListItem
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Version = p.UpdatedAt.Ticks.ToString(),
+                HasVideo = p.VideoAvatarImage != null,
+            })
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<byte[]?> GetVideoAvatarImageAsync(int id, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.QpadmPopulations
+            .AsNoTracking()
+            .Where(p => p.Id == id)
+            .Select(p => p.VideoAvatarImage)
+            .FirstOrDefaultAsync(cancellationToken);
+    }
+
+    public async Task<(int Updated, int Skipped, int Failed)> BackfillVideoAvatarsAsync(string identityId, CancellationToken cancellationToken = default)
+    {
+        if (!await transcoder.IsAvailableAsync(cancellationToken))
+        {
+            logger.LogWarning("Video backfill requested but ffmpeg is not available.");
+            return (0, 0, 0);
+        }
+
+        var candidates = await dbContext.QpadmPopulations
+            .Where(p => p.GifAvatarImage != null && p.VideoAvatarImage == null)
+            .Select(p => new { p.Id, p.Name })
+            .ToListAsync(cancellationToken);
+
+        var now = DateTime.UtcNow;
+        var updated = 0;
+        var failed = 0;
+
+        foreach (var row in candidates)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var population = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == row.Id, cancellationToken);
+            if (population?.GifAvatarImage is null) continue;
+
+            var mp4 = await TryTranscodeAsync(population.GifAvatarImage, population.Name, cancellationToken);
+            if (mp4 is null)
+            {
+                failed++;
+                continue;
+            }
+
+            population.VideoAvatarImage = mp4;
+            population.UpdatedAt = now;
+            population.UpdatedBy = identityId;
+            await dbContext.SaveChangesAsync(cancellationToken);
+            updated++;
+        }
+
+        if (updated > 0)
+            cache.Remove(ErasCacheKey);
+
+        var skipped = candidates.Count - updated - failed;
+        return (updated, skipped, failed);
     }
 
     public async Task<(int Updated, int Unmatched, int MissingOnDisk)> SyncGifAvatarsFromDiskAsync(
@@ -259,7 +349,9 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
                 continue;
             }
 
-            population.GifAvatarImage = await File.ReadAllBytesAsync(filePath, cancellationToken);
+            var gifBytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
+            population.GifAvatarImage = gifBytes;
+            population.VideoAvatarImage = await TryTranscodeAsync(gifBytes, population.Name, cancellationToken);
             population.UpdatedAt = now;
             population.UpdatedBy = identityId;
             updated++;

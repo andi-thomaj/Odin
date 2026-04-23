@@ -16,6 +16,14 @@ public static class GetPopulationContract
         public string MusicTrackName { get; set; } = string.Empty;
         public bool HasGifAvatarImage { get; set; }
     }
+
+    public class GifAvatarListItem
+    {
+        public int Id { get; set; }
+        public required string Name { get; set; }
+        public required string Version { get; set; }
+        public bool HasVideo { get; set; }
+    }
 }
 
 public static class CreatePopulationContract

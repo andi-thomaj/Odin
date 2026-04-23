@@ -29,9 +29,22 @@ public static class PopulationEndpoints
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("strict");
 
-        endpoints.MapGet("/{id:int}/gif-avatar-image", GetGifAvatarImage)
-            .RequireAuthorization("EmailVerified")
+        endpoints.MapGet("/gif-avatars", GetGifAvatarsList)
+            .AllowAnonymous()
             .RequireRateLimiting("authenticated");
+
+        endpoints.MapGet("/{id:int}/gif-avatar-image", GetGifAvatarImage)
+            .AllowAnonymous()
+            .RequireRateLimiting("authenticated");
+
+        endpoints.MapGet("/{id:int}/video-avatar", GetVideoAvatarImage)
+            .AllowAnonymous()
+            .RequireRateLimiting("authenticated");
+
+        endpoints.MapPost("/video-avatars/backfill", BackfillVideoAvatars)
+            .RequireAuthorization("AdminOnly")
+            .RequireRateLimiting("strict")
+            .WithRequestTimeout(TimeSpan.FromMinutes(10));
 
         endpoints.MapPut("/{id:int}/gif-avatar-image", UploadGifAvatarImage)
             .DisableAntiforgery()
@@ -88,11 +101,24 @@ public static class PopulationEndpoints
         return ok ? Results.NoContent() : Results.NotFound();
     }
 
-    private static async Task<IResult> GetGifAvatarImage(IPopulationService service, int id, CancellationToken cancellationToken)
+    private static async Task<IResult> GetGifAvatarsList(IPopulationService service, CancellationToken cancellationToken)
+    {
+        var list = await service.GetGifAvatarsListAsync(cancellationToken);
+        return Results.Ok(list);
+    }
+
+    private static async Task<IResult> GetGifAvatarImage(HttpContext httpContext, IPopulationService service, int id, string? v, CancellationToken cancellationToken)
     {
         var data = await service.GetGifAvatarImageAsync(id, cancellationToken);
         if (data is null || data.Length == 0)
             return Results.NotFound(new { Message = $"GIF avatar for population {id} not found." });
+
+        // When the client includes ?v={version}, the URL is uniquely identified per version
+        // so we can serve it as immutable for a year. Otherwise fall back to a short cache
+        // so stale content is refreshed within minutes.
+        httpContext.Response.Headers.CacheControl = string.IsNullOrEmpty(v)
+            ? "public, max-age=600"
+            : "public, max-age=31536000, immutable";
 
         return Results.File(data, "image/gif", $"population-{id}.gif",
             lastModified: null,
@@ -128,6 +154,31 @@ public static class PopulationEndpoints
 
         var (updated, unmatched, missingOnDisk) = await service.SyncGifAvatarsFromDiskAsync(identityId, cancellationToken);
         return Results.Ok(new { Updated = updated, Unmatched = unmatched, MissingOnDisk = missingOnDisk });
+    }
+
+    private static async Task<IResult> GetVideoAvatarImage(HttpContext httpContext, IPopulationService service, int id, string? v, CancellationToken cancellationToken)
+    {
+        var data = await service.GetVideoAvatarImageAsync(id, cancellationToken);
+        if (data is null || data.Length == 0)
+            return Results.NotFound(new { Message = $"Video avatar for population {id} not found." });
+
+        httpContext.Response.Headers.CacheControl = string.IsNullOrEmpty(v)
+            ? "public, max-age=600"
+            : "public, max-age=31536000, immutable";
+
+        return Results.File(data, "video/mp4", $"population-{id}.mp4",
+            lastModified: null,
+            entityTag: null,
+            enableRangeProcessing: true);
+    }
+
+    private static async Task<IResult> BackfillVideoAvatars(HttpContext httpContext, IPopulationService service, CancellationToken cancellationToken)
+    {
+        var identityId = ResolveIdentityId(httpContext);
+        if (identityId is null) return Results.Unauthorized();
+
+        var (updated, skipped, failed) = await service.BackfillVideoAvatarsAsync(identityId, cancellationToken);
+        return Results.Ok(new { Updated = updated, Skipped = skipped, Failed = failed });
     }
 
     private static string? ResolveIdentityId(HttpContext httpContext) =>
