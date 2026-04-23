@@ -22,7 +22,7 @@ public interface IPopulationService
     Task<(int Updated, int Unmatched, int MissingOnDisk)> SyncGifAvatarsFromDiskAsync(string identityId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<GetPopulationContract.GifAvatarListItem>> GetGifAvatarsListAsync(CancellationToken cancellationToken = default);
     Task<byte[]?> GetVideoAvatarImageAsync(int id, CancellationToken cancellationToken = default);
-    Task<(int Updated, int Skipped, int Failed)> BackfillVideoAvatarsAsync(string identityId, CancellationToken cancellationToken = default);
+    Task<(int Updated, int Skipped, int Failed, string? Error)> BackfillVideoAvatarsAsync(string identityId, CancellationToken cancellationToken = default);
 }
 
 public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCache cache, IVideoTranscodeService transcoder, ILogger<PopulationService> logger) : IPopulationService
@@ -283,12 +283,12 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<(int Updated, int Skipped, int Failed)> BackfillVideoAvatarsAsync(string identityId, CancellationToken cancellationToken = default)
+    public async Task<(int Updated, int Skipped, int Failed, string? Error)> BackfillVideoAvatarsAsync(string identityId, CancellationToken cancellationToken = default)
     {
         if (!await transcoder.IsAvailableAsync(cancellationToken))
         {
-            logger.LogWarning("Video backfill requested but ffmpeg is not available.");
-            return (0, 0, 0);
+            logger.LogWarning("Video backfill requested but ffmpeg is not available on PATH for the API process.");
+            return (0, 0, 0, "ffmpeg is not available on PATH for the API process. Install ffmpeg and restart the API.");
         }
 
         var candidates = await dbContext.QpadmPopulations
@@ -325,7 +325,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
             cache.Remove(ErasCacheKey);
 
         var skipped = candidates.Count - updated - failed;
-        return (updated, skipped, failed);
+        return (updated, skipped, failed, null);
     }
 
     public async Task<(int Updated, int Unmatched, int MissingOnDisk)> SyncGifAvatarsFromDiskAsync(

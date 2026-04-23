@@ -16,7 +16,45 @@ public interface IVideoTranscodeService
 
 public class VideoTranscodeService(ILogger<VideoTranscodeService> logger) : IVideoTranscodeService
 {
-    private const string FfmpegExecutable = "ffmpeg";
+    // Resolved once at type init. Order: FFMPEG_PATH env var → known winget locations on Windows → "ffmpeg" on PATH.
+    private static readonly string FfmpegExecutable = ResolveFfmpegPath();
+
+    private static string ResolveFfmpegPath()
+    {
+        var explicitPath = Environment.GetEnvironmentVariable("FFMPEG_PATH");
+        if (!string.IsNullOrEmpty(explicitPath) && File.Exists(explicitPath))
+            return explicitPath;
+
+        if (OperatingSystem.IsWindows())
+        {
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            if (!string.IsNullOrEmpty(localAppData))
+            {
+                // winget's shim directory (newer winget versions add here).
+                var shim = Path.Combine(localAppData, "Microsoft", "WinGet", "Links", "ffmpeg.exe");
+                if (File.Exists(shim)) return shim;
+
+                // Gyan.FFmpeg winget package — extracts to a versioned sub-folder, never edits PATH.
+                var packagesRoot = Path.Combine(localAppData, "Microsoft", "WinGet", "Packages");
+                if (Directory.Exists(packagesRoot))
+                {
+                    try
+                    {
+                        var match = Directory.EnumerateDirectories(packagesRoot, "Gyan.FFmpeg*")
+                            .SelectMany(dir => Directory.EnumerateFiles(dir, "ffmpeg.exe", SearchOption.AllDirectories))
+                            .FirstOrDefault();
+                        if (match is not null) return match;
+                    }
+                    catch
+                    {
+                        // Permission or IO issue — fall through to PATH lookup.
+                    }
+                }
+            }
+        }
+
+        return "ffmpeg";
+    }
 
     public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
     {
@@ -34,10 +72,17 @@ public class VideoTranscodeService(ILogger<VideoTranscodeService> logger) : IVid
             using var proc = Process.Start(psi);
             if (proc is null) return false;
             await proc.WaitForExitAsync(cancellationToken);
-            return proc.ExitCode == 0;
+            if (proc.ExitCode == 0)
+            {
+                logger.LogInformation("ffmpeg resolved to: {Path}", FfmpegExecutable);
+                return true;
+            }
+            logger.LogWarning("ffmpeg at {Path} exited {Code}", FfmpegExecutable, proc.ExitCode);
+            return false;
         }
-        catch
+        catch (Exception ex)
         {
+            logger.LogWarning("ffmpeg probe failed for {Path}: {Message}", FfmpegExecutable, ex.Message);
             return false;
         }
     }

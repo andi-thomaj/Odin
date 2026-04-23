@@ -177,8 +177,8 @@ public static class PopulationEndpoints
         var identityId = ResolveIdentityId(httpContext);
         if (identityId is null) return Results.Unauthorized();
 
-        var (updated, skipped, failed) = await service.BackfillVideoAvatarsAsync(identityId, cancellationToken);
-        return Results.Ok(new { Updated = updated, Skipped = skipped, Failed = failed });
+        var (updated, skipped, failed, error) = await service.BackfillVideoAvatarsAsync(identityId, cancellationToken);
+        return Results.Ok(new { Updated = updated, Skipped = skipped, Failed = failed, Error = error });
     }
 
     private static string? ResolveIdentityId(HttpContext httpContext) =>
