@@ -263,7 +263,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
         return await dbContext.QpadmPopulations
             .AsNoTracking()
             .Where(p => p.GifAvatarImage != null)
-            .OrderBy(p => p.Era.Id).ThenBy(p => p.Name)
+            .OrderByDescending(p => p.Era.Id).ThenBy(p => p.Name)
             .Select(p => new GetPopulationContract.GifAvatarListItem
             {
                 Id = p.Id,
