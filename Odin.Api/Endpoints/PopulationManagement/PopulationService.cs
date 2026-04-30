@@ -5,7 +5,6 @@ using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.PopulationManagement.Models;
-using Odin.Api.Services;
 
 namespace Odin.Api.Endpoints.PopulationManagement;
 
@@ -23,7 +22,7 @@ public interface IPopulationService
     Task<IReadOnlyList<GetPopulationContract.VideoAvatarListItem>> GetVideoAvatarsListAsync(CancellationToken cancellationToken = default);
 }
 
-public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCache cache, IVideoTranscodeService transcoder, ILogger<PopulationService> logger) : IPopulationService
+public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCache cache, ILogger<PopulationService> logger) : IPopulationService
 {
     private const string ErasCacheKey = "AllEras";
     private const long MaxVideoAvatarBytes = 25 * 1024 * 1024;
@@ -257,22 +256,19 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
     }
 
     /// <summary>
-    /// Reads each <c>Data/SeedData/population-gifs/{Name}.gif</c> on disk, transcodes it
-    /// to MP4 via the shared <see cref="IVideoTranscodeService"/>, and writes the resulting
-    /// bytes to <see cref="QpadmPopulation.VideoAvatarImage"/>. Designed for re-running
-    /// after the initial seed when the GIF source changes — admins call this from the
-    /// Populations admin page.
+    /// Copies each <c>Data/SeedData/population-videos/{Name}.mp4</c> on disk into
+    /// <see cref="QpadmPopulation.VideoAvatarImage"/> verbatim. The source files are the
+    /// final-quality MP4s (no transcoding) so what's in the file is exactly what's served
+    /// to the frontend. Admins call this from the Populations admin page after dropping
+    /// new MP4s into the seed directory on the server.
     /// </summary>
     public async Task<(int Updated, int Unmatched, int MissingOnDisk, int Failed)> SyncVideoAvatarsFromDiskAsync(
         string identityId, CancellationToken cancellationToken = default)
     {
-        var gifDir = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "population-gifs");
-        if (!Directory.Exists(gifDir))
-            return (0, 0, 0, 0);
-
-        if (!await transcoder.IsAvailableAsync(cancellationToken))
+        var videoDir = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "population-videos");
+        if (!Directory.Exists(videoDir))
         {
-            logger.LogWarning("Video sync requested but ffmpeg is not available on PATH for the API process.");
+            logger.LogWarning("Video sync requested but {Dir} does not exist.", videoDir);
             return (0, 0, 0, 0);
         }
 
@@ -286,22 +282,32 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var filePath = Path.Combine(gifDir, $"{population.Name}.gif");
+            var filePath = Path.Combine(videoDir, $"{population.Name}.mp4");
             if (!File.Exists(filePath))
             {
                 missingOnDisk++;
                 continue;
             }
 
-            var gifBytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
-            var mp4 = await TryTranscodeAsync(gifBytes, population.Name, cancellationToken);
-            if (mp4 is null)
+            byte[] mp4Bytes;
+            try
+            {
+                mp4Bytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to read MP4 for population {Name}", population.Name);
+                failed++;
+                continue;
+            }
+
+            if (mp4Bytes.Length == 0)
             {
                 failed++;
                 continue;
             }
 
-            population.VideoAvatarImage = mp4;
+            population.VideoAvatarImage = mp4Bytes;
             population.UpdatedAt = now;
             population.UpdatedBy = identityId;
             updated++;
@@ -314,23 +320,10 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
         }
 
         var populationNames = new HashSet<string>(populations.Select(p => p.Name), StringComparer.Ordinal);
-        var unmatched = Directory.EnumerateFiles(gifDir, "*.gif")
+        var unmatched = Directory.EnumerateFiles(videoDir, "*.mp4")
             .Select(Path.GetFileNameWithoutExtension)
             .Count(name => name is not null && !populationNames.Contains(name));
 
         return (updated, unmatched, missingOnDisk, failed);
-    }
-
-    private async Task<byte[]?> TryTranscodeAsync(byte[] gifBytes, string populationName, CancellationToken cancellationToken)
-    {
-        try
-        {
-            return await transcoder.GifToMp4Async(gifBytes, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to transcode GIF to MP4 for population {Name}", populationName);
-            return null;
-        }
     }
 }

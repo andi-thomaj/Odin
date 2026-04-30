@@ -1,5 +1,4 @@
 using Odin.Api.Data.Seeders;
-using Odin.Api.Services;
 
 namespace Odin.Api.Data;
 
@@ -12,17 +11,14 @@ namespace Odin.Api.Data;
 /// All sub-seeders are idempotent — they no-op when their target table already
 /// has rows — so re-running <see cref="SeedAsync"/> is safe.
 /// </summary>
-public class DatabaseSeeder(
-    ApplicationDbContext context,
-    IVideoTranscodeService transcoder,
-    ILogger<DatabaseSeeder> logger)
+public class DatabaseSeeder(ApplicationDbContext context, ILogger<DatabaseSeeder> logger)
 {
     /// <summary>Runs every seeder in dependency order — the entry point used by app startup.</summary>
     public async Task SeedAsync()
     {
         await SeedReferenceCatalogAsync();
         await new MediaFileSeeder(context).SeedAsync();
-        await new PopulationVideoAvatarSeeder(context, transcoder, logger).SeedAsync();
+        await new PopulationVideoAvatarSeeder(context, logger).SeedAsync();
     }
 
     /// <summary>

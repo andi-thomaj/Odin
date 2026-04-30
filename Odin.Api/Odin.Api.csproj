@@ -34,7 +34,7 @@
     <None Update="Data\SeedData\media\audio\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Data\SeedData\population-gifs\*">
+    <None Update="Data\SeedData\population-videos\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
