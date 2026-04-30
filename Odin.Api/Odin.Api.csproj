@@ -25,7 +25,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="Data\SeedData\population-geojson.json">
+    <None Update="Data\SeedData\qpadm-populations.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Data\SeedData\g25-ancients.txt">

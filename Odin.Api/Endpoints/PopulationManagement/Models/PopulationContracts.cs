@@ -14,15 +14,14 @@ public static class GetPopulationContract
         public string EraName { get; set; } = string.Empty;
         public int MusicTrackId { get; set; }
         public string MusicTrackName { get; set; } = string.Empty;
-        public bool HasGifAvatarImage { get; set; }
+        public bool HasVideoAvatarImage { get; set; }
     }
 
-    public class GifAvatarListItem
+    public class VideoAvatarListItem
     {
         public int Id { get; set; }
         public required string Name { get; set; }
         public required string Version { get; set; }
-        public bool HasVideo { get; set; }
     }
 }
 

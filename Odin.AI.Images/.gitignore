@@ -1,0 +1,6 @@
+# Keep the README in source control, but never commit anything else from this
+# folder — the Python helper scripts contain a hardcoded fal.ai API key and
+# the .venv / manifests / generated assets are large and machine-specific.
+*
+!.gitignore
+!README.md

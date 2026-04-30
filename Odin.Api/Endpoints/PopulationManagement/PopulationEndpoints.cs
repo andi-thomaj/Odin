@@ -29,11 +29,7 @@ public static class PopulationEndpoints
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("strict");
 
-        endpoints.MapGet("/gif-avatars", GetGifAvatarsList)
-            .AllowAnonymous()
-            .RequireRateLimiting("authenticated");
-
-        endpoints.MapGet("/{id:int}/gif-avatar-image", GetGifAvatarImage)
+        endpoints.MapGet("/video-avatars", GetVideoAvatarsList)
             .AllowAnonymous()
             .RequireRateLimiting("authenticated");
 
@@ -41,25 +37,20 @@ public static class PopulationEndpoints
             .AllowAnonymous()
             .RequireRateLimiting("authenticated");
 
-        endpoints.MapPost("/video-avatars/backfill", BackfillVideoAvatars)
-            .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("strict")
-            .WithRequestTimeout(TimeSpan.FromMinutes(10));
-
-        endpoints.MapPut("/{id:int}/gif-avatar-image", UploadGifAvatarImage)
+        endpoints.MapPut("/{id:int}/video-avatar", UploadVideoAvatar)
             .DisableAntiforgery()
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("file-upload")
             .WithRequestTimeout(TimeSpan.FromMinutes(5));
 
-        endpoints.MapDelete("/{id:int}/gif-avatar-image", DeleteGifAvatarImage)
+        endpoints.MapDelete("/{id:int}/video-avatar", DeleteVideoAvatar)
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("strict");
 
-        endpoints.MapPost("/gif-avatar-images/sync-from-disk", SyncGifAvatarsFromDisk)
+        endpoints.MapPost("/video-avatars/sync-from-disk", SyncVideoAvatarsFromDisk)
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("strict")
-            .WithRequestTimeout(TimeSpan.FromMinutes(5));
+            .WithRequestTimeout(TimeSpan.FromMinutes(10));
     }
 
     private static async Task<IResult> GetAllAdmin(IPopulationService service)
@@ -101,59 +92,10 @@ public static class PopulationEndpoints
         return ok ? Results.NoContent() : Results.NotFound();
     }
 
-    private static async Task<IResult> GetGifAvatarsList(IPopulationService service, CancellationToken cancellationToken)
+    private static async Task<IResult> GetVideoAvatarsList(IPopulationService service, CancellationToken cancellationToken)
     {
-        var list = await service.GetGifAvatarsListAsync(cancellationToken);
+        var list = await service.GetVideoAvatarsListAsync(cancellationToken);
         return Results.Ok(list);
-    }
-
-    private static async Task<IResult> GetGifAvatarImage(HttpContext httpContext, IPopulationService service, int id, string? v, CancellationToken cancellationToken)
-    {
-        var data = await service.GetGifAvatarImageAsync(id, cancellationToken);
-        if (data is null || data.Length == 0)
-            return Results.NotFound(new { Message = $"GIF avatar for population {id} not found." });
-
-        // When the client includes ?v={version}, the URL is uniquely identified per version
-        // so we can serve it as immutable for a year. Otherwise fall back to a short cache
-        // so stale content is refreshed within minutes.
-        httpContext.Response.Headers.CacheControl = string.IsNullOrEmpty(v)
-            ? "public, max-age=600"
-            : "public, max-age=31536000, immutable";
-
-        return Results.File(data, "image/gif", $"population-{id}.gif",
-            lastModified: null,
-            entityTag: null,
-            enableRangeProcessing: true);
-    }
-
-    private static async Task<IResult> UploadGifAvatarImage(HttpContext httpContext, IPopulationService service, int id, IFormFile file, CancellationToken cancellationToken)
-    {
-        var identityId = ResolveIdentityId(httpContext);
-        if (identityId is null) return Results.Unauthorized();
-
-        var (success, error, notFound) = await service.UploadGifAvatarImageAsync(id, file, identityId, cancellationToken);
-        if (notFound) return Results.NotFound();
-        return success
-            ? Results.NoContent()
-            : Results.BadRequest(new { Message = error });
-    }
-
-    private static async Task<IResult> DeleteGifAvatarImage(HttpContext httpContext, IPopulationService service, int id, CancellationToken cancellationToken)
-    {
-        var identityId = ResolveIdentityId(httpContext);
-        if (identityId is null) return Results.Unauthorized();
-
-        var ok = await service.DeleteGifAvatarImageAsync(id, identityId, cancellationToken);
-        return ok ? Results.NoContent() : Results.NotFound();
-    }
-
-    private static async Task<IResult> SyncGifAvatarsFromDisk(HttpContext httpContext, IPopulationService service, CancellationToken cancellationToken)
-    {
-        var identityId = ResolveIdentityId(httpContext);
-        if (identityId is null) return Results.Unauthorized();
-
-        var (updated, unmatched, missingOnDisk) = await service.SyncGifAvatarsFromDiskAsync(identityId, cancellationToken);
-        return Results.Ok(new { Updated = updated, Unmatched = unmatched, MissingOnDisk = missingOnDisk });
     }
 
     private static async Task<IResult> GetVideoAvatarImage(HttpContext httpContext, IPopulationService service, int id, string? v, CancellationToken cancellationToken)
@@ -162,6 +104,9 @@ public static class PopulationEndpoints
         if (data is null || data.Length == 0)
             return Results.NotFound(new { Message = $"Video avatar for population {id} not found." });
 
+        // When the client includes ?v={version}, the URL is uniquely identified per version
+        // so we can serve it as immutable for a year. Otherwise fall back to a short cache
+        // so stale content is refreshed within minutes.
         httpContext.Response.Headers.CacheControl = string.IsNullOrEmpty(v)
             ? "public, max-age=600"
             : "public, max-age=31536000, immutable";
@@ -172,13 +117,34 @@ public static class PopulationEndpoints
             enableRangeProcessing: true);
     }
 
-    private static async Task<IResult> BackfillVideoAvatars(HttpContext httpContext, IPopulationService service, CancellationToken cancellationToken)
+    private static async Task<IResult> UploadVideoAvatar(HttpContext httpContext, IPopulationService service, int id, IFormFile file, CancellationToken cancellationToken)
     {
         var identityId = ResolveIdentityId(httpContext);
         if (identityId is null) return Results.Unauthorized();
 
-        var (updated, skipped, failed, error) = await service.BackfillVideoAvatarsAsync(identityId, cancellationToken);
-        return Results.Ok(new { Updated = updated, Skipped = skipped, Failed = failed, Error = error });
+        var (success, error, notFound) = await service.UploadVideoAvatarAsync(id, file, identityId, cancellationToken);
+        if (notFound) return Results.NotFound();
+        return success
+            ? Results.NoContent()
+            : Results.BadRequest(new { Message = error });
+    }
+
+    private static async Task<IResult> DeleteVideoAvatar(HttpContext httpContext, IPopulationService service, int id, CancellationToken cancellationToken)
+    {
+        var identityId = ResolveIdentityId(httpContext);
+        if (identityId is null) return Results.Unauthorized();
+
+        var ok = await service.DeleteVideoAvatarAsync(id, identityId, cancellationToken);
+        return ok ? Results.NoContent() : Results.NotFound();
+    }
+
+    private static async Task<IResult> SyncVideoAvatarsFromDisk(HttpContext httpContext, IPopulationService service, CancellationToken cancellationToken)
+    {
+        var identityId = ResolveIdentityId(httpContext);
+        if (identityId is null) return Results.Unauthorized();
+
+        var (updated, unmatched, missingOnDisk, failed) = await service.SyncVideoAvatarsFromDiskAsync(identityId, cancellationToken);
+        return Results.Ok(new { Updated = updated, Unmatched = unmatched, MissingOnDisk = missingOnDisk, Failed = failed });
     }
 
     private static string? ResolveIdentityId(HttpContext httpContext) =>
