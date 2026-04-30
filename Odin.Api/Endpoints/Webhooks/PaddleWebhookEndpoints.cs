@@ -5,7 +5,9 @@ using Microsoft.Extensions.Options;
 using Odin.Api.Configuration;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Endpoints.CheckoutManagement;
 using Odin.Api.Services.Paddle;
+using Odin.Api.Services.Paddle.Models.Transactions;
 using Odin.Api.Services.Paddle.Sync;
 
 namespace Odin.Api.Endpoints.Webhooks;
@@ -144,18 +146,36 @@ public static class PaddleWebhookEndpoints
             return;
         }
 
-        var details = data.TryGetProperty("details", out var det) ? det : data;
-        var totalStr = details.TryGetProperty("totals", out var totals) && totals.TryGetProperty("total", out var totalEl)
-            ? totalEl.GetString() ?? "0"
-            : "0";
-        decimal.TryParse(totalStr, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var totalCents);
+        // Deserialize the webhook's transaction data into the same DTO the typed Paddle client uses.
+        // Lets us reuse BuildItemsSnapshotAsync from CheckoutEndpoints — single source of truth
+        // for the items snapshot regardless of whether the payment was confirmed via webhook or API.
+        PaddleTransactionDto? transactionDto = null;
+        try
+        {
+            transactionDto = data.Deserialize<PaddleTransactionDto>(PaddleJson.Options);
+        }
+        catch (JsonException ex)
+        {
+            logger.LogWarning(ex, "Paddle webhook: failed to parse transaction payload for {TransactionId}.", transactionId);
+        }
 
-        var currency = data.TryGetProperty("currency_code", out var cur) ? cur.GetString() ?? "USD" : "USD";
-        var status = data.TryGetProperty("status", out var st) ? st.GetString() ?? "completed" : "completed";
-
+        var totalCents = 0m;
+        var currency = "USD";
         string? receiptUrl = null;
-        if (data.TryGetProperty("checkout", out var checkout) && checkout.TryGetProperty("url", out var url))
-            receiptUrl = url.GetString();
+        string? itemsJson = null;
+
+        if (transactionDto is not null)
+        {
+            var totalsString = transactionDto.Details?.Totals?.GrandTotal
+                ?? transactionDto.Details?.Totals?.Total
+                ?? "0";
+            decimal.TryParse(totalsString, System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out totalCents);
+
+            currency = transactionDto.CurrencyCode;
+            receiptUrl = transactionDto.Checkout?.Url;
+            itemsJson = await CheckoutEndpoints.BuildItemsSnapshotAsync(dbContext, transactionDto, cancellationToken);
+        }
 
         var now = DateTime.UtcNow;
         dbContext.PaddlePayments.Add(new PaddlePayment
@@ -166,8 +186,9 @@ public static class PaddleWebhookEndpoints
             TotalAmount = totalCents / 100m,
             Currency = currency,
             ReceiptUrl = receiptUrl,
+            ItemsJson = itemsJson,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
         });
         await dbContext.SaveChangesAsync(cancellationToken);
 

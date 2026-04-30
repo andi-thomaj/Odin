@@ -64,7 +64,11 @@ public sealed class PaddleTransactionLineItem
     public string Id { get; set; } = "";
     public string PriceId { get; set; } = "";
     public int Quantity { get; set; }
-    public PaddleMoney? UnitPrice { get; set; }
+
+    /// <summary>Paddle reports per-unit pricing on transaction line items as <c>unit_totals.subtotal</c> (smallest currency unit, before tax/discount).</summary>
+    public PaddleTransactionTotals? UnitTotals { get; set; }
+
+    /// <summary>Per-line totals (subtotal × quantity, plus tax/discount).</summary>
     public PaddleTransactionTotals? Totals { get; set; }
 }
 

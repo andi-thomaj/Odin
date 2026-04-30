@@ -16,6 +16,15 @@ public class PaddlePayment
     public QpadmOrder? Order { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Snapshot of the line items the user paid for, captured at confirm/webhook time.
+    /// Stored as <c>jsonb</c>; shape is <c>[{ paddleProductId, paddlePriceId, displayName, unitPrice, quantity, currencyCode }]</c>
+    /// where <c>unitPrice</c> is in the smallest currency unit (matching Paddle's convention).
+    /// We snapshot here so the dashboard "you've already paid" card stays accurate even if
+    /// Paddle products are later renamed or repriced.
+    /// </summary>
+    public string? ItemsJson { get; set; }
 }
 
 public class PaddlePaymentConfiguration : IEntityTypeConfiguration<PaddlePayment>
@@ -31,6 +40,7 @@ public class PaddlePaymentConfiguration : IEntityTypeConfiguration<PaddlePayment
         builder.Property(e => e.TotalAmount).IsRequired().HasPrecision(18, 2);
         builder.Property(e => e.Currency).IsRequired().HasMaxLength(8);
         builder.Property(e => e.ReceiptUrl).HasMaxLength(1024);
+        builder.Property(e => e.ItemsJson).HasColumnType("jsonb");
 
         builder.HasOne(e => e.Order)
             .WithMany()
