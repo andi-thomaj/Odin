@@ -11,7 +11,6 @@ using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.Admin;
 using Odin.Api.Endpoints.AdmixtureSavedFileManagement;
 using Odin.Api.Endpoints.AppSettingsManagement;
-using Odin.Api.Endpoints.ChangelogManagement;
 using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.G25PopulationSampleManagement;
 using Odin.Api.Endpoints.G25DistancePopulationSampleManagement;
@@ -412,7 +411,6 @@ namespace Odin.Api
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IMediaService, MediaService>();
-            services.AddScoped<IChangelogService, ChangelogService>();
             services.AddScoped<IG25PopulationSampleService, G25PopulationSampleService>();
             services.AddScoped<IG25DistancePopulationSampleService, G25DistancePopulationSampleService>();
             services.AddScoped<IG25PcaPopulationsSampleService, G25PcaPopulationsSampleService>();
@@ -532,7 +530,6 @@ namespace Odin.Api
             app.MapNotificationEndpoints();
             app.MapReportEndpoints();
             app.MapMediaEndpoints();
-            app.MapChangelogEndpoints();
             app.MapG25PopulationSampleEndpoints();
             app.MapG25DistancePopulationSampleEndpoints();
             app.MapG25PcaPopulationsSampleEndpoints();
