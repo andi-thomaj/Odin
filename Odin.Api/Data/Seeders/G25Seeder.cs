@@ -6,9 +6,11 @@ namespace Odin.Api.Data.Seeders;
 
 /// <summary>
 /// Seeds the G25 reference data: admixture population samples, G25 eras (distance
-/// + admixture), the G25 service entity tree (continents → ethnicities), and the
-/// G25 product addons. Each sub-step is independently idempotent so individual
-/// rows can be added without re-seeding the rest.
+/// + admixture), and the G25 service entity tree (continents → ethnicities). Each
+/// sub-step is independently idempotent so individual rows can be added without
+/// re-seeding the rest. Catalog/commerce data (products, prices, addons) is
+/// owned by Paddle and synced into <c>paddle_products</c>/<c>paddle_prices</c>;
+/// this seeder no longer touches it.
 /// </summary>
 internal sealed class G25Seeder(ApplicationDbContext context)
 {
@@ -20,7 +22,6 @@ internal sealed class G25Seeder(ApplicationDbContext context)
         await SeedG25ServiceAsync();
         await SeedG25DistanceErasAsync();
         await SeedG25AdmixtureErasAsync();
-        await SeedG25AddonsAsync();
     }
 
     private async Task SeedG25PopulationSamplesAsync()
@@ -166,44 +167,4 @@ internal sealed class G25Seeder(ApplicationDbContext context)
         await context.SaveChangesAsync();
     }
 
-    private async Task SeedG25AddonsAsync()
-    {
-        var g25Product = await context.CatalogProducts
-            .Include(p => p.CatalogProductAddons)
-            .FirstOrDefaultAsync(p => p.ServiceType == ServiceType.g25);
-
-        if (g25Product is null || g25Product.CatalogProductAddons.Count > 0)
-            return;
-
-        var g25Addons = new[]
-        {
-            new ProductAddon
-            {
-                Code = "G25_ADMIXTURE",
-                DisplayName = "G25 Admixture",
-                Price = 15m,
-                IsActive = true
-            },
-            new ProductAddon
-            {
-                Code = "G25_PCA",
-                DisplayName = "G25 PCA Analysis",
-                Price = 15m,
-                IsActive = true
-            }
-        };
-        context.ProductAddons.AddRange(g25Addons);
-        await context.SaveChangesAsync();
-
-        foreach (var addon in g25Addons)
-        {
-            context.CatalogProductAddons.Add(new CatalogProductAddon
-            {
-                CatalogProductId = g25Product.Id,
-                ProductAddonId = addon.Id
-            });
-        }
-
-        await context.SaveChangesAsync();
-    }
 }

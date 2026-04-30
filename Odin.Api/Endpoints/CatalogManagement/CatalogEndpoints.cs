@@ -1,55 +1,82 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
+using Odin.Api.Data.Entities;
+using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.CatalogManagement.Models;
 using Odin.Api.Extensions;
 using Odin.Api.Services;
+using Odin.Api.Services.Paddle;
 
 namespace Odin.Api.Endpoints.CatalogManagement;
 
 public static class CatalogEndpoints
 {
+    private const string KindService = "service";
+    private const string KindAddon = "addon";
+
     public static void MapCatalogEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("api/catalog");
 
         group.MapGet("/products", GetProducts)
             .RequireAuthorization("EmailVerified")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .WithTags("Catalog")
+            .WithSummary("Public catalog of services + their addons, sourced from synced Paddle products.");
 
         group.MapPost("/preview-price", PreviewPrice)
             .RequireAuthorization("EmailVerified")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .WithTags("Catalog");
     }
 
-    private static async Task<IResult> GetProducts(ApplicationDbContext db)
+    private static async Task<IResult> GetProducts(ApplicationDbContext db, CancellationToken cancellationToken)
     {
-        var products = await db.CatalogProducts
+        var products = await db.PaddleProducts
             .AsNoTracking()
-            .Where(p => p.IsActive)
-            .Include(p => p.CatalogProductAddons)
-            .ThenInclude(c => c.ProductAddon)
-            .OrderBy(p => p.Id)
-            .ToListAsync();
+            .Include(p => p.Prices)
+            .Where(p => p.Status == "active"
+                        && (p.Kind == KindService || p.Kind == KindAddon))
+            .ToListAsync(cancellationToken);
 
-        var response = products.Select(p => new GetCatalogProductContract.ProductResponse
+        var services = products
+            .Where(p => p.Kind == KindService && p.ServiceType is not null)
+            .OrderBy(p => p.ServiceType)
+            .ToList();
+
+        var addonsByParent = products
+            .Where(p => p.Kind == KindAddon && p.ParentServiceType is not null)
+            .GroupBy(p => p.ParentServiceType!.Value)
+            .ToDictionary(g => g.Key, g => g.OrderBy(p => p.Name).ToList());
+
+        var response = new List<GetCatalogProductContract.ProductResponse>(services.Count);
+
+        foreach (var product in services)
         {
-            ServiceType = p.ServiceType.ToString(),
-            DisplayName = p.DisplayName,
-            Description = p.Description,
-            BasePrice = p.BasePrice,
-            Addons = p.CatalogProductAddons
-                .Where(c => c.ProductAddon.IsActive)
-                .OrderBy(c => c.ProductAddon.DisplayName)
-                .Select(c => new GetCatalogProductContract.AddonResponse
-                {
-                    Id = c.ProductAddon.Id,
-                    Code = c.ProductAddon.Code,
-                    DisplayName = c.ProductAddon.DisplayName,
-                    Price = c.ProductAddon.Price
-                })
-                .ToList()
-        }).ToList();
+            var price = SelectActivePrice(product);
+            if (price is null) continue;
+
+            var serviceType = product.ServiceType!.Value;
+            var addonRows = addonsByParent.TryGetValue(serviceType, out var addons) ? addons : [];
+
+            response.Add(new GetCatalogProductContract.ProductResponse
+            {
+                ServiceType = serviceType.ToString(),
+                PaddleProductId = product.PaddleProductId,
+                PaddlePriceId = price.PaddlePriceId,
+                DisplayName = product.Name,
+                Description = product.Description,
+                ImageUrl = product.ImageUrl,
+                BasePrice = PaddleMoneyConverter.ToDecimalMajorUnit(price.UnitPriceAmount, price.UnitPriceCurrency),
+                Currency = price.UnitPriceCurrency,
+                Addons = addonRows
+                    .Select(a => MapAddon(a, SelectActivePrice(a)))
+                    .Where(a => a is not null)
+                    .Select(a => a!)
+                    .ToList(),
+            });
+        }
 
         return Results.Ok(response);
     }
@@ -64,7 +91,7 @@ public static class CatalogEndpoints
 
         try
         {
-            var computation = await pricingService.ComputeAsync(request.Service, request.AddonIds, request.PromoCode);
+            var computation = await pricingService.ComputeAsync(request.Service, request.AddonPaddleProductIds);
 
             return Results.Ok(new PreviewOrderPriceContract.Response
             {
@@ -72,15 +99,15 @@ public static class CatalogEndpoints
                 AddonLines = computation.AddonLines
                     .Select(l => new PreviewOrderPriceContract.AddonLineResponse
                     {
-                        ProductAddonId = l.ProductAddonId,
-                        Code = l.Code,
+                        PaddleProductId = l.PaddleProductId,
+                        AddonCode = l.AddonCode,
                         DisplayName = l.DisplayName,
-                        UnitPrice = l.UnitPrice
+                        UnitPrice = l.UnitPrice,
                     })
                     .ToList(),
                 SubtotalBeforeDiscount = computation.SubtotalBeforeDiscount,
                 DiscountAmount = computation.DiscountAmount,
-                Total = computation.Total
+                Total = computation.Total,
             });
         }
         catch (InvalidOperationException ex)
@@ -88,4 +115,26 @@ public static class CatalogEndpoints
             return Results.BadRequest(new { Message = ex.Message });
         }
     }
+
+    private static GetCatalogProductContract.AddonResponse? MapAddon(PaddleProduct product, PaddlePrice? price)
+    {
+        if (price is null) return null;
+        return new GetCatalogProductContract.AddonResponse
+        {
+            PaddleProductId = product.PaddleProductId,
+            PaddlePriceId = price.PaddlePriceId,
+            Code = product.AddonCode ?? string.Empty,
+            DisplayName = product.Name,
+            Description = product.Description,
+            Price = PaddleMoneyConverter.ToDecimalMajorUnit(price.UnitPriceAmount, price.UnitPriceCurrency),
+            Currency = price.UnitPriceCurrency,
+        };
+    }
+
+    private static PaddlePrice? SelectActivePrice(PaddleProduct product) =>
+        product.Prices
+            .Where(p => p.Status == "active")
+            .OrderBy(p => p.Id)
+            .FirstOrDefault()
+        ?? product.Prices.OrderBy(p => p.Id).FirstOrDefault();
 }

@@ -1,5 +1,10 @@
 # Odin
 
+## Docs
+
+- [Paddle catalog setup](docs/paddle-setup.md) — end-to-end walkthrough: API keys, webhook destination, creating products, applying the migration, running the sync, verifying the catalog API.
+- [Paddle `custom_data` reference](docs/paddle-custom-data.md) — focused reference for the `custom_data` shape on Paddle products, with examples for services, addons, and common mistakes.
+
 ## API integration tests (`Odin.Api.IntegrationTests`)
 
 Tests use a **real PostgreSQL** database (no Docker/Testcontainers). They apply EF migrations and reset data between tests.

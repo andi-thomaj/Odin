@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -5,6 +6,7 @@ using Odin.Api.Configuration;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Services.Paddle;
+using Odin.Api.Services.Paddle.Sync;
 
 namespace Odin.Api.Endpoints.Webhooks;
 
@@ -25,6 +27,7 @@ public static class PaddleWebhookEndpoints
         HttpContext httpContext,
         IOptions<PaddleOptions> options,
         ApplicationDbContext dbContext,
+        IPaddleNotificationStore notificationStore,
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
@@ -48,6 +51,7 @@ public static class PaddleWebhookEndpoints
             return Results.Unauthorized();
         }
 
+        var rawJson = Encoding.UTF8.GetString(rawBody);
         JsonDocument doc;
         try
         {
@@ -59,6 +63,18 @@ public static class PaddleWebhookEndpoints
             return Results.BadRequest();
         }
 
+        // Persist the raw payload first so we have a durable audit-and-replay trail even if
+        // projection logic below throws or is later changed.
+        PaddleNotification? logRow = null;
+        try
+        {
+            logRow = await notificationStore.RecordWebhookAsync(rawJson, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Paddle webhook: failed to persist notification log entry.");
+        }
+
         using (doc)
         {
             var eventType = doc.RootElement.TryGetProperty("event_type", out var et)
@@ -66,20 +82,32 @@ public static class PaddleWebhookEndpoints
                 : null;
 
             logger.LogInformation(
-                "Paddle webhook received: event={EventType}, bytes={Length}",
-                eventType ?? "(unknown)", rawBody.Length);
+                "Paddle webhook received: event={EventType}, bytes={Length}, logId={LogId}",
+                eventType ?? "(unknown)", rawBody.Length, logRow?.Id);
 
-            switch (eventType)
+            try
             {
-                case "transaction.completed":
-                    await HandleTransactionCompleted(doc, dbContext, logger, cancellationToken);
-                    break;
-                case "transaction.refunded":
-                    await HandleTransactionRefunded(doc, dbContext, logger, cancellationToken);
-                    break;
-                default:
-                    logger.LogInformation("Paddle webhook: unhandled event {EventType}, acknowledging.", eventType);
-                    break;
+                switch (eventType)
+                {
+                    case "transaction.completed":
+                        await HandleTransactionCompleted(doc, dbContext, logger, cancellationToken);
+                        break;
+                    case "transaction.refunded":
+                        await HandleTransactionRefunded(doc, dbContext, logger, cancellationToken);
+                        break;
+                    default:
+                        logger.LogInformation("Paddle webhook: unhandled event {EventType}, acknowledging.", eventType);
+                        break;
+                }
+
+                if (logRow is not null)
+                    await notificationStore.MarkProcessedAsync(logRow.Id, cancellationToken);
+            }
+            catch (Exception ex) when (logRow is not null)
+            {
+                logger.LogError(ex, "Paddle webhook projection failed for {EventType}, log id {LogId}.", eventType, logRow.Id);
+                await notificationStore.MarkFailedAsync(logRow.Id, ex.Message, cancellationToken);
+                throw;
             }
         }
 

@@ -18,12 +18,8 @@ namespace Odin.Api.Data
         public DbSet<QpadmResultEraGroup> QpadmResultEraGroups { get; set; }
         public DbSet<QpadmOrder> QpadmOrders { get; set; }
         public DbSet<G25Order> G25Orders { get; set; }
-        public DbSet<CatalogProduct> CatalogProducts { get; set; }
-        public DbSet<ProductAddon> ProductAddons { get; set; }
-        public DbSet<CatalogProductAddon> CatalogProductAddons { get; set; }
-        public DbSet<OrderLineAddon> OrderLineAddons { get; set; }
-        public DbSet<PromoCode> PromoCodes { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<AppSetting> AppSettings { get; set; }
         public DbSet<Report> Reports { get; set; }
         public DbSet<Log> Logs { get; set; }
         public DbSet<MusicTrackFile> MusicTrackFiles { get; set; }
@@ -37,6 +33,12 @@ namespace Odin.Api.Data
         public DbSet<G25SavedCoordinate> G25SavedCoordinates { get; set; }
         public DbSet<AdmixtureSavedFile> AdmixtureSavedFiles { get; set; }
         public DbSet<PaddlePayment> PaddlePayments { get; set; }
+        public DbSet<PaddleNotification> PaddleNotifications { get; set; }
+        public DbSet<PaddleProduct> PaddleProducts { get; set; }
+        public DbSet<PaddlePrice> PaddlePrices { get; set; }
+        public DbSet<PaddleCustomer> PaddleCustomers { get; set; }
+        public DbSet<PaddleSubscription> PaddleSubscriptions { get; set; }
+        public DbSet<PaddleTransaction> PaddleTransactions { get; set; }
         public DbSet<G25Region> G25Regions { get; set; }
         public DbSet<G25Ethnicity> G25Ethnicities { get; set; }
         public DbSet<G25Continent> G25Continents { get; set; }

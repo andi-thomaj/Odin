@@ -153,10 +153,10 @@ public static class TestDataHelper
         return (await response.Content.ReadFromJsonAsync<List<GetCatalogProductContract.ProductResponse>>(JsonOptions))!;
     }
 
-    public static async Task<int> GetAddonIdByCodeAsync(HttpClient client, string code)
+    public static async Task<string> GetAddonPaddleProductIdByCodeAsync(HttpClient client, string code)
     {
         var products = await GetCatalogProductsAsync(client);
-        return products.SelectMany(p => p.Addons).Single(a => a.Code == code).Id;
+        return products.SelectMany(p => p.Addons).Single(a => a.Code == code).PaddleProductId;
     }
 
     public static async Task SetOrderStatusAsync(
@@ -171,37 +171,8 @@ public static class TestDataHelper
         await db.SaveChangesAsync();
     }
 
-    public static async Task<PromoCode> SeedPromoCodeAsync(
-        IServiceProvider services,
-        string code,
-        PromoDiscountType discountType = PromoDiscountType.Percent,
-        decimal value = 10m,
-        bool isActive = true,
-        DateTime? validFromUtc = null,
-        DateTime? validUntilUtc = null,
-        int? maxRedemptions = null,
-        int redemptionCount = 0,
-        ServiceType? applicableService = null)
-    {
-        await using var scope = services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-        var promo = new PromoCode
-        {
-            Code = code.ToUpperInvariant(),
-            DiscountType = discountType,
-            Value = value,
-            IsActive = isActive,
-            ValidFromUtc = validFromUtc,
-            ValidUntilUtc = validUntilUtc,
-            MaxRedemptions = maxRedemptions,
-            RedemptionCount = redemptionCount,
-            ApplicableService = applicableService
-        };
-        db.PromoCodes.Add(promo);
-        await db.SaveChangesAsync();
-        return promo;
-    }
+    // SeedPromoCodeAsync was removed: promo codes are no longer modeled locally. If discount
+    // testing is required, it should go through Paddle Discounts (synced via the Paddle pipeline).
 
     public static async Task SeedNotificationsAsync(
         IServiceProvider services,

@@ -2,118 +2,103 @@ using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
+using Odin.Api.Services.Paddle;
 
 namespace Odin.Api.Services;
 
+/// <summary>
+/// Computes order totals entirely from the Paddle-synced catalog: the service's base price
+/// comes from the active <see cref="PaddleProduct"/> + <see cref="PaddlePrice"/> tagged with
+/// <c>kind = "service"</c>, addon prices come from products tagged <c>kind = "addon"</c>.
+/// Discounts (if any) are applied by Paddle at checkout — promo codes are no longer modeled
+/// locally; if you need them, sync Paddle Discounts.
+/// </summary>
 public class OrderPricingService(ApplicationDbContext dbContext) : IOrderPricingService
 {
+    private const string KindService = "service";
+    private const string KindAddon = "addon";
+
     private static readonly HashSet<string> ExpeditedCodes = new(StringComparer.OrdinalIgnoreCase) { "EXPEDITED" };
     private static readonly HashSet<string> YHaploCodes = new(StringComparer.OrdinalIgnoreCase) { "Y_HAPLOGROUP" };
     private static readonly HashSet<string> MergeCodes = new(StringComparer.OrdinalIgnoreCase) { "MERGE_RAW" };
 
     public async Task<OrderPricingComputation> ComputeAsync(
         ServiceType service,
-        IReadOnlyList<int>? addonIds,
-        string? promoCode,
+        IReadOnlyList<string>? addonPaddleProductIds,
         CancellationToken cancellationToken = default)
     {
-        var catalog = await dbContext.CatalogProducts
+        var serviceProduct = await dbContext.PaddleProducts
             .AsNoTracking()
-            .Include(p => p.CatalogProductAddons)
-            .ThenInclude(cpa => cpa.ProductAddon)
-            .FirstOrDefaultAsync(p => p.ServiceType == service && p.IsActive, cancellationToken);
+            .Include(p => p.Prices)
+            .Where(p => p.Kind == KindService && p.ServiceType == service && p.Status == "active")
+            .OrderByDescending(p => p.PaddleUpdatedAt)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (catalog is null)
-            throw new InvalidOperationException("No active catalog entry for the selected service.");
+        if (serviceProduct is null)
+            throw new InvalidOperationException("No active Paddle product is linked to the selected service. Sync products from Paddle first.");
 
-        var allowedAddonIds = catalog.CatalogProductAddons
-            .Where(cpa => cpa.ProductAddon.IsActive)
-            .Select(cpa => cpa.ProductAddonId)
-            .ToHashSet();
+        var servicePrice = SelectActivePrice(serviceProduct)
+            ?? throw new InvalidOperationException("The Paddle product for this service has no active price.");
+        var basePrice = PaddleMoneyConverter.ToDecimalMajorUnit(servicePrice.UnitPriceAmount, servicePrice.UnitPriceCurrency);
 
-        // Form / JSON binders may leave AddonIds null when no values were sent.
-        var distinctRequested = (addonIds ?? []).Distinct().ToList();
-        var invalid = distinctRequested.Where(id => !allowedAddonIds.Contains(id)).ToList();
-        if (invalid.Count > 0)
-            throw new InvalidOperationException("One or more add-ons are not available for this product.");
-
-        var addonEntities = await dbContext.ProductAddons
-            .AsNoTracking()
-            .Where(a => distinctRequested.Contains(a.Id) && a.IsActive)
-            .ToListAsync(cancellationToken);
-
-        if (addonEntities.Count != distinctRequested.Count)
-            throw new InvalidOperationException("One or more add-ons are invalid or inactive.");
-
-        var lines = addonEntities
-            .Select(a => new PricedAddonLine
-            {
-                ProductAddonId = a.Id,
-                Code = a.Code,
-                DisplayName = a.DisplayName,
-                UnitPrice = a.Price
-            })
+        var requestedIds = (addonPaddleProductIds ?? [])
+            .Where(id => !string.IsNullOrWhiteSpace(id))
+            .Distinct(StringComparer.Ordinal)
             .ToList();
 
-        var addonsSubtotal = lines.Sum(l => l.UnitPrice);
-        var subtotal = catalog.BasePrice + addonsSubtotal;
-
-        decimal discount = 0;
-        int? promoId = null;
-        var normalizedPromo = string.IsNullOrWhiteSpace(promoCode) ? null : promoCode.Trim().ToUpperInvariant();
-
-        if (normalizedPromo is not null)
-        {
-            var now = DateTime.UtcNow;
-            var promo = await dbContext.PromoCodes
+        var addonProducts = requestedIds.Count == 0
+            ? new List<PaddleProduct>()
+            : await dbContext.PaddleProducts
                 .AsNoTracking()
-                .FirstOrDefaultAsync(
-                    p => p.Code == normalizedPromo && p.IsActive,
-                    cancellationToken);
+                .Include(p => p.Prices)
+                .Where(p => p.Kind == KindAddon
+                            && p.Status == "active"
+                            && requestedIds.Contains(p.PaddleProductId))
+                .ToListAsync(cancellationToken);
 
-            if (promo is null)
-                throw new InvalidOperationException("Promo code is not valid.");
+        if (addonProducts.Count != requestedIds.Count)
+            throw new InvalidOperationException("One or more add-ons are invalid or inactive.");
 
-            if (promo.ValidFromUtc is { } from && now < from)
-                throw new InvalidOperationException("Promo code is not yet active.");
+        if (addonProducts.Any(p => p.ParentServiceType != service))
+            throw new InvalidOperationException("One or more add-ons are not available for this product.");
 
-            if (promo.ValidUntilUtc is { } until && now > until)
-                throw new InvalidOperationException("Promo code has expired.");
+        var lines = new List<PricedAddonLine>(addonProducts.Count);
+        foreach (var product in addonProducts)
+        {
+            var price = SelectActivePrice(product)
+                ?? throw new InvalidOperationException($"Add-on '{product.Name}' has no active Paddle price.");
 
-            if (promo.MaxRedemptions is { } max && promo.RedemptionCount >= max)
-                throw new InvalidOperationException("Promo code has reached its redemption limit.");
-
-            if (promo.ApplicableService is { } onlyFor && onlyFor != service)
-                throw new InvalidOperationException("Promo code does not apply to this product.");
-
-            discount = promo.DiscountType switch
+            lines.Add(new PricedAddonLine
             {
-                PromoDiscountType.Percent => Math.Round(subtotal * (promo.Value / 100m), 2, MidpointRounding.AwayFromZero),
-                PromoDiscountType.FixedAmount => Math.Min(promo.Value, subtotal),
-                _ => throw new InvalidOperationException("Unsupported discount type.")
-            };
-
-            if (discount < 0)
-                discount = 0;
-
-            promoId = promo.Id;
+                PaddleProductId = product.PaddleProductId,
+                AddonCode = product.AddonCode ?? string.Empty,
+                DisplayName = product.Name,
+                UnitPrice = PaddleMoneyConverter.ToDecimalMajorUnit(price.UnitPriceAmount, price.UnitPriceCurrency),
+            });
         }
 
-        var total = Math.Round(subtotal - discount, 2, MidpointRounding.AwayFromZero);
+        var addonsSubtotal = lines.Sum(l => l.UnitPrice);
+        var subtotal = basePrice + addonsSubtotal;
+        var codes = lines.Select(l => l.AddonCode).Where(c => !string.IsNullOrEmpty(c)).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var codes = lines.Select(l => l.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
         return new OrderPricingComputation
         {
-            BasePrice = catalog.BasePrice,
+            BasePrice = basePrice,
             AddonsSubtotal = addonsSubtotal,
             SubtotalBeforeDiscount = subtotal,
-            DiscountAmount = discount,
-            Total = total,
-            PromoCodeId = promoId,
+            DiscountAmount = 0m,
+            Total = subtotal,
             AddonLines = lines,
             ExpeditedProcessing = codes.Any(c => ExpeditedCodes.Contains(c)),
             IncludesYHaplogroup = codes.Any(c => YHaploCodes.Contains(c)),
-            IncludesRawMerge = codes.Any(c => MergeCodes.Contains(c))
+            IncludesRawMerge = codes.Any(c => MergeCodes.Contains(c)),
         };
     }
+
+    private static PaddlePrice? SelectActivePrice(PaddleProduct product) =>
+        product.Prices
+            .Where(p => p.Status == "active")
+            .OrderBy(p => p.Id)
+            .FirstOrDefault()
+        ?? product.Prices.OrderBy(p => p.Id).FirstOrDefault();
 }

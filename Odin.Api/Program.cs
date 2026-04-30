@@ -10,6 +10,7 @@ using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.Admin;
 using Odin.Api.Endpoints.AdmixtureSavedFileManagement;
+using Odin.Api.Endpoints.AppSettingsManagement;
 using Odin.Api.Endpoints.ChangelogManagement;
 using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.G25PopulationSampleManagement;
@@ -25,6 +26,7 @@ using Odin.Api.Endpoints.PopulationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
 using Odin.Api.Endpoints.MediaManagement;
+using Odin.Api.Endpoints.PaddleAdminManagement;
 using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Endpoints.G25Calculations;
@@ -39,6 +41,11 @@ using Odin.Api.Hubs;
 using Odin.Api.Middleware;
 using Odin.Api.Models;
 using Odin.Api.Services;
+using Odin.Api.Services.AppSettings;
+using Odin.Api.Services.Paddle;
+using Odin.Api.Services.Paddle.Http;
+using Odin.Api.Services.Paddle.Resources;
+using Odin.Api.Services.Paddle.Sync;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
 using System.Threading.RateLimiting;
@@ -400,6 +407,7 @@ namespace Odin.Api
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
             services.AddScoped<IOrderPricingService, OrderPricingService>();
+            services.AddScoped<IAppSettingsService, AppSettingsService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IReportService, ReportService>();
@@ -418,11 +426,38 @@ namespace Odin.Api
             services.AddScoped<IG25AdmixtureEraService, G25AdmixtureEraService>();
             services.AddScoped<IG25CalculationService, G25CalculationService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
-            services.AddHttpClient("Paddle", client => { client.Timeout = TimeSpan.FromSeconds(15); });
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
             services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
             services.Configure<PaddleOptions>(configuration.GetSection(PaddleOptions.SectionName));
+
+            // ── Paddle API ──────────────────────────────────────────────
+            services.AddTransient<PaddleAuthHandler>();
+            services.AddTransient<PaddleRetryHandler>();
+            services.AddHttpClient<IPaddleApiClient, PaddleApiClient>((sp, client) =>
+            {
+                var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PaddleOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(opts.ApiBaseUrl))
+                    client.BaseAddress = new Uri(opts.ApiBaseUrl.TrimEnd('/') + "/", UriKind.Absolute);
+                client.Timeout = TimeSpan.FromSeconds(Math.Max(1, opts.RequestTimeoutSeconds));
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            })
+            .AddHttpMessageHandler<PaddleAuthHandler>()
+            .AddHttpMessageHandler<PaddleRetryHandler>();
+
+            services.AddScoped<IPaddleNotificationsResource, PaddleNotificationsResource>();
+            services.AddScoped<IPaddleProductsResource, PaddleProductsResource>();
+            services.AddScoped<IPaddlePricesResource, PaddlePricesResource>();
+            services.AddScoped<IPaddleCustomersResource, PaddleCustomersResource>();
+            services.AddScoped<IPaddleSubscriptionsResource, PaddleSubscriptionsResource>();
+            services.AddScoped<IPaddleTransactionsResource, PaddleTransactionsResource>();
+            services.AddScoped<IPaddleEventsResource, PaddleEventsResource>();
+
+            services.AddScoped<IPaddleProductSyncService, PaddleProductSyncService>();
+            services.AddScoped<IPaddleCustomerSyncService, PaddleCustomerSyncService>();
+            services.AddScoped<IPaddleSubscriptionSyncService, PaddleSubscriptionSyncService>();
+            services.AddScoped<IPaddleTransactionSyncService, PaddleTransactionSyncService>();
+            services.AddScoped<IPaddleNotificationStore, PaddleNotificationStore>();
             services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
             {
                 client.BaseAddress = new Uri("https://api.resend.com/");
@@ -491,6 +526,8 @@ namespace Odin.Api
             app.MapOrderEndpoints();
             app.MapCheckoutEndpoints();
             app.MapPaddleWebhookEndpoints();
+            app.MapPaddleAdminEndpoints();
+            app.MapAppSettingsEndpoints();
             app.MapCatalogEndpoints();
             app.MapNotificationEndpoints();
             app.MapReportEndpoints();

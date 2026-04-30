@@ -1,11 +1,10 @@
-using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
-using Odin.Api.Configuration;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Services.Paddle;
+using Odin.Api.Services.Paddle.Models.Transactions;
+using Odin.Api.Services.Paddle.Resources;
 
 namespace Odin.Api.Endpoints.CheckoutManagement;
 
@@ -49,8 +48,7 @@ public static class CheckoutEndpoints
     private static async Task<IResult> ConfirmTransaction(
         HttpContext httpContext,
         ApplicationDbContext dbContext,
-        IOptions<PaddleOptions> paddleOptions,
-        IHttpClientFactory httpClientFactory,
+        IPaddleTransactionsResource transactionsResource,
         ILoggerFactory loggerFactory,
         ConfirmTransactionRequest request,
         CancellationToken cancellationToken)
@@ -59,15 +57,10 @@ public static class CheckoutEndpoints
         var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
                          ?? httpContext.User.FindFirstValue("sub")
                          ?? string.Empty;
-        var cfg = paddleOptions.Value;
-
-        if (string.IsNullOrWhiteSpace(cfg.ApiKey))
-            return Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
 
         if (string.IsNullOrWhiteSpace(request.TransactionId))
             return Results.BadRequest("transactionId is required.");
 
-        // Already recorded (idempotent)?
         var existing = await dbContext.PaddlePayments
             .FirstOrDefaultAsync(p => p.PaddleTransactionId == request.TransactionId, cancellationToken);
         if (existing is not null)
@@ -76,53 +69,36 @@ public static class CheckoutEndpoints
             return Results.Ok(new CheckoutStatusResponse(alreadyStatus, alreadyStatus ? existing.Id : null));
         }
 
-        // Fetch transaction from Paddle API
-        var client = httpClientFactory.CreateClient("Paddle");
-        using var req = new HttpRequestMessage(HttpMethod.Get,
-            $"{cfg.ApiBaseUrl.TrimEnd('/')}/transactions/{request.TransactionId}");
-        req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", cfg.ApiKey);
-
-        using var response = await client.SendAsync(req, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+        PaddleTransactionDto transaction;
+        try
         {
-            logger.LogWarning("Paddle API returned {Status} for transaction {TxnId}.",
-                (int)response.StatusCode, request.TransactionId);
+            transaction = await transactionsResource.GetAsync(request.TransactionId, cancellationToken: cancellationToken);
+        }
+        catch (PaddleApiException ex)
+        {
+            logger.LogWarning(ex, "Paddle returned {Status} for transaction {TxnId}.", ex.StatusCode, request.TransactionId);
             return Results.BadRequest("Could not verify this transaction with Paddle.");
         }
 
-        using var doc = await JsonDocument.ParseAsync(
-            await response.Content.ReadAsStreamAsync(cancellationToken),
-            cancellationToken: cancellationToken);
-
-        var data = doc.RootElement.GetProperty("data");
-        var status = data.TryGetProperty("status", out var st) ? st.GetString() : null;
-        if (status is not "completed" and not "paid")
+        if (transaction.Status is not "completed" and not "paid")
         {
-            logger.LogInformation("Transaction {TxnId} status is {Status}, not completed.", request.TransactionId, status);
+            logger.LogInformation("Transaction {TxnId} status is {Status}, not completed.", request.TransactionId, transaction.Status);
             return Results.BadRequest("Transaction is not completed.");
         }
 
-        // Verify custom_data.user_id matches the authenticated user
-        string? txnUserId = null;
-        if (data.TryGetProperty("custom_data", out var cd) && cd.TryGetProperty("user_id", out var uid))
-            txnUserId = uid.GetString();
-
-        if (txnUserId != identityId)
+        var customDataUserId = ExtractCustomDataUserId(transaction);
+        if (customDataUserId != identityId)
         {
             logger.LogWarning("Transaction {TxnId} user_id {TxnUser} does not match authenticated user {AuthUser}.",
-                request.TransactionId, txnUserId, identityId);
+                request.TransactionId, customDataUserId, identityId);
             return Results.Forbid();
         }
 
-        // Extract totals
-        var details = data.TryGetProperty("details", out var det) ? det : data;
-        var totalStr = details.TryGetProperty("totals", out var totals) && totals.TryGetProperty("total", out var totalEl)
-            ? totalEl.GetString() ?? "0"
-            : "0";
-        decimal.TryParse(totalStr, System.Globalization.NumberStyles.Any,
+        var totalsString = transaction.Details?.Totals?.GrandTotal
+            ?? transaction.Details?.Totals?.Total
+            ?? "0";
+        decimal.TryParse(totalsString, System.Globalization.NumberStyles.Any,
             System.Globalization.CultureInfo.InvariantCulture, out var totalCents);
-
-        var currency = data.TryGetProperty("currency_code", out var cur) ? cur.GetString() ?? "USD" : "USD";
 
         var now = DateTime.UtcNow;
         var payment = new PaddlePayment
@@ -131,9 +107,9 @@ public static class CheckoutEndpoints
             UserId = identityId,
             Status = "paid",
             TotalAmount = totalCents / 100m,
-            Currency = currency,
+            Currency = transaction.CurrencyCode,
             CreatedAt = now,
-            UpdatedAt = now
+            UpdatedAt = now,
         };
         dbContext.PaddlePayments.Add(payment);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -142,6 +118,15 @@ public static class CheckoutEndpoints
             request.TransactionId, identityId);
 
         return Results.Ok(new CheckoutStatusResponse(true, payment.Id));
+    }
+
+    private static string? ExtractCustomDataUserId(PaddleTransactionDto transaction)
+    {
+        if (transaction.CustomData is not { ValueKind: System.Text.Json.JsonValueKind.Object } cd)
+            return null;
+        return cd.TryGetProperty("user_id", out var v) && v.ValueKind == System.Text.Json.JsonValueKind.String
+            ? v.GetString()
+            : null;
     }
 }
 

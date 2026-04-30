@@ -70,7 +70,7 @@ namespace Odin.Api.Migrations
                     b.ToTable("admixture_saved_files", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProduct", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.AppSetting", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -78,50 +78,33 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("BasePrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("ServiceType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("ServiceType")
+                    b.HasIndex("Key")
                         .IsUnique();
 
-                    b.ToTable("catalog_products", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProductAddon", b =>
-                {
-                    b.Property<int>("CatalogProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductAddonId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("CatalogProductId", "ProductAddonId");
-
-                    b.HasIndex("ProductAddonId");
-
-                    b.ToTable("catalog_product_addons", (string)null);
+                    b.ToTable("app_settings", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.ChangelogEntry", b =>
@@ -1133,7 +1116,7 @@ namespace Odin.Api.Migrations
                     b.ToTable("notifications", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.OrderLineAddon", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleCustomer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1141,23 +1124,129 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
 
-                    b.Property<int>("ProductAddonId")
-                        .HasColumnType("integer");
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
 
-                    b.Property<decimal>("UnitPriceSnapshot")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                    b.Property<DateTime>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Locale")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("MarketingConsent")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaddleCustomerId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId");
+                    b.HasIndex("Email");
 
-                    b.HasIndex("ProductAddonId");
+                    b.HasIndex("PaddleCustomerId")
+                        .IsUnique();
 
-                    b.ToTable("order_line_addons", (string)null);
+                    b.HasIndex("UserId");
+
+                    b.ToTable("paddle_customers", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Origin")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("PaddleEventId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PaddleNotificationId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProcessedStatus")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("ProcessingAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("ProcessingError")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventType");
+
+                    b.HasIndex("PaddleNotificationId")
+                        .IsUnique();
+
+                    b.HasIndex("ProcessedStatus");
+
+                    b.ToTable("paddle_notifications", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.PaddlePayment", b =>
@@ -1217,7 +1306,7 @@ namespace Odin.Api.Migrations
                     b.ToTable("paddle_payments", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.ProductAddon", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddlePrice", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1225,34 +1314,172 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Code")
+                    b.Property<int?>("BillingCycleFrequency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BillingCycleInterval")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaddlePriceId")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<string>("DisplayName")
+                    b.Property<string>("PaddleProductId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("PaddleProductInternalId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TaxMode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int?>("TrialPeriodFrequency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TrialPeriodInterval")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("UnitPriceAmount")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("UnitPriceCurrency")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaddlePriceId")
+                        .IsUnique();
+
+                    b.HasIndex("PaddleProductId");
+
+                    b.HasIndex("PaddleProductInternalId");
+
+                    b.ToTable("paddle_prices", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AddonCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("Kind")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTime>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("Price")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                    b.Property<string>("PaddleProductId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ParentServiceType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ServiceType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TaxCategory")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
+                    b.HasIndex("AddonCode");
+
+                    b.HasIndex("Kind");
+
+                    b.HasIndex("PaddleProductId")
                         .IsUnique();
 
-                    b.ToTable("product_addons", (string)null);
+                    b.HasIndex("ParentServiceType");
+
+                    b.HasIndex("ServiceType");
+
+                    b.ToTable("paddle_products", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.PromoCode", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleSubscription", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1260,49 +1487,180 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ApplicableService")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                    b.Property<DateTimeOffset?>("CanceledAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Code")
+                    b.Property<string>("CollectionMode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<DateTimeOffset?>("CurrentPeriodEndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("CurrentPeriodStartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset?>("FirstBilledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("NextBilledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaddleCustomerId")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<string>("DiscountType")
+                    b.Property<string>("PaddleSubscriptionId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("PausedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RawJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ScheduledChangeAction")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("ScheduledChangeEffectiveAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                    b.HasKey("Id");
 
-                    b.Property<int?>("MaxRedemptions")
+                    b.HasIndex("PaddleCustomerId");
+
+                    b.HasIndex("PaddleSubscriptionId")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("paddle_subscriptions", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    b.Property<int>("RedemptionCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("ValidFromUtc")
+                    b.Property<DateTimeOffset?>("BilledAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("ValidUntilUtc")
+                    b.Property<string>("CollectionMode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("DiscountTotal")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("GrandTotal")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("InvoiceId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("InvoiceNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("LastSyncedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("Value")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                    b.Property<string>("Origin")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaddleCustomerId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PaddleSubscriptionId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PaddleTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RawJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Subtotal")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TaxTotal")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
+                    b.HasIndex("PaddleCustomerId");
+
+                    b.HasIndex("PaddleSubscriptionId");
+
+                    b.HasIndex("PaddleTransactionId")
                         .IsUnique();
 
-                    b.ToTable("promo_codes", (string)null);
+                    b.HasIndex("Status");
+
+                    b.ToTable("paddle_transactions", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmEra", b =>
@@ -1451,6 +1809,9 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AddonsJson")
+                        .HasColumnType("jsonb");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1488,9 +1849,6 @@ namespace Odin.Api.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
-                    b.Property<int?>("PromoCodeId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1503,8 +1861,6 @@ namespace Odin.Api.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PromoCodeId");
 
                     b.ToTable("qpadm_orders", (string)null);
                 });
@@ -1987,25 +2343,6 @@ namespace Odin.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProductAddon", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.CatalogProduct", "CatalogProduct")
-                        .WithMany("CatalogProductAddons")
-                        .HasForeignKey("CatalogProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Odin.Api.Data.Entities.ProductAddon", "ProductAddon")
-                        .WithMany("CatalogProductAddons")
-                        .HasForeignKey("ProductAddonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CatalogProduct");
-
-                    b.Navigation("ProductAddon");
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.ChangelogEntry", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.ChangelogVersion", "Version")
@@ -2291,25 +2628,6 @@ namespace Odin.Api.Migrations
                     b.Navigation("RecipientUser");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.OrderLineAddon", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.QpadmOrder", "Order")
-                        .WithMany("OrderLineAddons")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Odin.Api.Data.Entities.ProductAddon", "ProductAddon")
-                        .WithMany("OrderLineAddons")
-                        .HasForeignKey("ProductAddonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("ProductAddon");
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.PaddlePayment", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.QpadmOrder", "Order")
@@ -2318,6 +2636,17 @@ namespace Odin.Api.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddlePrice", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.PaddleProduct", "Product")
+                        .WithMany("Prices")
+                        .HasForeignKey("PaddleProductInternalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmGeneticInspection", b =>
@@ -2364,16 +2693,6 @@ namespace Odin.Api.Migrations
                     b.Navigation("GeneticInspection");
 
                     b.Navigation("Region");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.QpadmOrder", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.PromoCode", "PromoCode")
-                        .WithMany("Orders")
-                        .HasForeignKey("PromoCodeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("PromoCode");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmPopulation", b =>
@@ -2497,11 +2816,6 @@ namespace Odin.Api.Migrations
                     b.Navigation("QpadmPopulationSample");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProduct", b =>
-                {
-                    b.Navigation("CatalogProductAddons");
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.ChangelogVersion", b =>
                 {
                     b.Navigation("Entries");
@@ -2572,16 +2886,9 @@ namespace Odin.Api.Migrations
                     b.Navigation("Populations");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.ProductAddon", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleProduct", b =>
                 {
-                    b.Navigation("CatalogProductAddons");
-
-                    b.Navigation("OrderLineAddons");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.PromoCode", b =>
-                {
-                    b.Navigation("Orders");
+                    b.Navigation("Prices");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmEra", b =>
@@ -2605,8 +2912,6 @@ namespace Odin.Api.Migrations
                 {
                     b.Navigation("GeneticInspection")
                         .IsRequired();
-
-                    b.Navigation("OrderLineAddons");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmPopulationSample", b =>

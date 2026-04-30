@@ -22,19 +22,14 @@ public class DatabaseSeeder(ApplicationDbContext context, ILogger<DatabaseSeeder
     }
 
     /// <summary>
-    /// Ethnicities, eras + populations, commerce catalog, and G25 reference data — safe
-    /// to re-run when tables are empty (e.g. integration tests after a Respawn). Excludes
-    /// the heavy media-file seeders, which integration tests don't need.
+    /// Ethnicities, eras + populations, and G25 reference data — safe to re-run when tables
+    /// are empty (e.g. integration tests after a Respawn). Excludes the heavy media-file
+    /// seeders, which integration tests don't need.
     /// </summary>
     public async Task SeedReferenceCatalogAsync()
     {
         await new EthnicityAndRegionSeeder(context).SeedAsync();
         await new QpadmEraAndPopulationSeeder(context).SeedAsync();
-        await SeedCatalogCommerceAsync();
         await new G25Seeder(context).SeedAsync();
     }
-
-    /// <summary>qpAdm + G25 catalog products, addons, and the welcome promo code.</summary>
-    public Task SeedCatalogCommerceAsync() =>
-        new CatalogCommerceSeeder(context).SeedAsync();
 }

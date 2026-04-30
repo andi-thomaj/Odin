@@ -163,7 +163,8 @@ namespace Odin.Api.Endpoints.UserManagement
             dbContext.Users.Remove(user);
             await dbContext.SaveChangesAsync();
 
-            // 2. Delete orphaned Orders (DB cascades to OrderLineAddons; PromoCode FK is SetNull)
+            // 2. Delete orphaned Orders. Addons are stored as a JSON snapshot on the order row,
+            //    so no cascade is needed for them.
             if (orderIds.Count > 0)
             {
                 await dbContext.QpadmOrders

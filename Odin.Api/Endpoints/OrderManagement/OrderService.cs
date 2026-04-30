@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
@@ -9,6 +10,7 @@ using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25Calculations.Models;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.Services;
+using Odin.Api.Services.AppSettings;
 
 namespace Odin.Api.Endpoints.OrderManagement;
 
@@ -34,6 +36,7 @@ public class OrderService(
     IGeoLocationService geoLocationService,
     IOrderPricingService orderPricingService,
     IG25CalculationService g25CalculationService,
+    IAppSettingsService appSettings,
     ILogger<OrderService> logger) : IOrderService
 {
         private const int MaxEthnicities = 4;
@@ -127,11 +130,19 @@ public class OrderService(
                 if (paddlePayment.OrderId is not null)
                     throw new InvalidOperationException("The specified payment has already been used for an order.");
             }
+            else
+            {
+                // No payment id supplied — only allowed when the AdminCanSkipPayment toggle is on
+                // AND the caller is an admin. The frontend hides this path from non-admins, but the
+                // backend has to enforce it independently.
+                var adminCanSkip = await appSettings.GetBoolAsync(AppSettingKeys.AdminCanSkipPayment, defaultValue: true);
+                if (!(adminCanSkip && user.Role == AppRole.Admin))
+                    throw new InvalidOperationException("A completed payment is required to create this order.");
+            }
 
             var pricing = await orderPricingService.ComputeAsync(
                 request.Service,
-                request.AddonIds,
-                request.PromoCode);
+                request.AddonPaddleProductIds);
 
             var now = DateTime.UtcNow;
             var order = new QpadmOrder
@@ -143,10 +154,10 @@ public class OrderService(
                 UpdatedAt = now,
                 UpdatedBy = identityId,
                 DiscountAmount = pricing.DiscountAmount,
-                PromoCodeId = pricing.PromoCodeId,
                 ExpeditedProcessing = pricing.ExpeditedProcessing,
                 IncludesYHaplogroup = pricing.IncludesYHaplogroup,
-                IncludesRawMerge = pricing.IncludesRawMerge
+                IncludesRawMerge = pricing.IncludesRawMerge,
+                AddonsJson = SerializeAddonSnapshot(pricing.AddonLines)
             };
             dbContext.QpadmOrders.Add(order);
             await dbContext.SaveChangesAsync();
@@ -155,16 +166,6 @@ public class OrderService(
             {
                 paddlePayment.OrderId = order.Id;
                 paddlePayment.UpdatedAt = now;
-            }
-
-            foreach (var line in pricing.AddonLines)
-            {
-                dbContext.OrderLineAddons.Add(new OrderLineAddon
-                {
-                    OrderId = order.Id,
-                    ProductAddonId = line.ProductAddonId,
-                    UnitPriceSnapshot = line.UnitPrice
-                });
             }
 
             var geneticInspection = new QpadmGeneticInspection
@@ -204,12 +205,6 @@ public class OrderService(
 
             dbContext.QpadmGeneticInspectionRegions.AddRange(regionAssociations);
 
-            if (pricing.PromoCodeId is { } promoId)
-            {
-                var promo = await dbContext.PromoCodes.FirstAsync(p => p.Id == promoId);
-                promo.RedemptionCount++;
-            }
-
             await dbContext.SaveChangesAsync();
 
             return new CreateOrderContract.Response
@@ -229,6 +224,12 @@ public class OrderService(
         {
             if (request.PaddlePaymentId.HasValue)
                 throw new InvalidOperationException("Paddle payment is not yet supported for G25 orders.");
+
+            // G25 orders currently have no Paddle path, so they're always free-or-blocked.
+            // Same gate as the qpAdm "no payment id" path.
+            var adminCanSkip = await appSettings.GetBoolAsync(AppSettingKeys.AdminCanSkipPayment, defaultValue: true);
+            if (!(adminCanSkip && user.Role == AppRole.Admin))
+                throw new InvalidOperationException("A completed payment is required to create this order.");
 
             int rawGeneticFileId;
             string? g25Coordinates = null;
@@ -292,8 +293,7 @@ public class OrderService(
 
             var pricing = await orderPricingService.ComputeAsync(
                 request.Service,
-                request.AddonIds,
-                request.PromoCode);
+                request.AddonPaddleProductIds);
 
             var now = DateTime.UtcNow;
             var order = new G25Order
@@ -335,12 +335,6 @@ public class OrderService(
             }
 
             dbContext.G25GeneticInspections.Add(geneticInspection);
-
-            if (pricing.PromoCodeId is { } promoId)
-            {
-                var promo = await dbContext.PromoCodes.FirstAsync(p => p.Id == promoId);
-                promo.RedemptionCount++;
-            }
 
             await dbContext.SaveChangesAsync();
 
@@ -483,6 +477,20 @@ public class OrderService(
             }
 
             return trimmed;
+        }
+
+        private static string NextG25DistanceVersion(string? current)
+        {
+            var n = ParseG25DistanceVersionNumber(current);
+            return n > 0 ? $"v{n + 1}" : "v1";
+        }
+
+        private static int ParseG25DistanceVersionNumber(string? version)
+        {
+            if (string.IsNullOrWhiteSpace(version) ||
+                !version.StartsWith("v", StringComparison.OrdinalIgnoreCase))
+                return 0;
+            return int.TryParse(version.AsSpan(1), out var n) && n > 0 ? n : 0;
         }
 
         public async Task<GetOrderContract.Response?> GetByIdAsync(int id, string identityId)
@@ -953,7 +961,7 @@ public class OrderService(
         {
             var startedAt = DateTime.UtcNow;
             var stopwatch = Stopwatch.StartNew();
-            var version = $"v{startedAt:yyyyMMddHHmmss}";
+            var runId = $"v{startedAt:yyyyMMddHHmmss}";
 
             var eras = await dbContext.G25DistanceEras
                 .AsNoTracking()
@@ -963,7 +971,7 @@ public class OrderService(
 
             var response = new RecomputeG25DistancesContract.Response
             {
-                Version = version,
+                Version = runId,
                 ErasConsidered = eras.Count,
                 InspectionsRequested = inspectionIds?.Count ?? 0,
             };
@@ -999,6 +1007,12 @@ public class OrderService(
                 var existingByEra = await dbContext.G25DistanceResults
                     .Where(r => r.GeneticInspectionId == inspection.Id)
                     .ToDictionaryAsync(r => r.G25DistanceEraId);
+
+                var highestExistingVersion = existingByEra.Values
+                    .Select(r => r.ResultsVersion)
+                    .OrderByDescending(ParseG25DistanceVersionNumber)
+                    .FirstOrDefault();
+                var inspectionVersion = NextG25DistanceVersion(highestExistingVersion);
 
                 var targetName = BuildTargetName(inspection.FirstName, inspection.LastName);
                 var normalizedTarget = NormalizeCoordinatesForTarget(inspection.G25Coordinates!, targetName);
@@ -1041,7 +1055,7 @@ public class OrderService(
                     if (existingByEra.TryGetValue(era.Id, out var existing))
                     {
                         existing.Populations = populations;
-                        existing.ResultsVersion = version;
+                        existing.ResultsVersion = inspectionVersion;
                         existing.UpdatedBy = identityId;
                         existing.UpdatedAt = now;
                     }
@@ -1051,7 +1065,7 @@ public class OrderService(
                         {
                             GeneticInspectionId = inspection.Id,
                             G25DistanceEraId = era.Id,
-                            ResultsVersion = version,
+                            ResultsVersion = inspectionVersion,
                             Populations = populations,
                             CreatedBy = identityId,
                             CreatedAt = now,
@@ -1108,5 +1122,20 @@ public class OrderService(
                         .FirstOrDefault(),
                 })
                 .ToListAsync();
+        }
+
+        private static string? SerializeAddonSnapshot(IReadOnlyList<PricedAddonLine> lines)
+        {
+            if (lines.Count == 0) return null;
+            var snapshot = lines
+                .Select(l => new
+                {
+                    paddleProductId = l.PaddleProductId,
+                    addonCode = l.AddonCode,
+                    displayName = l.DisplayName,
+                    unitPriceSnapshot = l.UnitPrice,
+                })
+                .ToArray();
+            return JsonSerializer.Serialize(snapshot);
         }
 }

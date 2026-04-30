@@ -18,8 +18,12 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public required string Gender { get; set; }
             public ServiceType Service { get; set; } = ServiceType.qpAdm;
             public List<int> RegionIds { get; set; } = [];
-            public List<int> AddonIds { get; set; } = [];
-            public string? PromoCode { get; set; }
+
+            /// <summary>
+            /// Paddle product ids (prefixed <c>pro_</c>) for any addons. Returned per addon
+            /// from <c>GET /api/catalog/products</c>.
+            /// </summary>
+            public List<string> AddonPaddleProductIds { get; set; } = [];
             public IFormFile? File { get; set; }
             public int? ExistingFileId { get; set; }
             public string? G25Coordinates { get; set; }
