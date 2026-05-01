@@ -73,14 +73,17 @@ namespace Odin.Api
             // ── Serilog (Console + PostgreSQL) ────────────────────────────
             var connectionString = configuration.GetConnectionString("DefaultConnection")!;
 
+            // Column names match the actual Postgres `logs` table schema (PascalCase, quoted).
+            // Lowercase keys (the old config) silently failed every insert because Postgres
+            // treats quoted PascalCase identifiers as case-sensitive — `Message` != `message`.
             var columnWriters = new Dictionary<string, ColumnWriterBase>
             {
-                { "message", new RenderedMessageColumnWriter() },
-                { "message_template", new MessageTemplateColumnWriter() },
-                { "level", new LevelColumnWriter(true, NpgsqlDbType.Varchar) },
-                { "timestamp", new TimestampColumnWriter() },
-                { "exception", new ExceptionColumnWriter() },
-                { "properties", new PropertiesColumnWriter() },
+                { "Message", new RenderedMessageColumnWriter() },
+                { "MessageTemplate", new MessageTemplateColumnWriter() },
+                { "Level", new LevelColumnWriter(true, NpgsqlDbType.Varchar) },
+                { "Timestamp", new TimestampColumnWriter() },
+                { "Exception", new ExceptionColumnWriter() },
+                { "Properties", new PropertiesColumnWriter() },
             };
 
             builder.Host.UseSerilog((context, loggerConfig) =>
