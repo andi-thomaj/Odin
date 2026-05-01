@@ -21,7 +21,10 @@ public static class GetPopulationContract
     {
         public int Id { get; set; }
         public required string Name { get; set; }
+        /// <summary>Cache-bust marker (currently the Ticks of the upload moment) — passed as <c>?v=</c> on the URL.</summary>
         public required string Version { get; set; }
+        /// <summary>Fully qualified public URL the frontend can drop straight into <c>&lt;video src&gt;</c>.</summary>
+        public required string Url { get; set; }
     }
 }
 

@@ -33,9 +33,9 @@ public static class PopulationEndpoints
             .AllowAnonymous()
             .RequireRateLimiting("authenticated");
 
-        endpoints.MapGet("/{id:int}/video-avatar", GetVideoAvatarImage)
-            .AllowAnonymous()
-            .RequireRateLimiting("authenticated");
+        // GET /{id:int}/video-avatar removed: avatars are now served by Cloudflare R2 directly
+        // at avatars.ancestrify.io/populations/{id}.mp4. Frontend uses the URL returned by the
+        // /video-avatars list endpoint.
 
         endpoints.MapPut("/{id:int}/video-avatar", UploadVideoAvatar)
             .DisableAntiforgery()
@@ -96,25 +96,6 @@ public static class PopulationEndpoints
     {
         var list = await service.GetVideoAvatarsListAsync(cancellationToken);
         return Results.Ok(list);
-    }
-
-    private static async Task<IResult> GetVideoAvatarImage(HttpContext httpContext, IPopulationService service, int id, string? v, CancellationToken cancellationToken)
-    {
-        var data = await service.GetVideoAvatarImageAsync(id, cancellationToken);
-        if (data is null || data.Length == 0)
-            return Results.NotFound(new { Message = $"Video avatar for population {id} not found." });
-
-        // When the client includes ?v={version}, the URL is uniquely identified per version
-        // so we can serve it as immutable for a year. Otherwise fall back to a short cache
-        // so stale content is refreshed within minutes.
-        httpContext.Response.Headers.CacheControl = string.IsNullOrEmpty(v)
-            ? "public, max-age=600"
-            : "public, max-age=31536000, immutable";
-
-        return Results.File(data, "video/mp4", $"population-{id}.mp4",
-            lastModified: null,
-            entityTag: null,
-            enableRangeProcessing: true);
     }
 
     private static async Task<IResult> UploadVideoAvatar(HttpContext httpContext, IPopulationService service, int id, IFormFile file, CancellationToken cancellationToken)

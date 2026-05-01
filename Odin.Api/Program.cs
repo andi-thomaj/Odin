@@ -399,6 +399,12 @@ namespace Odin.Api
                     npgsqlOptions => npgsqlOptions.CommandTimeout(180)));
             services.AddScoped<ApplicationDbContextInitializer>();
             services.AddScoped<DatabaseSeeder>();
+
+            // R2 (Cloudflare object storage) — population MP4 avatars and any future media.
+            services.Configure<Odin.Api.Storage.R2Options>(
+                configuration.GetSection(Odin.Api.Storage.R2Options.SectionName));
+            services.AddSingleton<Odin.Api.Storage.IR2Storage, Odin.Api.Storage.R2Storage>();
+
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IEthnicityService, EthnicityService>();
             services.AddScoped<IEraService, EraService>();

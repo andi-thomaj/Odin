@@ -5,6 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.PopulationManagement.Models;
+using Odin.Api.Storage;
 
 namespace Odin.Api.Endpoints.PopulationManagement;
 
@@ -15,21 +16,28 @@ public interface IPopulationService
     Task<(GetPopulationContract.AdminResponse? Response, string? Error)> CreateAsync(string identityId, CreatePopulationContract.Request request, CancellationToken cancellationToken = default);
     Task<(GetPopulationContract.AdminResponse? Response, string? Error, bool NotFound)> UpdateAsync(int id, string identityId, UpdatePopulationContract.Request request, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
-    Task<byte[]?> GetVideoAvatarImageAsync(int id, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error, bool NotFound)> UploadVideoAvatarAsync(int id, IFormFile file, string identityId, CancellationToken cancellationToken = default);
     Task<bool> DeleteVideoAvatarAsync(int id, string identityId, CancellationToken cancellationToken = default);
     Task<(int Updated, int Unmatched, int MissingOnDisk, int Failed)> SyncVideoAvatarsFromDiskAsync(string identityId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<GetPopulationContract.VideoAvatarListItem>> GetVideoAvatarsListAsync(CancellationToken cancellationToken = default);
 }
 
-public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCache cache, ILogger<PopulationService> logger) : IPopulationService
+public partial class PopulationService(
+    ApplicationDbContext dbContext,
+    IMemoryCache cache,
+    IR2Storage r2Storage,
+    ILogger<PopulationService> logger) : IPopulationService
 {
     private const string ErasCacheKey = "AllEras";
     private const long MaxVideoAvatarBytes = 25 * 1024 * 1024;
+    private const string VideoContentType = "video/mp4";
     private static readonly HashSet<string> AllowedVideoContentTypes = new(StringComparer.OrdinalIgnoreCase)
     {
-        "video/mp4",
+        VideoContentType,
     };
+
+    /// <summary>R2 object key for a population's MP4 avatar. ID-stable: renaming a population doesn't break the URL.</summary>
+    private static string AvatarKey(int populationId) => $"populations/{populationId}.mp4";
 
     public async Task<IReadOnlyList<GetPopulationContract.AdminResponse>> GetAllAdminAsync(CancellationToken cancellationToken = default)
     {
@@ -48,7 +56,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
                 EraName = p.Era.Name,
                 MusicTrackId = p.MusicTrackId,
                 MusicTrackName = p.MusicTrack.Name,
-                HasVideoAvatarImage = p.VideoAvatarImage != null,
+                HasVideoAvatarImage = p.VideoAvatarVersion != null,
             })
             .ToListAsync(cancellationToken);
     }
@@ -70,7 +78,7 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
                 EraName = p.Era.Name,
                 MusicTrackId = p.MusicTrackId,
                 MusicTrackName = p.MusicTrack.Name,
-                HasVideoAvatarImage = p.VideoAvatarImage != null,
+                HasVideoAvatarImage = p.VideoAvatarVersion != null,
             })
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -136,6 +144,21 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
         var entity = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         if (entity is null) return false;
 
+        // If the population had an avatar in R2, remove the orphan object too. Best-effort:
+        // a failed R2 delete shouldn't block the row deletion.
+        if (entity.VideoAvatarVersion is not null)
+        {
+            try
+            {
+                await r2Storage.DeleteAsync(AvatarKey(id), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex,
+                    "Failed to remove R2 avatar for deleted population {Id}; continuing", id);
+            }
+        }
+
         dbContext.QpadmPopulations.Remove(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
         cache.Remove(ErasCacheKey);
@@ -191,15 +214,6 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
     [GeneratedRegex(@"^#[0-9A-Fa-f]{6}$")]
     private static partial Regex HexColorRegex();
 
-    public async Task<byte[]?> GetVideoAvatarImageAsync(int id, CancellationToken cancellationToken = default)
-    {
-        return await dbContext.QpadmPopulations
-            .AsNoTracking()
-            .Where(p => p.Id == id)
-            .Select(p => p.VideoAvatarImage)
-            .FirstOrDefaultAsync(cancellationToken);
-    }
-
     public async Task<(bool Success, string? Error, bool NotFound)> UploadVideoAvatarAsync(
         int id, IFormFile file, string identityId, CancellationToken cancellationToken = default)
     {
@@ -213,12 +227,14 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
         var population = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         if (population is null) return (false, null, true);
 
-        using var ms = new MemoryStream();
-        await file.CopyToAsync(ms, cancellationToken);
-        var bytes = ms.ToArray();
+        await using (var stream = file.OpenReadStream())
+        {
+            await r2Storage.UploadAsync(AvatarKey(id), stream, VideoContentType, cancellationToken);
+        }
 
-        population.VideoAvatarImage = bytes;
-        population.UpdatedAt = DateTime.UtcNow;
+        var now = DateTime.UtcNow;
+        population.VideoAvatarVersion = now.Ticks;
+        population.UpdatedAt = now;
         population.UpdatedBy = identityId;
 
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -231,7 +247,9 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
         var population = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         if (population is null) return false;
 
-        population.VideoAvatarImage = null;
+        await r2Storage.DeleteAsync(AvatarKey(id), cancellationToken);
+
+        population.VideoAvatarVersion = null;
         population.UpdatedAt = DateTime.UtcNow;
         population.UpdatedBy = identityId;
 
@@ -242,25 +260,27 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
 
     public async Task<IReadOnlyList<GetPopulationContract.VideoAvatarListItem>> GetVideoAvatarsListAsync(CancellationToken cancellationToken = default)
     {
-        return await dbContext.QpadmPopulations
+        var rows = await dbContext.QpadmPopulations
             .AsNoTracking()
-            .Where(p => p.VideoAvatarImage != null)
+            .Where(p => p.VideoAvatarVersion != null)
             .OrderByDescending(p => p.Era.Id).ThenBy(p => p.Name)
-            .Select(p => new GetPopulationContract.VideoAvatarListItem
-            {
-                Id = p.Id,
-                Name = p.Name,
-                Version = p.UpdatedAt.Ticks.ToString(),
-            })
+            .Select(p => new { p.Id, p.Name, Version = p.VideoAvatarVersion!.Value })
             .ToListAsync(cancellationToken);
+
+        return rows.Select(r => new GetPopulationContract.VideoAvatarListItem
+        {
+            Id = r.Id,
+            Name = r.Name,
+            Version = r.Version.ToString(),
+            Url = $"{r2Storage.GetPublicUrl(AvatarKey(r.Id))}?v={r.Version}",
+        }).ToList();
     }
 
     /// <summary>
-    /// Copies each <c>Data/SeedData/population-videos/{Name}.mp4</c> on disk into
-    /// <see cref="QpadmPopulation.VideoAvatarImage"/> verbatim. The source files are the
-    /// final-quality MP4s (no transcoding) so what's in the file is exactly what's served
-    /// to the frontend. Admins call this from the Populations admin page after dropping
-    /// new MP4s into the seed directory on the server.
+    /// Bulk-uploads each <c>Data/SeedData/population-videos/{Name}.mp4</c> to R2 under the
+    /// stable key <c>populations/{Id}.mp4</c>, then bumps <see cref="QpadmPopulation.VideoAvatarVersion"/>
+    /// so clients re-fetch with a fresh cache-bust query. Disk filenames still use the population
+    /// <c>Name</c> (curator-friendly); the R2 key uses the population <c>Id</c> (rename-safe).
     /// </summary>
     public async Task<(int Updated, int Unmatched, int MissingOnDisk, int Failed)> SyncVideoAvatarsFromDiskAsync(
         string identityId, CancellationToken cancellationToken = default)
@@ -289,25 +309,25 @@ public partial class PopulationService(ApplicationDbContext dbContext, IMemoryCa
                 continue;
             }
 
-            byte[] mp4Bytes;
             try
             {
-                mp4Bytes = await File.ReadAllBytesAsync(filePath, cancellationToken);
+                await using var fs = File.OpenRead(filePath);
+                if (fs.Length == 0)
+                {
+                    failed++;
+                    continue;
+                }
+                await r2Storage.UploadAsync(AvatarKey(population.Id), fs, VideoContentType, cancellationToken);
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to read MP4 for population {Name}", population.Name);
+                logger.LogWarning(ex,
+                    "Failed to upload MP4 for population {Name} (id {Id}) to R2", population.Name, population.Id);
                 failed++;
                 continue;
             }
 
-            if (mp4Bytes.Length == 0)
-            {
-                failed++;
-                continue;
-            }
-
-            population.VideoAvatarImage = mp4Bytes;
+            population.VideoAvatarVersion = now.Ticks;
             population.UpdatedAt = now;
             population.UpdatedBy = identityId;
             updated++;

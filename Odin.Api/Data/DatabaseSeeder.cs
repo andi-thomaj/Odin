@@ -18,7 +18,8 @@ public class DatabaseSeeder(ApplicationDbContext context, ILogger<DatabaseSeeder
     {
         await SeedReferenceCatalogAsync();
         await new MediaFileSeeder(context).SeedAsync();
-        await new PopulationVideoAvatarSeeder(context, logger).SeedAsync();
+        // Population MP4 avatars are now seeded into R2 on demand by the admin
+        // POST /api/populations/video-avatars/sync-from-disk endpoint, not at startup.
     }
 
     /// <summary>
