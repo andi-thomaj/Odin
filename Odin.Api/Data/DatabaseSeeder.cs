@@ -11,7 +11,7 @@ namespace Odin.Api.Data;
 /// All sub-seeders are idempotent — they no-op when their target table already
 /// has rows — so re-running <see cref="SeedAsync"/> is safe.
 /// </summary>
-public class DatabaseSeeder(ApplicationDbContext context, ILogger<DatabaseSeeder> logger)
+public class DatabaseSeeder(ApplicationDbContext context)
 {
     /// <summary>Runs every seeder in dependency order — the entry point used by app startup.</summary>
     public async Task SeedAsync()

@@ -43,6 +43,11 @@ public sealed class R2Storage : IR2Storage, IDisposable
             ServiceURL = _options.Endpoint,
             ForcePathStyle = true,
             AuthenticationRegion = "auto",
+            // AWS SDK v4 added default request/response integrity checksums (CRC32 / CRC64NVME
+            // headers) that R2 rejects with `InvalidRequest`. Opt out so PutObject doesn't ship
+            // those headers — R2's own request signing already covers integrity.
+            RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+            ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED,
         };
         _client = new AmazonS3Client(credentials, config);
     }
