@@ -16,13 +16,6 @@ namespace Odin.Api.Data.Entities
         public int MusicTrackId { get; set; }
         public MusicTrack MusicTrack { get; set; }
         /// <summary>
-        /// Legacy: MP4 bytes were stored inline in Postgres. Superseded by R2 object storage —
-        /// the column is no longer read or written, and a follow-up migration will drop it once
-        /// the R2 cutover is verified in production.
-        /// </summary>
-        public byte[]? VideoAvatarImage { get; set; }
-
-        /// <summary>
         /// Cache-bust marker for the population's MP4 in R2 at <c>populations/{Id}.mp4</c>.
         /// <c>null</c> means no avatar uploaded; otherwise the value is bumped on every upload
         /// (typically <see cref="DateTime.UtcNow"/> ticks) and used as <c>?v=</c> on the public URL.
