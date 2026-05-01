@@ -14,7 +14,9 @@ public static class GetPopulationContract
         public string EraName { get; set; } = string.Empty;
         public int MusicTrackId { get; set; }
         public string MusicTrackName { get; set; } = string.Empty;
-        public bool HasVideoAvatarImage { get; set; }
+        public bool HasVideoAvatar { get; set; }
+        /// <summary>Cache-bust marker; surfaces in the admin grid so re-uploads don't show stale browser-cached video.</summary>
+        public string? VideoVersion { get; set; }
     }
 
     public class VideoAvatarListItem

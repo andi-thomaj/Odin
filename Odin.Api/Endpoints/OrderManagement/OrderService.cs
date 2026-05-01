@@ -773,7 +773,7 @@ public class OrderService(
                             MusicTrackId = qrp.Population.MusicTrackId,
                             MusicTrackFileName = qrp.Population.MusicTrack.FileName,
                             HasAudioFile = trackIdsWithAudio.Contains(qrp.Population.MusicTrackId),
-                            HasVideoAvatarImage = qrp.Population.VideoAvatarVersion != null,
+                            HasVideoAvatar = qrp.Population.VideoAvatarVersion != null,
                             VideoVersion = qrp.Population.VideoAvatarVersion != null
                                 ? qrp.Population.VideoAvatarVersion.Value.ToString()
                                 : null,

@@ -56,7 +56,8 @@ public partial class PopulationService(
                 EraName = p.Era.Name,
                 MusicTrackId = p.MusicTrackId,
                 MusicTrackName = p.MusicTrack.Name,
-                HasVideoAvatarImage = p.VideoAvatarVersion != null,
+                HasVideoAvatar = p.VideoAvatarVersion != null,
+                VideoVersion = p.VideoAvatarVersion != null ? p.VideoAvatarVersion.Value.ToString() : null,
             })
             .ToListAsync(cancellationToken);
     }
@@ -78,7 +79,8 @@ public partial class PopulationService(
                 EraName = p.Era.Name,
                 MusicTrackId = p.MusicTrackId,
                 MusicTrackName = p.MusicTrack.Name,
-                HasVideoAvatarImage = p.VideoAvatarVersion != null,
+                HasVideoAvatar = p.VideoAvatarVersion != null,
+                VideoVersion = p.VideoAvatarVersion != null ? p.VideoAvatarVersion.Value.ToString() : null,
             })
             .FirstOrDefaultAsync(cancellationToken);
     }
