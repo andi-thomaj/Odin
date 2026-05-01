@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data.Entities;
- 
+
 namespace Odin.Api.Data
 {
     public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
