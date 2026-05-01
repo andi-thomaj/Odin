@@ -44,8 +44,7 @@ public sealed class R2Storage : IR2Storage, IDisposable
             ForcePathStyle = true,
             AuthenticationRegion = "auto",
             // AWS SDK v4 added default request/response integrity checksums (CRC32 / CRC64NVME
-            // headers) that R2 rejects with `InvalidRequest`. Opt out so PutObject doesn't ship
-            // those headers — R2's own request signing already covers integrity.
+            // headers) that R2 rejects. Opt out — R2's own request signing covers integrity.
             RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
             ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED,
         };
@@ -67,6 +66,13 @@ public sealed class R2Storage : IR2Storage, IDisposable
             // Long cache for the avatar URL pattern. Cache-busting is handled by callers
             // adding `?v={version}` — same physical file, different URL on update.
             Headers = { CacheControl = "public, max-age=31536000, immutable" },
+            // R2 doesn't implement S3's streaming chunked-payload signing
+            // (`STREAMING-AWS4-HMAC-SHA256-PAYLOAD`) which SDK v4 enables by default. Force
+            // the simpler unsigned-payload mode so R2 accepts the upload — without these two
+            // flags, every PutObject returns `NotImplemented`. Per-request because v4 doesn't
+            // expose the equivalent on AmazonS3Config any more.
+            UseChunkEncoding = false,
+            DisablePayloadSigning = true,
         };
 
         try
