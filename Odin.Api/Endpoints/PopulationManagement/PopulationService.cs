@@ -321,7 +321,9 @@ public partial class PopulationService(
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex,
+                // Error level (not Warning) so the Serilog Postgres sink captures the exception —
+                // makes production debugging via the `logs` table possible without Coolify shell access.
+                logger.LogError(ex,
                     "Failed to upload MP4 for population {Name} (id {Id}) to R2", population.Name, population.Id);
                 failed++;
                 continue;
