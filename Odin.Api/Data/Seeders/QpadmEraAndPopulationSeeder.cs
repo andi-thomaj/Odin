@@ -67,8 +67,8 @@ internal sealed class QpadmEraAndPopulationSeeder(ApplicationDbContext context)
         {
             // Era 1 — Hunter Gatherer and Neolithic Farmer
             (1, "European Foragers", "european-foragers.wav",
-                ["Western Hunter Gatherer (12000 - 6000 BC)", "Baltic (BC 200 - 600 AD)",
-                 "Finno-Ugric Volga (0 - 400 AD)", "Saami (0 - 700 AD)"]),
+                ["Western Hunter Gatherer (12000 - 6000 BC)", "Eastern Hunter Gatherer (12000 - 5000 BC)",
+                 "Baltic (BC 200 - 600 AD)", "Finno-Ugric Volga (0 - 400 AD)", "Saami (0 - 700 AD)"]),
             (2, "Eurasian Steppe", "eurasian-steppe.wav",
                 ["Western Steppe Herder (5000 - 2800 BC)"]),
             (3, "Near Eastern / Anatolian Farmers", "near-eastern-farmers.wav",
