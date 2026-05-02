@@ -12,8 +12,8 @@ using Odin.Api.Data;
 namespace Odin.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260417135444_MakeG25DistanceFilePerEraUnique")]
-    partial class MakeG25DistanceFilePerEraUnique
+    [Migration("20260502195430_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -73,7 +73,7 @@ namespace Odin.Api.Migrations
                     b.ToTable("admixture_saved_files", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProduct", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.AppSetting", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -81,353 +81,36 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<decimal>("BasePrice")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
                     b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
                         .HasMaxLength(2000)
                         .HasColumnType("character varying(2000)");
 
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
-
-                    b.Property<string>("ServiceType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("ServiceType")
+                    b.HasIndex("Key")
                         .IsUnique();
 
-                    b.ToTable("catalog_products", (string)null);
+                    b.ToTable("app_settings", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProductAddon", b =>
-                {
-                    b.Property<int>("CatalogProductId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ProductAddonId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("CatalogProductId", "ProductAddonId");
-
-                    b.HasIndex("ProductAddonId");
-
-                    b.ToTable("catalog_product_addons", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.ChangelogEntry", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("ChangelogVersionId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ChangelogVersionId");
-
-                    b.ToTable("changelog_entries", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.ChangelogVersion", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<bool>("IsPublished")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(false);
-
-                    b.Property<DateTime>("ReleasedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Version")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("changelog_versions", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixtureFile", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("G25EraId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("G25EthnicityId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("G25EraId");
-
-                    b.HasIndex("G25EthnicityId", "G25EraId")
-                        .IsUnique();
-
-                    b.ToTable("g25_admixture_files", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixtureResult", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<double>("FitDistance")
-                        .HasPrecision(18, 10)
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("G25EraId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GeneticInspectionId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("G25EraId");
-
-                    b.HasIndex("GeneticInspectionId", "G25EraId")
-                        .IsUnique();
-
-                    b.ToTable("g25_admixture_results", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25Ancient", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Coordinates")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Label");
-
-                    b.ToTable("g25_ancients", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistanceFile", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Content")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("G25EraId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("G25EraId")
-                        .IsUnique();
-
-                    b.HasIndex("Title")
-                        .IsUnique();
-
-                    b.ToTable("g25_distance_files", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistanceResult", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("G25EraId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GeneticInspectionId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("G25EraId");
-
-                    b.HasIndex("GeneticInspectionId", "G25EraId")
-                        .IsUnique();
-
-                    b.ToTable("g25_distance_results", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25Era", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixtureEra", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -459,7 +142,256 @@ namespace Odin.Api.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("g25_eras", (string)null);
+                    b.ToTable("g25_admixture_eras", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixturePopulationSample", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Coordinates")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("G25AdmixtureEraId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Ids")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("G25AdmixtureEraId");
+
+                    b.HasIndex("Label");
+
+                    b.ToTable("g25_admixture_population_samples", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixtureResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<double>("FitDistance")
+                        .HasPrecision(18, 10)
+                        .HasColumnType("double precision");
+
+                    b.Property<int>("GeneticInspectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ResultsVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GeneticInspectionId")
+                        .IsUnique();
+
+                    b.ToTable("g25_admixture_results", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25Continent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("g25_continents", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistanceEra", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("g25_distance_eras", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistancePopulationSample", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Coordinates")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("G25DistanceEraId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Ids")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("G25DistanceEraId");
+
+                    b.HasIndex("Label");
+
+                    b.ToTable("g25_distance_population_samples", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistanceResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("G25DistanceEraId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GeneticInspectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ResultsVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("G25DistanceEraId");
+
+                    b.HasIndex("GeneticInspectionId", "G25DistanceEraId")
+                        .IsUnique();
+
+                    b.ToTable("g25_distance_results", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25Ethnicity", b =>
@@ -477,7 +409,7 @@ namespace Odin.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("G25RegionId")
+                    b.Property<int>("G25ContinentId")
                         .HasColumnType("integer");
 
                     b.Property<string>("Name")
@@ -494,7 +426,7 @@ namespace Odin.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("G25RegionId");
+                    b.HasIndex("G25ContinentId");
 
                     b.HasIndex("Name")
                         .IsUnique();
@@ -561,6 +493,44 @@ namespace Odin.Api.Migrations
                     b.ToTable("g25_genetic_inspections", (string)null);
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25GeneticInspectionContinent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("G25ContinentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("G25GeneticInspectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("G25ContinentId");
+
+                    b.HasIndex("G25GeneticInspectionId", "G25ContinentId")
+                        .IsUnique();
+
+                    b.ToTable("g25_genetic_inspection_continents", (string)null);
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.G25GeneticInspectionEthnicity", b =>
                 {
                     b.Property<int>("Id")
@@ -597,6 +567,44 @@ namespace Odin.Api.Migrations
                         .IsUnique();
 
                     b.ToTable("g25_genetic_inspection_ethnicities", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25GeneticInspectionRegion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("G25GeneticInspectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("G25RegionId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("G25RegionId");
+
+                    b.HasIndex("G25GeneticInspectionId", "G25RegionId")
+                        .IsUnique();
+
+                    b.ToTable("g25_genetic_inspection_regions", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25Order", b =>
@@ -650,6 +658,96 @@ namespace Odin.Api.Migrations
                     b.ToTable("g25_orders", (string)null);
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaPopulationsSample", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Coordinates")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("G25DistanceEraId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Ids")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("G25DistanceEraId");
+
+                    b.HasIndex("Label");
+
+                    b.ToTable("g25_pca_populations_samples", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaResult", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("G25ContinentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GeneticInspectionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ResultsVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("G25ContinentId");
+
+                    b.HasIndex("GeneticInspectionId", "G25ContinentId")
+                        .IsUnique();
+
+                    b.ToTable("g25_pca_results", (string)null);
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.G25Region", b =>
                 {
                     b.Property<int>("Id")
@@ -665,6 +763,9 @@ namespace Odin.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("G25EthnicityId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -679,7 +780,7 @@ namespace Odin.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Name")
+                    b.HasIndex("G25EthnicityId", "Name")
                         .IsUnique();
 
                     b.ToTable("g25_regions", (string)null);
@@ -928,7 +1029,7 @@ namespace Odin.Api.Migrations
                     b.ToTable("notifications", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.OrderLineAddon", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleCustomer", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -936,23 +1037,129 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("OrderId")
-                        .HasColumnType("integer");
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
 
-                    b.Property<int>("ProductAddonId")
-                        .HasColumnType("integer");
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)");
 
-                    b.Property<decimal>("UnitPriceSnapshot")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                    b.Property<DateTime>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Locale")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("MarketingConsent")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaddleCustomerId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("UserId")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OrderId");
+                    b.HasIndex("Email");
 
-                    b.HasIndex("ProductAddonId");
+                    b.HasIndex("PaddleCustomerId")
+                        .IsUnique();
 
-                    b.ToTable("order_line_addons", (string)null);
+                    b.HasIndex("UserId");
+
+                    b.ToTable("paddle_customers", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleNotification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Origin")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("PaddleEventId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PaddleNotificationId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTime?>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProcessedStatus")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<int>("ProcessingAttempts")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
+                    b.Property<string>("ProcessingError")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime>("ReceivedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventType");
+
+                    b.HasIndex("PaddleNotificationId")
+                        .IsUnique();
+
+                    b.HasIndex("ProcessedStatus");
+
+                    b.ToTable("paddle_notifications", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.PaddlePayment", b =>
@@ -970,6 +1177,9 @@ namespace Odin.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(8)
                         .HasColumnType("character varying(8)");
+
+                    b.Property<string>("ItemsJson")
+                        .HasColumnType("jsonb");
 
                     b.Property<int?>("OrderId")
                         .HasColumnType("integer");
@@ -1012,7 +1222,7 @@ namespace Odin.Api.Migrations
                     b.ToTable("paddle_payments", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.ProductAddon", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddlePrice", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1020,34 +1230,172 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Code")
+                    b.Property<int?>("BillingCycleFrequency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BillingCycleInterval")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaddlePriceId")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<string>("DisplayName")
+                    b.Property<string>("PaddleProductId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("PaddleProductInternalId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TaxMode")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int?>("TrialPeriodFrequency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TrialPeriodInterval")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("UnitPriceAmount")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("UnitPriceCurrency")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PaddlePriceId")
+                        .IsUnique();
+
+                    b.HasIndex("PaddleProductId");
+
+                    b.HasIndex("PaddleProductInternalId");
+
+                    b.ToTable("paddle_prices", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleProduct", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AddonCode")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<string>("Kind")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTime>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("Price")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                    b.Property<string>("PaddleProductId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ParentServiceType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("ServiceType")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TaxCategory")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
+                    b.HasIndex("AddonCode");
+
+                    b.HasIndex("Kind");
+
+                    b.HasIndex("PaddleProductId")
                         .IsUnique();
 
-                    b.ToTable("product_addons", (string)null);
+                    b.HasIndex("ParentServiceType");
+
+                    b.HasIndex("ServiceType");
+
+                    b.ToTable("paddle_products", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.PromoCode", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleSubscription", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -1055,49 +1403,180 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("ApplicableService")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                    b.Property<DateTimeOffset?>("CanceledAt")
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Code")
+                    b.Property<string>("CollectionMode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<DateTimeOffset?>("CurrentPeriodEndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("CurrentPeriodStartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<DateTimeOffset?>("FirstBilledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastSyncedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("NextBilledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaddleCustomerId")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
 
-                    b.Property<string>("DiscountType")
+                    b.Property<string>("PaddleSubscriptionId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("PausedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RawJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("ScheduledChangeAction")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("ScheduledChangeEffectiveAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
-                    b.Property<bool>("IsActive")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
+                    b.HasKey("Id");
 
-                    b.Property<int?>("MaxRedemptions")
+                    b.HasIndex("PaddleCustomerId");
+
+                    b.HasIndex("PaddleSubscriptionId")
+                        .IsUnique();
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("paddle_subscriptions", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleTransaction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    b.Property<int>("RedemptionCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0);
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime?>("ValidFromUtc")
+                    b.Property<DateTimeOffset?>("BilledAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime?>("ValidUntilUtc")
+                    b.Property<string>("CollectionMode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("CurrencyCode")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)");
+
+                    b.Property<string>("CustomData")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("DiscountTotal")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("GrandTotal")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("InvoiceId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("InvoiceNumber")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("LastSyncedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<decimal>("Value")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
+                    b.Property<string>("Origin")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<DateTimeOffset?>("PaddleCreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaddleCustomerId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PaddleSubscriptionId")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("PaddleTransactionId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTimeOffset?>("PaddleUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RawJson")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("Subtotal")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<string>("TaxTotal")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Code")
+                    b.HasIndex("PaddleCustomerId");
+
+                    b.HasIndex("PaddleSubscriptionId");
+
+                    b.HasIndex("PaddleTransactionId")
                         .IsUnique();
 
-                    b.ToTable("promo_codes", (string)null);
+                    b.HasIndex("Status");
+
+                    b.ToTable("paddle_transactions", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmEra", b =>
@@ -1246,6 +1725,9 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("AddonsJson")
+                        .HasColumnType("jsonb");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1283,9 +1765,6 @@ namespace Odin.Api.Migrations
                         .HasPrecision(18, 2)
                         .HasColumnType("numeric(18,2)");
 
-                    b.Property<int?>("PromoCodeId")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1298,8 +1777,6 @@ namespace Odin.Api.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PromoCodeId");
 
                     b.ToTable("qpadm_orders", (string)null);
                 });
@@ -1356,6 +1833,9 @@ namespace Odin.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<long?>("VideoAvatarVersion")
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("EraId");
@@ -1363,6 +1843,44 @@ namespace Odin.Api.Migrations
                     b.HasIndex("MusicTrackId");
 
                     b.ToTable("qpadm_populations", (string)null);
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.QpadmPopulationSample", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Coordinates")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Label");
+
+                    b.ToTable("qpadm_population_samples", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmRegion", b =>
@@ -1405,6 +1923,11 @@ namespace Odin.Api.Migrations
 
                     b.Property<int>("GeneticInspectionId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ResultsVersion")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1479,21 +2002,6 @@ namespace Odin.Api.Migrations
                     b.ToTable("qpadm_result_populations", (string)null);
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.QpadmResultResearchLink", b =>
-                {
-                    b.Property<int>("QpadmResultId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ResearchLinkId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("QpadmResultId", "ResearchLinkId");
-
-                    b.HasIndex("ResearchLinkId");
-
-                    b.ToTable("qpadm_result_research_links", (string)null);
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.RawGeneticFile", b =>
                 {
                     b.Property<int>("Id")
@@ -1538,6 +2046,10 @@ namespace Odin.Api.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CreatedBy", "RawDataFileName")
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false");
 
                     b.ToTable("raw_genetic_files", (string)null);
                 });
@@ -1623,17 +2135,51 @@ namespace Odin.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Title")
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("G25AdmixturePopulationSampleId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("G25DistancePopulationSampleId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("G25PcaPopulationsSampleId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Label")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
 
-                    b.Property<string>("Url")
+                    b.Property<string>("Link")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int?>("QpadmPopulationSampleId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("G25AdmixturePopulationSampleId");
+
+                    b.HasIndex("G25DistancePopulationSampleId");
+
+                    b.HasIndex("G25PcaPopulationsSampleId");
+
+                    b.HasIndex("QpadmPopulationSampleId");
 
                     b.ToTable("research_links", (string)null);
                 });
@@ -1717,63 +2263,18 @@ namespace Odin.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProductAddon", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixturePopulationSample", b =>
                 {
-                    b.HasOne("Odin.Api.Data.Entities.CatalogProduct", "CatalogProduct")
-                        .WithMany("CatalogProductAddons")
-                        .HasForeignKey("CatalogProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("Odin.Api.Data.Entities.G25AdmixtureEra", "G25AdmixtureEra")
+                        .WithMany("G25AdmixturePopulationSamples")
+                        .HasForeignKey("G25AdmixtureEraId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
-                    b.HasOne("Odin.Api.Data.Entities.ProductAddon", "ProductAddon")
-                        .WithMany("CatalogProductAddons")
-                        .HasForeignKey("ProductAddonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("CatalogProduct");
-
-                    b.Navigation("ProductAddon");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.ChangelogEntry", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.ChangelogVersion", "Version")
-                        .WithMany("Entries")
-                        .HasForeignKey("ChangelogVersionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Version");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixtureFile", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.G25Era", "G25Era")
-                        .WithMany("AdmixtureFiles")
-                        .HasForeignKey("G25EraId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Odin.Api.Data.Entities.G25Ethnicity", "G25Ethnicity")
-                        .WithMany("AdmixtureFiles")
-                        .HasForeignKey("G25EthnicityId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("G25Era");
-
-                    b.Navigation("G25Ethnicity");
+                    b.Navigation("G25AdmixtureEra");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixtureResult", b =>
                 {
-                    b.HasOne("Odin.Api.Data.Entities.G25Era", "Era")
-                        .WithMany()
-                        .HasForeignKey("G25EraId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Odin.Api.Data.Entities.G25GeneticInspection", "GeneticInspection")
                         .WithMany("G25AdmixtureResults")
                         .HasForeignKey("GeneticInspectionId")
@@ -1807,27 +2308,24 @@ namespace Odin.Api.Migrations
 
                     b.Navigation("Ancestors");
 
-                    b.Navigation("Era");
-
                     b.Navigation("GeneticInspection");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistanceFile", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistancePopulationSample", b =>
                 {
-                    b.HasOne("Odin.Api.Data.Entities.G25Era", "Era")
-                        .WithOne("DistanceFile")
-                        .HasForeignKey("Odin.Api.Data.Entities.G25DistanceFile", "G25EraId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.HasOne("Odin.Api.Data.Entities.G25DistanceEra", "G25DistanceEra")
+                        .WithMany("G25DistancePopulationSamples")
+                        .HasForeignKey("G25DistanceEraId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
-                    b.Navigation("Era");
+                    b.Navigation("G25DistanceEra");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25DistanceResult", b =>
                 {
-                    b.HasOne("Odin.Api.Data.Entities.G25Era", "Era")
+                    b.HasOne("Odin.Api.Data.Entities.G25DistanceEra", "DistanceEra")
                         .WithMany()
-                        .HasForeignKey("G25EraId")
+                        .HasForeignKey("G25DistanceEraId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -1864,7 +2362,7 @@ namespace Odin.Api.Migrations
                                 .HasForeignKey("G25DistanceResultId");
                         });
 
-                    b.Navigation("Era");
+                    b.Navigation("DistanceEra");
 
                     b.Navigation("GeneticInspection");
 
@@ -1873,13 +2371,13 @@ namespace Odin.Api.Migrations
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25Ethnicity", b =>
                 {
-                    b.HasOne("Odin.Api.Data.Entities.G25Region", "G25Region")
-                        .WithMany("Ethnicities")
-                        .HasForeignKey("G25RegionId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("Odin.Api.Data.Entities.G25Continent", "G25Continent")
+                        .WithMany("G25Ethnicities")
+                        .HasForeignKey("G25ContinentId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("G25Region");
+                    b.Navigation("G25Continent");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25GeneticInspection", b =>
@@ -1909,6 +2407,25 @@ namespace Odin.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25GeneticInspectionContinent", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.G25Continent", "G25Continent")
+                        .WithMany()
+                        .HasForeignKey("G25ContinentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Odin.Api.Data.Entities.G25GeneticInspection", "G25GeneticInspection")
+                        .WithMany("SelectedContinents")
+                        .HasForeignKey("G25GeneticInspectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("G25Continent");
+
+                    b.Navigation("G25GeneticInspection");
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.G25GeneticInspectionEthnicity", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.G25Ethnicity", "G25Ethnicity")
@@ -1926,6 +2443,65 @@ namespace Odin.Api.Migrations
                     b.Navigation("G25Ethnicity");
 
                     b.Navigation("G25GeneticInspection");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25GeneticInspectionRegion", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.G25GeneticInspection", "G25GeneticInspection")
+                        .WithMany("SelectedRegions")
+                        .HasForeignKey("G25GeneticInspectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Odin.Api.Data.Entities.G25Region", "G25Region")
+                        .WithMany()
+                        .HasForeignKey("G25RegionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("G25GeneticInspection");
+
+                    b.Navigation("G25Region");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaPopulationsSample", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.G25DistanceEra", "G25DistanceEra")
+                        .WithMany("G25PcaPopulationsSamples")
+                        .HasForeignKey("G25DistanceEraId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("G25DistanceEra");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaResult", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.G25Continent", "G25Continent")
+                        .WithMany()
+                        .HasForeignKey("G25ContinentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Odin.Api.Data.Entities.G25GeneticInspection", "GeneticInspection")
+                        .WithMany("G25PcaResults")
+                        .HasForeignKey("GeneticInspectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("G25Continent");
+
+                    b.Navigation("GeneticInspection");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25Region", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.G25Ethnicity", "G25Ethnicity")
+                        .WithMany("G25Regions")
+                        .HasForeignKey("G25EthnicityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("G25Ethnicity");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25SavedCoordinate", b =>
@@ -1961,25 +2537,6 @@ namespace Odin.Api.Migrations
                     b.Navigation("RecipientUser");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.OrderLineAddon", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.QpadmOrder", "Order")
-                        .WithMany("OrderLineAddons")
-                        .HasForeignKey("OrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Odin.Api.Data.Entities.ProductAddon", "ProductAddon")
-                        .WithMany("OrderLineAddons")
-                        .HasForeignKey("ProductAddonId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Order");
-
-                    b.Navigation("ProductAddon");
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.PaddlePayment", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.QpadmOrder", "Order")
@@ -1988,6 +2545,17 @@ namespace Odin.Api.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Order");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddlePrice", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.PaddleProduct", "Product")
+                        .WithMany("Prices")
+                        .HasForeignKey("PaddleProductInternalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmGeneticInspection", b =>
@@ -2034,16 +2602,6 @@ namespace Odin.Api.Migrations
                     b.Navigation("GeneticInspection");
 
                     b.Navigation("Region");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.QpadmOrder", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.PromoCode", "PromoCode")
-                        .WithMany("Orders")
-                        .HasForeignKey("PromoCodeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("PromoCode");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmPopulation", b =>
@@ -2125,25 +2683,6 @@ namespace Odin.Api.Migrations
                     b.Navigation("QpadmResultEraGroup");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.QpadmResultResearchLink", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.QpadmResult", "QpadmResult")
-                        .WithMany("QpadmResultResearchLinks")
-                        .HasForeignKey("QpadmResultId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Odin.Api.Data.Entities.ResearchLink", "ResearchLink")
-                        .WithMany("QpadmResultResearchLinks")
-                        .HasForeignKey("ResearchLinkId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("QpadmResult");
-
-                    b.Navigation("ResearchLink");
-                });
-
             modelBuilder.Entity("Odin.Api.Data.Entities.Report", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.User", "User")
@@ -2155,26 +2694,67 @@ namespace Odin.Api.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.CatalogProduct", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.ResearchLink", b =>
                 {
-                    b.Navigation("CatalogProductAddons");
+                    b.HasOne("Odin.Api.Data.Entities.G25AdmixturePopulationSample", "G25AdmixturePopulationSample")
+                        .WithMany("ResearchLinks")
+                        .HasForeignKey("G25AdmixturePopulationSampleId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Odin.Api.Data.Entities.G25DistancePopulationSample", "G25DistancePopulationSample")
+                        .WithMany("ResearchLinks")
+                        .HasForeignKey("G25DistancePopulationSampleId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Odin.Api.Data.Entities.G25PcaPopulationsSample", "G25PcaPopulationsSample")
+                        .WithMany("ResearchLinks")
+                        .HasForeignKey("G25PcaPopulationsSampleId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Odin.Api.Data.Entities.QpadmPopulationSample", "QpadmPopulationSample")
+                        .WithMany("ResearchLinks")
+                        .HasForeignKey("QpadmPopulationSampleId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("G25AdmixturePopulationSample");
+
+                    b.Navigation("G25DistancePopulationSample");
+
+                    b.Navigation("G25PcaPopulationsSample");
+
+                    b.Navigation("QpadmPopulationSample");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.ChangelogVersion", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixtureEra", b =>
                 {
-                    b.Navigation("Entries");
+                    b.Navigation("G25AdmixturePopulationSamples");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25Era", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25AdmixturePopulationSample", b =>
                 {
-                    b.Navigation("AdmixtureFiles");
+                    b.Navigation("ResearchLinks");
+                });
 
-                    b.Navigation("DistanceFile");
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25Continent", b =>
+                {
+                    b.Navigation("G25Ethnicities");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistanceEra", b =>
+                {
+                    b.Navigation("G25DistancePopulationSamples");
+
+                    b.Navigation("G25PcaPopulationsSamples");
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25DistancePopulationSample", b =>
+                {
+                    b.Navigation("ResearchLinks");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25Ethnicity", b =>
                 {
-                    b.Navigation("AdmixtureFiles");
+                    b.Navigation("G25Regions");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25GeneticInspection", b =>
@@ -2183,7 +2763,13 @@ namespace Odin.Api.Migrations
 
                     b.Navigation("G25DistanceResults");
 
+                    b.Navigation("G25PcaResults");
+
+                    b.Navigation("SelectedContinents");
+
                     b.Navigation("SelectedEthnicities");
+
+                    b.Navigation("SelectedRegions");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25Order", b =>
@@ -2192,9 +2778,9 @@ namespace Odin.Api.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25Region", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.G25PcaPopulationsSample", b =>
                 {
-                    b.Navigation("Ethnicities");
+                    b.Navigation("ResearchLinks");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.MusicTrack", b =>
@@ -2204,16 +2790,9 @@ namespace Odin.Api.Migrations
                     b.Navigation("Populations");
                 });
 
-            modelBuilder.Entity("Odin.Api.Data.Entities.ProductAddon", b =>
+            modelBuilder.Entity("Odin.Api.Data.Entities.PaddleProduct", b =>
                 {
-                    b.Navigation("CatalogProductAddons");
-
-                    b.Navigation("OrderLineAddons");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.PromoCode", b =>
-                {
-                    b.Navigation("Orders");
+                    b.Navigation("Prices");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmEra", b =>
@@ -2237,15 +2816,16 @@ namespace Odin.Api.Migrations
                 {
                     b.Navigation("GeneticInspection")
                         .IsRequired();
+                });
 
-                    b.Navigation("OrderLineAddons");
+            modelBuilder.Entity("Odin.Api.Data.Entities.QpadmPopulationSample", b =>
+                {
+                    b.Navigation("ResearchLinks");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmResult", b =>
                 {
                     b.Navigation("QpadmResultEraGroups");
-
-                    b.Navigation("QpadmResultResearchLinks");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.QpadmResultEraGroup", b =>
@@ -2256,11 +2836,6 @@ namespace Odin.Api.Migrations
             modelBuilder.Entity("Odin.Api.Data.Entities.RawGeneticFile", b =>
                 {
                     b.Navigation("GeneticInspections");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.ResearchLink", b =>
-                {
-                    b.Navigation("QpadmResultResearchLinks");
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.User", b =>

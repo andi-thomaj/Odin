@@ -48,7 +48,7 @@
     "EraId": 1
   },
   {
-    "Name": "Natufian (12,000 - 8000 BC)",
+    "Name": "Natufian (12000 - 8000 BC)",
     "Description": "Represents the Epipaleolithic hunter-gatherer culture of the Levant (~15,000–11,500 cal BP), considered among the earliest sedentary communities and precursors to Neolithic agriculture. Ancient DNA reveals that Natufians derived roughly half their ancestry from a Basal Eurasian lineage with minimal Neanderthal admixture, indicating deep divergence from other non-African populations. Genetic continuity between Natufian and early Levantine farming populations suggests that agriculture in the southern Levant arose from local foragers rather than incoming migrants. By the Bronze Age, admixture from Iranian, Anatolian, and European hunter-gatherer sources had substantially reshaped Levantine ancestry. Natufian-related genetic signatures persist as a foundational component in modern Near Eastern and parts of North African populations.",
     "GeoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[33.7810389,31.2369606],[34.831673,30.906389],[35.9251901,31.7306545],[36.4397864,33.5004377],[35.8179825,34.0884505],[35.422674,33.987932],[35.1586392,33.6289359],[34.4671673,32.1672977],[33.7810389,31.2369606]]]}",
     "IconFileName": "game-icons:sickle",
@@ -80,7 +80,7 @@
     "EraId": 1
   },
   {
-    "Name": "Ancestral South Indian (10,000 - 2000 BC)",
+    "Name": "Ancestral South Indian (10000 - 2000 BC)",
     "Description": "A reconstructed ancestral population inferred from genetic modeling as one of the two primary sources of South Asian ancestry, deeply divergent from both Ancestral North Indians (ANI) and East Asians. ASI-related ancestry is maximized in tribal Dravidian-speaking groups of southern India and emerged from a mixture of Iranian farmer-related ancestry and ancient local hunter-gatherer lineages. Following the decline of the Indus Valley Civilization (~1900 BCE), southeastern populations mixed with Iranian-related groups to form the ASI component observed in modern South Asians. Recent archaeogenomic studies have identified a related Proto-Dravidian ancestry in tribal groups like the Koraga, dating to approximately 4,400 years ago. The ASI component is central to understanding the deep population structure of the Indian subcontinent.",
     "GeoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[66.5055326,24.5391496],[73.0231927,25.4342344],[79.4421003,26.6762269],[84.9722362,23.1845221],[84.1822168,18.4790905],[82.7009304,14.7896724],[82.7996828,9.9684072],[81.7134061,4.0904564],[76.8745373,6.4503251],[69.1718481,18.1978792],[66.5055326,24.5391496]]]}",
     "IconFileName": "game-icons:lotus",
@@ -88,7 +88,7 @@
     "EraId": 1
   },
   {
-    "Name": "Sub Saharan Africans",
+    "Name": "Sub Saharan African",
     "Description": "Represents the deeply divergent ancestral lineages of sub-Saharan Africa, home to the greatest genetic diversity of any global region and the deepest branches of the human phylogenetic tree. Ancient DNA reveals that African forager populations maintained deeply structured ancestry dating to 80,000–20,000 years ago, with at least three highly divergent source populations contributing to modern sub-Saharan genetic variation. Southern African lineages ancestral to the San people represent one of the deepest-branching human lineages, historically spread across a much wider geographic range than today. Despite this deep structure, long-term genetic continuity within regions persisted for millennia, with limited long-range gene flow until Bantu expansions began approximately 3,000–5,000 years ago. Sub-Saharan ancestry serves as the outgroup reference in most Eurasian admixture models.",
     "GeoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[-16.4030632,17.5942312],[-7.5195824,19.31927],[4.9312805,18.9888891],[15.7033753,14.9083684],[24.2371127,11.5725183],[28.7138275,7.0872088],[30.0428521,-0.9387036],[27.9443921,-12.109312],[14.3743506,-11.6986465],[8.0789705,-2.546726],[7.6319422,1.3620268],[5.1010953,3.4164418],[1.5157289,3.89001],[-2.6931243,2.9770393],[-11.7165024,2.9770393],[-17.1025498,8.4732689],[-18.7113692,14.6378231],[-16.4030632,17.5942312]]]}",
     "IconFileName": "game-icons:tribal-shield",
@@ -168,7 +168,7 @@
     "EraId": 2
   },
   {
-    "Name": "West Anatolia (0 - 600 AD)",
+    "Name": "West Anatolian (0 - 600 AD)",
     "Description": "Encompasses the populations of western Anatolia during the Roman and early Byzantine periods (2nd century BCE–7th century CE), corresponding to the Roman province of Asia and adjacent regions along the Aegean coast. Long-standing Ionian and Aeolian Greek colonial settlement beginning in the early 1st millennium BCE produced a Hellenized cultural layer over indigenous Anatolian populations descended from Bronze Age Hittite and Luwian speakers. Archaeogenomic studies of Roman-period individuals from Anatolia reveal remarkable genetic continuity with earlier Iron Age and Classical inhabitants of the region, with local Anatolian ancestry forming the demographic core throughout successive political regimes. Under Roman rule, cities such as Ephesus, Smyrna, Pergamon, and Miletus thrived as cosmopolitan centers connecting the Aegean, eastern Mediterranean, and inland Anatolia, with limited demographic replacement despite intense administrative and commercial integration. This population forms part of the broader Anatolian genetic continuum that persisted from the Late Bronze Age through the Byzantine period and underlies the ancestry of modern western Turkish and Aegean Greek populations.",
     "GeoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[30.1361642,41.1749092],[30.6423513,40.832425],[30.9041723,39.9015226],[30.7121702,38.7266837],[30.467804,37.0740285],[29.9441622,36.1352386],[27.8321399,36.6270767],[26.9943129,37.3797894],[26.3484879,38.1387521],[26.1739406,38.8763149],[25.8772103,39.3368222],[26.1041217,40.2088084],[26.6103089,40.6075313],[27.2561339,41.3585861],[28.146325,41.6461768],[29.2983372,41.3716861],[29.7696149,41.3192703],[30.1361642,41.1749092]]]}",
     "IconFileName": "game-icons:ancient-columns",
@@ -192,7 +192,7 @@
     "EraId": 2
   },
   {
-    "Name": "East Mediterranean (0 - 600 AD)",
+    "Name": "Eastern Mediterranean (0 - 600 AD)",
     "Description": "Encompasses the diverse populations of the eastern Roman provinces spanning the Levant, Egypt, and the Aegean during the Imperial period (1st century BCE–7th century CE). Ancient DNA from Imperial-period Rome shows that the city itself received massive immigration from the eastern Mediterranean, with Near Eastern ancestry becoming predominant during the height of the Empire. Egyptian populations of this era carried a mixture of North African Neolithic ancestry and eastern Fertile Crescent contributions, with sub-Saharan African ancestry increasing in post-Roman periods. The Roman eastern Mediterranean was a zone of intense genetic mixing, with Levantine populations carrying composite ancestry from Natufian, Anatolian farmer, and Iranian/Caucasus sources accumulated since the Bronze Age. This cosmopolitan genetic profile reflects the connectivity of Roman provincial administration and trade networks across the eastern basin.",
     "GeoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[25.8046033,39.9133734],[26.231497,40.3730793],[26.5900509,40.5893586],[27.0412655,40.659121],[27.8715531,41.0883863],[28.9576331,41.2774182],[30.6667695,41.5342241],[32.2439952,41.8805408],[33.4654607,42.0880882],[34.2567452,42.0759971],[34.9071781,41.8494929],[35.8332094,41.3120656],[38.3982882,39.8513087],[40.5960456,38.0985039],[41.480857,36.9212096],[42.3085838,35.2839844],[42.0291411,33.5802645],[40.1056872,31.9827062],[39.142181,31.4985729],[36.6030474,31.0526543],[32.6595116,29.6296871],[28.370124,30.1506786],[26.7194312,31.1857003],[29.9029102,31.9091543],[31.3177898,31.9691884],[32.6855067,32.4082368],[32.7562506,33.7321835],[31.4552149,35.0169105],[29.3334731,35.6412034],[27.6639058,36.3727621],[26.8639049,36.680219],[25.7856426,37.7878985],[25.646512,38.797942],[25.7160773,39.3649378],[25.8046033,39.9133734]]]}",
     "IconFileName": "game-icons:temple-door",
@@ -216,7 +216,7 @@
     "EraId": 2
   },
   {
-    "Name": "North Africa (0 - 500 AD)",
+    "Name": "North African (0 - 500 AD)",
     "Description": "Encompasses the populations of North Africa during the period of Roman provincial administration (~146 BCE–430s CE), a region inhabited by indigenous Berber (Amazigh) peoples shaped by millennia of local genetic continuity and successive Mediterranean contacts. Ancient DNA from the broader Maghreb shows that indigenous North African lineages trace back over 20,000 years to Iberomaurusian foragers, forming a deeply rooted genetic substrate. The Neolithic transition introduced European and Levantine farmer ancestry, and subsequent Phoenician colonization (from ~1200 BCE) added further Mediterranean diversity before Roman conquest. Under Roman rule, North Africa became one of the empire's most prosperous regions, with cosmopolitan cities like Carthage, Leptis Magna, and Hippo Regius facilitating continued demographic exchange across the Mediterranean. Later Vandal, Byzantine, and Arab demographic inputs further transformed the region's genetic landscape, though Berber-related ancestry remains prominent in modern Maghrebi populations.",
     "GeoJson": "{\"type\":\"Polygon\",\"coordinates\":[[[-6.9672864,33.9846924],[-4.4544057,33.3411594],[1.7698064,33.5024936],[5.4811378,32.0397691],[9.8883439,31.0513885],[13.2903977,30.8192668],[14.4888485,30.8192668],[14.5166506,32.4523428],[14.3932175,32.6561585],[14.132751,32.7879291],[13.6329667,32.9187584],[12.6090301,33.2027946],[11.5893708,34.240754],[11.7440096,36.4167805],[11.4637532,37.0410675],[10.6425816,37.3408928],[9.0002383,37.6395259],[6.3656459,37.4903586],[3.6254721,37.0981827],[-0.079365,36.7601031],[-2.9156339,36.0237274],[-4.3432046,35.8274227],[-4.9088458,36.0019398],[-5.4879547,35.9746969],[-6.2714118,35.7920892],[-6.7290193,35.0090897],[-6.9562419,34.4162681],[-6.9672864,33.9846924]]]}",
     "IconFileName": "game-icons:scarab-beetle",

@@ -204,7 +204,9 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             var rawGeneticFile = new RawGeneticFile
             {
-                RawDataFileName = request.File.FileName, RawData = memoryStream.ToArray(), CreatedBy = string.Empty
+                RawDataFileName = request.File.FileName,
+                RawData = memoryStream.ToArray(),
+                CreatedBy = inspection.CreatedBy
             };
 
             dbContext.RawGeneticFiles.Add(rawGeneticFile);

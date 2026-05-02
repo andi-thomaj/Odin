@@ -62,7 +62,7 @@ public class EraEndpointsTests(CustomWebApplicationFactory factory) : Integratio
             "Anatolian Neolithic Farmer", "Western Steppe Herder", "Western Hunter Gatherer",
             "Caucasian Hunter Gatherer", "Iranian Neolithic Farmer", "Natufian",
             "North African Farmer", "Northeast Asian", "Native American",
-            "Ancestral South Indian", "Sub Saharan Africans",
+            "Ancestral South Indian", "Sub Saharan African",
         };
 
         var actualNames = era.Populations.Select(p => p.Name).OrderBy(n => n).ToList();

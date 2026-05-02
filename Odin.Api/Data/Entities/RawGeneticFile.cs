@@ -29,6 +29,13 @@ namespace Odin.Api.Data.Entities
                 .WithOne(gi => gi.RawGeneticFile)
                 .HasForeignKey(gi => gi.RawGeneticFileId);
 
+            // Per-user uniqueness: a user cannot have two active uploads with the same
+            // file name. Soft-deleted rows are excluded so a user can re-upload the same
+            // name after deleting it.
+            builder.HasIndex(e => new { e.CreatedBy, e.RawDataFileName })
+                .IsUnique()
+                .HasFilter("\"IsDeleted\" = false");
+
             builder.ToTable("raw_genetic_files");
         }
     }

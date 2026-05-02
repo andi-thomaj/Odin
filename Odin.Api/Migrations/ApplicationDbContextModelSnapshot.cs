@@ -2044,6 +2044,10 @@ namespace Odin.Api.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedBy", "RawDataFileName")
+                        .IsUnique()
+                        .HasFilter("\"IsDeleted\" = false");
+
                     b.ToTable("raw_genetic_files", (string)null);
                 });
 
