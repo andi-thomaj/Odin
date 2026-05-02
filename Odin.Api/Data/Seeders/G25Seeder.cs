@@ -28,11 +28,6 @@ internal sealed class G25Seeder(ApplicationDbContext context)
 
     private async Task SeedG25PopulationSamplesAsync()
     {
-        // The original seeder kept this guard but returned immediately to skip the
-        // bulk import (the file is large and integration tests don't need it).
-        // Preserving that behaviour intentionally.
-        return;
-#pragma warning disable CS0162 // Unreachable code — kept for parity with the original DatabaseSeeder.
         if (await context.G25AdmixturePopulationSamples.AnyAsync())
             return;
 
