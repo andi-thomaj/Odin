@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
@@ -21,6 +22,7 @@ internal sealed class G25Seeder(ApplicationDbContext context)
         await SeedG25PopulationSamplesAsync();
         await SeedG25ServiceAsync();
         await SeedG25DistanceErasAsync();
+        await SeedG25DistancePopulationSamplesAsync();
         await SeedG25AdmixtureErasAsync();
     }
 
@@ -136,6 +138,73 @@ internal sealed class G25Seeder(ApplicationDbContext context)
 
         await context.SaveChangesAsync();
     }
+
+    private async Task SeedG25DistancePopulationSamplesAsync()
+    {
+        if (await context.G25DistancePopulationSamples.AnyAsync())
+            return;
+
+        var path = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "g25_distance_population_samples.json");
+        if (!File.Exists(path))
+            throw new FileNotFoundException(
+                $"G25 distance population sample seed file not found at '{path}'. " +
+                "Make sure Data/SeedData/g25_distance_population_samples.json is set to copy to the build output.");
+
+        var seeds = JsonSerializer.Deserialize<List<DistancePopulationSampleSeed>>(
+            await File.ReadAllTextAsync(path),
+            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (seeds is null || seeds.Count == 0)
+            throw new InvalidOperationException(
+                "g25_distance_population_samples.json deserialised to an empty list — check the file contents.");
+
+        var validEraIds = await context.G25DistanceEras.Select(e => e.Id).ToHashSetAsync();
+        var now = DateTime.UtcNow;
+        const int batchSize = 1000;
+        var batch = new List<G25DistancePopulationSample>(batchSize);
+
+        foreach (var seed in seeds)
+        {
+            if (string.IsNullOrWhiteSpace(seed.Label) || string.IsNullOrWhiteSpace(seed.Coordinates))
+                continue;
+            if (!validEraIds.Contains(seed.G25DistanceEraId))
+                throw new InvalidOperationException(
+                    $"Population sample '{seed.Label}' references unknown G25DistanceEraId {seed.G25DistanceEraId}. " +
+                    "Re-check seed data against the G25 distance era catalog.");
+
+            batch.Add(new G25DistancePopulationSample
+            {
+                Label = seed.Label,
+                Coordinates = seed.Coordinates,
+                Ids = seed.Ids ?? string.Empty,
+                G25DistanceEraId = seed.G25DistanceEraId,
+                CreatedAt = now,
+                CreatedBy = SeederTag,
+                UpdatedAt = now,
+                UpdatedBy = SeederTag,
+            });
+
+            if (batch.Count < batchSize)
+                continue;
+
+            context.G25DistancePopulationSamples.AddRange(batch);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+            batch.Clear();
+        }
+
+        if (batch.Count > 0)
+        {
+            context.G25DistancePopulationSamples.AddRange(batch);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+        }
+    }
+
+    private sealed record DistancePopulationSampleSeed(
+        string Label,
+        string Coordinates,
+        string? Ids,
+        int G25DistanceEraId);
 
     private async Task SeedG25AdmixtureErasAsync()
     {
