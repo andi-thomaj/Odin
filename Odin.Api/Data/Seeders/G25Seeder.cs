@@ -145,9 +145,9 @@ internal sealed class G25Seeder(ApplicationDbContext context)
                 $"G25 distance population sample seed file not found at '{path}'. " +
                 "Make sure Data/SeedData/g25_distance_population_samples.json is set to copy to the build output.");
 
+        var jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
         var seeds = JsonSerializer.Deserialize<List<DistancePopulationSampleSeed>>(
-            await File.ReadAllTextAsync(path),
-            new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            await File.ReadAllTextAsync(path), jsonOpts);
         if (seeds is null || seeds.Count == 0)
             throw new InvalidOperationException(
                 "g25_distance_population_samples.json deserialised to an empty list — check the file contents.");
@@ -159,16 +159,16 @@ internal sealed class G25Seeder(ApplicationDbContext context)
 
         foreach (var seed in seeds)
         {
-            if (string.IsNullOrWhiteSpace(seed.Label) || string.IsNullOrWhiteSpace(seed.Coordinates))
+            if (string.IsNullOrWhiteSpace(seed.SampleLabel) || string.IsNullOrWhiteSpace(seed.Coordinates))
                 continue;
             if (!validEraIds.Contains(seed.G25DistanceEraId))
                 throw new InvalidOperationException(
-                    $"Population sample '{seed.Label}' references unknown G25DistanceEraId {seed.G25DistanceEraId}. " +
+                    $"Population sample '{seed.SampleLabel}' references unknown G25DistanceEraId {seed.G25DistanceEraId}. " +
                     "Re-check seed data against the G25 distance era catalog.");
 
-            batch.Add(new G25DistancePopulationSample
+            var sample = new G25DistancePopulationSample
             {
-                Label = seed.Label,
+                Label = seed.SampleLabel,
                 Coordinates = seed.Coordinates,
                 Ids = seed.Ids ?? string.Empty,
                 G25DistanceEraId = seed.G25DistanceEraId,
@@ -176,7 +176,28 @@ internal sealed class G25Seeder(ApplicationDbContext context)
                 CreatedBy = SeederTag,
                 UpdatedAt = now,
                 UpdatedBy = SeederTag,
-            });
+            };
+
+            if (!string.IsNullOrWhiteSpace(seed.ResearchLinks))
+            {
+                var links = JsonSerializer.Deserialize<List<ResearchLinkSeed>>(seed.ResearchLinks, jsonOpts) ?? [];
+                foreach (var link in links)
+                {
+                    if (string.IsNullOrWhiteSpace(link.Label) || string.IsNullOrWhiteSpace(link.Link))
+                        continue;
+                    sample.ResearchLinks.Add(new ResearchLink
+                    {
+                        Label = link.Label,
+                        Link = link.Link,
+                        CreatedAt = now,
+                        CreatedBy = SeederTag,
+                        UpdatedAt = now,
+                        UpdatedBy = SeederTag,
+                    });
+                }
+            }
+
+            batch.Add(sample);
 
             if (batch.Count < batchSize)
                 continue;
@@ -196,10 +217,13 @@ internal sealed class G25Seeder(ApplicationDbContext context)
     }
 
     private sealed record DistancePopulationSampleSeed(
-        string Label,
+        string SampleLabel,
         string Coordinates,
         string? Ids,
-        int G25DistanceEraId);
+        int G25DistanceEraId,
+        string? ResearchLinks);
+
+    private sealed record ResearchLinkSeed(string Label, string Link);
 
     private async Task SeedG25AdmixtureErasAsync()
     {
