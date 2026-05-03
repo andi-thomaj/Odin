@@ -7312,580 +7312,1119 @@
     "Coordinates": "Proto_Greek-2300BC,0.1138235,0.1406505,0.0222505,-0.0085595,0.0241585,-0.003068,0.0003525,0.0021925,0.011249,0.015399,0.0034105,0.0028475,-0.0086225,-0.008464,-0.0013575,0.0149825,0.0161675,0.004181,0.003834,-0.007879,0.000437,0.008903,0.0015405,-0.0137365,0.00485",
     "Ids": "I19459,I19460",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Egypt Old Kingdom (2700 BC)",
     "Coordinates": "EGY_Egyptian_OldKingdom_PyramidAges*(2700*BC),0.01935,0.132019,-0.0435575,-0.122418,0.010925,-0.053547,-0.028671,-0.0056535,0.0772075,-0.004556,0.009094,-0.0182835,0.0454155,-0.0008255,0.0063785,0.0080875,-0.0039115,-0.008235,-0.0106845,0.02695,0.003182,-0.0022875,0.0073335,0.00964,-0.0045505",
     "Ids": "NUE001",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Whole-genome ancestry of an Old Kingdom Egyptian\", \"Link\" : \"https://www.nature.com/articles/s41586-025-09195-5\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Whole-genome ancestry of an Old Kingdom Egyptian",
+        "Link": "https://www.nature.com/articles/s41586-025-09195-5"
+      }
+    ]
   },
   {
     "SampleLabel": "Cetina Culture (2300 - 1600 BC)",
     "Coordinates": "Cetina,0.1282408,0.1500728,0.0284098,-0.0010408,0.0262269,-0.0021383,0.0013317,-0.0016666,0.0085219,0.0256953,-0.0,0.009325,-0.0171289,-0.008502,-0.0055342,-0.007366,0.0018399,0.0031812,0.0033797,-0.003988,-0.0053654,0.0017311,-0.004793,0.001995,-0.005841",
     "Ids": "I19032,I11843,I18088,I18745,I18747,I18752,I19017,I19027,I18746",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Vucedol Culture (2800 BC)",
     "Coordinates": "Croatia_LateC_EBA_Vucedol.AG:I3499.AG__BC_2768__Cov_37.11%,0.120652,0.147252,0.01697,-0.017765,0.032621,-0.008367,-0.005405,-0.004384,0.010431,0.016766,0.001137,0.014087,-0.022448,-0.013625,0.001764,-0.006232,0.002738,-0.0019,0.003017,0.003627,0.001747,-0.002226,0.004314,-0.003133,-0.01449",
     "Ids": "I3499",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genomic history of southeastern Europe\", \"Link\" : \"https://www.nature.com/articles/nature25778\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genomic history of southeastern Europe",
+        "Link": "https://www.nature.com/articles/nature25778"
+      }
+    ]
   },
   {
     "SampleLabel": "Czechia BellBeaker (2500 - 2000 BC)",
     "Coordinates": "Czechia_BellBeaker,0.1254416,0.1229557,0.0569239,0.048255,0.0290445,0.0152758,-0.0019999,-0.0019592,0.0011538,0.0008768,-0.0005607,0.0039842,-0.0111692,-0.0127756,0.0131059,0.0094739,0.0007848,0.0015012,0.0022768,0.0034309,0.0045557,0.0030843,-0.0011069,0.0008958,-0.0011908",
     "Ids": "I7278,I7250,I7251,I7269,I7275,I7276,I7271,I7289,I7212,I7213,I7211,I7249,PRU002,PRU003,PRU005,KOP003,KO1005,VLI022,HOP003,I4136,I5666,KOP002,HOP001,I7286,I7205,I7214,I7282,I7287,I7288,I7290,I7281,I4946,HOP002,I4945,I4885,KO1004,I4896,HOP002,I4945,I4885,KO1004,I4896,KO1003,I5514,I6480,VLI024,VLI026,VLI028,VLI029,VLI030,I4889,I4891,I4895,I4145,I4886,I4888",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Dynamic changes in genomic and social structures in third millennium BCE central Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/sciadv.abi6941\"}, {\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Dynamic changes in genomic and social structures in third millennium BCE central Europe",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.abi6941"
+      },
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      }
+    ]
   },
   {
     "SampleLabel": "Early Indo-European Albania (2555 BC)",
     "Coordinates": "Albania_Cinamak_EBA.AG:I14689.AG__BC_2555__Cov_50.21%,0.122929,0.118817,0.030547,0.043928,-0.008617,0.015618,0.00799,0.000231,-0.025361,-0.011663,-0.000812,0.001649,-0.006244,0.000963,0.010993,-0.009812,-0.014212,0.005448,0.009176,-0.009379,-0.006613,-0.006183,0.016022,0.01446,-0.011376",
     "Ids": "I14689",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Proto-Illyrian South (1800 BC)",
     "Coordinates": "Albania_Shkrel_MBA.AG:I8471.AG__BC_1795__Cov_15.86%,0.122929,0.144205,0.020365,0.004199,0.028928,-0.020638,0.00423,-0.014307,0.012067,0.033167,0.002111,0.003597,-0.005352,-0.023258,-0.007465,0.005436,0.030119,-0.007475,0.00088,0.006503,-0.004367,0.007543,0.008504,0.010483,0.005149",
     "Ids": "I8471",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Pre-Columbian Indigenous Argentina (2600 - 1350 BC)",
     "Coordinates": "Pre-Columbian_Argentina,0.0515049,-0.3121481,0.1151161,0.0982326,-0.1115594,-0.017884,-0.2925002,-0.3537546,-0.0129618,-0.0176769,-0.0001624,0.00133,0.0064668,0.0241012,-0.0065146,0.0063642,0.0039441,-0.0008395,0.0010055,0.0006098,-0.0018404,0.0013756,-0.0022339,-0.0009489,-0.0044906",
     "Ids": "I12601,I19259,12726,I17030,I13563,I17032,ARG_22633_34,I34672",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Eight millennia of continuity of a previously unknown lineage in Argentina\", \"Link\" : \"https://www.nature.com/articles/s41586-025-09731-3\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Eight millennia of continuity of a previously unknown lineage in Argentina",
+        "Link": "https://www.nature.com/articles/s41586-025-09731-3"
+      }
+    ]
   },
   {
     "SampleLabel": "Pre-Armenian Kura-Araxes (2600 – 2300 BC)",
     "Coordinates": "KuraAraxes,0.1017904,0.1311483,-0.0718686,-0.039406,-0.0472176,-0.0078089,0.0087623,-0.0035933,-0.0596333,-0.0216083,0.0023197,0.0057804,-0.016034,0.0034209,0.0037613,-0.0018753,0.012461,-0.0023164,-0.0024783,0.0004286,0.0069164,-0.002579,-0.0014966,-0.0043033,0.0015394",
     "Ids": "I15132,I14339,I14341,I14343,I1633,I1635,I14340,I16920,I13599",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Proto-Armenian (2000 - 1500 BC)",
     "Coordinates": "Proto-Armenian,0.1024408,0.1200862,-0.0333752,-0.0131622,-0.0346215,0.0011155,0.0045238,-0.004846,-0.0469895,-0.0223238,0.000893,0.0037842,-0.010332,-0.0048855,0.0104165,0.0037122,0.008964,-0.0029138,-0.0028912,0.0050025,0.00209,0.0005562,0.0017252,0.002952,-0.0007485",
     "Ids": "I1656,I14813,vishap1,vishap2fem",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}, {\"Label\" : \"Genomic insights into the origin of farming in the ancient Near East\", \"Link\" : \"https://www.nature.com/articles/nature19310\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      },
+      {
+        "Label": "Genomic insights into the origin of farming in the ancient Near East",
+        "Link": "https://www.nature.com/articles/nature19310"
+      }
+    ]
   },
   {
     "SampleLabel": "Austria Unetice Culture (2000 BC)",
     "Coordinates": "uneticeculture,0.1295243,0.1348566,0.0554367,0.043451,0.0356672,0.0137334,0.0021392,0.0039316,0.0043275,0.0025496,-0.0013977,0.0051431,-0.0099574,-0.0098149,0.012159,0.0066691,0.0002316,0.0015913,0.0033575,0.0030108,0.0021341,0.0043487,-0.0012278,-0.0001745,-0.0016697",
     "Ids": "DSH006,DSH008,DSH014,DSH016,DSH020,DSH021,DSH022,DSH023,DSH025,DSH026,DSH029,DSH032,SLB002,SLB003,SLB005,SLB006,SLB007,SLB008,SLB009,SLB010,SLB011,SLB012,SLB013,SLB014,SLB015,SLB016,SLB018,SLB020,SLB021,SLB022,SLB023,SLB024,SLB026,SLB028,SLB029,SLB032,SLB033,SLB034,SLB035,SLB037,SLB039,SLB041,SLB044,SLB045,SLB046,ULK001,ULK003,ULK004,ULK009,ULK010,ULK011,ULK012,ULK017,ULK018,UZH004,UZH007,UZH010,UZH011,UZH012,UZH013,UZH015,UZH019,UZH020,UZH021,UZH022,UZH023,UZH024,UZH026,UZH027,UZH028,UZH029,UZH030,UZH031,UZH034,UZH036,UZH038,UZH039,UZH040,UZH041,UZH043,UZH044,UZH047,ZWD001,ZWD002,FZH001,FZH002,FZH003,I11700,I11704,I11705,I28991",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Tracing social mechanisms and interregional connections in Early Bronze Age Societies in Lower Austria\", \"Link\" : \"https://www.biorxiv.org/content/10.1101/2025.02.10.636471v1.full\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Tracing social mechanisms and interregional connections in Early Bronze Age Societies in Lower Austria",
+        "Link": "https://www.biorxiv.org/content/10.1101/2025.02.10.636471v1.full"
+      }
+    ]
   },
   {
     "SampleLabel": "Belgium BellBeaker (3000 - 2500 BC)",
     "Coordinates": "belgiumbellbeaker,0.1257228,0.1545452,0.0984285,0.041344,0.1054742,0.0087979,0.0009614,0.0117478,0.0705422,0.0562611,-0.0049455,0.0050137,-0.0105413,-0.0024396,0.0123012,0.0095706,-0.0032952,0.0039159,0.0020454,0.0097433,0.038557,0.0048112,-0.0214115,-0.06852,0.0086218",
     "Ids": "I13633,I13635,I13638,I13654,I13655,I13656,I13657,I13659,I13660,I7014,I21570",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Lasting Lower Rhine–Meuse forager ancestry shaped Bell Beaker expansion\", \"Link\" : \"https://www.nature.com/articles/s41586-026-10111-8\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Lasting Lower Rhine–Meuse forager ancestry shaped Bell Beaker expansion",
+        "Link": "https://www.nature.com/articles/s41586-026-10111-8"
+      }
+    ]
   },
   {
     "SampleLabel": "Pre-Columbian Indigenous Mesoamerica (3000 - 1900 BC)",
     "Coordinates": "mesoamerican,0.0513468,-0.3128959,0.1182902,0.0982999,-0.1121918,-0.0180969,-0.2908124,-0.3467037,-0.0122943,-0.017616,-0.0004151,0.0001832,0.0012553,0.0207198,-0.0080679,0.0055688,0.0059832,0.0004786,0.0037571,0.0001943,0.0019687,0.0087243,-0.0014652,-0.0006828,-0.0040316",
     "Ids": "I7543,I13266,I5455,I6236,I19950,I6235,I19942,I7544,I24542",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"South-to-north migration preceded the advent of intensive farming in the Maya region\", \"Link\" : \"https://www.nature.com/articles/s41467-022-29158-y\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "South-to-north migration preceded the advent of intensive farming in the Maya region",
+        "Link": "https://www.nature.com/articles/s41467-022-29158-y"
+      }
+    ]
   },
   {
     "SampleLabel": "Pre-Columbian Indigenous Brazil (2700 – 1200 BC)",
     "Coordinates": "brazilprecolumbian,0.0538763,-0.3078748,0.1139532,0.0957157,-0.1088922,-0.0199407,-0.2936848,-0.3442932,-0.0129532,-0.0221417,-0.0020838,-0.0015985,0.002329,0.0244738,-0.0040265,0.0019447,0.0072145,0.001098,0.0034985,0.0097963,0.0014767,0.000371,-0.0058337,-0.0036148,-0.0056482",
     "Ids": "CBE003,CBE004,I18120,I18121,I18122,I18123,I18124,I18125,TDA002",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Genomic history of coastal societies from eastern South America\", \"Link\" : \"https://www.nature.com/articles/s41559-023-02114-9\"}, {\"Label\" : \"Human auditory ossicles as an alternative optimal source of ancient DNA\", \"Link\" : \"https://genome.cshlp.org/content/early/2020/03/12/gr.260141.119.abstract\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Genomic history of coastal societies from eastern South America",
+        "Link": "https://www.nature.com/articles/s41559-023-02114-9"
+      },
+      {
+        "Label": "Human auditory ossicles as an alternative optimal source of ancient DNA",
+        "Link": "https://genome.cshlp.org/content/early/2020/03/12/gr.260141.119.abstract"
+      }
+    ]
   },
   {
     "SampleLabel": "Early Indo-European Bulgaria (3000 - 1700 BC)",
     "Coordinates": "EBA_Bulgaria,0.1224515,0.1431241,0.0306441,0.0013129,0.0298814,-0.0024292,0.0012963,0.000052,0.0030877,0.0173242,0.001802,0.0050229,-0.0114229,-0.0041509,-0.0069874,0.0016251,0.0089964,-0.0006457,0.0038763,-0.000948,0.000962,0.0031273,0.0006361,-0.0057023,-0.0038088",
     "Ids": "I19451,I19452,I19454,I19456,I19456_d,I19462,I18793,I20182,I18794,I18801_d,I1427,I1448,Bul4,I2510,I2165,I19458,I19457_enhanced,I2163,I19455,BOY001,YUN034,YUN035,YUN036,YUN037,YUN038,YUN039,YUN041,YUN042,YUN043,YUN044,YUN045",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}, {\"Label\" : \"Early contact between late farming and pastoralist societies in southeastern Europe\", \"Link\" : \"https://www.nature.com/articles/s41586-023-06334-8\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      },
+      {
+        "Label": "Early contact between late farming and pastoralist societies in southeastern Europe",
+        "Link": "https://www.nature.com/articles/s41586-023-06334-8"
+      }
+    ]
   },
   {
     "SampleLabel": "Archaic Indigenous Canada (2800 BC)",
     "Coordinates": "Canada_ASO.SG:CK-13.SG__BC_2892__Cov_72.89%,0.05122,-0.301612,0.110119,0.091086,-0.094479,-0.020359,-0.235011,-0.283142,-0.015953,-0.023691,0.004709,-0.006744,0.004311,0.00523,-0.009229,-0.003182,0.010561,-0.00038,0.004902,0.001,-0.003743,0.002597,-0.003821,0.002892,-0.001676",
     "Ids": "CK-13",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient human parallel lineages within North America contributed to a coastal expansion\", \"Link\" : \"https://www.science.org/doi/10.1126/science.aar6851\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient human parallel lineages within North America contributed to a coastal expansion",
+        "Link": "https://www.science.org/doi/10.1126/science.aar6851"
+      }
+    ]
   },
   {
     "SampleLabel": "Channel Islands Early Farmers (3000 - 2500 BC)",
     "Coordinates": "ChannelIslands_LN,0.1324143,0.1675623,0.073916,-0.0079673,0.0799123,-0.0116207,-0.0027417,0.000769,0.0602663,0.0708293,-0.007578,0.007893,-0.0239343,-0.014129,0.0043433,0.014187,0.018297,-0.0069253,0.0007123,0.0029183,0.0308207,0.0004947,-0.016392,-0.0409293,-0.0011973",
     "Ids": "I16425,I16429,I16438",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Large-scale migration into Britain during the Middle to Late Bronze Age\", \"Link\" : \"https://www.nature.com/articles/s41586-021-04287-4\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
   },
   {
     "SampleLabel": "Proto-Illyrian Dalmatia (1800-1300 BC)",
     "Coordinates": "protodalmatia,0.1265832,0.1466638,0.0370769,0.001666,0.0338848,-0.0014826,-0.0019543,-0.0003401,0.0088053,0.0253597,0.0002051,0.0092445,-0.0171195,-0.0105317,-0.0011073,-0.0030076,0.0050918,0.0006869,0.003718,-0.0036991,-0.0038877,0.0034101,-0.0030877,0.0022894,-0.0045504",
     "Ids": "I18712,I18748,I18071,I18072,I18073,I18074,I18077,I18078,I18079,I18082,I18087,I24342,I26773,I26774,I26893,I4331,I4332,I5073,I5074,I5080,I26726",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Pre-Columbian Caribbean (1200 BC)",
     "Coordinates": "Cuba_PreCeramic.AG:CAO019.AG__BC_1238__Cov_32.47%,0.048944,-0.316845,0.109365,0.091086,-0.110482,-0.019243,-0.288828,-0.34337,-0.016566,-0.016766,-0.001299,0.001948,0.003122,0.024084,0.00475,0.007558,0.001304,-0.004054,0.00905,0.010505,-0.003369,0.011376,-0.002958,-0.00241,-0.010777",
     "Ids": "CAO019",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Genomic insights into the early peopling of the Caribbean\", \"Link\" : \"https://www.science.org/doi/10.1126/science.aba8697\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Genomic insights into the early peopling of the Caribbean",
+        "Link": "https://www.science.org/doi/10.1126/science.aba8697"
+      }
+    ]
   },
   {
     "SampleLabel": "Czechia Corded Ware (3000 - 2250 BC)",
     "Coordinates": "Czechia_EBA,0.1233169,0.111639,0.0546483,0.0866742,0.0068194,0.0318886,0.0047214,0.0007132,-0.0262394,-0.0377105,-0.0023952,-0.0008822,-0.0047638,-0.0150916,0.0277548,0.0072803,-0.0073519,0.0002332,0.0010341,0.0062701,0.0004793,0.0026332,0.0048738,0.0133369,-0.0022861",
     "Ids": "BUT002,BUT003,CAH005,CAH010,DRO001,I6695,I7207,I7208,I7209,I7279,I7280,KO1002,KON001,KON003,KON004,OBR001,OBR003,OBR004,OHR002,PNL001,PNL002,RDV001,STD001,STD002,TRM003,TRM006,VLI007,VLI010,VLI011,VLI016,VLI017,VLI019,VLI020,VLI067,VLI070,VLI071,VLI076,VLI081,VLI085,VLI088,VLI090,VLI092,ZEL001,I6696",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Dynamic changes in genomic and social structures in third millennium BCE central Europe\", \"Link\" : \"Dynamic changes in genomic and social structures in third millennium BCE central Europe\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Dynamic changes in genomic and social structures in third millennium BCE central Europe",
+        "Link": "Dynamic changes in genomic and social structures in third millennium BCE central Europe"
+      }
+    ]
   },
   {
     "SampleLabel": "Estonia Corded Ware (2800-2200 BC)",
     "Coordinates": "Estonia_CordedWare,0.1214112,0.1073075,0.0623507,0.0851105,0.010053,0.0337922,0.010458,0.0089612,-0.0219863,-0.0321343,0.001272,-0.001099,-0.0053518,-0.0060323,0.0177793,-0.0003537,-0.0075623,-0.0010347,0.0059497,0.005023,0.0024123,0.0004742,0.0051352,0.0035143,-0.0030137",
     "Ids": "Kunila2,EKA1,MA968,MA971,MA973,SOP002",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic prehistory of the Baltic Sea region\", \"Link\" : \"https://www.nature.com/articles/s41467-018-02825-9\"}, {\"Label\" : \"Genetic ancestry changes in Stone to Bronze Age transition in the East European plain\", \"Link\" : \"https://www.science.org/doi/10.1126/sciadv.abd6535\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic prehistory of the Baltic Sea region",
+        "Link": "https://www.nature.com/articles/s41467-018-02825-9"
+      },
+      {
+        "Label": "Genetic ancestry changes in Stone to Bronze Age transition in the East European plain",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.abd6535"
+      }
+    ]
   },
   {
     "SampleLabel": "Denmark Proto-Germanic (2000-1300 BC)",
     "Coordinates": "Proto-Germanic,0.1227664,0.1290449,0.0640566,0.0624544,0.0372596,0.0216936,0.0031726,0.0068568,0.0018554,-0.00466,-0.003503,0.0028474,-0.0102681,-0.0141949,0.0197764,0.0147174,0.001015,0.0035836,0.0048484,0.00971,0.0085207,0.0027116,-0.0025266,0.0041571,-0.0018304",
     "Ids": "CGG106705_CGG106706,CGG106708,CGG106707,CGG105333,CGG105334,CGG106493,CGG100220,CGG100215,CGG100212,CGG106805,RISE47,NEO563,NEO590,NEO951",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Population genomics of post-glacial western Eurasia\", \"Link\" : \"https://www.nature.com/articles/s41586-023-06865-0\"}, {\"Label\" : \"Population genomics of Bronze Age Eurasia\", \"Link\" : \"https://www.nature.com/articles/nature14507\"}, {\"Label\" : \"Steppe Ancestry in Western Eurasia and the Spread of the Germanic Languages\", \"Link\" : \"https://www.biorxiv.org/content/10.1101/2024.03.13.584607v2.full\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of post-glacial western Eurasia",
+        "Link": "https://www.nature.com/articles/s41586-023-06865-0"
+      },
+      {
+        "Label": "Population genomics of Bronze Age Eurasia",
+        "Link": "https://www.nature.com/articles/nature14507"
+      },
+      {
+        "Label": "Steppe Ancestry in Western Eurasia and the Spread of the Germanic Languages",
+        "Link": "https://www.biorxiv.org/content/10.1101/2024.03.13.584607v2.full"
+      }
+    ]
   },
   {
     "SampleLabel": "England BellBeaker (2300-1500 BC)",
     "Coordinates": "England_Bellbeaker,0.12623,0.1236916,0.0636202,0.0696872,0.0271742,0.0227994,0.0027142,0.0029423,-0.004203,-0.0087928,-0.0032884,0.0046534,-0.01138,-0.0163084,0.0265605,0.0094736,-0.0063171,0.001951,0.0033436,0.005834,0.0072435,0.003048,0.0002526,0.0060612,-0.0003952",
     "Ids": "I2418,I2450,I4950,I4951,I5512,I5513,I6775,I6776,I2453,I2443,I2452,I3256,I5382,I2445,I3255,I1770,I2455,I2447,LUT1,LUT2",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}, {\"Label\" : \"Large-scale migration into Britain during the Middle to Late Bronze Age\", \"Link\" : \"https://www.nature.com/articles/s41586-021-04287-4\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      },
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
   },
   {
     "SampleLabel": "Proto-Briton (1500-1200 BC)",
     "Coordinates": "England_MBA,0.1272651,0.129504,0.0627098,0.0572018,0.0334126,0.0200669,0.0011414,0.0032307,0.0041294,-0.0020046,-0.0049258,0.0049313,-0.0107036,-0.0148828,0.0233245,0.0070083,-0.0079224,0.0019365,0.0003951,0.0033944,0.0049317,0.003209,-0.0007453,0.0042346,-0.0010778",
     "Ids": "I13714,I16403,I19858,I19857,I19915,I2639,I7568,I3082,I19859,I19860,I7572,I7640,I7571,I7627,I7574,I19913,I13710,I7626,I7577,I2448,I16454",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Large-scale migration into Britain during the Middle to Late Bronze Age\", \"Link\" : \"https://www.nature.com/articles/s41586-021-04287-4\"}, {\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      },
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      }
+    ]
   },
   {
     "SampleLabel": "France BellBeaker (2400-2200 BC)",
     "Coordinates": "France_BellBeaker,0.132604,0.1226252,0.0591135,0.0579785,0.0278515,0.0215442,0.0029375,0.0027115,0.005931,-0.0109795,-0.0045872,0.0012365,-0.0142715,-0.0166522,0.0162865,0.011933,0.003129,-0.0011402,0.0040852,0.007566,0.0106688,0.0008965,0.0026808,0.0063862,0.0010475",
     "Ids": "I1381,I1382,I1390,I1391",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Large-scale migration into Britain during the Middle to Late Bronze Age\", \"Link\" : \"https://www.nature.com/articles/s41586-021-04287-4\"}, {\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      },
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      }
+    ]
   },
   {
     "SampleLabel": "France Proto-Celtic (2300-1500 BC)",
     "Coordinates": "France_EBA,0.1274818,0.1411587,0.0567567,0.0239558,0.0480088,0.0047877,0.001645,0.0027305,0.0217138,0.0250573,-0.0017592,0.006544,-0.015981,-0.0167442,0.008641,0.0119328,0.0069753,0.0012668,0.0018228,0.003439,0.0041385,0.004163,-0.0056283,-0.0063462,-0.0030135",
     "Ids": "I10342,I10343,I10347,I10348,I15028,I15033",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Large-scale migration into Britain during the Middle to Late Bronze Age\", \"Link\" : \"https://www.nature.com/articles/s41586-021-04287-4\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
   },
   {
     "SampleLabel": "Georgia Kura-Araxes (3000 BC)",
     "Coordinates": "Georgia_Kura-Araxes_EBA,0.1005437,0.1271103,-0.07291,-0.0453815,-0.0517532,-0.0073442,0.0123773,-0.005615,-0.0666065,-0.0239337,0.0040597,0.0079428,-0.0167492,-0.0018122,0.0049085,-0.005171,0.0129515,-0.003674,-0.0008172,0.003356,0.0122075,-0.0041835,0.0018897,-0.0030525,0.0043508",
     "Ids": "geo015,A19268,A19269,A19270,A19271.79,A19278,XXX001",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The rise and transformation of Bronze Age pastoralists in the Caucasus\", \"Link\" : \"https://doi.org/10.1038/s41586-024-08113-5\"}, {\"Label\" : \"Spatial and temporal heterogeneity in human mobility patterns in Holocene Southwest Asia and the East Mediterranean\", \"Link\" : \"https://doi.org/10.1016/j.cub.2022.11.034\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The rise and transformation of Bronze Age pastoralists in the Caucasus",
+        "Link": "https://doi.org/10.1038/s41586-024-08113-5"
+      },
+      {
+        "Label": "Spatial and temporal heterogeneity in human mobility patterns in Holocene Southwest Asia and the East Mediterranean",
+        "Link": "https://doi.org/10.1016/j.cub.2022.11.034"
+      }
+    ]
   },
   {
     "SampleLabel": "Proto-Kartvelian (1800-1200 BC)",
     "Coordinates": "ProtoKartvelian,0.1105074,0.130341,-0.052387,-0.0317663,-0.0404757,-0.0023039,0.0090835,-0.0061703,-0.0571512,-0.0252754,0.0001977,0.0077475,-0.0181755,-0.003249,0.0054405,-0.0088201,0.0080951,-0.0020491,-0.004875,0.0071665,0.008523,0.001102,0.0008252,-0.0035363,-0.0004425",
     "Ids": "ATK001,ATK003,ATK004,ATK005,ATK006,OTA002,SGV001,TSG001,TSG002,KMR006,gur017,RTV002,SAP004,SAP011,TSV001,TSV002,TSV007,TSV008,TSV009,TSV013,TSV014,TSV015,TSV011",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Caucasus from the Bronze Age to the Early Middle Ages: 5,000 years of genetic continuity despite high mobility\", \"Link\" : \"https://www.sciencedirect.com/science/article/pii/S0092867425008025\"}, {\"Label\" : \"Spatial and temporal heterogeneity in human mobility patterns in Holocene Southwest Asia and the East Mediterranean\", \"Link\" : \"https://www.cell.com/current-biology/pdf/S0960-9822(22)01824-3.pdf\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Caucasus from the Bronze Age to the Early Middle Ages: 5,000 years of genetic continuity despite high mobility",
+        "Link": "https://www.sciencedirect.com/science/article/pii/S0092867425008025"
+      },
+      {
+        "Label": "Spatial and temporal heterogeneity in human mobility patterns in Holocene Southwest Asia and the East Mediterranean",
+        "Link": "https://www.cell.com/current-biology/pdf/S0960-9822(22)01824-3.pdf"
+      }
+    ]
   },
   {
     "SampleLabel": "Germany BellBeaker (2500-2200 BC)",
     "Coordinates": "GermanyBellBeaker,0.1266449,0.1301968,0.0568786,0.046626,0.0338977,0.0159951,0.0011128,0.0032579,0.0044154,0.0038269,-0.0020059,0.0061314,-0.0107954,-0.0143816,0.0161028,0.0088211,0.0002033,0.0008086,0.0011424,0.0048369,0.0047527,0.0033167,-0.0018088,0.0004642,-0.0005672",
     "Ids": "E09538,E09569,I0060,I0108,I0111,I0112,I0113,I0806,I1546,I1549,I3588,I3589,I3590,I3594,I3600,I3601,I3602,I4143,I4144,I4249,I4250,I5014,I5023,I5523,I5524,I5525,I5529,I5531,I5658,I5659,I5661,I5833,I5834,I5836,I6590,I6624",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}, {\"Label\" : \"Genome-wide patterns of selection in 230 ancient Eurasians\", \"Link\" : \"https://www.nature.com/articles/nature16152\"}, {\"Label\" : \"Neolithic mitochondrial haplogroup H genomes and the genetic origins of Europeans\", \"Link\" : \"https://www.nature.com/articles/ncomms2656\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      },
+      {
+        "Label": "Genome-wide patterns of selection in 230 ancient Eurasians",
+        "Link": "https://www.nature.com/articles/nature16152"
+      },
+      {
+        "Label": "Neolithic mitochondrial haplogroup H genomes and the genetic origins of Europeans",
+        "Link": "https://www.nature.com/articles/ncomms2656"
+      }
+    ]
   },
   {
     "SampleLabel": "Germany Unetice Culture (2200-1800 BC)",
     "Coordinates": "Germany_Unetice,0.1262544,0.1245916,0.0602876,0.0626937,0.0294714,0.0204464,0.0046816,0.0043935,-0.0037336,-0.0087688,-0.002579,0.0021657,-0.0090391,-0.012915,0.0170182,0.0076018,-0.0039959,0.0017414,0.0022108,0.0029941,0.0040369,0.0039859,-0.0005341,0.0038771,-0.0004554",
     "Ids": "I0047,I0115,I0116,I0117,I0164,I0803,LEU007,LEU008,LEU009,LEU010,LEU011,LEU012,LEU013,LEU014,LEU015,LEU016,LEU017,LEU018,LEU021,LEU023,LEU024,LEU025,LEU026,LEU02651,LEU027,LEU029,LEU031,LEU032,LEU033,LEU034,LEU035,LEU037,LEU038,LEU039,LEU040,LEU041,LEU044,LEU046,LEU050,LEU052,LEU053,LEU055,LEU056,LEU057,LEU058,LEU059,LEU060,LEU061,LEU063,LEU064,LEU065",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Genome-wide patterns of selection in 230 ancient Eurasians\", \"Link\" : \"https://www.nature.com/articles/nature16152\"}, {\"Label\" : \"Kinship practices at the early bronze age site of Leubingen in Central Germany\", \"Link\" : \"https://www.nature.com/articles/s41598-024-54462-6\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Genome-wide patterns of selection in 230 ancient Eurasians",
+        "Link": "https://www.nature.com/articles/nature16152"
+      },
+      {
+        "Label": "Kinship practices at the early bronze age site of Leubingen in Central Germany",
+        "Link": "https://www.nature.com/articles/s41598-024-54462-6"
+      }
+    ]
   },
   {
     "SampleLabel": "Minoan Crete (2200-2000 BC)",
     "Coordinates": "Greece_Crete_HgCharalambos_EMBA,0.117828,0.1710979,-0.0177387,-0.0915406,0.0275606,-0.0383009,-0.0003656,-0.0057433,0.0122562,0.0607926,0.0052746,0.0124168,-0.0216109,0.0020949,-0.0306426,-0.0111031,0.0147769,0.0005679,0.0081144,-0.0134323,-0.0135918,0.0042912,-0.0029487,0.0015754,-0.0036989",
     "Ids": "HGC001,HGC003,HGC005,HGC006-035,HGC008,HGC009,HGC010,HGC011,HGC015,HGC017-023-029,HGC018,HGC020,HGC024,HGC025,HGC027,HGC031,HGC032,HGC036,HGC037,HGC040,HGC041-052,HGC055-065,I0070,I0071,I0073,I0074,I9005",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean\", \"Link\" : \"https://www.nature.com/articles/s41559-022-01952-3\"}, {\"Label\" : \"Genetic origins of the Minoans and Mycenaeans\", \"Link\" : \"https://www.nature.com/articles/nature23310\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean",
+        "Link": "https://www.nature.com/articles/s41559-022-01952-3"
+      },
+      {
+        "Label": "Genetic origins of the Minoans and Mycenaeans",
+        "Link": "https://www.nature.com/articles/nature23310"
+      }
+    ]
   },
   {
     "SampleLabel": "Mycenaean Greece (1700-1200 BC)",
     "Coordinates": "GRC_Mycenaean*(1500-1100*BC),0.1182133,0.1590029,-0.006465,-0.0597089,0.0256091,-0.0224309,0.0003693,-0.0046646,0.0061065,0.0426694,0.0051385,0.0107048,-0.0158429,0.0011599,-0.0178376,-0.0090541,0.0086147,0.0005701,0.0078472,-0.0073071,-0.0083512,0.0063152,0.0000616,0.0014546,-0.0005902",
     "Ids": "AID017,AID001,AID007,I19366,I13514,I13518,I13506_d,I9033,I9041,GLI003,I16709,I15571,I15582,TIR002",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}, {\"Label\" : \"Genetic origins of the Minoans and Mycenaeans\", \"Link\" : \"https://www.nature.com/articles/nature23310\"}, {\"Label\" : \"Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean\", \"Link\" : \"https://www.nature.com/articles/s41559-022-01952-3\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      },
+      {
+        "Label": "Genetic origins of the Minoans and Mycenaeans",
+        "Link": "https://www.nature.com/articles/nature23310"
+      },
+      {
+        "Label": "Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean",
+        "Link": "https://www.nature.com/articles/s41559-022-01952-3"
+      }
+    ]
   },
   {
     "SampleLabel": "Greece Armenochori Culture (2300-1900 BC)",
     "Coordinates": "Greece_Logkas_MBA,0.1206525,0.149283,0.02225,-0.010336,0.0261585,-0.0079485,-0.00564,-0.0032305,-0.0002045,0.019408,0.0022735,0.010341,-0.014048,0.0005505,-0.01079,-0.0129935,-0.007106,0.0,0.0059705,-0.0075665,-0.0090465,0.004884,0.005238,0.0042175,-0.0045505",
     "Ids": "Log02,Log04",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genomic history of the Aegean palatial civilizations\", \"Link\" : \"https://www.cell.com/cell/fulltext/S0092-8674(21)00370-6?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867421003706%3Fshowall%3Dtrue\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genomic history of the Aegean palatial civilizations",
+        "Link": "https://www.cell.com/cell/fulltext/S0092-8674(21)00370-6?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867421003706%3Fshowall%3Dtrue"
+      }
+    ]
   },
   {
     "SampleLabel": "Cycladic Aegean (1200 BC)",
     "Coordinates": "Greece_Aegean_Cycladic*(1200*BC),0.1178068,0.1612152,-0.0085795,-0.0672648,0.019388,-0.0263552,0.0009988,-0.007788,0.0091012,0.0460602,0.0053995,0.0088048,-0.0135282,0.0023395,-0.0226652,-0.0101762,0.0099092,-0.0036425,0.0058762,-0.0079412,-0.0068628,0.0023185,-0.0024648,0.0016568,-0.002335",
     "Ids": "KUK001,KUK002,KUK005,KUK006",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean\", \"Link\" : \"https://www.nature.com/articles/s41559-022-01952-3\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean",
+        "Link": "https://www.nature.com/articles/s41559-022-01952-3"
+      }
+    ]
   },
   {
     "SampleLabel": "Greece Achaea Graeco-Dalmatian (1600-1450 BC)",
     "Coordinates": "GRC_Achaea_Graeco-Illyrian*(1600-1500*BC),0.1227393,0.1558838,0.0115022,-0.0409672,0.0259535,-0.0183138,-0.0025458,-0.0022692,0.0098512,0.036113,0.0065498,0.0075435,-0.0160057,-0.0032798,-0.0141602,-0.0096128,0.0054977,0.001879,0.0079188,-0.00692,-0.0077572,0.0031532,-0.0005137,0.0107443,-0.0028142",
     "Ids": "MYG001,MYG006,MYG008,MYG004,MYG005,MYG003",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean\", \"Link\" : \"https://www.nature.com/articles/s41559-022-01952-3\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean",
+        "Link": "https://www.nature.com/articles/s41559-022-01952-3"
+      }
+    ]
   },
   {
     "SampleLabel": "Greece Achaea Proto-Illyrian (1600 BC)",
     "Coordinates": "GRC_Achaea_Illyrian*(1600-1500*BC):Greece_Mygdalia_LBA.rel.AG:MYG002.AG__BC_1576__Cov_36.63%,0.12862,0.15436,0.018856,-0.028101,0.026466,-0.013108,-0.00235,-0.007154,0.007976,0.03426,0.009256,0.008542,-0.012785,-0.002752,-0.005565,-0.010077,0.012386,-0.002407,0.002765,-0.000375,0.000749,-0.000247,0.002835,0.018798,-0.006706",
     "Ids": "MYG002",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean\", \"Link\" : \"https://www.nature.com/articles/s41559-022-01952-3\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean",
+        "Link": "https://www.nature.com/articles/s41559-022-01952-3"
+      }
+    ]
   },
   {
     "SampleLabel": "Greece Dodona Epirus (1200 BC)",
     "Coordinates": "Greece_Epirus_Arta_Ammotopos,0.1246365,0.161977,0.008862,-0.0486115,0.0287745,-0.0195225,-0.0001175,-0.001731,0.010124,0.0481105,0.0003245,0.0086925,-0.0180625,-0.001858,-0.017983,-0.011668,0.0062585,-0.001774,0.011564,-0.006566,-0.010731,0.008903,-0.002958,0.001205,-0.0060475",
     "Ids": "Amm_Epi_LBA_1,Amm_Epi_LBA_2",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Genetic affinities between an ancient Greek colony and its metropolis: the case of Amvrakia in western Greece\", \"Link\" : \"https://www.biorxiv.org/content/10.1101/2025.07.01.662689v1\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Genetic affinities between an ancient Greek colony and its metropolis: the case of Amvrakia in western Greece",
+        "Link": "https://www.biorxiv.org/content/10.1101/2025.07.01.662689v1"
+      }
+    ]
   },
   {
     "SampleLabel": "Early Cycladic Aegean (2300 BC)",
     "Coordinates": "Early_Cycladic_Aegean,0.117238,0.1716245,-0.02093,-0.0818805,0.0184645,-0.036953,-0.0019975,-0.0078455,0.0037835,0.0491125,0.0068205,0.014837,-0.022299,0.0049545,-0.028026,-0.0068945,0.015581,0.003104,0.009867,-0.0124435,-0.00836,-0.0027825,0.0012325,0.004217,-0.0040715",
     "Ids": "Kou01,Kou03",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"https://www.cell.com/cell/fulltext/S0092-8674(21)00370-6?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867421003706%3Fshowall%3Dtrue\", \"Link\" : \"https://doi.org/10.1016/j.cell.2021.03.039\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "https://www.cell.com/cell/fulltext/S0092-8674(21)00370-6?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867421003706%3Fshowall%3Dtrue",
+        "Link": "https://doi.org/10.1016/j.cell.2021.03.039"
+      }
+    ]
   },
   {
     "SampleLabel": "Late Minoan & Mycenaean Crete (1600-1200 BC)",
     "Coordinates": "ChaniaCreteMycenoan,0.1217907,0.1654345,-0.0090688,-0.0732287,0.0248983,-0.0304522,-0.0015443,-0.0060546,0.0110248,0.051269,0.0036345,0.0089704,-0.0167067,-0.0005375,-0.0265043,-0.0096411,0.0118898,0.0028837,0.0084219,-0.0108028,-0.010838,0.0029088,-0.001661,0.0013599,-0.0025261",
     "Ids": "XAN003-007,XAN013,XAN014,XAN015,XAN017,XAN018,XAN021,XAN023,XAN024,XAN025,XAN026,XAN027,XAN028,XAN029,XAN031,XAN034,XAN035,XAN036,XAN040,XAN041,XAN053",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean\", \"Link\" : \"https://www.nature.com/articles/s41559-022-01952-3\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean",
+        "Link": "https://www.nature.com/articles/s41559-022-01952-3"
+      }
+    ]
   },
   {
     "SampleLabel": "Hungary BellBeaker (2500-2000 BC)",
     "Coordinates": "Hungary_Bellbeaker,0.1259297,0.1410665,0.04618,0.0183816,0.0415459,0.0028902,0.0023715,0.0016363,0.0117695,0.0159044,-0.0016829,0.0045504,-0.0095414,-0.0081697,0.0012339,0.0043635,0.0027617,-0.0008985,0.0043538,0.002308,0.0031083,0.0019223,-0.0023978,-0.007208,0.0016548",
     "Ids": "I2364,I2365,I2741,I2786,I2787,I3528,I3529,I4131,I4178,I7044,I7045",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}, {\"Label\" : \"The genetic origin of the Indo-Europeans\", \"Link\" : \"https://www.nature.com/articles/s41586-024-08531-5\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      },
+      {
+        "Label": "The genetic origin of the Indo-Europeans",
+        "Link": "https://www.nature.com/articles/s41586-024-08531-5"
+      }
+    ]
   },
   {
     "SampleLabel": "Iranian Plateau (3000-2300 BC)",
     "Coordinates": "TepeHissar_Chalcolithic,0.0783102,0.0975923,-0.1203392,-0.0130815,-0.0978644,0.0146139,0.0116329,-0.0053306,-0.0719925,-0.0328572,-0.002663,-0.0022479,-0.0028839,-0.0024772,0.0198289,0.0299385,-0.0079534,0.0058784,0.0068505,-0.0215229,0.0063512,-0.0161492,-0.0042273,-0.0236176,0.0127773",
     "Ids": "I2512,I2513,I2514,I2923,I2924,I2925,I2927,I2928,I2514",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Three assays for in-solution enrichment of ancient human DNA at more than a million SNPs\", \"Link\" : \"https://genome.cshlp.org/content/32/11-12/2068\"}, {\"Label\" : \"The formation of human populations in South and Central Asia\", \"Link\" : \"https://www.science.org/doi/10.1126/science.aat7487\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Three assays for in-solution enrichment of ancient human DNA at more than a million SNPs",
+        "Link": "https://genome.cshlp.org/content/32/11-12/2068"
+      },
+      {
+        "Label": "The formation of human populations in South and Central Asia",
+        "Link": "https://www.science.org/doi/10.1126/science.aat7487"
+      }
+    ]
   },
   {
     "SampleLabel": "Iraq Mesopotamian (1300 BC)",
     "Coordinates": "Mesopotamian_Iraq*(1300*BC),0.0899205,0.142682,-0.070899,-0.0812345,-0.0210805,-0.025937,-0.00047,-0.0040385,-0.0201455,-0.005194,-0.004953,-0.009142,0.0167245,0.0035095,-0.0078715,0.000199,-0.014277,0.011212,-0.0009425,-0.007316,0.0028075,0.0095215,-0.0023415,-0.005784,-0.007484",
     "Ids": "I6441,I6441_d",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"https://doi.org/10.1126/science.abm4247\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "https://doi.org/10.1126/science.abm4247",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Israel Canaanite (2200–1200 BC)",
     "Coordinates": "Canaanites,0.0874235,0.1464656,-0.0629427,-0.1004951,-0.0136998,-0.0397914,-0.004268,-0.009141,0.0138285,0.009006,0.0118386,-0.0108678,0.0230711,0.0044483,-0.0075303,0.0074378,-0.0055686,0.0036617,0.003187,0.0061562,0.0039045,0.0054925,-0.0053553,0.0018695,-0.001294",
     "Ids": "ASH029,ASH033,ASH034,I2198,I10092,I10093,I10097,I10099,I10104,I10106,I10263,I10264,I10266,I10268,I10359,I10768,I10770,I10771,I2062,I2190,I2195,I3832,I3965,I3966,I4518,I4519,I4525,I6923,I7003,I8187",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient DNA sheds light on the genetic origins of early Iron Age Philistines\", \"Link\" : \"https://www.science.org/doi/10.1126/sciadv.aax0061\"}, {\"Label\" : \"The Genomic History of the Bronze Age Southern Levant\", \"Link\" : \"https://doi.org/10.1016/j.cell.2020.04.024\"}, {\"Label\" : \"Punic people were genetically diverse with almost no Levantine ancestors\", \"Link\" : \"https://www.nature.com/articles/s41586-025-08913-3\"}, {\"Label\" : \"A Late Bronze Age II clay coffin from Tel Shaddud in the Central Jezreel Valley, Israel: context and historical implications\", \"Link\" : \"https://www.tandfonline.com/doi/full/10.1080/00758914.2017.1368204\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA sheds light on the genetic origins of early Iron Age Philistines",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.aax0061"
+      },
+      {
+        "Label": "The Genomic History of the Bronze Age Southern Levant",
+        "Link": "https://doi.org/10.1016/j.cell.2020.04.024"
+      },
+      {
+        "Label": "Punic people were genetically diverse with almost no Levantine ancestors",
+        "Link": "https://www.nature.com/articles/s41586-025-08913-3"
+      },
+      {
+        "Label": "A Late Bronze Age II clay coffin from Tel Shaddud in the Central Jezreel Valley, Israel: context and historical implications",
+        "Link": "https://www.tandfonline.com/doi/full/10.1080/00758914.2017.1368204"
+      }
+    ]
   },
   {
     "SampleLabel": "Philistines (1200 BC)",
     "Coordinates": "Philistines,0.0910587,0.1543607,-0.04714,-0.075582,-0.0020517,-0.02854,-0.000705,-0.0017693,0.0051813,0.032681,0.003248,0.0004493,-0.0057483,0.0061473,-0.0160603,-0.0054363,-0.0074753,0.002914,0.0036453,0.002376,-0.000208,0.0084087,0.0009037,-0.0062257,-0.0021953",
     "Ids": "ASH066,ASH067,ASH2-3",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient DNA sheds light on the genetic origins of early Iron Age Philistines\", \"Link\" : \"https://www.science.org/doi/10.1126/sciadv.aax0061\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA sheds light on the genetic origins of early Iron Age Philistines",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.aax0061"
+      }
+    ]
   },
   {
     "SampleLabel": "Italy Polada Culture (2200–1500 BC)",
     "Coordinates": "Italy_Polada_Culture,0.1238873,0.1709296,0.0383671,-0.052241,0.0662634,-0.0257461,-0.0031292,0.0000365,0.0439403,0.0768269,-0.0010171,0.0136378,-0.0283629,-0.0075475,-0.0184793,-0.0067271,0.0118993,0.0019404,0.0054116,-0.0089254,-0.0012609,0.0041326,-0.0070381,-0.0123352,-0.0008445",
     "Ids": "COR02,LAS01,NOG302,NOG303,PAL01,PAL02,ROM302,ROM303,ROM306,ROM307,ROM401,ROM402,SOL03,VAL01,VOL01,STE05,MEZ04,ROM304,ROM305",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient genomes reveal structural shifts after the arrival of Steppe-related ancestry in the Italian Peninsula\", \"Link\" : \"https://www.sciencedirect.com/science/article/pii/S0960982221005352\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomes reveal structural shifts after the arrival of Steppe-related ancestry in the Italian Peninsula",
+        "Link": "https://www.sciencedirect.com/science/article/pii/S0960982221005352"
+      }
+    ]
   },
   {
     "SampleLabel": "Sicani (2300–1250 BC)",
     "Coordinates": "Italy_Sicily_BA,0.1223598,0.1685143,0.0174654,-0.0621573,0.0489706,-0.0277148,-0.0021591,-0.0051922,0.0292087,0.0685207,0.0008425,0.0121391,-0.0228286,-0.0026406,-0.0179406,-0.0083946,0.0097707,-0.0008235,0.0031896,-0.0073629,-0.0054826,0.0015611,-0.0067556,-0.0109276,-0.00116",
     "Ids": "I11442,I3124,I7796,I7807,UZZ057,I3122,I3123,I10372,I3878,I10373,I3125,I4109,I22234,I22238,I22241,I22242",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The spread of steppe and Iranian-related ancestry in the islands of the western Mediterranean\", \"Link\" : \"https://www.nature.com/articles/s41559-020-1102-0\"}, {\"Label\" : \"Punic people were genetically diverse with almost no Levantine ancestors\", \"Link\" : \"https://www.nature.com/articles/s41586-025-08913-3\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The spread of steppe and Iranian-related ancestry in the islands of the western Mediterranean",
+        "Link": "https://www.nature.com/articles/s41559-020-1102-0"
+      },
+      {
+        "Label": "Punic people were genetically diverse with almost no Levantine ancestors",
+        "Link": "https://www.nature.com/articles/s41586-025-08913-3"
+      }
+    ]
   },
   {
     "SampleLabel": "Sardinia Nuragic (1200 BC)",
     "Coordinates": "Italy_Sardinia_BA_Nuragic,0.1283355,0.175179,0.0400692,-0.0569288,0.0805535,-0.031445,-0.004935,-0.0013845,0.058136,0.0965855,0.002598,0.0180965,-0.0338202,-0.0106658,-0.0164222,-0.002022,0.0105612,0.0008235,0.0040222,-0.0111618,0.0038995,0.0038025,-0.014882,-0.0291005,-0.0025148",
     "Ids": "ORC001,ORC003,ORC004,ORC007",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Genetic history from the Middle Neolithic to present on the Mediterranean island of Sardinia\", \"Link\" : \"https://www.nature.com/articles/s41467-020-14523-6\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Genetic history from the Middle Neolithic to present on the Mediterranean island of Sardinia",
+        "Link": "https://www.nature.com/articles/s41467-020-14523-6"
+      }
+    ]
   },
   {
     "SampleLabel": "Italic Proto-Apennine Culture (1900-1650 BC)",
     "Coordinates": "ProtoApennine,0.1266686,0.1553761,0.0435844,-0.0055371,0.0548673,-0.0066934,-0.00423,-0.0009559,0.0242213,0.0437629,0.0010207,0.012439,-0.0186677,-0.0096336,-0.0031216,-0.004224,-0.0034646,-0.001285,0.0042199,-0.003341,0.0015151,0.0041334,-0.0058806,-0.0064379,-0.001899",
     "Ids": "R11102,R11104,R11105,R11107,BRC010,BRC030,BRC002",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"A genetic history of continuity and mobility in the Iron Age central Mediterranean\", \"Link\" : \"https://www.nature.com/articles/s41559-023-02143-4\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "A genetic history of continuity and mobility in the Iron Age central Mediterranean",
+        "Link": "https://www.nature.com/articles/s41559-023-02143-4"
+      }
+    ]
   },
   {
     "SampleLabel": "Italic Apennine Culture (1650-1200 BC)",
     "Coordinates": "Italic_Apennine,0.1274819,0.1538864,0.0357261,-0.0136952,0.049527,-0.0147068,-0.0013005,0.0003538,0.0237519,0.0460813,-0.0040921,0.0093118,-0.0204458,-0.0093857,-0.0070031,0.0039424,0.0126038,-0.0008447,0.0034946,-0.0040771,-0.0029032,0.0031737,-0.0014626,-0.0055591,-0.0042072",
     "Ids": "CNV006,CNV017,CNV018,CNV021,ROC001,NEO806,BRC003,BRC007,GMO001,GMO004,GMO005,GMO006,GMO007,GMO009,GMO010,GMO012,GMO015,GMO018,GMO021,GMO022,GCP003,GCP002A1,CNV006,CNV017,CNV018,CNV021",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Population genomics of post-glacial western Eurasia\", \"Link\" : \"https://www.nature.com/articles/s41586-023-06865-0\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of post-glacial western Eurasia",
+        "Link": "https://www.nature.com/articles/s41586-023-06865-0"
+      }
+    ]
   },
   {
     "SampleLabel": "Proto-Phoenician (1800-1700 BC)",
     "Coordinates": "LBN_MBA,0.0817628,0.1475902,-0.060025,-0.1005072,-0.0128227,-0.0376503,-0.0035252,-0.0073458,0.0119307,0.0087777,0.0095538,-0.0110402,0.0220017,0.0034865,-0.0055645,0.007447,-0.0002827,-0.000739,-0.0001467,0.0067532,0.0045337,0.008264,-0.0021773,0.0019882,-0.0036323",
     "Ids": "ERS1790729,ERS1790730,ERS1790731,ERS1790732,ERS1790733,ERS1790733_d",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Continuity and Admixture in the Last Five Millennia of Levantine History from Ancient Canaanite and Present-Day Lebanese Genome Sequences\", \"Link\" : \"https://doi.org/10.1016/j.ajhg.2017.06.013\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Continuity and Admixture in the Last Five Millennia of Levantine History from Ancient Canaanite and Present-Day Lebanese Genome Sequences",
+        "Link": "https://doi.org/10.1016/j.ajhg.2017.06.013"
+      }
+    ]
   },
   {
     "SampleLabel": "Lithuania Corded Ware (2800-2500 BC)",
     "Coordinates": "LTN_LN,0.1225497,0.0978293,0.0563167,0.0949623,-0.0007183,0.0397887,0.003995,0.0031537,-0.0290423,-0.0438583,-0.0040057,-0.0048957,-0.0039147,-0.0139457,0.031668,0.0163087,0.0065627,-0.0062923,-0.005405,0.0081707,-0.007861,0.0059763,0.0060393,0.012331,-0.0013973",
     "Ids": "Gyvakarai1_10bp,Plinkaigalis241,Plinkaigalis242",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic prehistory of the Baltic Sea region\", \"Link\" : \"https://www.nature.com/articles/s41467-018-02825-9\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic prehistory of the Baltic Sea region",
+        "Link": "https://www.nature.com/articles/s41467-018-02825-9"
+      }
+    ]
   },
   {
     "SampleLabel": "Luxembourg BellBeaker (2000 BC)",
     "Coordinates": "LUX_BellBeaker,0.122929,0.116786,0.059585,0.0679915,0.034468,0.025937,0.0043475,0.003923,-0.0020455,-0.0137585,-0.007957,0.0017235,-0.010778,-0.022295,0.0240225,0.017104,0.0093225,0.0022805,0.0018855,0.017321,0.0068005,0.0080375,-0.0023415,0.001687,-0.0001795",
     "Ids": "ALW1,ALW2",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      }
+    ]
   },
   {
     "SampleLabel": "Moldova Yamnaya (3000-2700 BC)",
     "Coordinates": "Moldova_Yamnaya,0.1208422,0.0935132,0.0418602,0.10581,-0.0253892,0.0419498,0.0019778,-0.0027498,-0.0509603,-0.0685359,-0.0001352,-0.0004372,-0.0024282,-0.0163313,0.0349253,0.0037457,-0.0140272,-0.0029032,0.0005341,0.0068366,-0.0036498,0.0008037,0.0083603,0.0180447,-0.0050693",
     "Ids": "I10206,I10208,I10398,I10414,I10424,I12507,I12637,I17744,I17745,I20068,I7847,I7848",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic origin of the Indo-Europeans\", \"Link\" : \"https://doi.org/10.1038/s41586-024-08531-5\"}, {\"Label\" : \"A genomic history of the North Pontic Region from the Neolithic to the Bronze Age\", \"Link\" : \"https://doi.org/10.1038/s41586-024-08372-2\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic origin of the Indo-Europeans",
+        "Link": "https://doi.org/10.1038/s41586-024-08531-5"
+      },
+      {
+        "Label": "A genomic history of the North Pontic Region from the Neolithic to the Bronze Age",
+        "Link": "https://doi.org/10.1038/s41586-024-08372-2"
+      }
+    ]
   },
   {
     "SampleLabel": "Montenegro Hvar Culture (3000 BC)",
     "Coordinates": "Montenegro_LN_Hvar_possible.AG:I16994.AG__BC_3000__Cov_17.23%,0.120652,0.19092,0.017725,-0.08075,0.059703,-0.044344,0.001175,-0.009923,0.042132,0.105515,0.009581,0.009292,-0.028692,-0.005367,-0.024294,0.005171,0.04081,-0.004561,0.019106,-0.015382,-0.026453,0.000124,0.003574,0.005784,-0.007305",
     "Ids": "I16994",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Netherlands BellBeaker (2000 BC)",
     "Coordinates": "Netherlands_LNB_BellBeaker,0.1271023,0.1237253,0.0634822,0.0715983,0.0257482,0.025565,-0.0002742,0.0038845,-0.007397,-0.0112985,-0.0053588,0.0047955,-0.008102,-0.0139228,0.0267142,0.011712,-0.0047157,-0.0017737,0.001676,0.008254,0.007258,0.0041837,-0.0030607,0.003133,0.0007385",
     "Ids": "I4068,I4069,I4073,I4074,I4075,I5750",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      }
+    ]
   },
   {
     "SampleLabel": "Netherlands Proto-Germanic (1500-1300 BC",
     "Coordinates": "Netherlands_MBA,0.1278234,0.127449,0.0653926,0.0646646,0.0352065,0.0203589,0.0040422,0.0046843,0.0029043,-0.0075993,-0.0045631,0.0027874,-0.0109413,-0.0133494,0.0225703,0.0108856,-0.0021645,0.0021411,0.0033185,0.0041143,0.0073495,0.0046864,0.0016884,0.0079166,0.0012213",
     "Ids": "I11972,I11973,I12081,I12082,I17019,I26828,I26829,I26830,I26831,I26832",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Large-scale migration into Britain during the Middle to Late Bronze Age\", \"Link\" : \"https://www.nature.com/articles/s41586-021-04287-4\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
   },
   {
     "SampleLabel": "Proto-Dardanian (1200 BC)",
     "Coordinates": "NorthMacedonia_BA.AG:I7231.AG__BC_1219__Cov_74.04%,0.132035,0.149283,0.010182,-0.02261,0.027697,-0.006414,0.00423,-0.002769,0.002863,0.033349,0.003573,0.006594,-0.010258,0.002064,-0.018458,0.001724,0.004433,0.002027,0.007416,-0.006253,-0.016596,0.008161,-0.003821,-0.001928,-0.003113",
     "Ids": "I7231",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Poland BellBeaker (2400-2100 BC)",
     "Coordinates": "Poland_BellBeaker,0.1271975,0.127449,0.0527025,0.0485308,0.0323905,0.0172218,0.003995,0.0021922,-0.0048062,-0.0018678,-0.0031665,0.0045338,-0.0124502,-0.0124548,0.0182545,0.0120658,-0.0028685,0.0006018,0.0049022,0.0067532,0.007549,0.008192,0.0034202,0.0003615,-0.0002395",
     "Ids": "I4253,I6580,I6582,I6583",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      }
+    ]
   },
   {
     "SampleLabel": "Poland Chopice-Vesele Culture (2200 BC)",
     "Coordinates": "Poland_ChopiceVeseleCulture,0.127482,0.1193245,0.0576995,0.066215,0.023235,0.0207775,0.004935,0.010269,-0.015544,-0.020046,-0.003248,0.0060695,-0.0095885,-0.0144505,0.0238185,0.011469,-0.0011085,0.0,0.0014455,0.00494,-0.004055,-0.002535,-0.0005545,0.006929,-0.005389",
     "Ids": "I6531,I6537",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      }
+    ]
   },
   {
     "SampleLabel": "Poland Unetice (1800 BC)",
     "Coordinates": "Poland_EBA_Unetice,0.1233083,0.1198327,0.063356,0.0677223,0.0303647,0.024914,0.0077553,0.0039227,-0.009408,-0.0146397,-0.001191,0.0048957,-0.010109,-0.0181207,0.0221677,0.00632,-0.005259,0.0041383,0.0051957,0.0145903,0.0069463,0.0100983,0.0023007,0.0103227,-0.009101",
     "Ids": "RISE109,RISE150_noUDG,RISE154",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Population genomics of Bronze Age Eurasia\", \"Link\" : \"https://www.nature.com/articles/nature14507\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of Bronze Age Eurasia",
+        "Link": "https://www.nature.com/articles/nature14507"
+      }
+    ]
   },
   {
     "SampleLabel": "Poland Globular Amphora Culture (3000-2700 BC)",
     "Coordinates": "Poland_GlobularAmphora,0.1214113,0.1675623,0.0614707,-0.018411,0.0867857,-0.0269597,0.0013317,0.0013843,0.046359,0.0674883,-0.003302,0.0138877,-0.019425,-0.0103677,-0.0066503,0.0079557,0.0089093,0.0054053,0.0085893,0.0037933,0.017303,0.0065947,-0.0122833,-0.0257467,-0.0027943",
     "Ids": "I2403,I2433,I2440",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genomic history of southeastern Europe\", \"Link\" : \"https://www.nature.com/articles/nature25778\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genomic history of southeastern Europe",
+        "Link": "https://www.nature.com/articles/nature25778"
+      }
+    ]
   },
   {
     "SampleLabel": "Portugal Proto-Iberian (1500–1300 BC)",
     "Coordinates": "Portugal_Alentejo_BA:PT_23197__BC_1400__Cov_49.79%,0.118376,0.155376,0.058077,-0.004522,0.067705,-0.007251,-0.00141,0.001615,0.037223,0.056858,-0.001299,0.016335,-0.026016,-0.023809,0.005836,0.003845,-0.000652,0.004561,-0.004148,-0.003627,0.017469,0.001978,-0.012571,-0.0194,0.003233\nPortugal_Alentejo_BA:PT_23198__BC_1400__Cov_16.25%,0.127482,0.144205,0.05506,-0.001938,0.072013,0.006136,-0.002115,0.019153,0.043768,0.070708,-0.006171,0.005245,-0.017096,-0.010046,-0.002986,-0.011933,-0.02047,0.004307,0.005279,-0.006003,0.015473,0.006925,-0.014543,-0.027112,0.00946\nPortugal_Alentejo_BA:PT_23207__BC_1400__Cov_60.95%,0.119514,0.149283,0.058831,-0.002907,0.068628,-0.009203,-0.00611,-0.000231,0.044586,0.056675,0.000162,0.007643,-0.020812,-0.014313,0.007872,0.009149,0.015385,0.00076,0.00088,-0.004252,0.005241,0.001484,0.000123,-0.022172,0.003832\nPortugal_Alentejo_BA:PT_23208__BC_1400__Cov_43.23%,0.127482,0.146236,0.060716,0.010013,0.068628,-0.002789,0.000235,-0.001385,0.039269,0.056493,-0.00065,0.009292,-0.028246,-0.012111,0.006922,0.016574,0.012386,-0.002027,0.00264,0.007253,0.003868,0.000495,-0.007272,-0.018918,0.002634\nPortugal_Alentejo_BA:PT_23209__BC_1400__Cov_17.79%,0.124067,0.151314,0.05506,-0.020995,0.091402,0.000558,-0.019271,-0.000923,0.046222,0.066334,0.000487,0.007044,-0.024975,-0.009496,-0.0038,0,0.00665,-0.003674,0.008547,0.008254,0.004991,0.001978,-0.017748,-0.031209,0.006826\nPortugal_Alentejo_BA:PT_23210__BC_1400__Cov_71.54%,0.126344,0.161469,0.062602,-0.000969,0.067705,-0.006972,-0.005875,0.002769,0.039473,0.056858,-0.005684,0.014387,-0.018731,-0.011836,-0.002986,0.00411,0.005867,-0.001267,-0.000628,0.001,0.010731,-0.000742,-0.002218,-0.017834,0.005628\nPortugal_Alentejo_BA:PT_23211__BC_1400__Cov_14.04%,0.12862,0.15436,0.056945,-0.010336,0.067397,-0.00502,-0.015511,0.005538,0.037632,0.054306,-0.01088,0.006294,-0.013825,-0.010322,0.002714,-0.00716,0.010561,-0.002787,-0.018603,-0.014257,0.001248,0.000989,-0.010723,-0.015544,0.010777\nPortugal_Alentejo_BA:PT_23219__BC_1400__Cov_29.58%,0.122929,0.144205,0.053551,-0.008721,0.068936,-0.015339,-0.010575,0.006461,0.050108,0.066516,0.003248,0.006744,-0.028989,-0.025873,0.011536,0.018032,0.019688,0.006714,-0.006159,0.006003,0.000624,0.004822,-0.006779,-0.020364,0.00467",
     "Ids": "PT_23197,PT_23198,PT_23207,PT_23208,PT_23209,PT_23210,PT_23211,PT_23219",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genomic history of the Iberian Peninsula over the past 8000 years\", \"Link\" : \"https://www.science.org/doi/10.1126/science.aav4040\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genomic history of the Iberian Peninsula over the past 8000 years",
+        "Link": "https://www.science.org/doi/10.1126/science.aav4040"
+      }
+    ]
   },
   {
     "SampleLabel": "Romania Monteoru culture (2100–1900 BC)",
     "Coordinates": "Romania_BA_Arman,0.1238775,0.1465748,0.0470773,0.0055448,0.0552923,-0.0023708,-0.0033293,0.009038,0.023827,0.0299475,-0.001326,0.0026477,-0.0078543,0.0008943,-0.0084373,0.0095245,0.016537,-0.0016048,0.0023043,0.0070033,0.0062807,0.0087793,-0.0054025,-0.0248832,0.0017567",
     "Ids": "I10479,I10480,I10481,I10483,I10558,I10562",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Russia Afanasievo Culture (3000–2500 BC)",
     "Coordinates": "Russia_Afanasievo,0.1234168,0.0892214,0.0388433,0.1120588,-0.0312366,0.0455788,0.0030383,-0.00089,-0.0591805,-0.0766304,0.0007889,0.0004174,-0.0038971,-0.0216559,0.0367316,0.0103325,-0.0082699,-0.0018461,-0.0034297,0.0085131,-0.0064261,0.0013249,0.0114444,0.0223869,-0.0019759",
     "Ids": "I10564,I10565,I11112,I11752,I1829,I2071,I3388,I3950,I5271,I5272,I5278,I6711,I6713,I6715",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The formation of human populations in South and Central Asia\", \"Link\" : \"https://www.science.org/doi/10.1126/science.aat7487\"}, {\"Label\" : \"Bioarchaeological Perspectives on Late Antiquity in Dalmatia: Paleogenetic, Dietary, and Population Studies of the Hvar—Radošević burial site\", \"Link\" : \"https://link.springer.com/article/10.1007/s12520-024-02050-0\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The formation of human populations in South and Central Asia",
+        "Link": "https://www.science.org/doi/10.1126/science.aat7487"
+      },
+      {
+        "Label": "Bioarchaeological Perspectives on Late Antiquity in Dalmatia: Paleogenetic, Dietary, and Population Studies of the Hvar—Radošević burial site",
+        "Link": "https://link.springer.com/article/10.1007/s12520-024-02050-0"
+      }
+    ]
   },
   {
     "SampleLabel": "Russia Dolmen culture (1550 BC)",
     "Coordinates": "Russia_Adygea_Dolmen,0.1141075,0.1216095,-0.0369578,-0.001615,-0.0336985,0.005717,0.0098115,-0.003692,-0.0553748,-0.0364472,0.0001218,0.0071185,-0.0191402,-0.0029242,0.0110272,-0.011237,0.0081815,-0.0005065,-0.0072275,0.0160388,0.0060832,0.0072335,-0.0001235,-0.0075915,0.0010778",
     "Ids": "SUS003,SUS005,SUS009,SUS014",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The rise and transformation of Bronze Age pastoralists in the Caucasus\", \"Link\" : \"https://www.nature.com/articles/s41586-024-08113-5\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The rise and transformation of Bronze Age pastoralists in the Caucasus",
+        "Link": "https://www.nature.com/articles/s41586-024-08113-5"
+      }
+    ]
   },
   {
     "SampleLabel": "Scotland BellBeaker (2800-2300 BC)",
     "Coordinates": "Scotland_BellBeaker.AG:I5367.AG__BC_2362__Cov_66.34%,0.127482,0.126941,0.070522,0.062985,0.028928,0.027889,0.0047,0.004846,0.001227,-0.012392,-0.003573,0.006894,-0.01219,-0.01445,0.029723,0.003447,-0.008214,0.0019,0.000251,0.0005,0.007112,-0.002473,-0.008504,0.003856,-0.001437\nScotland_BellBeaker.AG:I5385.AG__BC_2280__Cov_48.58%,0.119514,0.119832,0.062602,0.07106,0.021542,0.024263,-0.003995,0.001154,-0.002045,-0.01549,-0.008769,0.008692,-0.011001,-0.013212,0.028501,0.005834,-0.012778,0.002534,0.006411,0.001251,0.008111,0.016322,0.002218,0.01205,0.003473",
     "Ids": "I5367,I5385",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      }
+    ]
   },
   {
     "SampleLabel": "Proto-Insular Celtic (1600–1400 BC)",
     "Coordinates": "Scotland_Orkney,0.1275768,0.1330343,0.0627278,0.0557713,0.0333396,0.0178956,0.008715,0.0027112,0.0029486,-0.0030828,-0.0021112,0.0089421,-0.0154234,-0.021492,0.0255495,0.0082868,-0.0004998,0.0008656,0.0016132,0.0038663,0.0055943,0.0018959,0.0027115,0.0063261,0.0001398",
     "Ids": "KD006,KD044,KD047,KD049,KD050_65,KD057,KD059,KD060,KD061,KD063,KD064,KD067",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient DNA at the edge of the world: Continental immigration and the persistence of Neolithic male lineages in Bronze Age Orkney\", \"Link\" : \"https://www.pnas.org/doi/full/10.1073/pnas.2108001119\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA at the edge of the world: Continental immigration and the persistence of Neolithic male lineages in Bronze Age Orkney",
+        "Link": "https://www.pnas.org/doi/full/10.1073/pnas.2108001119"
+      }
+    ]
   },
   {
     "SampleLabel": "Serbia Maros Culture (2500-1800 BC)",
     "Coordinates": "Serbia_Proto-Illyric_Maros_culture*(1950*BC),0.1265399,0.1465164,0.0481154,0.0139113,0.0444432,0.0019233,0.001645,0.0032465,0.012603,0.0217174,0.0011198,0.0031576,-0.007433,-0.000019,-0.0062852,0.0002285,0.0053414,0.0011184,0.0038142,0.0006684,0.0004906,0.0035092,-0.0029028,-0.0092118,-0.0023412",
     "Ids": "I17912,I17913,I23209,I23210,I23211,I16803,I17916,I23205,I23206,I23207,I23208,I23212,MOK12,MOK13,MOK15,MOK19A,MOK20,MOK21A,MOK22,MOK24A,MOK25A,MOK26A,MOK27,MOK28A,MOK29A,MOK30,MOK32,MOK33,MOK9B",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Ancient genomes provide insights into family structure and the heredity of social status in the early Bronze Age of southeastern Europe\", \"Link\" : \"https://www.nature.com/articles/s41598-021-89090-x\"}, {\"Label\" : \"Large-scale migration into Britain during the Middle to Late Bronze Age\", \"Link\" : \"https://www.nature.com/articles/s41586-021-04287-4\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomes provide insights into family structure and the heredity of social status in the early Bronze Age of southeastern Europe",
+        "Link": "https://www.nature.com/articles/s41598-021-89090-x"
+      },
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
   },
   {
     "SampleLabel": "Spain El Argar Culture (2200-1550 BC)",
     "Coordinates": "ElArgar_culture*(2200-1550*BC),0.1232566,0.1560222,0.0550768,-0.0113637,0.0715005,-0.0118106,-0.0021684,0.0013391,0.0492003,0.0674052,-0.0021898,0.0129498,-0.0256349,-0.0164813,0.0019186,0.0043714,0.0043995,0.0024148,0.0011961,-0.0018399,0.0096024,0.0028365,-0.010687,-0.0251423,0.0017364",
     "Ids": "BAS022,BAS023,BAS024,BAS025,BAS027,BAS002,BAS018,BAS026,ALM035,ALM047,ALM053,ALM056_merged,ALM062,ALM069,ALM070,ALM071,ALM075,ALM079,ALM084,ALM088,ALM001_merged,ALM002_merged,ALM004,ALM006,ALM007,ALM008,ALM014,ALM015_merged,ALM016_merged,ALM017,ALM018,ALM019_merged,ALM020,ALM021,ALM024,ALM025,ALM026,ALM027,ALM028_merged,ALM040,ALM041,ALM042,ALM043,ALM046,ALM048,ALM049,ALM050,ALM034,ALM003,ALM029,ALM032,ALM036,ALM038_merged,ALM039,ALM051,ALM055,ALM057,ALM063,ALM064,ALM067,ALM068,ALM076,ALM078,ALM081,ALM086,ALM087",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Genomic transformation and social organization during the Copper Age–Bronze Age transition in southern Iberia\", \"Link\" : \"https://www.science.org/doi/10.1126/sciadv.abi7038\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Genomic transformation and social organization during the Copper Age–Bronze Age transition in southern Iberia",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.abi7038"
+      }
+    ]
   },
   {
     "SampleLabel": "Pre-Iberian (2100-1500 BC)",
     "Coordinates": "Pre-Iberian_Spain,0.1261403,0.1550495,0.0588578,-0.0008536,0.0683972,-0.005279,-0.0044652,0.0019368,0.0401889,0.0578404,-0.0028998,0.0113524,-0.0231539,-0.0171388,0.003461,0.0056398,0.008284,0.0012081,0.0010551,-0.0003885,0.0082711,0.004319,-0.0103308,-0.0199813,0.0015482",
     "Ids": "I1310,I1312_d,I1313,I1836,I1840,I1977,I23569,I2471,I3485,I3487,I3490,I3491,I3492,I3494,I3756,I3997,I4559,I4560,I4561,I6618,I8136,I8144,LP110_26,LP110_2,LP110_3,LP110_5,LP110_6,LP110_9",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genomic history of the Iberian Peninsula over the past 8000 years\", \"Link\" : \"https://www.science.org/doi/10.1126/science.aav4040\"}, {\"Label\" : \"Genomic transformation and social organization during the Copper Age–Bronze Age transition in southern Iberia\", \"Link\" : \"https://www.science.org/doi/10.1126/sciadv.abi7038\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genomic history of the Iberian Peninsula over the past 8000 years",
+        "Link": "https://www.science.org/doi/10.1126/science.aav4040"
+      },
+      {
+        "Label": "Genomic transformation and social organization during the Copper Age–Bronze Age transition in southern Iberia",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.abi7038"
+      }
+    ]
   },
   {
     "SampleLabel": "Sweden Battle Axe Culture",
     "Coordinates": "BAC_Culture_Sweden,0.1237828,0.1221175,0.057228,0.0637118,0.0207732,0.0229388,0.0074615,-0.0006922,-0.0086922,-0.0143058,-0.0059678,0.0034845,-0.006281,-0.0176845,0.014624,0.0086848,0.0038788,0.0012352,-0.0034568,0.0015948,0.001716,-0.000773,0.004098,0.0082842,-0.0032032",
     "Ids": "RISE94,oll007,ber2F,ber1M",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genomic ancestry of the Scandinavian Battle Axe Culture people and their relation to the broader Corded Ware horizon Open Access\", \"Link\" : \"https://doi.org/10.1098/rspb.2019.1528\"}, {\"Label\" : \"Population genomics of Bronze Age Eurasia\", \"Link\" : \"https://www.nature.com/articles/nature14507\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genomic ancestry of the Scandinavian Battle Axe Culture people and their relation to the broader Corded Ware horizon Open Access",
+        "Link": "https://doi.org/10.1098/rspb.2019.1528"
+      },
+      {
+        "Label": "Population genomics of Bronze Age Eurasia",
+        "Link": "https://www.nature.com/articles/nature14507"
+      }
+    ]
   },
   {
     "SampleLabel": "Switzerland BellBeaker (2200 BC)",
     "Coordinates": "Switzerland_BellBeaker,0.1246365,0.133034,0.0458205,0.018411,0.038469,0.0047415,-0.0041125,0.004154,0.019021,0.01713,0.008444,0.004571,-0.01888,-0.0100465,0.009161,0.004508,-0.0035855,0.006081,0.004588,0.0041895,-0.0014975,0.0006185,0.001972,-0.0112065,-0.005149",
     "Ids": "I5755,I5759",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The Beaker phenomenon and the genomic transformation of northwest Europe\", \"Link\" : \"https://www.nature.com/articles/nature25738\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The Beaker phenomenon and the genomic transformation of northwest Europe",
+        "Link": "https://www.nature.com/articles/nature25738"
+      }
+    ]
   },
   {
     "SampleLabel": "Syria Semitic (2600–1850 BC)",
     "Coordinates": "Syria_Ebla,0.0900152,0.1475903,-0.0648018,-0.0943968,-0.0133357,-0.036953,-0.0028592,-0.0075381,0.0001362,0.0095674,0.0090126,-0.0035592,0.0081638,-0.0000573,-0.0102243,0.0027291,0.0006628,0.0003272,0.0048709,-0.0001147,0.0019862,0.0045237,-0.001664,-0.0033137,-0.0003294",
     "Ids": "ETM001,ETM004,ETM005,ETM006,ETM010,ETM012,ETM014,ETM016,ETM018,ETM023,ETM026",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Genomic History of Neolithic to Bronze Age Anatolia, Northern Levant, and Southern Caucasus\", \"Link\" : \"https://doi.org/10.1016/j.cell.2020.04.044\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Genomic History of Neolithic to Bronze Age Anatolia, Northern Levant, and Southern Caucasus",
+        "Link": "https://doi.org/10.1016/j.cell.2020.04.044"
+      }
+    ]
   },
   {
     "SampleLabel": "Central Anatolian (2600–2400 BC)",
     "Coordinates": "Old_Central_Anatolia*(2600-2400*BC,0.1077528,0.1555452,-0.0420488,-0.0783275,-0.0035903,-0.0237988,-0.0013317,-0.0059998,-0.009783,0.0288845,0.0090668,0.0053202,-0.0123142,-0.0032342,-0.0187067,0.0021215,0.0163632,0.0028717,0.0059078,-0.0034808,-0.0034317,0.0012985,-0.0023623,0.0000805,-0.0020158",
     "Ids": "MA2210,MA2212,MA2213,I2495,I2499,I2683",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Aegean Anatolia Proto-Arzawa (2000 BC)",
     "Coordinates": "Proto-Arzawa*(2000*BC),0.1081315,0.1695935,-0.020176,-0.082042,0.0050775,-0.029702,-0.0017625,-0.0083075,0.007056,0.0410945,0.006577,0.001798,-0.011744,0.000757,-0.024158,-0.0010605,0.008149,-0.005828,0.016152,-0.000938,-0.013414,0.005379,-0.0014175,0.002771,-0.000299",
     "Ids": "I5737,I5737_d",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Anatolian Black Sea (3000–2600 BC)",
     "Coordinates": "Turkey_BlackSea_Amasya,0.107278,0.1604535,-0.0482715,-0.083334,-0.0079245,-0.0350005,-0.002115,-0.0080765,-0.0154925,0.026424,0.0046282,0.0085798,-0.011967,0.0027525,-0.0221902,-0.0113695,0.0054108,-0.0012032,0.0061908,-0.0070655,-0.0034625,0.0002472,-0.0036048,-0.0053622,0.002934",
     "Ids": "I5740,I5742,I5743,I5744",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Assyrian Central Anatolia (1900-1800 BC)",
     "Coordinates": "Turkey_Central_Kalehoyuk_AssyrianColonyPeriod,0.1115467,0.1499597,-0.0448773,-0.0837647,-0.005129,-0.022962,0.007207,-0.0082303,-0.010226,0.0241767,0.0063873,0.006394,-0.009911,0.009542,-0.011265,-0.002475,0.0004347,-0.0008447,0.00993,-0.003627,-0.0011647,0.004905,-0.0030403,0.00245,0.0012773",
     "Ids": "MA2205,MA2206,MA2208",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The first horse herders and the impact of early Bronze Age steppe expansions into Asia\", \"Link\" : \"https://www.science.org/doi/10.1126/science.aar7711\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The first horse herders and the impact of early Bronze Age steppe expansions into Asia",
+        "Link": "https://www.science.org/doi/10.1126/science.aar7711"
+      }
+    ]
   },
   {
     "SampleLabel": "East Anatolia Pre-Urartian (1300 BC)",
     "Coordinates": "Turkey_East_Van_BIA_pre-Urartian.AG:I14767.AG__BC_1306__Cov_71.74%,0.094473,0.141159,-0.063733,-0.069768,-0.037853,-0.02761,-0.00517,-0.001846,-0.019634,-0.00656,0.00065,0.001948,0.005946,0.007156,-0.005157,-0.010342,-0.013169,-0.004307,0.001508,-0.004877,0.001123,-0.00136,0.003451,-0.005422,0.001437",
     "Ids": "I14767",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
   },
   {
     "SampleLabel": "Southeast Anatolia Hurrian (1800-1400 BC)",
     "Coordinates": "TUR_Hatay_Hurrian,0.096147,0.1481478,-0.0609271,-0.090022,-0.0159848,-0.033836,-0.00047,-0.0057488,-0.0039942,0.0117435,0.0078041,-0.0031163,0.0078003,0.0034405,-0.0091651,0.0042351,-0.0008974,0.0026978,0.0051462,-0.0025417,0.0010496,0.003495,-0.0039296,-0.0017507,0.0014722",
     "Ids": "ALA001,ALA002,ALA004,ALA008,ALA013,ALA014,ALA016,ALA017,ALA018,ALA020,ALA023,ALA024,ALA025,ALA026,ALA028,ALA029,ALA030,ALA034,ALA035,ALA037,ALA039,ALA084,ALA095,ALA110,ALA118,ALA120,ALA123,ALA124,ALA128,ALA130,ALA131,ALA135,ALA136,ALA138",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Human mobility at Tell Atchana (Alalakh), Hatay, Turkey during the 2nd millennium BC: Integration of isotopic and genomic evidence\", \"Link\" : \"https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0241883\"}, {\"Label\" : \"Genomic History of Neolithic to Bronze Age Anatolia, Northern Levant, and Southern Caucasus\", \"Link\" : \"https://www.cell.com/cell/fulltext/S0092-8674(20)30509-2?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867420305092%3Fshowall%3Dtrue\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Human mobility at Tell Atchana (Alalakh), Hatay, Turkey during the 2nd millennium BC: Integration of isotopic and genomic evidence",
+        "Link": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0241883"
+      },
+      {
+        "Label": "Genomic History of Neolithic to Bronze Age Anatolia, Northern Levant, and Southern Caucasus",
+        "Link": "https://www.cell.com/cell/fulltext/S0092-8674(20)30509-2?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867420305092%3Fshowall%3Dtrue"
+      }
+    ]
   },
   {
     "SampleLabel": "Turkmenistan Oxus Civilization (2200-1800 BC)",
     "Coordinates": "Oxus_Civilization,0.0809895,0.0749928,-0.1052458,0.0155288,-0.0981721,0.0223971,0.0063092,-0.0061239,-0.062962,-0.0425732,-0.0015614,0.0023632,-0.0050201,-0.0083844,0.0191158,0.0239988,-0.0060076,0.0001657,0.0050183,-0.0233188,-0.0023998,-0.012194,-0.0010807,-0.0154053,0.0115696",
     "Ids": "I10410,I10411,I1781,I1782,I1784,I17885,I1790,I1793,I2085,I2116,I2121,I1783",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The genetic history of the Southern Arc: A bridge between West Asia and Europe\", \"Link\" : \"https://www.science.org/doi/10.1126/science.abm4247\"}, {\"Label\" : \"The formation of human populations in South and Central Asia\", \"Link\" : \"https://www.science.org/doi/10.1126/science.aat7487\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      },
+      {
+        "Label": "The formation of human populations in South and Central Asia",
+        "Link": "https://www.science.org/doi/10.1126/science.aat7487"
+      }
+    ]
   },
   {
     "SampleLabel": "Ukraine Komarov Culture (1600-1300 BC)",
     "Coordinates": "Komarov-Culture,0.1270266,0.1222696,0.092998,0.0985802,0.0431466,0.0338014,0.0079432,0.013661,-0.0006954,-0.0342238,-0.0036702,-0.0076432,0.0176014,0.0078444,0.008659,0.0143462,0.0074056,0.0038262,0.0020618,0.0053778,0.0024458,-0.0005194,0.0061376,-0.0112064,-0.0028498",
     "Ids": "poz296,poz296_dr,poz636_2,poz636,poz637",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Patrilocality and hunter-gatherer-related ancestry of populations in East-Central Europe during the Middle Bronze Age\", \"Link\" : \"https://www.nature.com/articles/s41467-023-40072-9\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Patrilocality and hunter-gatherer-related ancestry of populations in East-Central Europe during the Middle Bronze Age",
+        "Link": "https://www.nature.com/articles/s41467-023-40072-9"
+      }
+    ]
   },
   {
     "SampleLabel": "Uzbekistan Bustan Culture (1800-1400 BC)",
     "Coordinates": "Uzbekistan_Bustan,0.083091,0.0792113,-0.1150759,0.0080289,-0.0958423,0.0227494,0.0063451,-0.0032634,-0.0615324,-0.0372543,0.0007423,0.0031684,0.0043111,-0.0050331,0.0129709,0.0230894,-0.0098534,0.0030584,0.0077394,-0.0201703,0.0010161,-0.0110227,-0.0011796,-0.0183846,0.0090496",
     "Ids": "I12026,I11027,I11519,I4157,I4159,I5604,I5605",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"The formation of human populations in South and Central Asia\", \"Link\" : \"https://www.science.org/doi/10.1126/science.aat7487\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "The formation of human populations in South and Central Asia",
+        "Link": "https://www.science.org/doi/10.1126/science.aat7487"
+      }
+    ]
   },
   {
     "SampleLabel": "Wales Deverel–Rimbury Culture (1300 BC)",
     "Coordinates": "Wales_MBA.AG:I2574.AG__BC_1327__Cov_28.22%,0.125205,0.125926,0.054305,0.059432,0.02462,0.024542,-0.00094,0.000692,0.007363,-0.010934,-0.002761,0.010041,-0.006392,-0.023533,0.025787,0.012198,-0.002738,0.00228,-0.002514,0.003252,0.002371,-0.009769,0.006779,0.006145,-0.007664",
     "Ids": "I2574",
     "G25DistanceEraId": 1,
-    "ResearchLinks": "[{\"Label\" : \"Large-scale migration into Britain during the Middle to Late Bronze Age\", \"Link\" : \"https://www.nature.com/articles/s41586-021-04287-4\"}]"
+    "ResearchLinks": [
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
   }
 ]
