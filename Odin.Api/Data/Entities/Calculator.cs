@@ -13,6 +13,8 @@ namespace Odin.Api.Data.Entities
         public bool IsAdmin { get; set; }
         public int UserId { get; set; }
         public User User { get; set; } = null!;
+        public int AdmixToolsEraId { get; set; }
+        public AdmixToolsEra AdmixToolsEra { get; set; } = null!;
     }
 
     public class CalculatorConfiguration : IEntityTypeConfiguration<Calculator>
@@ -33,9 +35,15 @@ namespace Odin.Api.Data.Entities
                 .HasForeignKey(e => e.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            builder.HasOne(e => e.AdmixToolsEra)
+                .WithMany(e => e.Calculators)
+                .HasForeignKey(e => e.AdmixToolsEraId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             builder.HasIndex(e => e.Label);
             builder.HasIndex(e => e.Type);
             builder.HasIndex(e => e.IsAdmin);
+            builder.HasIndex(e => e.AdmixToolsEraId);
             builder.HasIndex(e => new { e.UserId, e.Type });
 
             builder.ToTable("calculators");

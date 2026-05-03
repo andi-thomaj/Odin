@@ -50,6 +50,7 @@ namespace Odin.Api.Data
         public DbSet<G25AdmixtureResult> G25AdmixtureResults { get; set; }
         public DbSet<G25PcaResult> G25PcaResults { get; set; }
         public DbSet<Calculator> Calculators { get; set; }
+        public DbSet<AdmixToolsEra> AdmixToolsEras { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

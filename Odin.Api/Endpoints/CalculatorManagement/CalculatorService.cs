@@ -33,7 +33,9 @@ public class CalculatorService(ApplicationDbContext dbContext) : ICalculatorServ
                 IsAdmin = c.IsAdmin,
                 UserId = c.UserId,
                 UserEmail = c.User.Email,
-                UserUsername = c.User.Username
+                UserUsername = c.User.Username,
+                AdmixToolsEraId = c.AdmixToolsEraId,
+                AdmixToolsEraName = c.AdmixToolsEra.Name
             })
             .ToListAsync(ct);
     }
@@ -52,7 +54,9 @@ public class CalculatorService(ApplicationDbContext dbContext) : ICalculatorServ
                 IsAdmin = c.IsAdmin,
                 UserId = c.UserId,
                 UserEmail = c.User.Email,
-                UserUsername = c.User.Username
+                UserUsername = c.User.Username,
+                AdmixToolsEraId = c.AdmixToolsEraId,
+                AdmixToolsEraName = c.AdmixToolsEra.Name
             })
             .FirstOrDefaultAsync(ct);
     }
@@ -62,6 +66,9 @@ public class CalculatorService(ApplicationDbContext dbContext) : ICalculatorServ
     {
         var (label, coordinates, error) = ValidateBasic(request.Label, request.Coordinates, request.Type);
         if (error is not null) return (null, error);
+
+        var eraError = await ValidateEraAsync(request.AdmixToolsEraId, ct);
+        if (eraError is not null) return (null, eraError);
 
         var duplicate = await DuplicateExistsAsync(request.Type, label, currentUserId, null, ct);
         if (duplicate is not null) return (null, duplicate);
@@ -73,6 +80,7 @@ public class CalculatorService(ApplicationDbContext dbContext) : ICalculatorServ
             Type = request.Type,
             IsAdmin = currentUserIsAdmin,
             UserId = currentUserId,
+            AdmixToolsEraId = request.AdmixToolsEraId,
             CreatedBy = identityId,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
@@ -96,12 +104,16 @@ public class CalculatorService(ApplicationDbContext dbContext) : ICalculatorServ
         var (label, coordinates, error) = ValidateBasic(request.Label, request.Coordinates, request.Type);
         if (error is not null) return (null, error, false, false);
 
+        var eraError = await ValidateEraAsync(request.AdmixToolsEraId, ct);
+        if (eraError is not null) return (null, eraError, false, false);
+
         var duplicate = await DuplicateExistsAsync(request.Type, label, entity.UserId, id, ct);
         if (duplicate is not null) return (null, duplicate, false, false);
 
         entity.Label = label;
         entity.Coordinates = coordinates;
         entity.Type = request.Type;
+        entity.AdmixToolsEraId = request.AdmixToolsEraId;
         entity.UpdatedAt = DateTime.UtcNow;
         entity.UpdatedBy = identityId;
         await dbContext.SaveChangesAsync(ct);
@@ -142,6 +154,17 @@ public class CalculatorService(ApplicationDbContext dbContext) : ICalculatorServ
             return (string.Empty, string.Empty, "Type must be a valid calculator type.");
 
         return (label.Trim(), coordinates.Trim(), null);
+    }
+
+    private async Task<string?> ValidateEraAsync(int admixToolsEraId, CancellationToken ct)
+    {
+        if (admixToolsEraId <= 0)
+            return "Era is required.";
+
+        var exists = await dbContext.AdmixToolsEras
+            .AsNoTracking()
+            .AnyAsync(e => e.Id == admixToolsEraId, ct);
+        return exists ? null : "Era must be a valid AdmixTools era.";
     }
 
     private async Task<string?> DuplicateExistsAsync(CalculatorType type, string label, int ownerUserId, int? existingId, CancellationToken ct)

@@ -14,6 +14,8 @@ public static class GetCalculatorContract
         public int UserId { get; set; }
         public string? UserEmail { get; set; }
         public string? UserUsername { get; set; }
+        public int AdmixToolsEraId { get; set; }
+        public required string AdmixToolsEraName { get; set; }
     }
 }
 
@@ -24,6 +26,7 @@ public static class CreateCalculatorContract
         public required string Label { get; set; }
         public required string Coordinates { get; set; }
         public CalculatorType Type { get; set; }
+        public int AdmixToolsEraId { get; set; }
     }
 }
 
@@ -34,5 +37,6 @@ public static class UpdateCalculatorContract
         public required string Label { get; set; }
         public required string Coordinates { get; set; }
         public CalculatorType Type { get; set; }
+        public int AdmixToolsEraId { get; set; }
     }
 }

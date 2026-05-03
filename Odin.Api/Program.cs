@@ -434,6 +434,7 @@ namespace Odin.Api
             services.AddScoped<IG25AdmixtureEraService, G25AdmixtureEraService>();
             services.AddScoped<IG25CalculationService, G25CalculationService>();
             services.AddScoped<ICalculatorService, CalculatorService>();
+            services.AddScoped<IAdmixToolsEraService, AdmixToolsEraService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
@@ -555,6 +556,7 @@ namespace Odin.Api
             app.MapG25CalculationEndpoints();
             app.MapG25AdminEndpoints();
             app.MapCalculatorEndpoints();
+            app.MapAdmixToolsEraEndpoints();
             await app.RunAsync();
         }
 
