@@ -9,6 +9,7 @@ namespace Odin.Api.Endpoints.CalculatorManagement;
 public interface ICalculatorService
 {
     Task<IReadOnlyList<GetCalculatorContract.Response>> GetAdminCalculatorsAsync(CancellationToken ct = default);
+    Task<IReadOnlyList<GetCalculatorContract.Response>> GetVisibleCalculatorsAsync(int currentUserId, bool currentUserIsAdmin, CancellationToken ct = default);
     Task<GetCalculatorContract.Response?> GetByIdAsync(int id, int currentUserId, bool currentUserIsAdmin, CancellationToken ct = default);
     Task<(GetCalculatorContract.Response? Response, string? Error)> CreateAsync(CreateCalculatorContract.Request request, int currentUserId, bool currentUserIsAdmin, string identityId, CancellationToken ct = default);
     Task<(GetCalculatorContract.Response? Response, string? Error, bool NotFound, bool Forbidden)> UpdateAsync(int id, UpdateCalculatorContract.Request request, int currentUserId, bool currentUserIsAdmin, string identityId, CancellationToken ct = default);
@@ -22,6 +23,29 @@ public class CalculatorService(ApplicationDbContext dbContext) : ICalculatorServ
         return await dbContext.Calculators
             .AsNoTracking()
             .Where(c => c.IsAdmin)
+            .OrderBy(c => c.Type)
+            .ThenBy(c => c.Label)
+            .Select(c => new GetCalculatorContract.Response
+            {
+                Id = c.Id,
+                Label = c.Label,
+                Coordinates = c.Coordinates,
+                Type = c.Type,
+                IsAdmin = c.IsAdmin,
+                UserId = c.UserId,
+                UserEmail = c.User.Email,
+                UserUsername = c.User.Username,
+                AdmixToolsEraId = c.AdmixToolsEraId,
+                AdmixToolsEraName = c.AdmixToolsEra.Name
+            })
+            .ToListAsync(ct);
+    }
+
+    public async Task<IReadOnlyList<GetCalculatorContract.Response>> GetVisibleCalculatorsAsync(int currentUserId, bool currentUserIsAdmin, CancellationToken ct = default)
+    {
+        return await dbContext.Calculators
+            .AsNoTracking()
+            .Where(c => currentUserIsAdmin || c.IsAdmin || c.UserId == currentUserId)
             .OrderBy(c => c.Type)
             .ThenBy(c => c.Label)
             .Select(c => new GetCalculatorContract.Response

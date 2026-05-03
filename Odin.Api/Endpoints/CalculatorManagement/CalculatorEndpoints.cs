@@ -17,6 +17,10 @@ public static class CalculatorEndpoints
             .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated");
 
+        endpoints.MapGet("/visible", GetVisible)
+            .RequireAuthorization("EmailVerified")
+            .RequireRateLimiting("authenticated");
+
         endpoints.MapGet("/{id:int}", GetById)
             .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated");
@@ -37,6 +41,18 @@ public static class CalculatorEndpoints
     private static async Task<IResult> GetAll(ICalculatorService service)
     {
         var items = await service.GetAdminCalculatorsAsync();
+        return Results.Ok(items);
+    }
+
+    private static async Task<IResult> GetVisible(
+        HttpContext httpContext,
+        ApplicationDbContext dbContext,
+        ICalculatorService service)
+    {
+        var ctx = await ResolveUserContextAsync(httpContext, dbContext);
+        if (ctx is null) return Results.Unauthorized();
+
+        var items = await service.GetVisibleCalculatorsAsync(ctx.UserId, ctx.IsAdmin);
         return Results.Ok(items);
     }
 

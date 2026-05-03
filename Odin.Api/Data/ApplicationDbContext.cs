@@ -29,7 +29,6 @@ namespace Odin.Api.Data
         public DbSet<QpadmPopulationSample> QpadmPopulationSamples { get; set; }
         public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<G25SavedCoordinate> G25SavedCoordinates { get; set; }
-        public DbSet<AdmixtureSavedFile> AdmixtureSavedFiles { get; set; }
         public DbSet<PaddlePayment> PaddlePayments { get; set; }
         public DbSet<PaddleNotification> PaddleNotifications { get; set; }
         public DbSet<PaddleProduct> PaddleProducts { get; set; }

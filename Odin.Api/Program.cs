@@ -9,7 +9,6 @@ using Odin.Api.Services.Email;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.Admin;
-using Odin.Api.Endpoints.AdmixtureSavedFileManagement;
 using Odin.Api.Endpoints.AppSettingsManagement;
 using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.G25PopulationSampleManagement;
@@ -426,7 +425,6 @@ namespace Odin.Api
             services.AddScoped<IG25PcaPopulationsSampleService, G25PcaPopulationsSampleService>();
             services.AddScoped<IQpadmPopulationSampleService, QpadmPopulationSampleService>();
             services.AddScoped<IG25SavedCoordinateService, G25SavedCoordinateService>();
-            services.AddScoped<IAdmixtureSavedFileService, AdmixtureSavedFileService>();
             services.AddScoped<IG25RegionService, G25RegionService>();
             services.AddScoped<IG25EthnicityService, G25EthnicityService>();
             services.AddScoped<IG25ContinentService, G25ContinentService>();
@@ -547,7 +545,6 @@ namespace Odin.Api
             app.MapG25PcaPopulationsSampleEndpoints();
             app.MapQpadmPopulationSampleEndpoints();
             app.MapG25SavedCoordinateEndpoints();
-            app.MapAdmixtureSavedFileEndpoints();
             app.MapG25RegionEndpoints();
             app.MapG25EthnicityEndpoints();
             app.MapG25ContinentEndpoints();
