@@ -49,6 +49,7 @@ namespace Odin.Api.Data
         public DbSet<G25DistanceResult> G25DistanceResults { get; set; }
         public DbSet<G25AdmixtureResult> G25AdmixtureResults { get; set; }
         public DbSet<G25PcaResult> G25PcaResults { get; set; }
+        public DbSet<Calculator> Calculators { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

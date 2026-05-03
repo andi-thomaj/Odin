@@ -30,6 +30,7 @@ using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25ContinentManagement;
+using Odin.Api.Endpoints.CalculatorManagement;
 using Odin.Api.Endpoints.G25AdmixtureEraManagement;
 using Odin.Api.Endpoints.G25DistanceEraManagement;
 using Odin.Api.Endpoints.G25EthnicityManagement;
@@ -432,6 +433,7 @@ namespace Odin.Api
             services.AddScoped<IG25DistanceEraService, G25DistanceEraService>();
             services.AddScoped<IG25AdmixtureEraService, G25AdmixtureEraService>();
             services.AddScoped<IG25CalculationService, G25CalculationService>();
+            services.AddScoped<ICalculatorService, CalculatorService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
@@ -552,6 +554,7 @@ namespace Odin.Api
             app.MapG25AdmixtureEraEndpoints();
             app.MapG25CalculationEndpoints();
             app.MapG25AdminEndpoints();
+            app.MapCalculatorEndpoints();
             await app.RunAsync();
         }
 
