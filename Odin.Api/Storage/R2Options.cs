@@ -19,11 +19,14 @@ public class R2Options
     /// <summary>S3-compatible endpoint, e.g. <c>https://&lt;account-id&gt;.r2.cloudflarestorage.com</c>.</summary>
     public string Endpoint { get; set; } = string.Empty;
 
-    /// <summary>Bucket name, e.g. <c>ancestrify-qpadm-population-avatars</c>.</summary>
+    /// <summary>Bucket name, e.g. <c>ancestrify</c>. Single bucket shared by every service; each
+    /// service uses a distinct top-level key prefix so concerns don't collide. Current layout:
+    /// <c>qpAdm/population-videos/{id}.mp4</c> and <c>qpAdm/population-music-tracks/{filename}.wav</c>;
+    /// G25 keys live under their own root prefixes when added.</summary>
     public string BucketName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Public-facing base URL via the bucket's custom domain, e.g. <c>https://avatars.ancestrify.io</c>.
+    /// Public-facing base URL via the bucket's custom domain, e.g. <c>https://storage.ancestrify.io</c>.
     /// Used to build the URLs the frontend points <c>&lt;video src&gt;</c> at.
     /// </summary>
     public string PublicBaseUrl { get; set; } = string.Empty;

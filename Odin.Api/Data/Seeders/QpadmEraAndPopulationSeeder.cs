@@ -10,9 +10,11 @@ namespace Odin.Api.Data.Seeders;
 ///
 /// Population data is loaded from <c>Data/SeedData/qpadm-populations.json</c>
 /// (copied to the build output). That JSON is the single source of truth for the
-/// per-population fields (Name, Description, GeoJson, IconFileName, Color, EraId).
-/// Era definitions and music-track wiring stay in code because they describe how
-/// the populations group together for the Ancient Origins experience.
+/// per-population fields (Name, Description, GeoJson, IconFileName, Color, EraId,
+/// MusicTrackFileName). The MusicTrackFileName joins each population to one of the
+/// tracks declared in <c>musicTrackData</c> below — using the file name (which is
+/// already stable on-disk) as the key keeps the JSON and code from drifting on
+/// human-readable names.
 /// </summary>
 internal sealed class QpadmEraAndPopulationSeeder(ApplicationDbContext context)
 {
@@ -62,56 +64,39 @@ internal sealed class QpadmEraAndPopulationSeeder(ApplicationDbContext context)
         };
         context.MusicTracks.Add(introTrack);
 
-        // (DisplayOrder, Name, FileName, Population names assigned to this track).
-        var musicTrackData = new (int Order, string Name, string FileName, string[] Populations)[]
+        // (DisplayOrder, Name, FileName). Populations join to a track via the
+        // population's MusicTrackFileName field in qpadm-populations.json — using the
+        // file name as the key avoids the prior brittle name-based join, where any
+        // whitespace/spelling drift between this list and the JSON's display name
+        // would throw at startup.
+        var musicTrackData = new (int Order, string Name, string FileName)[]
         {
             // Era 1 — Hunter Gatherer and Neolithic Farmer
-            (1, "European Foragers", "european-foragers.wav",
-                ["Western Hunter Gatherer (12000 - 6000 BC)", "Eastern Hunter Gatherer (12000 - 5000 BC)",
-                 "Baltic (BC 200 - 600 AD)", "Finno-Ugric Volga (0 - 400 AD)", "Saami (0 - 700 AD)"]),
-            (2, "Eurasian Steppe", "eurasian-steppe.wav",
-                ["Western Steppe Herder (5000 - 2800 BC)"]),
-            (3, "Near Eastern / Anatolian Farmers", "near-eastern-farmers.wav",
-                ["Anatolian Neolithic Farmer (8500 - 6000 BC)", "Iranian Neolithic Farmer (8000 - 5000 BC)",
-                 "Caucasian Hunter Gatherer (13000 - 7000 BC)", "Ancestral South Indian (10000 - 2000 BC)"]),
-            (4, "Levantine & North African", "levantine-north-african.wav",
-                ["Natufian (12000 - 8000 BC)", "North African Farmer (5200 - 4000 BC)"]),
-            (5, "East Asian & Native American", "east-asian-native-american.wav",
-                ["Northeast Asian (6000 - 2000 BC)", "Native American (15000 - 1500 BC)"]),
-            (6, "Sub-Saharan African", "sub-saharan-african.wav",
-                ["Sub Saharan African"]),
+            (1, "European Foragers", "european-foragers.wav"),
+            (2, "Eurasian Steppe", "eurasian-steppe.wav"),
+            (3, "Near Eastern / Anatolian Farmers", "near-eastern-farmers.wav"),
+            (4, "Levantine & North African", "levantine-north-african.wav"),
+            (5, "East Asian & Native American", "east-asian-native-american.wav"),
+            (6, "Sub-Saharan African", "sub-saharan-african.wav"),
 
             // Era 2 — Classical Antiquity
-            (7, "Hellenic", "hellenic.wav",
-                ["Ancient Greek (1500 - 300 BC)", "Pontic (300 - 50 BC)",
-                 "Eastern Mediterranean (0 - 600 AD)", "West Anatolian (0 - 600 AD)",
-                 "Aegean (BC 200 - 600 AD)"]),
-            (8, "Roman / Italic", "roman-italic.wav",
-                ["Latin and Etruscan (850 - 150 BC)", "Moesia Superior (0 - 500 AD)",
-                 "North African (0 - 500 AD)", "Imperial Italy (0 - 550 AD)"]),
-            (9, "Balkan / Paleo-Balkan", "balkan-paleo-balkan.wav",
-                ["Illyrian (1200 - 250 BC)", "Thracian (850 - 0 BC)",
-                 "Proto Albanian (500 - 900 AD)"]),
-            (10, "Anatolian / Caucasian", "anatolian-caucasian.wav",
-                ["Anatolian (1800 - 300 BC)"]),
-            (11, "Semitic / Phoenician", "semitic-phoenician.wav",
-                ["Phoenician (850 - 50 BC)", "Carthaginian (800 - 150 BC)"]),
-            (12, "Celtic", "celtic.wav",
-                ["Celtic (600 - 50 BC)"]),
-            (13, "Western Mediterranean", "western-mediterranean-pre-ie.wav",
-                ["Iberian (800 - 50 BC)"]),
-            (14, "Germanic", "germanic-sarmatian.wav",
-                ["Germanic (0 - 500 AD)"]),
-            (15, "Medieval Slavic", "medieval-slavic.wav",
-                ["Early Slavic (600 - 1200 AD)"]),
+            (7, "Hellenic", "hellenic.wav"),
+            (8, "Roman / Italic", "roman-italic.wav"),
+            (9, "Balkan / Paleo-Balkan", "balkan-paleo-balkan.wav"),
+            (10, "Anatolian / Caucasian", "anatolian-caucasian.wav"),
+            (11, "Semitic / Phoenician", "semitic-phoenician.wav"),
+            (12, "Celtic", "celtic.wav"),
+            (13, "Western Mediterranean", "western-mediterranean-pre-ie.wav"),
+            (14, "Germanic", "germanic-sarmatian.wav"),
+            (15, "Medieval Slavic", "medieval-slavic.wav"),
 
             // Standalone tracks (not yet linked to seeded populations)
-            (16, "Central Asian Nomadic", "central-asian-nomadic.wav", Array.Empty<string>()),
-            (17, "North African Amazigh", "north-african-amazigh.wav", Array.Empty<string>()),
+            (16, "Central Asian Nomadic", "central-asian-nomadic.wav"),
+            (17, "North African Amazigh", "north-african-amazigh.wav"),
         };
 
-        var popToTrack = new Dictionary<string, MusicTrack>(StringComparer.Ordinal);
-        foreach (var (order, name, fileName, populationNames) in musicTrackData)
+        var tracksByFileName = new Dictionary<string, MusicTrack>(StringComparer.Ordinal);
+        foreach (var (order, name, fileName) in musicTrackData)
         {
             var track = new MusicTrack
             {
@@ -123,9 +108,7 @@ internal sealed class QpadmEraAndPopulationSeeder(ApplicationDbContext context)
                 UpdatedAt = now,
             };
             context.MusicTracks.Add(track);
-
-            foreach (var popName in populationNames)
-                popToTrack[popName] = track;
+            tracksByFileName[fileName] = track;
         }
 
         // ---- Populations (loaded from JSON) -------------------------------
@@ -135,9 +118,13 @@ internal sealed class QpadmEraAndPopulationSeeder(ApplicationDbContext context)
             if (!erasById.TryGetValue(seed.EraId, out var era))
                 throw new InvalidOperationException(
                     $"Population '{seed.Name}' references unknown EraId {seed.EraId}.");
-            if (!popToTrack.TryGetValue(seed.Name, out var track))
+            if (string.IsNullOrWhiteSpace(seed.MusicTrackFileName))
                 throw new InvalidOperationException(
-                    $"Population '{seed.Name}' is not assigned to any music track. Update the seeder's musicTrackData mapping.");
+                    $"Population '{seed.Name}' has no MusicTrackFileName set in qpadm-populations.json.");
+            if (!tracksByFileName.TryGetValue(seed.MusicTrackFileName, out var track))
+                throw new InvalidOperationException(
+                    $"Population '{seed.Name}' references unknown music track file name '{seed.MusicTrackFileName}'. " +
+                    "Add it to musicTrackData or fix qpadm-populations.json.");
 
             context.QpadmPopulations.Add(new QpadmPopulation
             {
@@ -179,5 +166,6 @@ internal sealed class QpadmEraAndPopulationSeeder(ApplicationDbContext context)
         string GeoJson,
         string IconFileName,
         string Color,
-        int EraId);
+        int EraId,
+        string MusicTrackFileName);
 }

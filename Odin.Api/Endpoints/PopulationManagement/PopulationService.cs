@@ -36,8 +36,10 @@ public partial class PopulationService(
         VideoContentType,
     };
 
-    /// <summary>R2 object key for a population's MP4 avatar. ID-stable: renaming a population doesn't break the URL.</summary>
-    private static string AvatarKey(int populationId) => $"populations/{populationId}.mp4";
+    /// <summary>R2 object key for a population's MP4 avatar. ID-stable: renaming a population doesn't break the URL.
+    /// The <c>qpAdm/population-videos/</c> prefix scopes this service's objects inside the shared
+    /// <c>ancestrify</c> bucket (G25 service uses sibling prefixes under <c>qpAdm/</c> and its own roots).</summary>
+    private static string AvatarKey(int populationId) => $"qpAdm/population-videos/{populationId}.mp4";
 
     public async Task<IReadOnlyList<GetPopulationContract.AdminResponse>> GetAllAdminAsync(CancellationToken cancellationToken = default)
     {
@@ -280,7 +282,7 @@ public partial class PopulationService(
 
     /// <summary>
     /// Bulk-uploads each <c>Data/SeedData/population-videos/{Name}.mp4</c> to R2 under the
-    /// stable key <c>populations/{Id}.mp4</c>, then bumps <see cref="QpadmPopulation.VideoAvatarVersion"/>
+    /// stable key <c>qpAdm/population-videos/{Id}.mp4</c>, then bumps <see cref="QpadmPopulation.VideoAvatarVersion"/>
     /// so clients re-fetch with a fresh cache-bust query. Disk filenames still use the population
     /// <c>Name</c> (curator-friendly); the R2 key uses the population <c>Id</c> (rename-safe).
     /// </summary>

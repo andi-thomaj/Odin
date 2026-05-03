@@ -78,7 +78,6 @@ internal sealed class G25Seeder(ApplicationDbContext context)
             context.G25AdmixturePopulationSamples.AddRange(batch);
             await context.SaveChangesAsync();
         }
-#pragma warning restore CS0162
     }
 
     private async Task SeedG25ServiceAsync()

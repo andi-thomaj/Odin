@@ -24,11 +24,17 @@ public class DatabaseSeeder(ApplicationDbContext context)
     /// Ethnicities, eras + populations, and G25 reference data — safe to re-run when tables
     /// are empty (e.g. integration tests after a Respawn). Excludes the heavy media-file
     /// seeders, which integration tests don't need.
+    ///
+    /// Wrapped in a single transaction so a failure halfway through doesn't leave a
+    /// half-populated reference catalog: the per-seeder <c>AnyAsync</c> idempotency check
+    /// would otherwise treat the partial state as "already seeded" on the next startup.
     /// </summary>
     public async Task SeedReferenceCatalogAsync()
     {
+        await using var transaction = await context.Database.BeginTransactionAsync();
         await new EthnicityAndRegionSeeder(context).SeedAsync();
         await new QpadmEraAndPopulationSeeder(context).SeedAsync();
         await new G25Seeder(context).SeedAsync();
+        await transaction.CommitAsync();
     }
 }

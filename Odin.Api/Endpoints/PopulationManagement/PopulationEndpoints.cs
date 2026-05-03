@@ -34,8 +34,8 @@ public static class PopulationEndpoints
             .RequireRateLimiting("authenticated");
 
         // GET /{id:int}/video-avatar removed: avatars are now served by Cloudflare R2 directly
-        // at avatars.ancestrify.io/populations/{id}.mp4. Frontend uses the URL returned by the
-        // /video-avatars list endpoint.
+        // at storage.ancestrify.io/qpAdm/population-videos/{id}.mp4. Frontend uses the URL returned
+        // by the /video-avatars list endpoint.
 
         endpoints.MapPut("/{id:int}/video-avatar", UploadVideoAvatar)
             .DisableAntiforgery()

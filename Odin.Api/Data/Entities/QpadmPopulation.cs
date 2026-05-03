@@ -16,7 +16,7 @@ namespace Odin.Api.Data.Entities
         public int MusicTrackId { get; set; }
         public MusicTrack MusicTrack { get; set; }
         /// <summary>
-        /// Cache-bust marker for the population's MP4 in R2 at <c>populations/{Id}.mp4</c>.
+        /// Cache-bust marker for the population's MP4 in R2 at <c>qpAdm/population-videos/{Id}.mp4</c>.
         /// <c>null</c> means no avatar uploaded; otherwise the value is bumped on every upload
         /// (typically <see cref="DateTime.UtcNow"/> ticks) and used as <c>?v=</c> on the public URL.
         /// </summary>

@@ -18,6 +18,11 @@ public static class MediaEndpoints
             .RequireRateLimiting("file-upload")
             .WithRequestTimeout(TimeSpan.FromMinutes(5));
 
+        endpoints.MapPost("/audio/sync-from-disk", SyncMusicTrackAudioFromDisk)
+            .RequireAuthorization("AdminOnly")
+            .RequireRateLimiting("strict")
+            .WithRequestTimeout(TimeSpan.FromMinutes(10));
+
     }
 
     private static async Task<IResult> DownloadAudio(IMediaService service, int musicTrackId)
@@ -45,6 +50,18 @@ public static class MediaEndpoints
         return success
             ? Results.NoContent()
             : Results.BadRequest(new { Message = error });
+    }
+
+    private static async Task<IResult> SyncMusicTrackAudioFromDisk(IMediaService service, HttpContext httpContext, CancellationToken cancellationToken)
+    {
+        var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                         ?? httpContext.User.FindFirstValue("sub")
+                         ?? string.Empty;
+
+        var (updated, missingOnDisk, failed, unmatched, firstError) =
+            await service.SyncMusicTrackAudioFromDiskAsync(identityId, cancellationToken);
+
+        return Results.Ok(new { Updated = updated, MissingOnDisk = missingOnDisk, Failed = failed, Unmatched = unmatched, FirstError = firstError });
     }
 
 }
