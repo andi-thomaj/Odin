@@ -7,6 +7,8 @@
 
 ## API integration tests (`Odin.Api.IntegrationTests`)
 
+### One-time setup
+
 Tests use a **real PostgreSQL** database (no Docker/Testcontainers). They apply EF migrations and reset data between tests.
 
 1. Create a dedicated database (once), e.g. `odin_integration_test`, with credentials your API can use.
@@ -20,6 +22,21 @@ Tests use a **real PostgreSQL** database (no Docker/Testcontainers). They apply 
 
 4. If there are no user secrets, defaults match [`Odin.Api/appsettings.Testing.json`](Odin.Api/appsettings.Testing.json).
 
-From the `Odin/` directory:
+### Running tests
 
-`dotnet test Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj`
+For daily work, run **only the impacted tests** — the full suite is slow (real PostgreSQL, heavy seeding, many minutes). Targeted runs use the `FullyQualifiedName~` filter:
+
+```bash
+# from the Odin/ directory
+dotnet test Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj --filter "FullyQualifiedName~CatalogEndpointsTests"
+```
+
+The `/be-test <class-or-namespace>` slash command wraps this. See [CLAUDE.md](CLAUDE.md) for the full agent-policy: when targeted runs are appropriate vs when to run the full suite (CI, pre-merge, or changes touching shared test infrastructure like `CustomWebApplicationFactory` / `IntegrationTestBase`).
+
+Full-suite invocation when you really want it:
+
+```bash
+dotnet test Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj
+```
+
+Unit tests in `Odin.Api.Tests` are fast and a separate project — prefer them when they cover the change.
