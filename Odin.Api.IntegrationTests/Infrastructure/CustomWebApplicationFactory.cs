@@ -10,17 +10,46 @@ using Odin.Api.IntegrationTests.Fakers;
 using Odin.Api.Services.Email;
 using Respawn;
 using Respawn.Graph;
+using Testcontainers.PostgreSql;
 
 namespace Odin.Api.IntegrationTests.Infrastructure;
 
 public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
-    /// <summary>
-    /// Resolved before the host is built (see <see cref="ResolveConnectionString"/>).
-    /// </summary>
-    private readonly string _connectionString = ResolveConnectionString();
+    /// <summary>Container instance — null when an external database is supplied via env var.</summary>
+    private readonly PostgreSqlContainer? _container;
 
-    public string ConnectionString => _connectionString;
+    /// <summary>External connection string supplied via <c>ConnectionStrings__DefaultConnection</c>; null otherwise.</summary>
+    private readonly string? _externalConnectionString;
+
+    /// <summary>Resolved at <see cref="InitializeAsync"/>; throws if accessed before initialization.</summary>
+    private string? _connectionString;
+
+    public string ConnectionString => _connectionString
+        ?? throw new InvalidOperationException(
+            $"{nameof(CustomWebApplicationFactory)}.{nameof(InitializeAsync)} must run before {nameof(ConnectionString)} is read.");
+
+    public CustomWebApplicationFactory()
+    {
+        _externalConnectionString = ResolveExternalConnectionString();
+
+        if (_externalConnectionString is not null)
+        {
+            // External Postgres — skip the container; tests will hit whatever the env var points at.
+            return;
+        }
+
+        // Default path: a disposable Postgres container per factory lifetime.
+        // The factory is a collection fixture (see IntegrationTestCollection), so the
+        // container is shared across every test in the suite and torn down at the end.
+        _container = new PostgreSqlBuilder()
+            .WithImage("postgres:16-alpine")
+            .WithDatabase("odin_integration_test")
+            .WithUsername("odin")
+            .WithPassword("odin_secret")
+            .WithCleanUp(true)
+            .Build();
+    }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -29,7 +58,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(
-                new Dictionary<string, string?> { ["ConnectionStrings:DefaultConnection"] = _connectionString });
+                new Dictionary<string, string?> { ["ConnectionStrings:DefaultConnection"] = ConnectionString });
         });
 
         builder.ConfigureTestServices(services =>
@@ -43,7 +72,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             }
 
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(_connectionString));
+                options.UseNpgsql(ConnectionString));
 
             services.AddScoped<ApplicationDbContextInitializer>();
 
@@ -55,6 +84,20 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
 
     public async Task InitializeAsync()
     {
+        if (_container is not null)
+        {
+            // Fresh container — no stale data and no tables yet. Host startup will run
+            // MigrateAsync + SeedAsync once Services is realised below; per-test Respawn
+            // (in IntegrationTestBase) takes over from there.
+            await _container.StartAsync();
+            _connectionString = _container.GetConnectionString();
+            _ = Services;
+            return;
+        }
+
+        // External database path: validate connectivity, then wipe any leftover data so the
+        // startup seeder's AnyAsync() guards don't skip on stale rows.
+        _connectionString = _externalConnectionString!;
         await using var connection = new NpgsqlConnection(_connectionString);
         try
         {
@@ -63,14 +106,14 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
         catch (NpgsqlException ex)
         {
             throw new InvalidOperationException(
-                "Integration tests require PostgreSQL. Set ConnectionStrings__DefaultConnection or align " +
-                "Odin.Api/appsettings.Testing.json with your server. Create the database if needed: " +
+                $"Integration tests could not reach the external database supplied via " +
+                "ConnectionStrings__DefaultConnection. Unset the variable to fall back to the " +
+                "Testcontainers Postgres instance, or align the database with " +
+                "Odin.Api/appsettings.Testing.json. Create the database if needed: " +
                 "CREATE DATABASE odin_integration_test;",
                 ex);
         }
 
-        // Wipe all data left over from a previous test run so the startup
-        // seeder's AnyAsync() guards don't skip on stale rows.
         var respawner = await Respawner.CreateAsync(connection,
             new RespawnerOptions
             {
@@ -80,48 +123,26 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             });
         await respawner.ResetAsync(connection);
 
-        // Host startup runs MigrateAsync + SeedAsync on the now-clean database.
         _ = Services;
     }
 
     public new async Task DisposeAsync()
     {
         await base.DisposeAsync();
+        if (_container is not null)
+        {
+            await _container.DisposeAsync();
+        }
     }
 
     /// <summary>
-    /// 1) Environment variable <c>ConnectionStrings__DefaultConnection</c> (full override).<br/>
-    /// 2) <see cref="ApplicationDbContext"/> assembly user secrets (<c>dotnet user secrets</c> on Odin.Api), with
-    /// <c>ancestrify_development</c> / <c>odin_db</c> rewritten to <c>odin_integration_test</c>.<br/>
-    /// 3) Literal fallback aligned with <c>Odin.Api/appsettings.Testing.json</c>.
+    /// Returns the explicitly supplied connection string (env var
+    /// <c>ConnectionStrings__DefaultConnection</c>) when present, or null to fall back to the
+    /// managed Postgres container.
     /// </summary>
-    private static string ResolveConnectionString()
+    private static string? ResolveExternalConnectionString()
     {
         var fromEnv = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
-        if (!string.IsNullOrWhiteSpace(fromEnv))
-            return fromEnv.Trim();
-
-        var config = new ConfigurationBuilder()
-            .AddUserSecrets(typeof(ApplicationDbContext).Assembly)
-            .AddEnvironmentVariables()
-            .Build();
-
-        var fromSecrets = config.GetConnectionString("DefaultConnection");
-        if (!string.IsNullOrWhiteSpace(fromSecrets))
-        {
-            var csb = new NpgsqlConnectionStringBuilder(fromSecrets);
-            if (csb.Database is "ancestrify_development" or "odin_db")
-                csb.Database = "odin_integration_test";
-            return csb.ConnectionString;
-        }
-
-        return new NpgsqlConnectionStringBuilder
-        {
-            Host = "localhost",
-            Port = 5432,
-            Database = "odin_integration_test",
-            Username = "odin",
-            Password = "odin_secret"
-        }.ConnectionString;
+        return string.IsNullOrWhiteSpace(fromEnv) ? null : fromEnv.Trim();
     }
 }
