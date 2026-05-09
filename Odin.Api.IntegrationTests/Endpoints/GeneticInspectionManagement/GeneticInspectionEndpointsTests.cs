@@ -438,7 +438,12 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
     private async Task<(int RawFileId, List<int> RegionIds)> SeedTestDataAsync()
     {
-        var rawFileId = await SeedRawGeneticFileAsync(Factory.Services, "test_genetic_data.txt");
+        // RawGeneticFiles has a unique index on (CreatedBy, RawDataFileName); two calls in a single
+        // test (e.g. GetAll_AfterCreating_ReturnsInspections seeds two inspections) would otherwise
+        // collide on the literal "test_genetic_data.txt".
+        var rawFileId = await SeedRawGeneticFileAsync(
+            Factory.Services,
+            $"test_genetic_data_{Guid.NewGuid():N}.txt");
         var (regionIds, _) = await SeedEthnicitiesAndRegionsAsync(Factory.Services);
         return (rawFileId, regionIds);
     }
