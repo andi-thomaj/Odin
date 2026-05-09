@@ -1,7 +1,9 @@
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
 using Odin.Api.Data;
+using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.UserManagement.Models;
 using Respawn;
 using Respawn.Graph;
@@ -60,6 +62,17 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             throw new InvalidOperationException(
                 $"Seed POST /api/users failed: {(int)seedResponse.StatusCode}. Body: {body}");
         }
+
+        // The user-create endpoint always assigns AppRole.User regardless of the auth context, so the
+        // DB record is User even though the test client authenticates as Admin (X-Test-App-Role).
+        // Several product paths (e.g. OrderService.CreateG25OrderAsync's "admin can skip payment"
+        // gate) read the role from the DB rather than the auth claim, so the integration default
+        // user must actually be Admin in the database for those tests to exercise admin behaviour.
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbUser = await db.Users.SingleAsync(u => u.IdentityId == "auth0|integration-default");
+        dbUser.Role = AppRole.Admin;
+        await db.SaveChangesAsync();
     }
 
     public Task DisposeAsync()
