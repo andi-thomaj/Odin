@@ -119,7 +119,10 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             {
                 DbAdapter = DbAdapter.Postgres,
                 SchemasToInclude = ["public"],
-                TablesToIgnore = [new Table("public", "__EFMigrationsHistory")]
+                TablesToIgnore = [new Table("public", "__EFMigrationsHistory")],
+                // Match IntegrationTestBase: reseed identity sequences so seeded reference data
+                // lands on the IDs the JSON seed files hardcode.
+                WithReseed = true,
             });
         await respawner.ResetAsync(connection);
 

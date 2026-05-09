@@ -32,7 +32,11 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                 DbAdapter = DbAdapter.Postgres,
                 SchemasToInclude = ["public"],
                 // Do not clear migration history: next host startup would re-apply migrations while tables still exist (42P07).
-                TablesToIgnore = [new Table("public", "__EFMigrationsHistory")]
+                TablesToIgnore = [new Table("public", "__EFMigrationsHistory")],
+                // Reset identity sequences after delete so re-seeded reference data lands on the
+                // same IDs the JSON seed files hardcode (e.g. g25_distance_population_samples
+                // references G25DistanceEraId 1–6; without reseed, post-Respawn eras land on 7–12).
+                WithReseed = true,
             });
 
         await _respawner.ResetAsync(connection);
