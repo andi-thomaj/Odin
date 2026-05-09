@@ -1,18 +1,17 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
-using Odin.Api.Data.Entities;
-using Odin.Api.Endpoints.AdmixtureSavedFileManagement.Models;
+using Odin.Api.Endpoints.G25TargetCoordinateManagement.Models;
 
-namespace Odin.Api.Endpoints.AdmixtureSavedFileManagement;
+namespace Odin.Api.Endpoints.G25TargetCoordinateManagement;
 
-public static class AdmixtureSavedFileEndpoints
+public static class G25TargetCoordinateEndpoints
 {
-    private const int MaxContentBytes = 5 * 1024 * 1024;
+    private const int MaxCoordinatesBytes = 5 * 1024 * 1024;
 
-    public static void MapAdmixtureSavedFileEndpoints(this IEndpointRouteBuilder app)
+    public static void MapG25TargetCoordinateEndpoints(this IEndpointRouteBuilder app)
     {
-        var endpoints = app.MapGroup("api/admixture-saved-files");
+        var endpoints = app.MapGroup("api/g25-target-coordinates");
 
         endpoints.MapGet("/", GetAll)
             .RequireAuthorization("EmailVerified")
@@ -38,23 +37,19 @@ public static class AdmixtureSavedFileEndpoints
     private static async Task<IResult> GetAll(
         HttpContext httpContext,
         ApplicationDbContext dbContext,
-        IAdmixtureSavedFileService service,
-        string? kind)
+        IG25TargetCoordinateService service)
     {
         var userId = await ResolveUserId(httpContext, dbContext);
         if (userId is null) return Results.Unauthorized();
 
-        var resolvedKind = NormalizeKind(kind);
-        if (resolvedKind is null) return Results.BadRequest("Invalid kind.");
-
-        var list = await service.GetAllForUserAsync(userId.Value, resolvedKind);
+        var list = await service.GetAllForUserAsync(userId.Value);
         return Results.Ok(list);
     }
 
     private static async Task<IResult> GetById(
         HttpContext httpContext,
         ApplicationDbContext dbContext,
-        IAdmixtureSavedFileService service,
+        IG25TargetCoordinateService service,
         int id)
     {
         var userId = await ResolveUserId(httpContext, dbContext);
@@ -67,8 +62,8 @@ public static class AdmixtureSavedFileEndpoints
     private static async Task<IResult> Create(
         HttpContext httpContext,
         ApplicationDbContext dbContext,
-        IAdmixtureSavedFileService service,
-        CreateAdmixtureSavedFileContract.Request request)
+        IG25TargetCoordinateService service,
+        CreateG25TargetCoordinateContract.Request request)
     {
         var identityId = ResolveIdentityId(httpContext);
         if (identityId is null) return Results.Unauthorized();
@@ -79,19 +74,16 @@ public static class AdmixtureSavedFileEndpoints
         var validation = ValidateCreate(request);
         if (validation is not null) return validation;
 
-        var resolvedKind = NormalizeKind(request.Kind);
-        if (resolvedKind is null) return Results.BadRequest("Invalid kind.");
-
-        var result = await service.CreateAsync(userId.Value, identityId, request, resolvedKind);
-        return Results.Created($"/api/admixture-saved-files/{result.Id}", result);
+        var result = await service.CreateAsync(userId.Value, identityId, request);
+        return Results.Created($"/api/g25-target-coordinates/{result.Id}", result);
     }
 
     private static async Task<IResult> Update(
         HttpContext httpContext,
         ApplicationDbContext dbContext,
-        IAdmixtureSavedFileService service,
+        IG25TargetCoordinateService service,
         int id,
-        UpdateAdmixtureSavedFileContract.Request request)
+        UpdateG25TargetCoordinateContract.Request request)
     {
         var identityId = ResolveIdentityId(httpContext);
         if (identityId is null) return Results.Unauthorized();
@@ -99,12 +91,12 @@ public static class AdmixtureSavedFileEndpoints
         var userId = await ResolveUserId(httpContext, dbContext);
         if (userId is null) return Results.Unauthorized();
 
-        if (string.IsNullOrWhiteSpace(request.Title))
-            return Results.BadRequest("Title is required.");
-        if (string.IsNullOrEmpty(request.Content))
-            return Results.BadRequest("Content is required.");
-        if (System.Text.Encoding.UTF8.GetByteCount(request.Content) > MaxContentBytes)
-            return Results.BadRequest("Content exceeds maximum allowed size.");
+        if (string.IsNullOrWhiteSpace(request.Label))
+            return Results.BadRequest("Label is required.");
+        if (string.IsNullOrEmpty(request.Coordinates))
+            return Results.BadRequest("Coordinates are required.");
+        if (System.Text.Encoding.UTF8.GetByteCount(request.Coordinates) > MaxCoordinatesBytes)
+            return Results.BadRequest("Coordinates exceed maximum allowed size.");
 
         var result = await service.UpdateAsync(id, userId.Value, identityId, request);
         return result is null ? Results.NotFound() : Results.Ok(result);
@@ -113,7 +105,7 @@ public static class AdmixtureSavedFileEndpoints
     private static async Task<IResult> Delete(
         HttpContext httpContext,
         ApplicationDbContext dbContext,
-        IAdmixtureSavedFileService service,
+        IG25TargetCoordinateService service,
         int id)
     {
         var userId = await ResolveUserId(httpContext, dbContext);
@@ -123,22 +115,15 @@ public static class AdmixtureSavedFileEndpoints
         return ok ? Results.NoContent() : Results.NotFound();
     }
 
-    private static IResult? ValidateCreate(CreateAdmixtureSavedFileContract.Request request)
+    private static IResult? ValidateCreate(CreateG25TargetCoordinateContract.Request request)
     {
-        if (string.IsNullOrWhiteSpace(request.Title))
-            return Results.BadRequest("Title is required.");
-        if (string.IsNullOrEmpty(request.Content))
-            return Results.BadRequest("Content is required.");
-        if (System.Text.Encoding.UTF8.GetByteCount(request.Content) > MaxContentBytes)
-            return Results.BadRequest("Content exceeds maximum allowed size.");
+        if (string.IsNullOrWhiteSpace(request.Label))
+            return Results.BadRequest("Label is required.");
+        if (string.IsNullOrEmpty(request.Coordinates))
+            return Results.BadRequest("Coordinates are required.");
+        if (System.Text.Encoding.UTF8.GetByteCount(request.Coordinates) > MaxCoordinatesBytes)
+            return Results.BadRequest("Coordinates exceed maximum allowed size.");
         return null;
-    }
-
-    private static string? NormalizeKind(string? kind)
-    {
-        if (string.IsNullOrWhiteSpace(kind)) return AdmixtureSavedFileKind.Source;
-        var lower = kind.Trim().ToLowerInvariant();
-        return AdmixtureSavedFileKind.IsValid(lower) ? lower : null;
     }
 
     private static string? ResolveIdentityId(HttpContext httpContext) =>

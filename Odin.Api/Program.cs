@@ -9,7 +9,6 @@ using Odin.Api.Services.Email;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.Admin;
-using Odin.Api.Endpoints.AdmixtureSavedFileManagement;
 using Odin.Api.Endpoints.AppSettingsManagement;
 using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.G25PopulationSampleManagement;
@@ -17,6 +16,7 @@ using Odin.Api.Endpoints.G25DistancePopulationSampleManagement;
 using Odin.Api.Endpoints.G25PcaPopulationsSampleManagement;
 using Odin.Api.Endpoints.QpadmPopulationSampleManagement;
 using Odin.Api.Endpoints.G25SavedCoordinateManagement;
+using Odin.Api.Endpoints.G25TargetCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.CheckoutManagement;
@@ -30,6 +30,7 @@ using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25ContinentManagement;
+using Odin.Api.Endpoints.CalculatorManagement;
 using Odin.Api.Endpoints.G25AdmixtureEraManagement;
 using Odin.Api.Endpoints.G25DistanceEraManagement;
 using Odin.Api.Endpoints.G25EthnicityManagement;
@@ -425,13 +426,15 @@ namespace Odin.Api
             services.AddScoped<IG25PcaPopulationsSampleService, G25PcaPopulationsSampleService>();
             services.AddScoped<IQpadmPopulationSampleService, QpadmPopulationSampleService>();
             services.AddScoped<IG25SavedCoordinateService, G25SavedCoordinateService>();
-            services.AddScoped<IAdmixtureSavedFileService, AdmixtureSavedFileService>();
+            services.AddScoped<IG25TargetCoordinateService, G25TargetCoordinateService>();
             services.AddScoped<IG25RegionService, G25RegionService>();
             services.AddScoped<IG25EthnicityService, G25EthnicityService>();
             services.AddScoped<IG25ContinentService, G25ContinentService>();
             services.AddScoped<IG25DistanceEraService, G25DistanceEraService>();
             services.AddScoped<IG25AdmixtureEraService, G25AdmixtureEraService>();
             services.AddScoped<IG25CalculationService, G25CalculationService>();
+            services.AddScoped<ICalculatorService, CalculatorService>();
+            services.AddScoped<IAdmixToolsEraService, AdmixToolsEraService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
@@ -544,7 +547,7 @@ namespace Odin.Api
             app.MapG25PcaPopulationsSampleEndpoints();
             app.MapQpadmPopulationSampleEndpoints();
             app.MapG25SavedCoordinateEndpoints();
-            app.MapAdmixtureSavedFileEndpoints();
+            app.MapG25TargetCoordinateEndpoints();
             app.MapG25RegionEndpoints();
             app.MapG25EthnicityEndpoints();
             app.MapG25ContinentEndpoints();
@@ -552,6 +555,8 @@ namespace Odin.Api
             app.MapG25AdmixtureEraEndpoints();
             app.MapG25CalculationEndpoints();
             app.MapG25AdminEndpoints();
+            app.MapCalculatorEndpoints();
+            app.MapAdmixToolsEraEndpoints();
             await app.RunAsync();
         }
 

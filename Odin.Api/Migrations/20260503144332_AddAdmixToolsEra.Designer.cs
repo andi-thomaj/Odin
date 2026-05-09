@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Odin.Api.Data;
@@ -11,9 +12,11 @@ using Odin.Api.Data;
 namespace Odin.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260503144332_AddAdmixToolsEra")]
+    partial class AddAdmixToolsEra
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -53,6 +56,54 @@ namespace Odin.Api.Migrations
                             Id = 2,
                             Name = "Modern"
                         });
+                });
+
+            modelBuilder.Entity("Odin.Api.Data.Entities.AdmixtureSavedFile", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("source");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("UpdatedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Kind", "UpdatedAt");
+
+                    b.ToTable("admixture_saved_files", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.AppSetting", b =>
@@ -884,47 +935,6 @@ namespace Odin.Api.Migrations
                     b.HasIndex("UserId", "UpdatedAt");
 
                     b.ToTable("g25_saved_coordinates", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25TargetCoordinate", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Coordinates")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Label")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId", "UpdatedAt");
-
-                    b.ToTable("g25_target_coordinates", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.Log", b =>
@@ -2335,6 +2345,17 @@ namespace Odin.Api.Migrations
                     b.ToTable("application_users", (string)null);
                 });
 
+            modelBuilder.Entity("Odin.Api.Data.Entities.AdmixtureSavedFile", b =>
+                {
+                    b.HasOne("Odin.Api.Data.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("Odin.Api.Data.Entities.Calculator", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.AdmixToolsEra", "AdmixToolsEra")
@@ -2596,17 +2617,6 @@ namespace Odin.Api.Migrations
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.G25SavedCoordinate", b =>
-                {
-                    b.HasOne("Odin.Api.Data.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.G25TargetCoordinate", b =>
                 {
                     b.HasOne("Odin.Api.Data.Entities.User", "User")
                         .WithMany()

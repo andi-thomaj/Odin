@@ -29,7 +29,7 @@ namespace Odin.Api.Data
         public DbSet<QpadmPopulationSample> QpadmPopulationSamples { get; set; }
         public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<G25SavedCoordinate> G25SavedCoordinates { get; set; }
-        public DbSet<AdmixtureSavedFile> AdmixtureSavedFiles { get; set; }
+        public DbSet<G25TargetCoordinate> G25TargetCoordinates { get; set; }
         public DbSet<PaddlePayment> PaddlePayments { get; set; }
         public DbSet<PaddleNotification> PaddleNotifications { get; set; }
         public DbSet<PaddleProduct> PaddleProducts { get; set; }
@@ -49,6 +49,8 @@ namespace Odin.Api.Data
         public DbSet<G25DistanceResult> G25DistanceResults { get; set; }
         public DbSet<G25AdmixtureResult> G25AdmixtureResults { get; set; }
         public DbSet<G25PcaResult> G25PcaResults { get; set; }
+        public DbSet<Calculator> Calculators { get; set; }
+        public DbSet<AdmixToolsEra> AdmixToolsEras { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
