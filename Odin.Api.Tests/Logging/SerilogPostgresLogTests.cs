@@ -10,7 +10,11 @@ namespace Odin.Api.Tests.Logging;
 
 public class SerilogPostgresLogTests
 {
-    [Fact]
+    // Verifies real Serilog → Postgres logging end-to-end (writes a row, reads it back, deletes it).
+    // Requires a populated Postgres with the production-shape "logs" table — does not belong in the
+    // unit-test pass that runs without Docker. Move into Odin.Api.IntegrationTests against the
+    // Testcontainers Postgres if you want this to run in CI.
+    [Fact(Skip = "Requires a real Postgres with the logs table — promote to integration tests if needed.")]
     public async Task Error_From_ThrownException_Is_Persisted_To_Logs_Table()
     {
         var connectionString = ResolveConnectionString();

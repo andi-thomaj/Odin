@@ -92,6 +92,12 @@ jobs:
         run: dotnet build Odin.slnx --configuration Release --no-restore
 
       - name: Run integration tests
+        # No ConnectionStrings__DefaultConnection env var. Setting it to "" overrides
+        # appsettings.Testing.json's "<secret>" placeholder with an empty string, and
+        # Program.cs's AddNpgSql(...) rejects empty strings before the test factory's
+        # InMemoryCollection override can apply. Leaving the variable unset lets the
+        # placeholder satisfy AddNpgSql's guard while CustomWebApplicationFactory still
+        # routes the DbContext through the Testcontainers Postgres instance.
         run: |
           dotnet test Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj \
             --configuration Release \
@@ -99,10 +105,6 @@ jobs:
             --logger "trx;LogFileName=integration-tests.trx" \
             --logger "console;verbosity=normal" \
             --results-directory ./TestResults
-        env:
-          # Force the Testcontainers path; ignore any developer connection string that might
-          # leak in via shell env or user secrets on a self-hosted runner.
-          ConnectionStrings__DefaultConnection: ""
 
       - name: Upload TRX results
         if: always()

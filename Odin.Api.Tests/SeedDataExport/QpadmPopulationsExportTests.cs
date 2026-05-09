@@ -8,7 +8,10 @@ namespace Odin.Api.Tests.SeedDataExport;
 
 public class QpadmPopulationsExportTests
 {
-    [Fact]
+    // Manual seed-data export utility — rewrites Odin.Api/Data/SeedData/qpadm-populations.json from a
+    // populated Postgres. Not a CI test. Run locally with ConnectionStrings__DefaultConnection set,
+    // by removing the Skip attribute, or via `dotnet test --filter` against this single test.
+    [Fact(Skip = "Manual seed-export utility — requires a populated Postgres; run locally only.")]
     public async Task Export_QpadmPopulations_RewritesSeedJson()
     {
         var connectionString = ResolveConnectionString();

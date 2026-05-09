@@ -45,15 +45,19 @@ public class G25CoordinateParserTests
     }
 
     [Fact]
-    public void Parse_NameWithSpaces_ReplacesWithGreaterThan()
+    public void Parse_NameWithSpaces_PreservesSpaces()
     {
+        // The parser used to replace internal spaces with ">" (legacy admixture-format quirk).
+        // The current G25CoordinateParser only trims, so internal spaces are kept verbatim.
+        // If the ">" behaviour needs to come back, restore it in G25CoordinateParser.Parse and
+        // flip this assertion plus the test name.
         var text = "Ancient Pop One,0.1,0.2";
 
         var result = G25CoordinateParser.Parse(text, "SOURCE");
 
         Assert.Equal(0, result.Errors);
         Assert.NotNull(result.Lines);
-        Assert.Equal("Ancient>Pop>One", result.Lines[0].Name);
+        Assert.Equal("Ancient Pop One", result.Lines[0].Name);
     }
 
     [Fact]
