@@ -177,10 +177,9 @@ internal sealed class G25Seeder(ApplicationDbContext context)
                 UpdatedBy = SeederTag,
             };
 
-            if (!string.IsNullOrWhiteSpace(seed.ResearchLinks))
+            if (seed.ResearchLinks is { Count: > 0 })
             {
-                var links = JsonSerializer.Deserialize<List<ResearchLinkSeed>>(seed.ResearchLinks, jsonOpts) ?? [];
-                foreach (var link in links)
+                foreach (var link in seed.ResearchLinks)
                 {
                     if (string.IsNullOrWhiteSpace(link.Label) || string.IsNullOrWhiteSpace(link.Link))
                         continue;
@@ -220,7 +219,7 @@ internal sealed class G25Seeder(ApplicationDbContext context)
         string Coordinates,
         string? Ids,
         int G25DistanceEraId,
-        string? ResearchLinks);
+        List<ResearchLinkSeed>? ResearchLinks);
 
     private sealed record ResearchLinkSeed(string Label, string Link);
 
