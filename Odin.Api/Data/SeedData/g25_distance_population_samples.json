@@ -8382,12 +8382,12 @@
     "G25DistanceEraId": 1,
     "ResearchLinks": [
       {
-        "Label": "The formation of human populations in South and Central Asia",
-        "Link": "https://www.science.org/doi/10.1126/science.aat7487"
-      },
-      {
         "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
         "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      },
+      {
+        "Label": "The formation of human populations in South and Central Asia",
+        "Link": "https://www.science.org/doi/10.1126/science.aat7487"
       }
     ]
   },
@@ -8482,12 +8482,12 @@
     "G25DistanceEraId": 2,
     "ResearchLinks": [
       {
-        "Label": "Population genomics of Bronze Age Eurasia",
-        "Link": "https://www.nature.com/articles/nature14507"
-      },
-      {
         "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
         "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      },
+      {
+        "Label": "Population genomics of Bronze Age Eurasia",
+        "Link": "https://www.nature.com/articles/nature14507"
       }
     ]
   },
@@ -8498,12 +8498,12 @@
     "G25DistanceEraId": 2,
     "ResearchLinks": [
       {
-        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
-        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
-      },
-      {
         "Label": "Population genomics of Bronze Age Eurasia",
         "Link": "https://www.nature.com/articles/nature14507"
+      },
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
       }
     ]
   },
@@ -8514,12 +8514,12 @@
     "G25DistanceEraId": 2,
     "ResearchLinks": [
       {
-        "Label": "Stable population structure in Europe since the Iron Age, despite high mobility",
-        "Link": "https://elifesciences.org/articles/79714"
-      },
-      {
         "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
         "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      },
+      {
+        "Label": "Stable population structure in Europe since the Iron Age, despite high mobility",
+        "Link": "https://elifesciences.org/articles/79714"
       }
     ]
   },
@@ -8689,12 +8689,12 @@
     "G25DistanceEraId": 2,
     "ResearchLinks": [
       {
-        "Label": "Steppe Ancestry in Western Eurasia and the Spread of the Germanic Languages",
-        "Link": "https://www.biorxiv.org/content/10.1101/2024.03.13.584607v2.full"
-      },
-      {
         "Label": "Population genomics of post-glacial western Eurasia",
         "Link": "https://www.nature.com/articles/s41586-023-06865-0"
+      },
+      {
+        "Label": "Steppe Ancestry in Western Eurasia and the Spread of the Germanic Languages",
+        "Link": "https://www.biorxiv.org/content/10.1101/2024.03.13.584607v2.full"
       }
     ]
   },
@@ -8771,6 +8771,685 @@
       {
         "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
         "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Celtic Briton (500-0 BC)",
+    "Coordinates": "Briton,0.1290384,0.1349526,0.0601363,0.046766,0.0395445,0.0168097,0.0016972,0.0047513,0.0071688,0.0058658,-0.0048175,0.0060241,-0.0142066,-0.0152173,0.0210472,0.0057501,-0.0046938,0.0015604,0.002125,0.0033039,0.0052909,0.0033957,-0.0020784,0.0052997,-0.0015291",
+    "Ids": "I11146,I11147,I11148,I11150,I11151,I11153,I11156,I11997,I12770,I12771,I12775,I12778,I13615,I13680,I13685,I13687,I13717,I13727,I13728,I13729,I13730,I13731,I13732,I14347,I14348,I14380,I14549,I14551,I14800,I14801,I14802,I14804,I14807,I14808,I14858,I14859,I14860,I14863,I14866,I16591,I16592,I16595,I16597,I16599,I16611,I17014,I17015,I17016,I17261,I19044,I19045,I19046,I19207,I19210,I19211,I19652,I19654,I19656,I19856,I19872,I19873,I19874,I19907,I19908,I19909,I19910,I19911,I19912,I19914,I20582,I20586,I20587,I20588,I20589,I20627,I20990,I21178,I21179,I21180,I21181,I21182,I21275,I21276,I21277,I21293,I3014,I3083,I7632,C10427,I14803,I20583,I12779,I14378,I11143,I11152,I11991,I11992,I11993,I11994,I12790,I12793,I12926,I13616,I13726,I14353,I14809,I14837,I16386,I16450,I16455,I16457,I16458,I16601,I16619,I17262,I17263,I17264,I17266,I17267,I19040,I19042,I19657,I19854,I19855,I20584,I20621,I20622,I20623,I20624,I20625,I20626,I20628,I20630_d,I20631,I20982,I20983,I20984,I20985,I20986,I20987,I20988,I20989,I21271,I21272,I21274,I21307,I21308,I21309,I21310,I21311,I21312,I21313,I21314,I19655,I12792,I20632,DUX004,I11142,I11144,I11145,I12785,I12791,I14096,I14097,I14351,I19870,I21303,I21306,I21315,I27379,I5365,I19869,I17017,I14360,I14352,I0160,I0789,I0156,M1489,I16620",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Estonia Early Balto-Finnic (1180–484 BC)",
+    "Coordinates": "Estonia-anc,0.1314655,0.1215589,0.098881,0.1102084,0.0515174,0.0418894,0.0156752,0.0210684,-0.0037222,-0.0504793,-0.0000326,-0.0188083,0.0360355,0.0401996,-0.0195845,0.0035534,0.0112913,-0.0000507,-0.0006032,0.0059153,-0.0023708,-0.0074933,0.0100569,-0.0184482,0.0029339",
+    "Ids": "0LS11,V14,V16,V9,X08,X10,X11,X14,X15,X17",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The Arrival of Siberian Ancestry Connecting the Eastern Baltic to Uralic Speakers further East",
+        "Link": "https://doi.org/10.1016/j.cub.2019.04.026"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Estonia Balto-Finnic (650–150 BC)",
+    "Coordinates": "BaltoFinnic,0.130517,0.1068,0.0923947,0.0903862,0.043444,0.030213,0.0090478,0.0156148,0.0013977,-0.037085,0.0051693,-0.0136128,0.023389,0.0147255,-0.003981,0.0065632,0.0122995,-0.0001478,0.00331,0.0106508,0.00366,-0.0019992,0.0032045,-0.0095793,-0.0009777",
+    "Ids": "0LS10,V10,V11,V12,VII4,X04",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The Arrival of Siberian Ancestry Connecting the Eastern Baltic to Uralic Speakers further East",
+        "Link": "https://doi.org/10.1016/j.cub.2019.04.026"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Early Finnic (350 BC)",
+    "Coordinates": "Finland_Ostrobothnia_Käldamäki_IA:CGG024143__BC_350__Cov_14.16%,0.125205,0.111708,0.089755,0.073321,0.044316,0.027889,0.008225,0.022845,-0.00225,-0.014761,-0.013641,0.002997,0.023191,0.027525,-0.025651,-0.020286,0.003912,-0.006968,0.005782,0.014257,-0.003743,-0.017435,0.009244,-0.014219,0.001916",
+    "Ids": "CGG024143",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Steppe Ancestry in Western Eurasia and the Spread of the Germanic Languages",
+        "Link": "https://www.biorxiv.org/content/10.1101/2024.03.13.584607v2.full"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Gaul (750–100 BC)",
+    "Coordinates": "Gaul,0.1267974,0.142229,0.0560967,0.0284196,0.0440268,0.0090131,0.0013306,0.0043906,0.0136907,0.0180857,-0.0029745,0.0067764,-0.0149243,-0.0092551,0.0107494,0.0007696,-0.0057387,0.0014861,0.0029149,0.0005847,0.0038707,0.0031406,-0.0032561,-0.0004535,-0.0007355",
+    "Ids": "BFT228,BLH447,VAS75,VAS79-2,BUCH48-1,BUCH48-2,BUCH82,GDF1231,GDF1264,GDF1341,GDF1348,GDF1349-A,ERS83-2,GOX287_merge,ISL6950,CGG023685,CGG023644,CGG023647,CGG023659,CGG023660,CGG023662,CGG023664,CGG023672,CGG023676,CGG023677,CGG023678,CGG023679,CGG023682,CGG023687,CGG023688,CGG023690,CGG023691,CGG023692,CGG023693,CGG023698,CGG023699,CGG023700,CGG023702,CGG023703,CGG023704,CGG023706,CGG023707,CGG023708,CGG023709,CGG023712,CGG023713,CGG023714,CGG023716,CGG023717,CGG023718,CGG023719,CGG023720,CGG023723,CGG023724,CGG023637,CGG023653,CGG023668,CGG023669,CGG023310,CGG023634,CGG023626,CGG023627,CGG023628,Jeb8,NOR2B6,NOR3-15,NOR3-6,NOR4,I19356,I19357,I19358,I19359,I19362,I20815,I20817,I20827,I21399,I21402,I21931,COL11,COL153A,COL153i,ERS1164,ERS86,ERS88,I21403,I19363,I19360,Croi12-2,COL239,COL330,CROI1-4,CROI11,SCPG2,WET429,CGG022417,CGG022418,CGG022419,CGG022420,CGG022421,CGG022424,CGG022425,CGG022426,CGG022427,CGG022428,CGG022429,CGG022430,CGG022431,CGG022432,CGG022433,CGG022434,CGG022435,CGG022436,CGG022437,CGG022438,CGG022440,CGG022441,CGG022442,CGG022443,CGG022444,CGG022445,CGG022447,CGG022451,CGG022452,CGG022453,CGG022454,CGG022455,CGG022456,CGG022457,CGG022458,CGG022459,CGG022461,CGG022463,CGG022464,CGG022465,ATT26,BFM265,UN129,UN19_merge,UN85,CHF106,ATT27,ATT3,ATT52-2,PAL170,GLN141,GLN29-A,GLN126_merge",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "https://www.cell.com/trends/biochemical-sciences/fulltext/S0968-0004(22)00148-7",
+        "Link": "Coordinating gene expression during the cell cycle"
+      },
+      {
+        "Label": "Coordinating gene expression during the cell cycle",
+        "Link": "https://www.cell.com/trends/biochemical-sciences/fulltext/S0968-0004(22)00148-7"
+      },
+      {
+        "Label": "Steppe Ancestry in Western Eurasia and the Spread of the Germanic Languages",
+        "Link": "https://www.biorxiv.org/content/10.1101/2024.03.13.584607v2.full"
+      },
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      },
+      {
+        "Label": "Ancient genomes from present-day France unveil 7,000 years of its demographic history",
+        "Link": "https://www.pnas.org/doi/10.1073/pnas.1918034117"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Georgia Iberian (1200–0 BC)",
+    "Coordinates": "Georgia_Iberian ,0.1097144,0.1301365,-0.0487038,-0.028164,-0.0387839,-0.0000817,0.0072336,-0.0052569,-0.0577056,-0.0250108,0.0009861,0.0081256,-0.0171467,-0.0003323,0.0070243,-0.0126284,0.0033645,-0.0018601,-0.0034214,0.0064299,0.0082081,0.0012606,0.0003728,-0.0037031,-0.0001373",
+    "Ids": "AHI001,BZT001,BZT002,DDN006,DDN009,DDN011,DDN012,geo029,CGG021779,IGT003,KMR003,KMR005,KMR012,KMR014,KMR015,KMR021-KMR028,KMR024,KMR026,KMR027,KMR004,KMR007,KMR008,KMR009,KMR001-NOK002,KMR016,KTR001,MRA001,NBG002-NBG004,NBG005,TEL001,TRL001,TRL004,TRL002,TRL003,TRL005,VRS002,VRS004,VRS005,VRS006,VRS008,VRS003",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Caucasus from the Bronze Age to the Early Middle Ages: 5,000 years of genetic continuity despite high mobility",
+        "Link": "https://www.sciencedirect.com/science/article/pii/S0092867425008025"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Colchians (800–250 BC)",
+    "Coordinates": "Colchian,0.1180912,0.1322728,-0.0664675,-0.0420708,-0.0431618,-0.0036258,0.005288,-0.0087692,-0.063198,-0.0226428,0.0007308,0.0081302,-0.016427,0.0028558,0.0089235,-0.0119662,0.0127778,-0.0082662,-0.0124128,0.0117555,0.0104192,0.0008962,0.0009858,-0.0069285,-0.0026645",
+    "Ids": "SKH009,SKH002,TSH007,NOK003",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Caucasus from the Bronze Age to the Early Middle Ages: 5,000 years of genetic continuity despite high mobility",
+        "Link": "https://www.sciencedirect.com/science/article/pii/S0092867425008025"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Kartvelian (325-0 BC)",
+    "Coordinates": "Kartvelian,0.1101808,0.1346594,-0.0598116,-0.0419254,-0.0428388,-0.001227,0.004747,-0.0061842,-0.0588212,-0.022743,-0.0018188,0.0154064,-0.013558,0.012909,0.0029318,-0.0224342,0.0134818,-0.002686,-0.0103828,0.0132562,0.0144994,-0.0011624,-0.0019472,-0.0089168,0.0000238",
+    "Ids": "DZN009,ERK001,GKL002,NSK007,SMT023",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Caucasus from the Bronze Age to the Early Middle Ages: 5,000 years of genetic continuity despite high mobility",
+        "Link": "https://www.sciencedirect.com/science/article/pii/S0092867425008025"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Germany Celtic Hallstatt Culture (650–300 BC)",
+    "Coordinates": "Hallstatt_Celt_Germany,0.1284423,0.1437608,0.0526908,0.0206417,0.0463548,0.0048196,0.0021444,0.0046801,0.0131662,0.0228421,-0.0016189,0.0054936,-0.0142714,-0.007565,0.0040759,0.003696,0.0013201,0.0008868,0.0039124,-0.0013718,0.0011152,0.0030952,-0.0014596,-0.0021727,-0.0011414",
+    "Ids": "APG001,APG002,APG003,HEU001,HEU002,HOC001,HOC002,HOC003,HOC004,HOC004_d,c,LWB001,LWB002,LWB003,MBG003,MBG004,MBG005,MBG006,MBG007,MBG007_d,MBG008,MBG008_d,MBG009,MBG009_d,MBG010,MBG015,MBG016,MBG017,MBG017_d,CGG023734,CGG023735,MX265",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomes reveal social and genetic structure of Late Neolithic Switzerland",
+        "Link": "https://www.nature.com/articles/s41467-020-15560-x"
+      },
+      {
+        "Label": "Evidence for dynastic succession among early Celtic elites in Central Europe",
+        "Link": "https://www.nature.com/articles/s41562-024-01888-7"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Germany Proto-Celtic Urnfield Culture (1050 BC)",
+    "Coordinates": "ProtoCeltGermany,0.1231967,0.1359615,0.0590896,0.042123,0.0400376,0.0130422,0.0028338,0.00495,0.0080767,0.0069499,-0.0023976,0.0050485,-0.0112544,-0.0093556,0.0124597,0.0049813,-0.0015698,0.0015104,0.0044142,0.0029254,0.0044676,0.0042526,-0.0022329,0.0016775,-0.0006997",
+    "Ids": "I0099,ESP036,ESP039,ESP040,ESP041,ESP042,ESP043,ESP044,ESP045,ESP046,ESP058,ESP059,KUC001,KUC002,KUC003,KUC004,KUC005,KUC006,KUC007,KUC008,KUC009,KUC010,KUC011,KUC012,KUC015,KUC016,KUC017,KUC018,KUC019,KUC021,KUC022,KUC023,KUC026,KUC027,KUC028,KUC030,LEU020,NES004,NES005,NES006,NES007,NES009,NES012,NES013,NES014,NES015,NES017,NES018,NES019,NES020,NES021",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Genome-wide patterns of selection in 230 ancient Eurasians",
+        "Link": "https://www.nature.com/articles/nature16152"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Ambracian (500-350 BC)",
+    "Coordinates": "GRC_Ambracian*(500-100*BC),0.1166249,0.1585788,0.0018565,-0.0555312,0.0269636,-0.0200588,0.000235,-0.0033017,0.0074572,0.0398816,0.0025357,0.0081273,-0.0149232,-0.0005081,-0.0201598,-0.005426,0.0092773,0.0005262,0.0090985,-0.0109668,-0.0125068,0.0015218,0.0014317,0.0042916,-0.0040529",
+    "Ids": "Amv_Epi_Arch_2,Amv_Epi_Arch_1,Amv_Epi_Arch_3,Amv_Epi_Cl_4,Amv_Epi_Cl_2,Amv_Epi_Cl_1,Amv_Epi_Cl_5,Amv_Epi_Cl_6",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic affinities between an ancient Greek colony and its metropolis: the case of Amvrakia in western Greece",
+        "Link": "https://www.biorxiv.org/content/10.1101/2025.07.01.662689v1"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hellenistic Ambracian (200-100 BC)",
+    "Coordinates": "GRC_Ambracian_Hellenistic*(200-100*BC),0.1149612,0.1622308,-0.0000945,-0.056525,0.0276205,-0.0205682,-0.0003525,-0.005769,0.008488,0.0383608,0.0041,0.0034468,-0.017802,-0.0005505,-0.0168295,-0.0028508,0.0045962,-0.0009185,0.0044935,-0.0128498,-0.0160968,0.0016075,0.0012018,-0.001717,-0.0063468",
+    "Ids": "Amv_Epi_Hel_5,Amv_Epi_Hel_1,Amv_Epi_Hel_4,Amv_Epi_Archaic_to_Roman",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic affinities between an ancient Greek colony and its metropolis: the case of Amvrakia in western Greece",
+        "Link": "https://www.biorxiv.org/content/10.1101/2025.07.01.662689v1"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Phocian Delphi (650 BC)",
+    "Coordinates": "Greece_Kastrouli_IA.AG:I17962.AG__BC_644__Cov_42.10%,0.117238,0.159438,-0.010182,-0.060724,0.027082,-0.030678,-0.009635,-0.004846,0.016362,0.042643,0.003735,0.005845,-0.015461,-0.004817,-0.019815,0.006364,0.028424,-0.000633,0.012067,-0.002876,-0.019091,0.009398,-0.005423,0.013616,0.002994",
+    "Ids": "I17962",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Aegean Cyclades Mycenaean (1100 BC)",
+    "Coordinates": "GRC_Aegean_Cycladic*(1100*BC),0.1178068,0.1612152,-0.0085795,-0.0672648,0.019388,-0.0263552,0.0009988,-0.007788,0.0091012,0.0460602,0.0053995,0.0088048,-0.0135282,0.0023395,-0.0226652,-0.0101762,0.0099092,-0.0036425,0.0058762,-0.0079412,-0.0068628,0.0023185,-0.0024648,0.0016568,-0.002335",
+    "Ids": "KUK001,KUK002,KUK005,KUK006",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean",
+        "Link": "https://www.nature.com/articles/s41559-022-01952-3"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Ancient Makedon (370 BC)",
+    "Coordinates": "Greece_Macedonia_Vergina_Tomb1_Classical:DEM3237_rmdup__BC_372__Cov_22.32%,0.133173,0.144205,0.016593,-0.046835,0.029852,-0.018686,0.005405,0.005077,-0.001636,0.033167,0.00341,0.007194,-0.021704,-0.006744,-0.012079,-0.000133,0.008736,-0.008108,0.006411,-0.011255,-0.015223,-0.0115,-0.008504,0.011447,-0.001796",
+    "Ids": "DEM3237",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": null
+  },
+  {
+    "SampleLabel": "Post-Mycenaean (1010 BC)",
+    "Coordinates": "Greece_PalaceOfNestor_EIA.AG:I19368.AG__BC_1010__Cov_11.12%,0.108132,0.160454,0.000377,-0.039406,0.018465,-0.019522,-0.007755,0.012923,-0.010431,0.025331,0.013641,0.018583,-0.010406,-0.002615,-0.008279,-0.013392,0.005476,-0.008742,0.015209,-0.009004,0.00574,-0.007666,-0.003328,0.006507,-0.002754",
+    "Ids": "I19368",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Corinthian (500 BC)",
+    "Coordinates": "GRC_Corinthian*(500*BC),0.1160995,0.1645155,0.0035825,-0.060724,0.0301595,-0.0210565,-0.0048175,-0.002077,0.006238,0.039363,0.006983,0.0080175,-0.0138995,0.000413,-0.019476,-0.0257885,-0.0048245,-0.000317,0.000377,-0.013194,-0.015348,-0.0011125,0.0032045,0.003434,0.0007785",
+    "Ids": "Ten_Pel_Arch1,Ten_Pel_Arch2",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic affinities between an ancient Greek colony and its metropolis: the case of Amvrakia in western Greece",
+        "Link": "https://www.biorxiv.org/content/10.1101/2025.07.01.662689v1"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Corinthian Hellenistic (180-120 BC)",
+    "Coordinates": "GRC_Corinth_Hellenistic*(200-100*BCE),0.117238,0.157915,-0.0101825,-0.062339,0.014618,-0.024403,0.0057575,-0.0056535,-0.0017385,0.027973,0.0027605,0.008767,-0.0095145,-0.006193,-0.015133,-0.0063645,0.0062585,-0.0019005,0.006348,-0.0041895,-0.007674,0.001113,0.004437,0.0086155,-0.0037125",
+    "Ids": "Ten_Pel_Hel_1,Ten_Pel_Hel_2",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic affinities between an ancient Greek colony and its metropolis: the case of Amvrakia in western Greece",
+        "Link": "https://www.biorxiv.org/content/10.1101/2025.07.01.662689v1"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Dark Ages Greece (900 BC)",
+    "Coordinates": "GRC_DarkAges*(900*BC):Greece_Tiryns_IA.AG:TIR008.AG__BC_901__Cov_33.72%,0.122929,0.1635,-0.00792,-0.067184,0.044008,-0.027889,-0.002585,-0.000462,0.013908,0.049386,-0.000325,0.012739,-0.017691,0.00055,-0.027008,0.005569,0.022687,-0.005828,0.006159,-0.008629,-0.018717,-0.001237,0.005423,0.00494,-0.001197",
+    "Ids": "TIR008",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA reveals admixture history and endogamy in the prehistoric Aegean",
+        "Link": "https://www.nature.com/articles/s41559-022-01952-3"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Pannonian Celt (350-200 BC)",
+    "Coordinates": "Hungary_LaTene-Celts,0.1278743,0.1443803,0.0476863,0.0133655,0.0430106,0.0033659,0.0018152,0.0041139,0.0111713,0.0201841,-0.003623,0.0061238,-0.0126414,-0.0018555,-0.0021903,0.0006538,0.0037767,0.0013456,0.0034892,0.000496,-0.0009853,0.0032406,-0.0004208,-0.0032077,-0.0020564",
+    "Ids": "I18110,I18181,I18220,I18488,I18526,I18527,I18528,I18529,I18530,I18531,I18834,I18838,I18839,I18840,I20752,I25510,I25512,I25516,I25518,I25519,I25522,I4996,I18490,I18835,I20774,I18489,I18491,I18492,I18493",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Scythian (800-600 BC)",
+    "Coordinates": "Scythian_Hungary,0.1263437,0.1448822,0.0465115,0.0127047,0.0406228,0.0030677,0.0022718,0.0023077,0.0122715,0.0163405,0.0010557,0.0042213,-0.0058227,0.000688,-0.0052027,-0.002033,0.0002392,0.0025127,0.0044205,-0.0016467,-0.0019548,0.0031327,-0.0027937,-0.0080732,0.0005188",
+    "Ids": "I11683,I18211,I18213,I18239,I18245,I18246",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Large-scale migration into Britain during the Middle to Late Bronze Age",
+        "Link": "https://www.nature.com/articles/s41586-021-04287-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Indonesia Early Austronesian (300–120 BC)",
+    "Coordinates": "Undefined,-0.0053661,-0.3785023,-0.1104964,0.0469734,0.1631076,-0.0980499,-0.002585,-0.0072196,-0.0227021,-0.0182234,0.0369549,0.0048814,-0.0047147,-0.0055049,0.0083564,0.0072734,-0.0032224,0.002172,0.0072904,-0.0085399,0.003761,-0.0247834,-0.0068664,-0.0087617,-0.0446666",
+    "Ids": "AMA001,AMA003008,AMA005,TanjungPinang1,TanjungPinang2,TanjungPinang4,TanjungPinang6",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomes from the last three millennia support multiple human dispersals into Wallacea",
+        "Link": "https://www.nature.com/articles/s41559-022-01775-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Iran Mannaean (1200–600 BC)",
+    "Coordinates": "Undefined,0.0928131,0.1218635,-0.0640948,-0.0410345,-0.0428285,-0.0092614,0.0022815,-0.0060094,-0.0313603,-0.013531,0.0046078,-0.0006432,0.0035306,-0.0029358,0.0021037,0.0100326,-0.0031564,0.0008129,0.0025925,-0.0064354,0.0016846,-0.0030963,-0.0013762,-0.0034893,0.0025396",
+    "Ids": "4237,I3914,I3915,I4238,I4273,I2327,I4100,I4232,I4233,I4269,I4280,I4338,I4353,I4355,I4355_d,I4356,I4357,I6388,I6428,I6429,I6430,I6431,I6432,F38",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Iran Parthian Caspian Sea (80–50 BC)",
+    "Coordinates": "Undefined,0.0902997,0.1123853,-0.096166,-0.0270243,-0.0715003,0.0035327,0.004152,-0.0031537,-0.068243,-0.0326207,-0.0064413,0.001099,-0.0031713,0.0007797,0.01226,0.0189163,-0.0101267,-0.003674,0.0013407,-0.008004,0.0057817,-0.0082847,0.0002053,-0.0120093,0.015847",
+    "Ids": "IRN22W,IRN23W,IRN25W",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA indicates 3,000 years of genetic continuity in the Northern Iranian Plateau, from the Copper Age to the Sassanid Empire",
+        "Link": "https://www.nature.com/articles/s41598-025-99743-w"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Achaemenid–Seleucid Iranian (320 BC)",
+    "Coordinates": "Undefined,0.0891613,0.1005373,-0.102828,-0.0188417,-0.0822717,0.0147813,0.0092433,0.0019997,-0.063948,-0.036933,-0.0051963,0.0041463,-0.004807,-0.0021103,0.019589,0.028639,-0.0016513,0.008066,0.007961,-0.018384,0.0037433,-0.0147973,-0.000493,-0.0100817,0.0029937",
+    "Ids": "IRN57W,IRN65W,IRN69W",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA indicates 3,000 years of genetic continuity in the Northern Iranian Plateau, from the Copper Age to the Sassanid Empire",
+        "Link": "https://www.nature.com/articles/s41598-025-99743-w"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Israel Phoenician (800-600 BC)",
+    "Coordinates": "Undefined,0.0817456,0.1503906,-0.0526254,-0.097282,-0.0092605,-0.0366361,-0.0023501,-0.0092934,0.0137775,0.0129387,0.0102008,-0.0109812,0.0188124,0.0019644,-0.0047255,0.0026999,0.0015292,0.0025569,0.0033481,0.0043772,0.0020191,0.002518,-0.0011204,-0.0005479,-0.0017961",
+    "Ids": "I11788,I11794,I11804,I11805,I11806,I22252,I22253,I22254,I22256,I22258,I22260",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Punic people were genetically diverse with almost no Levantine ancestors",
+        "Link": "https://www.nature.com/articles/s41586-025-08913-3"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Israelite (1200-1000 BC)",
+    "Coordinates": "Undefined,0.081099,0.1426818,-0.0605278,-0.1037642,-0.0166952,-0.0387658,-0.0048175,-0.0151148,0.0152882,0.009613,0.006942,-0.0062195,0.0227822,0.0005162,-0.0105182,0.0067288,-0.004531,-0.0024388,-0.0035195,0.0007505,0.002714,0.001051,-0.0053305,-0.0049405,0.000838",
+    "Ids": "ASH008,ASH0087,ASH135,I4517",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The Genomic History of the Bronze Age Southern Levant",
+        "Link": "https://doi.org/10.1016/j.cell.2020.04.024"
+      },
+      {
+        "Label": "Ancient DNA sheds light on the genetic origins of early Iron Age Philistines",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.aax0061"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Etruscan (800-100 BC)",
+    "Coordinates": "Undefined,0.1248905,0.1537986,0.0382095,-0.0129269,0.0491023,-0.0070673,0.00007,-0.0009083,0.0224498,0.04395,-0.0005598,0.0088581,-0.0200091,-0.0084155,-0.0030003,-0.0017631,0.0029711,0.0018815,0.0031826,-0.0043133,-0.0003557,0.0052908,-0.003582,-0.0058966,-0.0003057",
+    "Ids": "UDC_P,EV16D1,EV7A,TAQ002,TAQ004,TAQ006,TAQ008,TAQ010,TAQ012,TAQ013,TAQ015,TAQ016,TAQ019,TAQ024,TAQ017,TAQ005,TAQ001,TAQ018,R10338,R10340,R10344,R10359,R10361,R10363,CSN010,CSN001,CSN003,CSN004,CSN005,CSN006,CSN008,CSN009,CSN013,MAG001,MAS004,VET001,VET002,VET003_4,VET007,VET010,VEU001,VOL001,CAM001,CAM003,ETR005,PRZ001,PRZ002",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic history of continuity and mobility in the Iron Age central Mediterranean",
+        "Link": "https://www.nature.com/articles/s41559-023-02143-4"
+      },
+      {
+        "Label": "The genomic portrait of the Picene culture provides new insights into the Italic Iron Age and the legacy of the Roman Empire in Central Italy",
+        "Link": "https://link.springer.com/article/10.1186/s13059-024-03430-4"
+      },
+      {
+        "Label": "The origin and legacy of the Etruscans through a 2000-year archeogenomic time transect",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.abi7673"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Sicani (1000–600 BC)",
+    "Coordinates": "Undefined,0.1247914,0.1689471,0.0148962,-0.0573325,0.0466659,-0.0250748,-0.0035891,-0.0018355,0.0266253,0.0630123,0.0026941,0.0113831,-0.0232385,-0.0030152,-0.0212032,-0.0107096,0.0053812,0.0015778,0.0063592,-0.0101071,-0.0066418,0.0035971,-0.0038319,-0.0083526,-0.000272",
+    "Ids": "I3876,I13125,I13128,I13376,I13377,I13378,I13379,I13380,I13381,I13382,I13383,I13384,I13385,I13386,I13387,I13389,I13390,I13391,I13392,I13393,I13394,I13395",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The diverse genetic origins of a Classical period Greek army",
+        "Link": "https://www.pnas.org/doi/10.1073/pnas.2205272119"
+      },
+      {
+        "Label": "The spread of steppe and Iranian-related ancestry in the islands of the western Mediterranean",
+        "Link": "https://www.nature.com/articles/s41559-020-1102-0"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Sardinian Punic (1000–100 BC)",
+    "Coordinates": "Undefined,0.0956114,0.1579148,0.0175048,-0.0476425,0.0425207,-0.0230317,-0.0059437,0.0004519,0.0374195,0.0472219,0.0016847,0.0039653,-0.0085913,-0.0107519,-0.0026465,-0.0026794,0.0033628,-0.0011665,-0.0016917,-0.003804,-0.0026412,-0.0028543,-0.0014534,-0.0104682,0.0029389",
+    "Ids": "R11828,R11829,R11835,VIL006,VIL007,VIL010,VIL011,MSR002,MSR003,ORC002,I21984,I22096,I22115,I22117,I22118,I22121,I22122,I22114,I22119,I21966,I22088,I22125,I22113,I21964",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic history from the Middle Neolithic to present on the Mediterranean island of Sardinia",
+        "Link": "https://www.nature.com/articles/s41467-020-14523-6"
+      },
+      {
+        "Label": "Punic people were genetically diverse with almost no Levantine ancestors",
+        "Link": "https://www.nature.com/articles/s41586-025-08913-3"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "South Picene (600 BC)",
+    "Coordinates": "ITA_Picene_South*(600*BC),0.124636,0.148775,0.0456315,-0.0066215,0.039546,-0.0015335,-0.0063455,0.002769,0.0226,0.030342,0.000812,0.001124,-0.008994,-0.0124545,-0.002918,-0.0053035,0.0031945,0.008488,-0.006222,0.003752,-0.007549,0.004637,0.006532,0.003916,0.00006",
+    "Ids": "PNU76,PSD2",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genomic portrait of the Picene culture provides new insights into the Italic Iron Age and the legacy of the Roman Empire in Central Italy",
+        "Link": "https://link.springer.com/article/10.1186/s13059-024-03430-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "North Picene (700-600 BC)",
+    "Coordinates": "ITA_Picene_North*(700-600*BC),0.122335,0.1448233,0.03622,0.0012218,0.0388835,-0.0043288,-0.0011955,0.0023478,0.0107152,0.0289993,-0.000113,0.0050629,-0.0183629,-0.0079642,-0.0016463,-0.0019889,0.0039853,0.0013056,0.0060663,-0.007694,-0.0017793,0.0022097,-0.0019131,-0.0000733,-0.0021607",
+    "Ids": "PN101,PN105,PN125,PN135,PN138,PN141,PN146,PN157,PN158,PN162,PN172,PN174,PN177,PN179,PN180,PN20,PN24,PN35,PN41,PN42,PN44,PN50,PN51,PN78,PN79,PN85,PN87,PN90,PN91",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genomic portrait of the Picene culture provides new insights into the Italic Iron Age and the legacy of the Roman Empire in Central Italy",
+        "Link": "https://link.springer.com/article/10.1186/s13059-024-03430-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Latin / Roman Republican (800-300 BC)",
+    "Coordinates": "Latin,0.12862,0.1541572,0.0374102,-0.0183464,0.0487476,-0.0079204,0.000705,0.0006002,0.0248702,0.04319,0.0017536,0.0104008,-0.0210506,-0.0109272,-0.0041802,-0.003686,0.0052156,-0.0005574,0.0055056,-0.0015256,-0.000075,0.0025968,-0.0039686,-0.004844,-0.0017244",
+    "Ids": "R1015,R1016,R473,R851,R1021",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "ancient Rome: A genetic crossroads of Europe and the Mediterranean",
+        "Link": "https://www.science.org/doi/10.1126/science.aay6826"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Magna Graecian (550-400 BC)",
+    "Coordinates": "Italy_Sicily_Himera_480BCE_Greek.AG:I10945.AG__BC_480__Cov_61.94%,0.114961,0.15436,-0.014708,-0.054264,0.017849,-0.027889,-0.00235,-0.002308,0.003886,0.041368,0.001137,0.016635,-0.021853,0.003165,-0.017236,-0.019358,0.005998,-0.000633,0.015712,-0.014757,-0.021836,0.013107,0.001232,0.008555,-0.001557\nItaly_Sicily_Himera_480BCE_Greek.AG:I10948.AG__BC_480__Cov_55.08%,0.118376,0.165531,-0.002263,-0.059432,0.030159,-0.022311,-0.00376,-0.000231,0.013499,0.049204,0.006333,0.01094,-0.025124,-0.00523,-0.018865,-0.003845,0.004824,0.001394,0.011564,-0.006628,-0.002995,0.002844,0.006162,0.008194,-0.001676\nItaly_Sicily_Himera_480BCE_Greek.AG:I10952.AG__BC_480__Cov_54.38%,0.114961,0.160454,0.004903,-0.060078,0.02739,-0.020638,-0.00705,-0.002538,0.008181,0.045012,0.006171,0.007493,-0.011298,0.003716,-0.017915,-0.013789,-0.005867,-0.00114,0.006411,-0.012631,0.00025,0.006925,-0.004314,0.006266,-0.005628\nItaly_Sicily_Himera_480BCE_Greek.AG:I7217.AG__BC_480__Cov_61.29%,0.121791,0.157407,-0.009428,-0.063954,0.032621,-0.027331,0.003055,-0.002538,0.004704,0.047928,0.007145,0.010341,-0.016501,-0.009083,-0.018458,-0.012729,0.007041,0.002787,0.005405,-0.022136,-0.004367,0.007296,-0.001602,0.012893,0.003473\nItaly_Sicily_Himera_480BCE_Greek.AG:I7218.AG__BC_480__Cov_67.15%,0.117238,0.161469,-0.001131,-0.062662,0.025235,-0.031794,0.004465,-0.000462,0.012271,0.051755,0.006983,0.008842,-0.012785,-0.008945,-0.021987,0.006099,0.033639,0.000127,0.009176,-0.007253,-0.011729,-0.003215,-0.005669,0.008555,-0.010777\nItaly_Sicily_Himera_480BCE_Greek.AG:I7219.AG__BC_480__Cov_71.48%,0.125205,0.173656,-0.001508,-0.068153,0.024312,-0.022032,0.001175,0.001846,0.0045,0.043554,0.001786,0.01079,-0.024975,-0.010046,-0.027008,-0.012066,0.018645,-0.002027,0.013198,0.000375,-0.013975,-0.000618,0.002835,-0.004338,-0.001916\nItaly_Sicily_Himera_480BCE_Greek.AG:I7221.AG__BC_480__Cov_74.03%,0.117238,0.157407,-0.012822,-0.063631,0.018157,-0.025379,-0.00517,-0.004846,-0.0045,0.035901,0.003085,0.004946,-0.016055,-0.00055,-0.018051,-0.008221,0.012386,-0.000887,0.002514,-0.001376,-0.011105,0.006554,-0.003081,0.004217,-0.005987",
+    "Ids": "I10945,I10948,I10952,I7217,I7218,I7219,I7221",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The diverse genetic origins of a Classical period Greek army",
+        "Link": "https://www.pnas.org/doi/10.1073/pnas.2205272119"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Magna Graecia Sicilian (480-400 BC)",
+    "Coordinates": "Undefined,0.1231566,0.1635002,0.0055814,-0.0560082,0.03416,-0.0205262,-0.003478,-0.0071072,0.0150938,0.0502242,0.0012018,0.0119894,-0.0241424,0.001734,-0.0150108,-0.0135772,0.0071972,0.0011908,0.0050028,-0.010555,-0.00015,0.0045008,-0.0006654,0.0008916,-0.0029936",
+    "Ids": "I17866,I7223,I7224,I7225,I17432",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The diverse genetic origins of a Classical period Greek army",
+        "Link": "https://www.pnas.org/doi/10.1073/pnas.2205272119"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Magna Graecia Dardanian Mercenary (480 BC)",
+    "Coordinates": "Undefined,0.1263435,0.145221,0.0294155,-0.0079135,0.0381605,-0.008506,-0.0017625,-0.0010385,0.0079765,0.029887,0.005602,0.006894,-0.013974,0.0057805,-0.018051,-0.011005,0.0056065,-0.002027,0.0098675,-0.0048775,-0.009982,0.010325,-0.0032045,0.000542,0.003233",
+    "Ids": "I10950,I10946",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "https://www.pnas.org/doi/10.1073/pnas.2205272119",
+        "Link": "The diverse genetic origins of a Classical period Greek army"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Magna Graecia Baltic Mercenary (480 BC)",
+    "Coordinates": "Italy_Sicily_Himera_480BCE_NEurope.AG:I10943.AG__BC_480__Cov_58.83%,0.126344,0.122879,0.077687,0.080104,0.030467,0.028447,0.01081,0.014538,-0.015953,-0.040456,0.001137,-0.006145,0.019475,0.01445,-0.009636,0.01432,0.025946,-0.005954,-0.007542,0.011255,0.000749,-0.006677,0.005916,-0.01205,-0.003353\nItaly_Sicily_Himera_480BCE_NEurope.AG:I10949.AG__BC_480__Cov_49.60%,0.124067,0.112724,0.078441,0.075259,0.038469,0.031515,0.012926,0.007154,-0.001636,-0.024784,-0.000162,-0.010041,0.011447,0.022845,-0.010586,0.00769,0.002347,0.002407,0.004022,0.01138,-0.000873,-0.010758,0.006532,-0.015665,0.005508",
+    "Ids": "I10943,I10949",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The diverse genetic origins of a Classical period Greek army",
+        "Link": "https://www.pnas.org/doi/10.1073/pnas.2205272119"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Magna Graecia Sarmatian Mercenary (480 BC)",
+    "Coordinates": "Italy_Sicily_Himera_480BCE_Sarmatian.AG:I10944.AG__BC_480__Cov_59.82%,0.10927,0.043668,0.042238,0.057817,-0.019696,0.011435,0.001175,0.000692,-0.026384,-0.029704,-0.003735,0.001798,-0.000743,-0.002752,0.014929,-0.001193,-0.021253,0.003421,0.001006,-0.002876,-0.015348,0.00272,0.001972,0.001566,0.000958\nItaly_Sicily_Himera_480BCE_Sarmatian.AG:I10947.AG__BC_480__Cov_61.52%,0.108132,0.042652,0.040352,0.052003,-0.025543,0.024821,-0.00752,-0.002308,-0.024747,-0.024784,-0.006983,-0.001349,-0.003122,-0.021744,0.015336,0.017237,0.01004,-0.004181,0.010684,0.003001,-0.015847,-0.002844,0.003204,0.007109,0.008263",
+    "Ids": "I10944,I10947",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The diverse genetic origins of a Classical period Greek army",
+        "Link": "https://www.pnas.org/doi/10.1073/pnas.2205272119"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Nuragic Sardinian (1200–1000 BC)",
+    "Coordinates": "Nuragicé_Sardinian,0.1279197,0.1750616,0.0430495,-0.0517297,0.0794941,-0.029026,-0.0038144,0.0005325,0.0575027,0.0972158,-0.0042469,0.0151942,-0.0316418,-0.0131482,-0.0141567,-0.0044977,0.0107818,0.0053599,0.0019338,-0.0097643,0.0007295,0.0028156,-0.0123534,-0.0286972,0.0019436",
+    "Ids": "ORC005,ORC006,ORC008,ORC009,SUA003,SUA006,MA110,MA112,I10364,I10553,I10554,I3642,I3741",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic history from the Middle Neolithic to present on the Mediterranean island of Sardinia",
+        "Link": "https://www.nature.com/articles/s41467-020-14523-6?utm_source=chatgpt.com"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Illyrian Apulia Proto-Iapygian (1200 BC)",
+    "Coordinates": "Italy_BA.SG:NEO806.SG__BC_1213__Cov_74.77%,0.127482,0.140143,0.030547,-0.004845,0.032929,-0.006136,0.001645,0.001615,0.007158,0.023144,0.00406,0.005545,-0.007879,-0.007569,-0.005836,-0.004906,0.006128,0.002407,0.008045,-0.010505,-0.001497,0.009027,0.003081,0.001205,-0.008622",
+    "Ids": "NEO806",
+    "G25DistanceEraId": 1,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of post-glacial western Eurasia",
+        "Link": "https://www.nature.com/articles/s41586-023-06865-0"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Daunian (650 BC)",
+    "Coordinates": "Undefined,0.1257745,0.150806,0.0307355,-0.0208335,0.032006,0.0033465,0.0031725,-0.0074995,0.0165665,0.0359005,0.0015425,0.0059945,-0.0095885,-0.0059175,-0.0156755,-0.0005965,0.00176,0.0050675,0.001257,0.001876,-0.0018715,0.012056,0.002773,-0.0031935,-0.0057475",
+    "Ids": "ORD009,ORD014",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The Genetic Origin of Daunians and the Pan-Mediterranean Southern Italian Iron Age Context",
+        "Link": "https://academic.oup.com/mbe/article/39/2/msac014/6509524"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Verona Cenomani Gauls (200-120 BC)",
+    "Coordinates": "Undefined,0.1264312,0.1476424,0.0489096,0.0053419,0.0474408,-0.0023814,-0.0025488,0.0029465,0.0204838,0.0324241,-0.0026606,0.0071244,-0.018228,-0.0081198,0.0038419,0.0011626,0.003741,0.0036448,0.0056082,-0.0035979,-0.0014205,0.0026252,-0.0028822,-0.0020113,-0.0018606",
+    "Ids": "3196,3206,3210,3214,3217,3220,3225,3227,3265,3267,3298,3308,3779",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "\"Until death do us part\". A multidisciplinary study on human- Animal co- burials from the Late Iron Age necropolis of Seminario Vescovile in Verona (Northern Italy, 3rd-1st c. BCE)",
+        "Link": "https://pmc.ncbi.nlm.nih.gov/articles/PMC10866530/?utm_source=chatgpt.com"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Kazakhstan Sargat (50 BC)",
+    "Coordinates": "Kazakhstan_Sargat_IA.AG:BRV001.AG__BC_50__Cov_75.44%,0.091058,-0.020311,0.058077,0.064277,-0.046778,0.003626,-0.00094,-0.006692,-0.015953,-0.032256,-0.000325,-0.005545,-0.000595,-0.028763,0.005972,0.000133,-0.007693,-0.001774,0.001006,-0.01013,-0.007112,0.003957,0.000863,0.005422,-0.005628",
+    "Ids": "BRV001",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomic time transect from the Central Asian Steppe unravels the history of the Scythians",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.abe4414"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Wusun",
+    "Coordinates": "Undefined,0.0985708,0.0054836,0.0203644,0.0520676,-0.0450544,0.0164544,0.002068,-0.0059536,-0.0254836,-0.0335312,-0.0042222,-0.0013188,0.0089496,-0.0201754,0.0140606,0.0167328,-0.0009648,-0.000203,0.0011818,-0.0010256,-0.0131768,0.0036848,0.0086026,0.0009158,-0.0031854",
+    "Ids": "DA220,DA223,DA201,DA227,DA130",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://www.nature.com/articles/s41586-018-0094-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Kazakhstan Sarmatian (650-250 BC)",
+    "Coordinates": "Undefined,0.1041709,0.0228292,0.0359622,0.063786,-0.0296793,0.0221439,-0.0000752,-0.0012922,-0.0230295,-0.0332107,-0.0011108,0.0001259,0.0006303,-0.0236767,0.0193754,0.0133862,-0.003416,0.0007247,-0.0005531,0.0018208,-0.009039,0.0021912,-0.0004239,0.0050609,-0.0022129",
+    "Ids": "I11537,I1153,DA221,IS2,I3451,NEO902,DA18,NUL001,CSP001,DA202,DA26,AIG002,AIG003,AIG006,BSB001,BSB002,BSB003,CLK001,KBU001,KBU002,KBU003,SGZ001,SGZ002,KSK002,SBL001",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomic time transect from the Central Asian Steppe unravels the history of the Scythians",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.abe4414"
+      },
+      {
+        "Label": "Ancestry and demography and descendants of Iron Age nomads of the Eurasian Steppe",
+        "Link": "https://pubmed.ncbi.nlm.nih.gov/28256537/"
+      },
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://www.nature.com/articles/s41586-018-0094-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Latvia Baltic (750–350 BC)",
+    "Coordinates": "Undefined,0.1314655,0.1266367,0.0986171,0.1114682,0.0480398,0.0407181,0.0147589,0.0196147,-0.0016158,-0.0490216,-0.0002762,-0.0171448,0.030193,0.0414932,-0.0168019,0.0011534,0.0051111,-0.0032306,0.0005153,0.0059403,-0.0017844,-0.0065288,0.0083192,-0.0224249,0.0037003",
+    "Ids": "Kivutkalns153,Kivutkalns164,Kivutkalns19,Kivutkalns194,Kivutkalns207,Kivutkalns209,Kivutkalns215,Kivutkalns222,Kivutkalns25,Kivutkalns42",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic prehistory of the Baltic Sea region",
+        "Link": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5789860/"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Lithuania Proto-Baltic (880 BC)",
+    "Coordinates": "Lithuania_BA,0.1280505,0.1284645,0.0910745,0.094316,0.040931,0.0358375,0.007873,0.010269,-0.0036815,-0.0459235,-0.001624,-0.0187335,0.015684,0.023671,-0.0102465,-0.0020555,-0.0095835,0.003674,-0.005279,-0.0006255,-0.0026825,-0.0017315,-0.0000615,-0.0139175,0.010538",
+    "Ids": "Turlojiske1,Turlojiske3",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic prehistory of the Baltic Sea region",
+        "Link": "https://pmc.ncbi.nlm.nih.gov/articles/PMC5789860/"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hellenistic Phoenician (330-70 BC)",
+    "Coordinates": "Undefined,0.0698113,0.1455593,-0.0580763,-0.0837647,-0.004103,-0.028168,-0.0039167,-0.0125377,-0.0008863,0.0136677,0.007253,-0.00005,0.0121903,0.004358,-0.011039,-0.000221,-0.002999,-0.00152,0.0075837,-0.008629,0.0044503,0.0036683,0.0003697,0.001687,-0.0054287",
+    "Ids": "SFI-12,SFI-20,SFI-5",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "A Genetic History of the Near East from an aDNA Time Course Sampling Eight Points in the Past 4,000 Years",
+        "Link": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7332655/"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Phoenician (550-330 BC)",
+    "Coordinates": "LBN_Phoenician_Persian_Era*(550-330*BC),0.0896356,0.1523294,-0.048507,-0.0893095,-0.0100019,-0.032665,-0.0026144,-0.0094036,0.0114278,0.0141915,0.0067594,-0.0038591,0.0104991,0.0018922,-0.0097719,0.0026849,0.0021839,0.0007762,0.003771,0.0001251,0.0020901,0.0052399,-0.0036359,0.0003614,-0.0016914",
+    "Ids": "SFI-34,SFI-35,SFI-36,SFI-39,SFI-42,SFI-45,SFI-47,SFI-50",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "A Genetic History of the Near East from an aDNA Time Course Sampling Eight Points in the Past 4,000 Years",
+        "Link": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7332655/"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Macedon Persian (300 BC)",
+    "Coordinates": "NorthMacedonia_Classical_Hellenistic_o.AG:I10392.AG__BC_300__Cov_68.07%,0.093335,0.136081,-0.057699,-0.080104,-0.014464,-0.028726,-0.00141,-0.001385,-0.003272,0.010387,0.004547,-0.003747,0.018731,0.01156,-0.008958,0.009281,-0.002086,0.002027,0.005279,0.002126,0.003619,0.007543,-0.012325,0.001084,-0.000718",
+    "Ids": "I10392",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Makedonian / South Paeonian (400-300 BC)",
+    "Coordinates": "Undefined,0.1252055,0.1538525,0.021119,-0.0260015,0.0289285,-0.0121315,-0.0036425,-0.0084225,0.006238,0.0276085,0.0038975,0.005995,-0.01494,0.0045415,-0.0089575,-0.016043,-0.0059325,0.0003165,0.005405,-0.014444,-0.009047,0.0043275,0.0,0.0072295,-0.000539",
+    "Ids": "I10390,I10391",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "South Dardanian (650 BC)",
+    "Coordinates": "Undefined,0.132035,0.151314,0.0263985,-0.0298775,0.0304675,-0.007948,0.0029375,-0.000692,0.0049085,0.039363,-0.0006495,0.0061445,-0.0133055,-0.001858,-0.013097,-0.0006625,0.0177975,-0.0012035,0.0051535,0.000625,-0.013476,0.001422,0.000308,0.0015065,0.006227",
+    "Ids": "I10381,I10379",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Illyrian Encheleii (600 BC)",
+    "Coordinates": "MKD_Illyrian_Enchelei*(700-600*BC),0.122246,0.1539542,0.023306,-0.0130492,0.023758,-0.006526,-0.001128,-0.0017076,0.0020452,0.026825,0.0075022,0.006654,-0.0168284,-0.0076242,-0.0104234,-0.0015644,0.0037552,0.0044086,0.0062346,-0.008504,-0.0110554,0.0092244,-0.0010846,0.009447,-0.0027062",
+    "Ids": "I10388,I10385,I10384,I10387,I10389",
+    "G25DistanceEraId": 2,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://www.science.org/doi/10.1126/science.abm4247"
       }
     ]
   }
