@@ -24,6 +24,14 @@ public interface IR2Storage
     Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Server-side copy from <paramref name="sourceKey"/> to <paramref name="destinationKey"/>
+    /// within the configured bucket. Used when a name-keyed object needs to follow a rename
+    /// without re-uploading the bytes. The source object is left intact; pair with
+    /// <see cref="DeleteAsync"/> for a "move".
+    /// </summary>
+    Task CopyAsync(string sourceKey, string destinationKey, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Builds the public URL for <paramref name="key"/> using <see cref="R2Options.PublicBaseUrl"/>.
     /// Returned URLs are stable; cache-busting is the caller's job (e.g. <c>?v=...</c> query).
     /// </summary>
