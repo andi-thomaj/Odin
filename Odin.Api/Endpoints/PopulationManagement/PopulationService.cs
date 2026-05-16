@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
@@ -36,10 +38,50 @@ public partial class PopulationService(
         VideoContentType,
     };
 
-    /// <summary>R2 object key for a population's MP4 avatar. ID-stable: renaming a population doesn't break the URL.
+    /// <summary>R2 object key for a population's MP4 avatar, derived from the population's Name.
+    /// Name-based (not ID-based) so the (name → video) pairing is stable across DB reseeds and
+    /// across environments sharing the same R2 bucket — an ID-keyed scheme would silently misalign
+    /// videos with names whenever auto-generated IDs shifted between environments. Renames are
+    /// handled explicitly by <see cref="UpdateAsync"/>, which copies the R2 object to the new key.
     /// The <c>qpAdm/population-videos/</c> prefix scopes this service's objects inside the shared
-    /// <c>ancestrify</c> bucket (G25 service uses sibling prefixes under <c>qpAdm/</c> and its own roots).</summary>
-    private static string AvatarKey(int populationId) => $"qpAdm/population-videos/{populationId}.mp4";
+    /// <c>ancestrify</c> bucket.</summary>
+    public static string AvatarKey(string populationName) =>
+        $"qpAdm/population-videos/{Slugify(populationName)}.mp4";
+
+    /// <summary>URL-safe, ASCII-folded, lowercase slug. Must stay byte-for-byte identical to the
+    /// frontend's <c>slugifyPopulationName</c> in <c>odin-react/src/api/populations.ts</c> —
+    /// the two encodings address the same R2 objects.</summary>
+    internal static string Slugify(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ArgumentException("Population name cannot be null or whitespace.", nameof(name));
+
+        var normalized = name.Normalize(NormalizationForm.FormKD);
+        var sb = new StringBuilder(normalized.Length);
+        var prevWasSeparator = true;
+        foreach (var ch in normalized)
+        {
+            if (CharUnicodeInfo.GetUnicodeCategory(ch) == UnicodeCategory.NonSpacingMark)
+                continue;
+            if (ch is >= '0' and <= '9' or >= 'a' and <= 'z')
+            {
+                sb.Append(ch);
+                prevWasSeparator = false;
+            }
+            else if (ch is >= 'A' and <= 'Z')
+            {
+                sb.Append((char)(ch + 32));
+                prevWasSeparator = false;
+            }
+            else if (!prevWasSeparator)
+            {
+                sb.Append('-');
+                prevWasSeparator = true;
+            }
+        }
+        if (sb.Length > 0 && sb[^1] == '-') sb.Length--;
+        return sb.ToString();
+    }
 
     public async Task<IReadOnlyList<GetPopulationContract.AdminResponse>> GetAllAdminAsync(CancellationToken cancellationToken = default)
     {
@@ -126,7 +168,45 @@ public partial class PopulationService(
         var error = await ValidateAsync(request.Name, request.GeoJson, request.Color, request.EraId, request.MusicTrackId, existingId: id, cancellationToken);
         if (error is not null) return (null, error, false);
 
-        entity.Name = request.Name.Trim();
+        var oldName = entity.Name;
+        var newName = request.Name.Trim();
+        var oldKey = AvatarKey(oldName);
+        var newKey = AvatarKey(newName);
+        var nameChanged = !string.Equals(oldKey, newKey, StringComparison.Ordinal);
+        var hadAvatar = entity.VideoAvatarVersion is not null;
+
+        // R2 keys derive from the slugified Name, so a rename that changes the slug must move
+        // the avatar object so the URL the frontend reads keeps pointing at the right bytes.
+        // Copy-then-delete (rather than re-uploading) — we don't have the source MP4 here, only
+        // the bucket reference. Done before the DB write so a copy failure aborts the update;
+        // the orphan delete is best-effort.
+        if (nameChanged && hadAvatar)
+        {
+            try
+            {
+                await r2Storage.CopyAsync(oldKey, newKey, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Population {Id} rename '{Old}' → '{New}' failed: could not copy R2 avatar to new key",
+                    id, oldName, newName);
+                return (null, "Failed to move the population's video avatar to the new key. The name was not changed.", false);
+            }
+
+            try
+            {
+                await r2Storage.DeleteAsync(oldKey, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex,
+                    "Population {Id} renamed but the old R2 avatar key '{OldKey}' could not be deleted; orphan will remain",
+                    id, oldKey);
+            }
+        }
+
+        entity.Name = newName;
         entity.Description = request.Description?.Trim() ?? string.Empty;
         entity.GeoJson = request.GeoJson.Trim();
         entity.IconFileName = request.IconFileName?.Trim() ?? string.Empty;
@@ -135,6 +215,12 @@ public partial class PopulationService(
         entity.MusicTrackId = request.MusicTrackId;
         entity.UpdatedAt = DateTime.UtcNow;
         entity.UpdatedBy = identityId;
+
+        // Bump VideoAvatarVersion on a successful rename-and-move so the cache-busting `?v=`
+        // query changes — without this, the browser/CDN keeps serving the old URL it cached
+        // for the previous name and never refetches under the new key.
+        if (nameChanged && hadAvatar)
+            entity.VideoAvatarVersion = entity.UpdatedAt.Ticks;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         cache.Remove(ErasCacheKey);
@@ -154,7 +240,7 @@ public partial class PopulationService(
         {
             try
             {
-                await r2Storage.DeleteAsync(AvatarKey(id), cancellationToken);
+                await r2Storage.DeleteAsync(AvatarKey(entity.Name), cancellationToken);
             }
             catch (Exception ex)
             {
@@ -233,7 +319,7 @@ public partial class PopulationService(
 
         await using (var stream = file.OpenReadStream())
         {
-            await r2Storage.UploadAsync(AvatarKey(id), stream, VideoContentType, cancellationToken);
+            await r2Storage.UploadAsync(AvatarKey(population.Name), stream, VideoContentType, cancellationToken);
         }
 
         var now = DateTime.UtcNow;
@@ -251,7 +337,7 @@ public partial class PopulationService(
         var population = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
         if (population is null) return false;
 
-        await r2Storage.DeleteAsync(AvatarKey(id), cancellationToken);
+        await r2Storage.DeleteAsync(AvatarKey(population.Name), cancellationToken);
 
         population.VideoAvatarVersion = null;
         population.UpdatedAt = DateTime.UtcNow;
@@ -276,15 +362,17 @@ public partial class PopulationService(
             Id = r.Id,
             Name = r.Name,
             Version = r.Version.ToString(),
-            Url = $"{r2Storage.GetPublicUrl(AvatarKey(r.Id))}?v={r.Version}",
+            Url = $"{r2Storage.GetPublicUrl(AvatarKey(r.Name))}?v={r.Version}",
         }).ToList();
     }
 
     /// <summary>
     /// Bulk-uploads each <c>Data/SeedData/population-videos/{Name}.mp4</c> to R2 under the
-    /// stable key <c>qpAdm/population-videos/{Id}.mp4</c>, then bumps <see cref="QpadmPopulation.VideoAvatarVersion"/>
-    /// so clients re-fetch with a fresh cache-bust query. Disk filenames still use the population
-    /// <c>Name</c> (curator-friendly); the R2 key uses the population <c>Id</c> (rename-safe).
+    /// slug-derived key <c>qpAdm/population-videos/{slug(Name)}.mp4</c>, then bumps
+    /// <see cref="QpadmPopulation.VideoAvatarVersion"/> so clients re-fetch with a fresh
+    /// cache-bust query. Both the disk filename and the R2 key derive from the same Name,
+    /// which keeps the (name → video) pairing stable across DB reseeds and across environments
+    /// that share the R2 bucket.
     /// </summary>
     public async Task<(int Updated, int Unmatched, int MissingOnDisk, int Failed)> SyncVideoAvatarsFromDiskAsync(
         string identityId, CancellationToken cancellationToken = default)
@@ -321,7 +409,7 @@ public partial class PopulationService(
                     failed++;
                     continue;
                 }
-                await r2Storage.UploadAsync(AvatarKey(population.Id), fs, VideoContentType, cancellationToken);
+                await r2Storage.UploadAsync(AvatarKey(population.Name), fs, VideoContentType, cancellationToken);
             }
             catch (Exception ex)
             {

@@ -106,6 +106,30 @@ public sealed class R2Storage : IR2Storage, IDisposable
         }
     }
 
+    public async Task CopyAsync(string sourceKey, string destinationKey, CancellationToken cancellationToken = default)
+    {
+        var request = new CopyObjectRequest
+        {
+            SourceBucket = _options.BucketName,
+            SourceKey = sourceKey,
+            DestinationBucket = _options.BucketName,
+            DestinationKey = destinationKey,
+            MetadataDirective = S3MetadataDirective.COPY,
+        };
+
+        try
+        {
+            await _client.CopyObjectAsync(request, cancellationToken);
+        }
+        catch (AmazonS3Exception ex)
+        {
+            _logger.LogError(ex,
+                "R2 copy failed in bucket {Bucket}: {Source} → {Destination} (status {Status})",
+                _options.BucketName, sourceKey, destinationKey, ex.StatusCode);
+            throw;
+        }
+    }
+
     public string GetPublicUrl(string key)
     {
         var baseUrl = _options.PublicBaseUrl.TrimEnd('/');
