@@ -9864,5 +9864,61 @@
         "Link": "https://www.nature.com/articles/s41586-021-04287-4"
       }
     ]
+  },
+  {
+    "SampleLabel": "Numidian Berber (30–150 AD)",
+    "Coordinates": "Undefined,0.0504617,0.149621,-0.014079,-0.0602933,0.018875,-0.0279817,-0.0054837,0.0024613,0.0310193,0.0255737,0.0015697,-0.0004997,0.0039147,-0.0064223,-0.0000907,-0.007602,0.0036943,-0.0063343,-0.012821,0.0006673,-0.007071,-0.0159923,0.0066963,-0.004298,0.0036323",
+    "Ids": "R10760,R10766,R10770",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Stable population structure in Europe since the Iron Age, despite high mobility",
+        "Link": "https://elifesciences.org/articles/79714"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Armenian (0-400 AD)",
+    "Coordinates": "Undefined,0.1025284,0.1379558,-0.0567712,-0.0567238,-0.0312483,-0.016948,0.0056401,-0.0062483,-0.0354141,-0.0071072,0.0015488,0.0046229,-0.0090683,0.0039488,-0.0024743,-0.0033046,0.0053659,0.0011889,0.000203,0.0006638,0.0043768,0.002026,0.0007585,-0.0012048,0.0016305",
+    "Ids": "I1639,R11541,R11651,R11653,R11678,R11713,R11714,R11538,R11542,R11543,R11544,I20442,I10252",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Arc: A bridge between West Asia and Europe",
+        "Link": "https://doi.org/10.1126/science.abm4247"
+      },
+      {
+        "Label": "Stable population structure in Europe since the Iron Age, despite high mobility",
+        "Link": "https://doi.org/10.7554/eLife.79714"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Noric Celt (80-270 AD)",
+    "Coordinates": "Undefined,0.1280508,0.14082,0.0556882,0.0293392,0.041341,0.0078555,0.0027417,0.0074612,0.0185437,0.0134852,0.000027,0.0059697,-0.011422,-0.0108952,0.0084372,0.0028287,-0.0022383,0.0011402,0.001718,0.0085248,0.0009983,0.0075632,-0.000616,0.0049205,0.0003392",
+    "Ids": "R10656,R10657,R10659,R10670,196735_S3_L002,196736_S4_L002",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Stable population structure in Europe since the Iron Age, despite high mobility",
+        "Link": "https://doi.org/10.7554/eLife.79714"
+      },
+      {
+        "Label": "Double feature: First genetic evidence of a mother-daughter double burial in Roman period Austria",
+        "Link": "https://doi.org/10.1016/j.jasrep.2024.104445"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Czechia Langobard (400-500 AD)",
+    "Coordinates": "Undefined,0.1259642,0.1408203,0.0556255,0.0408595,0.0361093,0.0113417,0.0094397,0.001346,0.0037498,0.0008202,-0.0010825,0.0035218,-0.0070862,-0.0045185,0.0130968,0.0071378,-0.0089963,0.0035895,0.0098463,-0.0058778,0.0059062,0.0042658,-0.00152,0.0129533,-0.0011777",
+    "Ids": "CGG021948,CGG021956,CGG021963,CGG021972,CGG021981,CGG021991",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Steppe Ancestry in Western Eurasia and the Spread of the Germanic Languages",
+        "Link": "https://doi.org/10.1101/2024.03.13.584607"
+      }
+    ]
   }
 ]
