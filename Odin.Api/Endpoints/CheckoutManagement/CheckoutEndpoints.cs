@@ -24,13 +24,15 @@ public static class CheckoutEndpoints
             .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated")
             .WithTags("Checkout")
-            .WithSummary("Check whether the current user has an unused paid credit");
+            .WithSummary("Check whether the current user has an unused paid credit")
+            .Produces<CheckoutStatusResponse>(StatusCodes.Status200OK);
 
         group.MapPost("/confirm", ConfirmTransaction)
             .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("strict")
             .WithTags("Checkout")
-            .WithSummary("Verify a Paddle transaction via API and record the payment");
+            .WithSummary("Verify a Paddle transaction via API and record the payment")
+            .Produces<CheckoutStatusResponse>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> GetCheckoutStatus(

@@ -58,6 +58,9 @@ using System.Net;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Http.Timeouts;
+using Hangfire;
+using Hangfire.PostgreSql;
+using Odin.Api.Hangfire;
 
 namespace Odin.Api
 {
@@ -484,6 +487,22 @@ namespace Odin.Api
             });
             services.AddSingleton<IUserIdProvider, UserIdProvider>();
 
+            // ── Hangfire (background jobs) ───────────────────────────────
+            // Skipped in Testing so integration tests don't try to spin up the worker
+            // against the throwaway Postgres container.
+            if (!builder.Environment.IsEnvironment("Testing"))
+            {
+                services.AddHangfire(hf => hf
+                    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                    .UseSimpleAssemblyNameTypeSerializer()
+                    .UseRecommendedSerializerSettings()
+                    .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connectionString)));
+                services.AddHangfireServer(opts =>
+                {
+                    opts.WorkerCount = Math.Max(1, Environment.ProcessorCount / 2);
+                });
+            }
+
             var app = builder.Build();
 
             // ── HTTPS Redirection (Production only) ──────────────────────
@@ -527,36 +546,50 @@ namespace Odin.Api
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapHealthChecks("/health");
 
-            app.MapUserEndpoints();
-            app.MapEthnicityEndpoints();
-            app.MapEraEndpoints();
-            app.MapPopulationEndpoints();
-            app.MapRawGeneticFileEndpoints();
-            app.MapGeneticInspectionEndpoints();
-            app.MapOrderEndpoints();
-            app.MapCheckoutEndpoints();
-            app.MapPaddleWebhookEndpoints();
-            app.MapPaddleAdminEndpoints();
-            app.MapAppSettingsEndpoints();
-            app.MapCatalogEndpoints();
-            app.MapNotificationEndpoints();
-            app.MapReportEndpoints();
-            app.MapMediaEndpoints();
-            app.MapG25PopulationSampleEndpoints();
-            app.MapG25DistancePopulationSampleEndpoints();
-            app.MapG25PcaPopulationsSampleEndpoints();
-            app.MapQpadmPopulationSampleEndpoints();
-            app.MapG25SavedCoordinateEndpoints();
-            app.MapG25TargetCoordinateEndpoints();
-            app.MapG25RegionEndpoints();
-            app.MapG25EthnicityEndpoints();
-            app.MapG25ContinentEndpoints();
-            app.MapG25DistanceEraEndpoints();
-            app.MapG25AdmixtureEraEndpoints();
-            app.MapG25CalculationEndpoints();
-            app.MapG25AdminEndpoints();
-            app.MapCalculatorEndpoints();
-            app.MapAdmixToolsEraEndpoints();
+            // Hangfire dashboard — admin-only. Not mounted in Testing.
+            if (!app.Environment.IsEnvironment("Testing"))
+            {
+                app.UseHangfireDashboard("/jobs", new DashboardOptions
+                {
+                    Authorization = new[] { new HangfireDashboardAuthFilter() },
+                    DashboardTitle = "Odin background jobs"
+                });
+            }
+
+            // Version prefix — all business endpoints live under /v1 so breaking changes
+            // can ship a v2 alongside without breaking existing clients. SignalR hubs and
+            // health checks stay at the root by convention (not part of the API surface).
+            var v1 = app.MapGroup("/v1");
+            v1.MapUserEndpoints();
+            v1.MapEthnicityEndpoints();
+            v1.MapEraEndpoints();
+            v1.MapPopulationEndpoints();
+            v1.MapRawGeneticFileEndpoints();
+            v1.MapGeneticInspectionEndpoints();
+            v1.MapOrderEndpoints();
+            v1.MapCheckoutEndpoints();
+            v1.MapPaddleWebhookEndpoints();
+            v1.MapPaddleAdminEndpoints();
+            v1.MapAppSettingsEndpoints();
+            v1.MapCatalogEndpoints();
+            v1.MapNotificationEndpoints();
+            v1.MapReportEndpoints();
+            v1.MapMediaEndpoints();
+            v1.MapG25PopulationSampleEndpoints();
+            v1.MapG25DistancePopulationSampleEndpoints();
+            v1.MapG25PcaPopulationsSampleEndpoints();
+            v1.MapQpadmPopulationSampleEndpoints();
+            v1.MapG25SavedCoordinateEndpoints();
+            v1.MapG25TargetCoordinateEndpoints();
+            v1.MapG25RegionEndpoints();
+            v1.MapG25EthnicityEndpoints();
+            v1.MapG25ContinentEndpoints();
+            v1.MapG25DistanceEraEndpoints();
+            v1.MapG25AdmixtureEraEndpoints();
+            v1.MapG25CalculationEndpoints();
+            v1.MapG25AdminEndpoints();
+            v1.MapCalculatorEndpoints();
+            v1.MapAdmixToolsEraEndpoints();
             await app.RunAsync();
         }
 

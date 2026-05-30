@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Hangfire;
 using Odin.Api.Endpoints.Admin.Models;
 using Odin.Api.Endpoints.OrderManagement;
 
@@ -11,11 +12,11 @@ public static class G25AdminEndpoints
         var endpoints = app.MapGroup("api/admin/g25")
             .RequireAuthorization("AdminOnly");
 
-        endpoints.MapGet("/inspections", GetInspections);
+        endpoints.MapGet("/inspections", GetInspections)
+            .Produces<List<AdminG25InspectionContract.ListItem>>(StatusCodes.Status200OK);
 
         endpoints.MapPost("/recompute-distance-results", RecomputeDistanceResults)
-            .RequireRateLimiting("strict")
-            .WithRequestTimeout(TimeSpan.FromMinutes(10));
+            .RequireRateLimiting("strict");
     }
 
     private static async Task<IResult> GetInspections(IOrderService service)
@@ -24,16 +25,21 @@ public static class G25AdminEndpoints
         return Results.Ok(items);
     }
 
-    private static async Task<IResult> RecomputeDistanceResults(
+    private static IResult RecomputeDistanceResults(
         RecomputeG25DistancesContract.Request? request,
-        IOrderService service,
+        IBackgroundJobClient jobClient,
         HttpContext httpContext)
     {
         var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
                          ?? httpContext.User.FindFirstValue("sub")
                          ?? string.Empty;
 
-        var response = await service.RecomputeG25DistanceResultsAsync(identityId, request?.InspectionIds);
-        return Results.Ok(response);
+        // Hangfire materializes the IOrderService inside its own DI scope when the worker picks
+        // up the job; this avoids blocking the request thread on the multi-minute compute.
+        var inspectionIds = request?.InspectionIds?.ToList();
+        var jobId = jobClient.Enqueue<IOrderService>(svc =>
+            svc.RecomputeG25DistanceResultsAsync(identityId, inspectionIds));
+
+        return Results.Accepted(value: new { jobId });
     }
 }

@@ -60,6 +60,8 @@ public class OrderService(
             if (request.Service == ServiceType.g25)
                 return await CreateG25OrderAsync(request, identityId, user);
 
+            await using var transaction = await dbContext.Database.BeginTransactionAsync();
+
             var regions = await dbContext.QpadmRegions
                 .Include(r => r.Ethnicity)
                 .Where(r => request.RegionIds.Contains(r.Id))
@@ -193,19 +195,18 @@ public class OrderService(
             }
 
             dbContext.QpadmGeneticInspections.Add(geneticInspection);
-            await dbContext.SaveChangesAsync();
 
+            // FK resolves via the navigation property on save — no intermediate SaveChanges needed.
             var regionAssociations = regions.Select(region => new QpadmGeneticInspectionRegion
             {
-                GeneticInspectionId = geneticInspection.Id,
                 GeneticInspection = geneticInspection,
-                RegionId = region.Id,
                 Region = region
             }).ToList();
 
             dbContext.QpadmGeneticInspectionRegions.AddRange(regionAssociations);
 
             await dbContext.SaveChangesAsync();
+            await transaction.CommitAsync();
 
             return new CreateOrderContract.Response
             {
@@ -230,6 +231,8 @@ public class OrderService(
             var adminCanSkip = await appSettings.GetBoolAsync(AppSettingKeys.AdminCanSkipPayment, defaultValue: true);
             if (!(adminCanSkip && user.Role == AppRole.Admin))
                 throw new InvalidOperationException("A completed payment is required to create this order.");
+
+            await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
             int rawGeneticFileId;
             string? g25Coordinates = null;
@@ -337,6 +340,10 @@ public class OrderService(
             dbContext.G25GeneticInspections.Add(geneticInspection);
 
             await dbContext.SaveChangesAsync();
+            // Commit the order + inspection create before running the distance compute below.
+            // The compute is expensive and is a Phase 2 target for background-jobification;
+            // failures there leave the order Pending (existing behavior) rather than rolling back.
+            await transaction.CommitAsync();
 
             if (!string.IsNullOrWhiteSpace(g25Coordinates))
             {

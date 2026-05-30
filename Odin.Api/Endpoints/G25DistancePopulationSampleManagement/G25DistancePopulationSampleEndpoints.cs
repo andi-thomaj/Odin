@@ -11,31 +11,38 @@ public static class G25DistancePopulationSampleEndpoints
 
         endpoints.MapGet("/", GetPaged)
             .RequireAuthorization("ScientistOrAdmin")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<GetG25DistancePopulationSampleContract.PagedResponse>(StatusCodes.Status200OK);
 
         endpoints.MapGet("/all", GetAll)
             .RequireAuthorization("ScientistOrAdmin")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<GetG25DistancePopulationSampleContract.Response>>(StatusCodes.Status200OK);
 
         endpoints.MapGet("/labels/search", SearchLabels)
             .RequireAuthorization("ScientistOrAdmin")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<string>>(StatusCodes.Status200OK);
 
         endpoints.MapGet("/{id:int}", GetById)
             .RequireAuthorization("ScientistOrAdmin")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<GetG25DistancePopulationSampleContract.Response>(StatusCodes.Status200OK);
 
         endpoints.MapPost("/", Create)
             .RequireAuthorization("ScientistOrAdmin")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces<CreateG25DistancePopulationSampleContract.Response>(StatusCodes.Status201Created);
 
         endpoints.MapPut("/{id:int}", Update)
             .RequireAuthorization("ScientistOrAdmin")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces<GetG25DistancePopulationSampleContract.Response>(StatusCodes.Status200OK);
 
         endpoints.MapDelete("/{id:int}", Delete)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces(StatusCodes.Status204NoContent);
     }
 
     private static async Task<IResult> GetPaged(IG25DistancePopulationSampleService service, int page = 1, int pageSize = 25)

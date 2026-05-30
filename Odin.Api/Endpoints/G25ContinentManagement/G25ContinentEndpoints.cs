@@ -10,23 +10,28 @@ public static class G25ContinentEndpoints
 
         endpoints.MapGet("/", GetAll)
             .RequireAuthorization("EmailVerified")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<GetG25ContinentContract.Response>>(StatusCodes.Status200OK);
 
         endpoints.MapGet("/{id:int}", GetById)
             .RequireAuthorization("EmailVerified")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<GetG25ContinentContract.Response>(StatusCodes.Status200OK);
 
         endpoints.MapPost("/", Create)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces<GetG25ContinentContract.Response>(StatusCodes.Status201Created);
 
         endpoints.MapPut("/{id:int}", Update)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces<GetG25ContinentContract.Response>(StatusCodes.Status200OK);
 
         endpoints.MapDelete("/{id:int}", Delete)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces(StatusCodes.Status204NoContent);
     }
 
     private static async Task<IResult> GetAll(IG25ContinentService service)

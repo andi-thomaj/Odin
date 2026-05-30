@@ -1,3 +1,5 @@
+using Odin.Api.Endpoints.UserManagement.Models;
+
 namespace Odin.Api.Endpoints.ReferenceDataManagement
 {
     public static class EraEndpoints
@@ -7,7 +9,8 @@ namespace Odin.Api.Endpoints.ReferenceDataManagement
             var endpoints = app.MapGroup("api/eras");
 
             endpoints.MapGet("/", GetAll)
-                .AllowAnonymous();
+                .AllowAnonymous()
+                .Produces<IEnumerable<GetErasContract.Response>>(StatusCodes.Status200OK);
         }
 
         private static async Task<IResult> GetAll(IEraService eraService)

@@ -1,3 +1,5 @@
+using Odin.Api.Endpoints.CalculatorManagement.Models;
+
 namespace Odin.Api.Endpoints.CalculatorManagement;
 
 public static class AdmixToolsEraEndpoints
@@ -8,7 +10,8 @@ public static class AdmixToolsEraEndpoints
 
         endpoints.MapGet("/", GetAll)
             .RequireAuthorization("EmailVerified")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<GetAdmixToolsEraContract.Response>>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> GetAll(IAdmixToolsEraService service)

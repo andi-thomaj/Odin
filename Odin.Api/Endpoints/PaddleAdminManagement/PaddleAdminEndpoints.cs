@@ -20,21 +20,43 @@ public static class PaddleAdminEndpoints
             .RequireRateLimiting("strict")
             .WithTags("Paddle Admin");
 
-        group.MapPost("/sync/products", SyncProducts).WithSummary("Pull all products + prices from Paddle and upsert.");
-        group.MapPost("/sync/products/{productId}", SyncProduct).WithSummary("Re-sync a single product.");
-        group.MapPost("/sync/customers", SyncCustomers).WithSummary("Pull all customers from Paddle and upsert.");
-        group.MapPost("/sync/customers/{customerId}", SyncCustomer).WithSummary("Re-sync a single customer.");
-        group.MapPost("/sync/subscriptions", SyncSubscriptions).WithSummary("Pull all subscriptions from Paddle and upsert.");
-        group.MapPost("/sync/subscriptions/{subscriptionId}", SyncSubscription).WithSummary("Re-sync a single subscription.");
-        group.MapPost("/sync/transactions", SyncTransactions).WithSummary("Pull transactions billed at/after the supplied cutoff.");
-        group.MapPost("/sync/transactions/{transactionId}", SyncTransaction).WithSummary("Re-sync a single transaction.");
+        group.MapPost("/sync/products", SyncProducts)
+            .WithSummary("Pull all products + prices from Paddle and upsert.")
+            .Produces<PaddleSyncResultResponse>(StatusCodes.Status200OK);
+        group.MapPost("/sync/products/{productId}", SyncProduct)
+            .WithSummary("Re-sync a single product.")
+            .Produces<PaddleSyncResultResponse>(StatusCodes.Status200OK);
+        group.MapPost("/sync/customers", SyncCustomers)
+            .WithSummary("Pull all customers from Paddle and upsert.")
+            .Produces<PaddleSyncResultResponse>(StatusCodes.Status200OK);
+        group.MapPost("/sync/customers/{customerId}", SyncCustomer)
+            .WithSummary("Re-sync a single customer.")
+            .Produces<PaddleSyncResultResponse>(StatusCodes.Status200OK);
+        group.MapPost("/sync/subscriptions", SyncSubscriptions)
+            .WithSummary("Pull all subscriptions from Paddle and upsert.")
+            .Produces<PaddleSyncResultResponse>(StatusCodes.Status200OK);
+        group.MapPost("/sync/subscriptions/{subscriptionId}", SyncSubscription)
+            .WithSummary("Re-sync a single subscription.")
+            .Produces<PaddleSyncResultResponse>(StatusCodes.Status200OK);
+        group.MapPost("/sync/transactions", SyncTransactions)
+            .WithSummary("Pull transactions billed at/after the supplied cutoff.")
+            .Produces<PaddleSyncResultResponse>(StatusCodes.Status200OK);
+        group.MapPost("/sync/transactions/{transactionId}", SyncTransaction)
+            .WithSummary("Re-sync a single transaction.")
+            .Produces<PaddleSyncResultResponse>(StatusCodes.Status200OK);
 
-        group.MapGet("/notifications", ListNotifications).WithSummary("Local notification log (last 100, newest first).");
-        group.MapGet("/notifications/{id:int}", GetNotification).WithSummary("Local notification log row, including raw payload.");
+        group.MapGet("/notifications", ListNotifications)
+            .WithSummary("Local notification log (last 100, newest first).")
+            .Produces<List<PaddleNotificationListItem>>(StatusCodes.Status200OK);
+        group.MapGet("/notifications/{id:int}", GetNotification)
+            .WithSummary("Local notification log row, including raw payload.")
+            .Produces<PaddleNotificationDetail>(StatusCodes.Status200OK);
         group.MapPost("/notifications/{id:int}/replay", ReplayNotification)
-            .WithSummary("Asks Paddle to replay this notification. Only event-origin notifications under 90 days old are eligible.");
+            .WithSummary("Asks Paddle to replay this notification. Only event-origin notifications under 90 days old are eligible.")
+            .Produces<ReplayNotificationResponse>(StatusCodes.Status200OK);
         group.MapPost("/notifications/backfill", BackfillNotifications)
-            .WithSummary("Pull recent notifications from Paddle and store any we don't already have locally.");
+            .WithSummary("Pull recent notifications from Paddle and store any we don't already have locally.")
+            .Produces<PaddleSyncResultResponse>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> SyncProducts(IPaddleProductSyncService sync, CancellationToken ct)

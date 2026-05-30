@@ -11,27 +11,33 @@ public static class PopulationEndpoints
 
         endpoints.MapGet("/admin", GetAllAdmin)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<GetPopulationContract.AdminResponse>>(StatusCodes.Status200OK);
 
         endpoints.MapGet("/admin/{id:int}", GetByIdAdmin)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<GetPopulationContract.AdminResponse>(StatusCodes.Status200OK);
 
         endpoints.MapPost("/", Create)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces<GetPopulationContract.AdminResponse>(StatusCodes.Status201Created);
 
         endpoints.MapPut("/{id:int}", Update)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces<GetPopulationContract.AdminResponse>(StatusCodes.Status200OK);
 
         endpoints.MapDelete("/{id:int}", Delete)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces(StatusCodes.Status204NoContent);
 
         endpoints.MapGet("/video-avatars", GetVideoAvatarsList)
             .AllowAnonymous()
-            .RequireRateLimiting("authenticated");
+            .RequireRateLimiting("authenticated")
+            .Produces<IReadOnlyList<GetPopulationContract.VideoAvatarListItem>>(StatusCodes.Status200OK);
 
         // GET /{id:int}/video-avatar removed: avatars are now served by Cloudflare R2 directly
         // at storage.ancestrify.io/qpAdm/population-videos/{id}.mp4. Frontend uses the URL returned
@@ -41,11 +47,13 @@ public static class PopulationEndpoints
             .DisableAntiforgery()
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("file-upload")
+            .Produces(StatusCodes.Status204NoContent)
             .WithRequestTimeout(TimeSpan.FromMinutes(5));
 
         endpoints.MapDelete("/{id:int}/video-avatar", DeleteVideoAvatar)
             .RequireAuthorization("AdminOnly")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces(StatusCodes.Status204NoContent);
 
         endpoints.MapPost("/video-avatars/sync-from-disk", SyncVideoAvatarsFromDisk)
             .RequireAuthorization("AdminOnly")

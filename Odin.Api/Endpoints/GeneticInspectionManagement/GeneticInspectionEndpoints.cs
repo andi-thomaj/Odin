@@ -14,42 +14,50 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             endpoints.MapGet("/", GetAll)
                 .RequireAuthorization("ScientistOrAdmin")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<IEnumerable<GetGeneticInspectionContract.Response>>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/{id:int}", GetById)
                 .RequireAuthorization("ScientistOrAdmin")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<GetGeneticInspectionContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapPost("/", Create)
                 .RequireAuthorization("ScientistOrAdmin")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<CreateGeneticInspectionContract.Response>(StatusCodes.Status201Created);
+
             endpoints.MapDelete("/{id:int}", Delete)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
+                .RequireRateLimiting("strict")
+                .Produces(StatusCodes.Status204NoContent);
 
             endpoints.MapPost("/{id:int}/genetic-file", UploadGeneticFile)
                 .DisableAntiforgery()
                 .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("file-upload")
+                .Produces<UploadGeneticFileContract.Response>(StatusCodes.Status201Created)
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
-            
+
             endpoints.MapGet("/{id:int}/genetic-file/download", DownloadGeneticFile)
                 .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("authenticated");
-            
+
             endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile)
                 .RequireAuthorization("ScientistOrAdmin")
-                .RequireRateLimiting("authenticated");
+                .RequireRateLimiting("authenticated")
+                .Produces(StatusCodes.Status204NoContent);
 
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult)
                 .RequireAuthorization("ScientistOrAdmin")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<SubmitQpadmResultContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapPost("/{id:int}/qpadm-result", SubmitQpadmResult)
                 .DisableAntiforgery()
                 .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("file-upload")
+                .Produces<SubmitQpadmResultContract.Response>(StatusCodes.Status201Created)
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
         }
 

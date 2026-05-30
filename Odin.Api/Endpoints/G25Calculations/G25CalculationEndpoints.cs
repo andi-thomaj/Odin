@@ -10,15 +10,18 @@ public static class G25CalculationEndpoints
 
         endpoints.MapPost("/distances", ComputeDistances)
             .RequireAuthorization("EmailVerified")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces<ComputeDistancesContract.Response>(StatusCodes.Status200OK);
 
         endpoints.MapPost("/admixture/single", ComputeAdmixtureSingle)
             .RequireAuthorization("EmailVerified")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces<ComputeAdmixtureSingleContract.Response>(StatusCodes.Status200OK);
 
         endpoints.MapPost("/admixture/multi", ComputeAdmixtureMulti)
             .RequireAuthorization("EmailVerified")
-            .RequireRateLimiting("strict");
+            .RequireRateLimiting("strict")
+            .Produces<ComputeAdmixtureMultiContract.Response>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> ComputeDistances(

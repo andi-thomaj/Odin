@@ -17,9 +17,15 @@ public static class AppSettingsEndpoints
             .RequireRateLimiting("strict")
             .WithTags("App Settings");
 
-        group.MapGet("/", GetAll).WithSummary("Returns all key/value app settings.");
-        group.MapGet("/{key}/bool", GetBool).WithSummary("Returns the boolean value of a setting.");
-        group.MapPut("/{key}/bool", PutBool).WithSummary("Upserts the boolean value of a setting.");
+        group.MapGet("/", GetAll)
+            .WithSummary("Returns all key/value app settings.")
+            .Produces<AppSettingsResponse>(StatusCodes.Status200OK);
+        group.MapGet("/{key}/bool", GetBool)
+            .WithSummary("Returns the boolean value of a setting.")
+            .Produces<AppSettingResponse>(StatusCodes.Status200OK);
+        group.MapPut("/{key}/bool", PutBool)
+            .WithSummary("Upserts the boolean value of a setting.")
+            .Produces<AppSettingResponse>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> GetAll(IAppSettingsService settings, CancellationToken ct)

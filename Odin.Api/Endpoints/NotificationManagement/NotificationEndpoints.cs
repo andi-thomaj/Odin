@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
+using Odin.Api.Endpoints.NotificationManagement.Models;
 
 namespace Odin.Api.Endpoints.NotificationManagement
 {
@@ -12,15 +13,17 @@ namespace Odin.Api.Endpoints.NotificationManagement
 
             endpoints.MapGet("/", GetAll)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<List<GetNotificationContract.Response>>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/unread-count", GetUnreadCount)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
-            
+
             endpoints.MapPatch("/read-status", MarkAllAsRead)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
+                .RequireRateLimiting("authenticated")
+                .Produces(StatusCodes.Status204NoContent);
         }
 
         private static async Task<IResult> GetAll(

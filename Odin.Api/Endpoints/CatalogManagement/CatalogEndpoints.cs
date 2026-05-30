@@ -23,12 +23,14 @@ public static class CatalogEndpoints
             .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated")
             .WithTags("Catalog")
-            .WithSummary("Public catalog of services + their addons, sourced from synced Paddle products.");
+            .WithSummary("Public catalog of services + their addons, sourced from synced Paddle products.")
+            .Produces<List<GetCatalogProductContract.ProductResponse>>(StatusCodes.Status200OK);
 
         group.MapPost("/preview-price", PreviewPrice)
             .RequireAuthorization("EmailVerified")
             .RequireRateLimiting("authenticated")
-            .WithTags("Catalog");
+            .WithTags("Catalog")
+            .Produces<PreviewOrderPriceContract.Response>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> GetProducts(ApplicationDbContext db, CancellationToken cancellationToken)

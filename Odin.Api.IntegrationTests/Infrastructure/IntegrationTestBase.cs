@@ -21,7 +21,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected IntegrationTestBase(CustomWebApplicationFactory factory)
     {
         Factory = factory;
-        Client = factory.CreateClient();
+        Client = factory.CreateDefaultClient(new ApiVersionPrefixHandler());
     }
 
     public async Task InitializeAsync()

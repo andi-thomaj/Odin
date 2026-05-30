@@ -1,4 +1,5 @@
 using Odin.Api.Endpoints.ReferenceDataManagement.Models;
+using Odin.Api.Endpoints.UserManagement.Models;
 
 namespace Odin.Api.Endpoints.ReferenceDataManagement
 {
@@ -10,39 +11,48 @@ namespace Odin.Api.Endpoints.ReferenceDataManagement
 
             endpoints.MapGet("/", GetAll)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
+                .RequireRateLimiting("authenticated")
+                .Produces<IEnumerable<GetEthnicitiesContract.Response>>(StatusCodes.Status200OK);
 
             endpoints.MapGet("/admin", GetAllAdmin)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("authenticated");
+                .RequireRateLimiting("authenticated")
+                .Produces<IReadOnlyList<GetEthnicityAdminContract.Response>>(StatusCodes.Status200OK);
 
             endpoints.MapGet("/admin/{id:int}", GetByIdAdmin)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("authenticated");
+                .RequireRateLimiting("authenticated")
+                .Produces<GetEthnicityAdminContract.Response>(StatusCodes.Status200OK);
 
             endpoints.MapPost("/", CreateEthnicity)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
+                .RequireRateLimiting("strict")
+                .Produces<GetEthnicityAdminContract.Response>(StatusCodes.Status201Created);
 
             endpoints.MapPut("/{id:int}", UpdateEthnicity)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
+                .RequireRateLimiting("strict")
+                .Produces<GetEthnicityAdminContract.Response>(StatusCodes.Status200OK);
 
             endpoints.MapDelete("/{id:int}", DeleteEthnicity)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
+                .RequireRateLimiting("strict")
+                .Produces(StatusCodes.Status204NoContent);
 
             endpoints.MapPost("/{ethnicityId:int}/regions", CreateRegion)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
+                .RequireRateLimiting("strict")
+                .Produces<GetEthnicityAdminContract.RegionItem>(StatusCodes.Status201Created);
 
             endpoints.MapPut("/{ethnicityId:int}/regions/{regionId:int}", UpdateRegion)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
+                .RequireRateLimiting("strict")
+                .Produces<GetEthnicityAdminContract.RegionItem>(StatusCodes.Status200OK);
 
             endpoints.MapDelete("/{ethnicityId:int}/regions/{regionId:int}", DeleteRegion)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
+                .RequireRateLimiting("strict")
+                .Produces(StatusCodes.Status204NoContent);
         }
 
         private static async Task<IResult> GetAll(IEthnicityService ethnicityService)

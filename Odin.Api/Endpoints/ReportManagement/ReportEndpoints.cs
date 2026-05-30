@@ -19,20 +19,24 @@ namespace Odin.Api.Endpoints.ReportManagement
                 .RequireAuthorization("EmailVerified")
                 .DisableAntiforgery()
                 .RequireRateLimiting("file-upload")
+                .Produces<CreateReportContract.Response>(StatusCodes.Status201Created)
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
-            
+
             endpoints.MapGet("/", GetAll)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<List<ReportListContract.ListItem>>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/{id:int}", GetDetail)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<ReportListContract.Detail>(StatusCodes.Status200OK);
+
             endpoints.MapPatch("/{id:int}/status", UpdateStatus)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
-            
+                .RequireRateLimiting("strict")
+                .Produces<UpdateReportStatusContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/{id:int}/file", DownloadFile)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
