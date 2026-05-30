@@ -20,44 +20,51 @@ namespace Odin.Api.Endpoints.OrderManagement
 
             endpoints.MapGet("/", GetAll)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<IEnumerable<GetOrderContract.Response>>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/{id:int}", GetById)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<GetOrderContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapPost("/", Create)
                 .DisableAntiforgery()
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("file-upload")
+                .Produces<CreateOrderContract.Response>(StatusCodes.Status201Created)
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
-            
+
             endpoints.MapPut("/{id:int}", Update)
                 .DisableAntiforgery()
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("file-upload")
+                .Produces<GetOrderContract.Response>(StatusCodes.Status200OK)
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
-            
+
             endpoints.MapDelete("/{id:int}", Delete)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
-            
+                .RequireRateLimiting("strict")
+                .Produces(StatusCodes.Status204NoContent);
+
             endpoints.MapGet("/{id:int}/qpadm-result", GetQpadmResult)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
+                .RequireRateLimiting("authenticated")
+                .Produces<GetOrderQpadmResultContract.Response>(StatusCodes.Status200OK);
 
             endpoints.MapGet("/{id:int}/g25-result", GetG25Result)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
+                .RequireRateLimiting("authenticated")
+                .Produces<GetOrderG25ResultContract.Response>(StatusCodes.Status200OK);
 
             endpoints.MapGet("/{id:int}/merged-data/download", DownloadMergedData)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
-            
+
             endpoints.MapGet("/{id:int}/profile-picture", GetProfilePicture)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
-            
+
             app.MapPatch("api/qpadm-orders/{id:int}/viewed-status", MarkQpadmResultsAsViewed)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");

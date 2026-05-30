@@ -16,6 +16,7 @@ public static class MediaEndpoints
             .DisableAntiforgery()
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("file-upload")
+            .Produces(StatusCodes.Status204NoContent)
             .WithRequestTimeout(TimeSpan.FromMinutes(5));
 
         endpoints.MapPost("/audio/sync-from-disk", SyncMusicTrackAudioFromDisk)

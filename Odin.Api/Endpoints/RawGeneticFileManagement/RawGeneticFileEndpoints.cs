@@ -12,25 +12,29 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
             endpoints.MapGet("/", GetAllFiles)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<IEnumerable<GetGeneticFileContract.Response>>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/{id:int}", GetFileById)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<GetGeneticFileContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/{id:int}/download", DownloadFile)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated");
-            
+
             endpoints.MapPost("/", UploadFile)
                 .DisableAntiforgery()
                 .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("file-upload")
+                .Produces<UploadGeneticFileContract.Response>(StatusCodes.Status201Created)
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
-            
+
             endpoints.MapDelete("/{id:int}", DeleteFile)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
+                .RequireRateLimiting("authenticated")
+                .Produces(StatusCodes.Status204NoContent);
         }
 
         private static async Task<IResult> GetAllFiles(IRawGeneticFileService service, HttpContext httpContext)

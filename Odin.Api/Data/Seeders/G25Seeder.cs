@@ -9,9 +9,7 @@ namespace Odin.Api.Data.Seeders;
 /// Seeds the G25 reference data: admixture population samples, G25 eras (distance
 /// + admixture), and the G25 service entity tree (continents → ethnicities). Each
 /// sub-step is independently idempotent so individual rows can be added without
-/// re-seeding the rest. Catalog/commerce data (products, prices, addons) is
-/// owned by Paddle and synced into <c>paddle_products</c>/<c>paddle_prices</c>;
-/// this seeder no longer touches it.
+/// re-seeding the rest.
 /// </summary>
 internal sealed class G25Seeder(ApplicationDbContext context)
 {

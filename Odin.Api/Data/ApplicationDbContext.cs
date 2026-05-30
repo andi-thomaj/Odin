@@ -30,13 +30,6 @@ namespace Odin.Api.Data
         public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<G25SavedCoordinate> G25SavedCoordinates { get; set; }
         public DbSet<G25TargetCoordinate> G25TargetCoordinates { get; set; }
-        public DbSet<PaddlePayment> PaddlePayments { get; set; }
-        public DbSet<PaddleNotification> PaddleNotifications { get; set; }
-        public DbSet<PaddleProduct> PaddleProducts { get; set; }
-        public DbSet<PaddlePrice> PaddlePrices { get; set; }
-        public DbSet<PaddleCustomer> PaddleCustomers { get; set; }
-        public DbSet<PaddleSubscription> PaddleSubscriptions { get; set; }
-        public DbSet<PaddleTransaction> PaddleTransactions { get; set; }
         public DbSet<G25Region> G25Regions { get; set; }
         public DbSet<G25Ethnicity> G25Ethnicities { get; set; }
         public DbSet<G25Continent> G25Continents { get; set; }

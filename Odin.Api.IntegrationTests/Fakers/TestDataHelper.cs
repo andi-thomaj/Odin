@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
-using Odin.Api.Endpoints.CatalogManagement.Models;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.Endpoints.UserManagement.Models;
 using Odin.Api.IntegrationTests.Infrastructure;
@@ -106,8 +105,6 @@ public static class TestDataHelper
     public static async Task<CreateOrderContract.Response> CreateOrderViaApiAsync(
         HttpClient client,
         IServiceProvider services,
-        List<int>? addonIds = null,
-        string? promoCode = null,
         int? existingFileId = null)
     {
         var (regionIds, _) = await SeedEthnicitiesAndRegionsAsync(services, 1, 1);
@@ -120,13 +117,6 @@ public static class TestDataHelper
 
         foreach (var regionId in regionIds)
             content.Add(new StringContent(regionId.ToString()), "RegionIds");
-
-        if (addonIds is not null)
-            foreach (var id in addonIds)
-                content.Add(new StringContent(id.ToString()), "AddonIds");
-
-        if (promoCode is not null)
-            content.Add(new StringContent(promoCode), "PromoCode");
 
         if (existingFileId.HasValue)
         {
@@ -145,20 +135,6 @@ public static class TestDataHelper
         return (await response.Content.ReadFromJsonAsync<CreateOrderContract.Response>(JsonOptions))!;
     }
 
-    public static async Task<List<GetCatalogProductContract.ProductResponse>> GetCatalogProductsAsync(
-        HttpClient client)
-    {
-        var response = await client.GetAsync("/api/catalog/products");
-        response.EnsureSuccessStatusCode();
-        return (await response.Content.ReadFromJsonAsync<List<GetCatalogProductContract.ProductResponse>>(JsonOptions))!;
-    }
-
-    public static async Task<string> GetAddonPaddleProductIdByCodeAsync(HttpClient client, string code)
-    {
-        var products = await GetCatalogProductsAsync(client);
-        return products.SelectMany(p => p.Addons).Single(a => a.Code == code).PaddleProductId;
-    }
-
     public static async Task SetOrderStatusAsync(
         IServiceProvider services,
         int orderId,
@@ -170,9 +146,6 @@ public static class TestDataHelper
         order.Status = status;
         await db.SaveChangesAsync();
     }
-
-    // SeedPromoCodeAsync was removed: promo codes are no longer modeled locally. If discount
-    // testing is required, it should go through Paddle Discounts (synced via the Paddle pipeline).
 
     public static async Task SeedNotificationsAsync(
         IServiceProvider services,

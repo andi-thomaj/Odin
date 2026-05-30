@@ -10,7 +10,6 @@ using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.Admin;
 using Odin.Api.Endpoints.AppSettingsManagement;
-using Odin.Api.Endpoints.CatalogManagement;
 using Odin.Api.Endpoints.G25PopulationSampleManagement;
 using Odin.Api.Endpoints.G25DistancePopulationSampleManagement;
 using Odin.Api.Endpoints.G25PcaPopulationsSampleManagement;
@@ -19,13 +18,11 @@ using Odin.Api.Endpoints.G25SavedCoordinateManagement;
 using Odin.Api.Endpoints.G25TargetCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
-using Odin.Api.Endpoints.CheckoutManagement;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.PopulationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
 using Odin.Api.Endpoints.MediaManagement;
-using Odin.Api.Endpoints.PaddleAdminManagement;
 using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Endpoints.G25Calculations;
@@ -35,17 +32,11 @@ using Odin.Api.Endpoints.G25AdmixtureEraManagement;
 using Odin.Api.Endpoints.G25DistanceEraManagement;
 using Odin.Api.Endpoints.G25EthnicityManagement;
 using Odin.Api.Endpoints.G25RegionManagement;
-using Odin.Api.Endpoints.Webhooks;
-using Odin.Api.Configuration;
 using Odin.Api.Hubs;
 using Odin.Api.Middleware;
 using Odin.Api.Models;
 using Odin.Api.Services;
 using Odin.Api.Services.AppSettings;
-using Odin.Api.Services.Paddle;
-using Odin.Api.Services.Paddle.Http;
-using Odin.Api.Services.Paddle.Resources;
-using Odin.Api.Services.Paddle.Sync;
 using Microsoft.AspNetCore.ResponseCompression;
 using System.IO.Compression;
 using System.Threading.RateLimiting;
@@ -58,6 +49,9 @@ using System.Net;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Http.Timeouts;
+using Hangfire;
+using Hangfire.PostgreSql;
+using Odin.Api.Hangfire;
 
 namespace Odin.Api
 {
@@ -271,10 +265,6 @@ namespace Odin.Api
                         return RateLimitPartition.GetNoLimiter(partitionKey: "");
                     }
 
-                    // Paddle webhooks may come from varying IPs; avoid accidental 429 on bursts/retries.
-                    if (string.Equals(path, PaddleWebhookEndpoints.Path, StringComparison.OrdinalIgnoreCase))
-                        return RateLimitPartition.GetNoLimiter(partitionKey: "");
-                    
                     return RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: GetPartitionKey(context),
                         factory: _ =>
@@ -415,7 +405,6 @@ namespace Odin.Api
             services.AddScoped<IPopulationService, PopulationService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
-            services.AddScoped<IOrderPricingService, OrderPricingService>();
             services.AddScoped<IAppSettingsService, AppSettingsService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<INotificationService, NotificationService>();
@@ -439,35 +428,7 @@ namespace Odin.Api
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
             services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
-            services.Configure<PaddleOptions>(configuration.GetSection(PaddleOptions.SectionName));
 
-            // ── Paddle API ──────────────────────────────────────────────
-            services.AddTransient<PaddleAuthHandler>();
-            services.AddTransient<PaddleRetryHandler>();
-            services.AddHttpClient<IPaddleApiClient, PaddleApiClient>((sp, client) =>
-            {
-                var opts = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PaddleOptions>>().Value;
-                if (!string.IsNullOrWhiteSpace(opts.ApiBaseUrl))
-                    client.BaseAddress = new Uri(opts.ApiBaseUrl.TrimEnd('/') + "/", UriKind.Absolute);
-                client.Timeout = TimeSpan.FromSeconds(Math.Max(1, opts.RequestTimeoutSeconds));
-                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
-            })
-            .AddHttpMessageHandler<PaddleAuthHandler>()
-            .AddHttpMessageHandler<PaddleRetryHandler>();
-
-            services.AddScoped<IPaddleNotificationsResource, PaddleNotificationsResource>();
-            services.AddScoped<IPaddleProductsResource, PaddleProductsResource>();
-            services.AddScoped<IPaddlePricesResource, PaddlePricesResource>();
-            services.AddScoped<IPaddleCustomersResource, PaddleCustomersResource>();
-            services.AddScoped<IPaddleSubscriptionsResource, PaddleSubscriptionsResource>();
-            services.AddScoped<IPaddleTransactionsResource, PaddleTransactionsResource>();
-            services.AddScoped<IPaddleEventsResource, PaddleEventsResource>();
-
-            services.AddScoped<IPaddleProductSyncService, PaddleProductSyncService>();
-            services.AddScoped<IPaddleCustomerSyncService, PaddleCustomerSyncService>();
-            services.AddScoped<IPaddleSubscriptionSyncService, PaddleSubscriptionSyncService>();
-            services.AddScoped<IPaddleTransactionSyncService, PaddleTransactionSyncService>();
-            services.AddScoped<IPaddleNotificationStore, PaddleNotificationStore>();
             services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
             {
                 client.BaseAddress = new Uri("https://api.resend.com/");
@@ -483,6 +444,22 @@ namespace Odin.Api
                 options.EnableDetailedErrors = builder.Environment.IsDevelopment();
             });
             services.AddSingleton<IUserIdProvider, UserIdProvider>();
+
+            // ── Hangfire (background jobs) ───────────────────────────────
+            // Skipped in Testing so integration tests don't try to spin up the worker
+            // against the throwaway Postgres container.
+            if (!builder.Environment.IsEnvironment("Testing"))
+            {
+                services.AddHangfire(hf => hf
+                    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                    .UseSimpleAssemblyNameTypeSerializer()
+                    .UseRecommendedSerializerSettings()
+                    .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connectionString)));
+                services.AddHangfireServer(opts =>
+                {
+                    opts.WorkerCount = Math.Max(1, Environment.ProcessorCount / 2);
+                });
+            }
 
             var app = builder.Build();
 
@@ -527,36 +504,46 @@ namespace Odin.Api
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapHealthChecks("/health");
 
-            app.MapUserEndpoints();
-            app.MapEthnicityEndpoints();
-            app.MapEraEndpoints();
-            app.MapPopulationEndpoints();
-            app.MapRawGeneticFileEndpoints();
-            app.MapGeneticInspectionEndpoints();
-            app.MapOrderEndpoints();
-            app.MapCheckoutEndpoints();
-            app.MapPaddleWebhookEndpoints();
-            app.MapPaddleAdminEndpoints();
-            app.MapAppSettingsEndpoints();
-            app.MapCatalogEndpoints();
-            app.MapNotificationEndpoints();
-            app.MapReportEndpoints();
-            app.MapMediaEndpoints();
-            app.MapG25PopulationSampleEndpoints();
-            app.MapG25DistancePopulationSampleEndpoints();
-            app.MapG25PcaPopulationsSampleEndpoints();
-            app.MapQpadmPopulationSampleEndpoints();
-            app.MapG25SavedCoordinateEndpoints();
-            app.MapG25TargetCoordinateEndpoints();
-            app.MapG25RegionEndpoints();
-            app.MapG25EthnicityEndpoints();
-            app.MapG25ContinentEndpoints();
-            app.MapG25DistanceEraEndpoints();
-            app.MapG25AdmixtureEraEndpoints();
-            app.MapG25CalculationEndpoints();
-            app.MapG25AdminEndpoints();
-            app.MapCalculatorEndpoints();
-            app.MapAdmixToolsEraEndpoints();
+            // Hangfire dashboard — admin-only. Not mounted in Testing.
+            if (!app.Environment.IsEnvironment("Testing"))
+            {
+                app.UseHangfireDashboard("/jobs", new DashboardOptions
+                {
+                    Authorization = new[] { new HangfireDashboardAuthFilter() },
+                    DashboardTitle = "Odin background jobs"
+                });
+            }
+
+            // Version prefix — all business endpoints live under /v1 so breaking changes
+            // can ship a v2 alongside without breaking existing clients. SignalR hubs and
+            // health checks stay at the root by convention (not part of the API surface).
+            var v1 = app.MapGroup("/v1");
+            v1.MapUserEndpoints();
+            v1.MapEthnicityEndpoints();
+            v1.MapEraEndpoints();
+            v1.MapPopulationEndpoints();
+            v1.MapRawGeneticFileEndpoints();
+            v1.MapGeneticInspectionEndpoints();
+            v1.MapOrderEndpoints();
+            v1.MapAppSettingsEndpoints();
+            v1.MapNotificationEndpoints();
+            v1.MapReportEndpoints();
+            v1.MapMediaEndpoints();
+            v1.MapG25PopulationSampleEndpoints();
+            v1.MapG25DistancePopulationSampleEndpoints();
+            v1.MapG25PcaPopulationsSampleEndpoints();
+            v1.MapQpadmPopulationSampleEndpoints();
+            v1.MapG25SavedCoordinateEndpoints();
+            v1.MapG25TargetCoordinateEndpoints();
+            v1.MapG25RegionEndpoints();
+            v1.MapG25EthnicityEndpoints();
+            v1.MapG25ContinentEndpoints();
+            v1.MapG25DistanceEraEndpoints();
+            v1.MapG25AdmixtureEraEndpoints();
+            v1.MapG25CalculationEndpoints();
+            v1.MapG25AdminEndpoints();
+            v1.MapCalculatorEndpoints();
+            v1.MapAdmixToolsEraEndpoints();
             await app.RunAsync();
         }
 

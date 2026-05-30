@@ -5,8 +5,7 @@ using Odin.Api.Services.AppSettings;
 namespace Odin.Api.Endpoints.AppSettingsManagement;
 
 /// <summary>
-/// Admin-only key/value settings store for runtime-tunable feature flags
-/// (e.g. <c>AdminCanSkipPayment</c>).
+/// Admin-only key/value settings store for runtime-tunable feature flags.
 /// </summary>
 public static class AppSettingsEndpoints
 {
@@ -17,9 +16,15 @@ public static class AppSettingsEndpoints
             .RequireRateLimiting("strict")
             .WithTags("App Settings");
 
-        group.MapGet("/", GetAll).WithSummary("Returns all key/value app settings.");
-        group.MapGet("/{key}/bool", GetBool).WithSummary("Returns the boolean value of a setting.");
-        group.MapPut("/{key}/bool", PutBool).WithSummary("Upserts the boolean value of a setting.");
+        group.MapGet("/", GetAll)
+            .WithSummary("Returns all key/value app settings.")
+            .Produces<AppSettingsResponse>(StatusCodes.Status200OK);
+        group.MapGet("/{key}/bool", GetBool)
+            .WithSummary("Returns the boolean value of a setting.")
+            .Produces<AppSettingResponse>(StatusCodes.Status200OK);
+        group.MapPut("/{key}/bool", PutBool)
+            .WithSummary("Upserts the boolean value of a setting.")
+            .Produces<AppSettingResponse>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> GetAll(IAppSettingsService settings, CancellationToken ct)
@@ -51,7 +56,6 @@ public static class AppSettingsEndpoints
     /// <summary>Defaults for known keys so reads stay deterministic before any admin has flipped the switch.</summary>
     internal static bool ResolveDefault(string key) => key switch
     {
-        AppSettingKeys.AdminCanSkipPayment => true,
         _ => false,
     };
 }

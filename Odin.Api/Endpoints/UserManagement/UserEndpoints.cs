@@ -12,27 +12,33 @@ namespace Odin.Api.Endpoints.UserManagement
 
             endpoints.MapGet("/", ListUsers)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
-            
+                .RequireRateLimiting("strict")
+                .Produces<ListUsersContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapPost("/", CreateUser)
                 .RequireAuthorization("Authenticated")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<CreateUserContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/{identityId}", GetUserByIdentityId)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<GetUserContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapPut("/{identityId}", UpdateUser)
                 .RequireAuthorization("EmailVerified")
-                .RequireRateLimiting("authenticated");
-            
+                .RequireRateLimiting("authenticated")
+                .Produces<UpdateUserContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapDelete("/{identityId}", DeleteUser)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
-            
+                .RequireRateLimiting("strict")
+                .Produces(StatusCodes.Status204NoContent);
+
             endpoints.MapPatch("/{identityId}/role", UpdateUserRole)
                 .RequireAuthorization("AdminOnly")
-                .RequireRateLimiting("strict");
+                .RequireRateLimiting("strict")
+                .Produces<UpdateUserRoleContract.Response>(StatusCodes.Status200OK);
         }
 
         private static async Task<IResult> ListUsers(IUserService userService, int skip = 0, int take = 50)
