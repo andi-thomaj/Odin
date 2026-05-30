@@ -5,8 +5,7 @@ using Odin.Api.Services.AppSettings;
 namespace Odin.Api.Endpoints.AppSettingsManagement;
 
 /// <summary>
-/// Admin-only key/value settings store for runtime-tunable feature flags
-/// (e.g. <c>AdminCanSkipPayment</c>).
+/// Admin-only key/value settings store for runtime-tunable feature flags.
 /// </summary>
 public static class AppSettingsEndpoints
 {
@@ -57,7 +56,6 @@ public static class AppSettingsEndpoints
     /// <summary>Defaults for known keys so reads stay deterministic before any admin has flipped the switch.</summary>
     internal static bool ResolveDefault(string key) => key switch
     {
-        AppSettingKeys.AdminCanSkipPayment => true,
         _ => false,
     };
 }

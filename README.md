@@ -1,10 +1,5 @@
 # Odin
 
-## Docs
-
-- [Paddle catalog setup](docs/paddle-setup.md) — end-to-end walkthrough: API keys, webhook destination, creating products, applying the migration, running the sync, verifying the catalog API.
-- [Paddle `custom_data` reference](docs/paddle-custom-data.md) — focused reference for the `custom_data` shape on Paddle products, with examples for services, addons, and common mistakes.
-
 ## API integration tests (`Odin.Api.IntegrationTests`)
 
 ### One-time setup
@@ -28,7 +23,7 @@ For daily work, run **only the impacted tests** — the full suite is slow (real
 
 ```bash
 # from the Odin/ directory
-dotnet test Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj --filter "FullyQualifiedName~CatalogEndpointsTests"
+dotnet test Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj --filter "FullyQualifiedName~EraEndpointsTests"
 ```
 
 The `/be-test <class-or-namespace>` slash command wraps this. See [CLAUDE.md](CLAUDE.md) for the full agent-policy: when targeted runs are appropriate vs when to run the full suite (CI, pre-merge, or changes touching shared test infrastructure like `CustomWebApplicationFactory` / `IntegrationTestBase`).

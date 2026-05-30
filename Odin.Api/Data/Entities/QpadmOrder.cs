@@ -15,14 +15,6 @@ namespace Odin.Api.Data.Entities
         public bool IncludesYHaplogroup { get; set; }
         public bool IncludesRawMerge { get; set; }
         public QpadmGeneticInspection GeneticInspection { get; set; }
-
-        /// <summary>
-        /// Snapshot of which addons were on this order, captured at order creation time.
-        /// Stored as <c>jsonb</c>; shape is <c>[{ paddleProductId, addonCode, displayName, unitPriceSnapshot }]</c>.
-        /// We snapshot rather than join so historical orders keep their original prices/names
-        /// even when the underlying Paddle product is renamed or repriced.
-        /// </summary>
-        public string? AddonsJson { get; set; }
     }
 
     public class QpadmOrderConfiguration : IEntityTypeConfiguration<QpadmOrder>
@@ -37,8 +29,6 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.ExpeditedProcessing).IsRequired().HasDefaultValue(false);
             builder.Property(e => e.IncludesYHaplogroup).IsRequired().HasDefaultValue(false);
             builder.Property(e => e.IncludesRawMerge).IsRequired().HasDefaultValue(false);
-
-            builder.Property(e => e.AddonsJson).HasColumnType("jsonb");
 
             builder.HasOne(e => e.GeneticInspection)
                 .WithOne(gi => gi.Order)

@@ -18,10 +18,10 @@ Do not point integration tests at a database that holds data you care about — 
 
 ```bash
 cd Odin
-dotnet test Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj --filter "FullyQualifiedName~CatalogEndpointsTests"
+dotnet test Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj --filter "FullyQualifiedName~EraEndpointsTests"
 ```
 
-Other examples: `FullyQualifiedName~EraEndpointsTests`, `FullyQualifiedName~GeneticInspectionEndpointsTests`.
+Other examples: `FullyQualifiedName~GeneticInspectionEndpointsTests`, `FullyQualifiedName~OrderEndpointsTests`.
 
 Reserve **full** `dotnet test` on `Odin.Api.IntegrationTests` for CI, pre-merge checks, release validation, or when your change touches **shared test infrastructure** (e.g. `CustomWebApplicationFactory`, collection fixtures, `IntegrationTestBase`, global middleware/DI used by most tests).
 

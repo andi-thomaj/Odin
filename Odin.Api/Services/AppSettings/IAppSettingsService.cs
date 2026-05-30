@@ -1,8 +1,8 @@
 namespace Odin.Api.Services.AppSettings;
 
 /// <summary>
-/// Runtime-tunable feature flags and app-level toggles. Reads are memory-cached so order/checkout
-/// hot paths can call <see cref="GetBoolAsync"/> on every request without hitting the DB.
+/// Runtime-tunable feature flags and app-level toggles. Reads are memory-cached so hot paths
+/// can call <see cref="GetBoolAsync"/> on every request without hitting the DB.
 /// </summary>
 public interface IAppSettingsService
 {
@@ -18,9 +18,4 @@ public interface IAppSettingsService
 /// <summary>Well-known setting keys. Add new entries here so the contract is discoverable.</summary>
 public static class AppSettingKeys
 {
-    /// <summary>
-    /// When <c>true</c> (default), users with the <c>Admin</c> app role can create orders without
-    /// paying through Paddle. When <c>false</c>, even admins must complete checkout.
-    /// </summary>
-    public const string AdminCanSkipPayment = "AdminCanSkipPayment";
 }

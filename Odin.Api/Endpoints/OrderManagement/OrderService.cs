@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Text;
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
@@ -10,7 +9,6 @@ using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25Calculations.Models;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.Services;
-using Odin.Api.Services.AppSettings;
 
 namespace Odin.Api.Endpoints.OrderManagement;
 
@@ -34,9 +32,7 @@ public interface IOrderService
 public class OrderService(
     ApplicationDbContext dbContext,
     IGeoLocationService geoLocationService,
-    IOrderPricingService orderPricingService,
     IG25CalculationService g25CalculationService,
-    IAppSettingsService appSettings,
     ILogger<OrderService> logger) : IOrderService
 {
         private const int MaxEthnicities = 4;
@@ -117,58 +113,18 @@ public class OrderService(
                 rawGeneticFileId = rawGeneticFile.Id;
             }
 
-            Data.Entities.PaddlePayment? paddlePayment = null;
-            if (request.PaddlePaymentId.HasValue)
-            {
-                paddlePayment = await dbContext.PaddlePayments
-                    .FirstOrDefaultAsync(p => p.Id == request.PaddlePaymentId.Value);
-
-                if (paddlePayment is null)
-                    throw new InvalidOperationException("The specified payment was not found.");
-                if (paddlePayment.UserId != identityId)
-                    throw new InvalidOperationException("The specified payment does not belong to your account.");
-                if (paddlePayment.Status != "paid")
-                    throw new InvalidOperationException("The specified payment is not in a valid state.");
-                if (paddlePayment.OrderId is not null)
-                    throw new InvalidOperationException("The specified payment has already been used for an order.");
-            }
-            else
-            {
-                // No payment id supplied — only allowed when the AdminCanSkipPayment toggle is on
-                // AND the caller is an admin. The frontend hides this path from non-admins, but the
-                // backend has to enforce it independently.
-                var adminCanSkip = await appSettings.GetBoolAsync(AppSettingKeys.AdminCanSkipPayment, defaultValue: true);
-                if (!(adminCanSkip && user.Role == AppRole.Admin))
-                    throw new InvalidOperationException("A completed payment is required to create this order.");
-            }
-
-            var pricing = await orderPricingService.ComputeAsync(
-                request.Service,
-                request.AddonPaddleProductIds);
-
             var now = DateTime.UtcNow;
             var order = new QpadmOrder
             {
-                Price = pricing.Total,
+                Price = 0m,
                 Status = OrderStatus.Pending,
                 CreatedBy = identityId,
                 CreatedAt = now,
                 UpdatedAt = now,
                 UpdatedBy = identityId,
-                DiscountAmount = pricing.DiscountAmount,
-                ExpeditedProcessing = pricing.ExpeditedProcessing,
-                IncludesYHaplogroup = pricing.IncludesYHaplogroup,
-                IncludesRawMerge = pricing.IncludesRawMerge,
-                AddonsJson = SerializeAddonSnapshot(pricing.AddonLines)
             };
             dbContext.QpadmOrders.Add(order);
             await dbContext.SaveChangesAsync();
-
-            if (paddlePayment is not null)
-            {
-                paddlePayment.OrderId = order.Id;
-                paddlePayment.UpdatedAt = now;
-            }
 
             var geneticInspection = new QpadmGeneticInspection
             {
@@ -223,15 +179,6 @@ public class OrderService(
             string identityId,
             User user)
         {
-            if (request.PaddlePaymentId.HasValue)
-                throw new InvalidOperationException("Paddle payment is not yet supported for G25 orders.");
-
-            // G25 orders currently have no Paddle path, so they're always free-or-blocked.
-            // Same gate as the qpAdm "no payment id" path.
-            var adminCanSkip = await appSettings.GetBoolAsync(AppSettingKeys.AdminCanSkipPayment, defaultValue: true);
-            if (!(adminCanSkip && user.Role == AppRole.Admin))
-                throw new InvalidOperationException("A completed payment is required to create this order.");
-
             await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
             int rawGeneticFileId;
@@ -294,21 +241,15 @@ public class OrderService(
                 g25Coordinates = coordinates;
             }
 
-            var pricing = await orderPricingService.ComputeAsync(
-                request.Service,
-                request.AddonPaddleProductIds);
-
             var now = DateTime.UtcNow;
             var order = new G25Order
             {
-                Price = pricing.Total,
+                Price = 0m,
                 Status = OrderStatus.Pending,
                 CreatedBy = identityId,
                 CreatedAt = now,
                 UpdatedAt = now,
                 UpdatedBy = identityId,
-                DiscountAmount = pricing.DiscountAmount,
-                ExpeditedProcessing = pricing.ExpeditedProcessing
             };
             dbContext.G25Orders.Add(order);
             await dbContext.SaveChangesAsync();
@@ -1131,18 +1072,4 @@ public class OrderService(
                 .ToListAsync();
         }
 
-        private static string? SerializeAddonSnapshot(IReadOnlyList<PricedAddonLine> lines)
-        {
-            if (lines.Count == 0) return null;
-            var snapshot = lines
-                .Select(l => new
-                {
-                    paddleProductId = l.PaddleProductId,
-                    addonCode = l.AddonCode,
-                    displayName = l.DisplayName,
-                    unitPriceSnapshot = l.UnitPrice,
-                })
-                .ToArray();
-            return JsonSerializer.Serialize(snapshot);
-        }
 }
