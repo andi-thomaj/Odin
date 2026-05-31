@@ -424,6 +424,7 @@ namespace Odin.Api
             services.AddScoped<IG25CalculationService, G25CalculationService>();
             services.AddScoped<ICalculatorService, CalculatorService>();
             services.AddScoped<IAdmixToolsEraService, AdmixToolsEraService>();
+            services.AddScoped<Odin.Api.Endpoints.Admin.IG25SeedImportService, Odin.Api.Endpoints.Admin.G25SeedImportService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
