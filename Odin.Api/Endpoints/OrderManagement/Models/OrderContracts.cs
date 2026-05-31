@@ -195,6 +195,35 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
         }
     }
 
+    public class AdminGetOrderContract
+    {
+        public class Response
+        {
+            public int Id { get; set; }
+            public decimal Price { get; set; }
+            public string Service { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public int GeneticInspectionId { get; set; }
+            public string FirstName { get; set; } = string.Empty;
+            public string MiddleName { get; set; } = string.Empty;
+            public string LastName { get; set; } = string.Empty;
+            public string? Gender { get; set; }
+            public bool HasProfilePicture { get; set; }
+            public bool HasViewedResults { get; set; }
+            public List<int> RegionIds { get; set; } = [];
+            public List<int> EthnicityIds { get; set; } = [];
+            public DateTime CreatedAt { get; set; }
+            public string CreatedBy { get; set; } = string.Empty;
+            public DateTime UpdatedAt { get; set; }
+            public string UpdatedBy { get; set; } = string.Empty;
+            /// <summary>Owning <c>application_users</c> row id; null when the order's <c>CreatedBy</c> identity has no provisioned user.</summary>
+            public int? OwnerId { get; set; }
+            public string? OwnerEmail { get; set; }
+            public string OwnerFirstName { get; set; } = string.Empty;
+            public string OwnerLastName { get; set; } = string.Empty;
+        }
+    }
+
     public class GetOrderG25ResultContract
     {
         public class DistancePopulationResult

@@ -17,14 +17,15 @@ public interface IOrderService
     Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null);
     Task<GetOrderContract.Response?> GetByIdAsync(int id, string identityId);
     Task<IEnumerable<GetOrderContract.Response>> GetAllAsync(string identityId);
+    Task<IEnumerable<AdminGetOrderContract.Response>> GetAllAdminAsync();
     Task<(GetOrderContract.Response? Response, int StatusCode)> UpdateAsync(int id, string identityId, UpdateOrderContract.Request request);
     Task<bool> DeleteAsync(int id);
-    Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId);
-    Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId);
-    Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId);
-    Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId);
-    Task<(bool Success, int StatusCode, string? Error)> MarkQpadmResultsAsViewedAsync(int orderId, string identityId);
-    Task<(bool Success, int StatusCode, string? Error)> MarkG25ResultsAsViewedAsync(int orderId, string identityId);
+    Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
+    Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
+    Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId, bool isAdmin = false);
+    Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, bool isAdmin = false);
+    Task<(bool Success, int StatusCode, string? Error)> MarkQpadmResultsAsViewedAsync(int orderId, string identityId, bool isAdmin = false);
+    Task<(bool Success, int StatusCode, string? Error)> MarkG25ResultsAsViewedAsync(int orderId, string identityId, bool isAdmin = false);
     Task<RecomputeG25DistancesContract.Response> RecomputeG25DistanceResultsAsync(string identityId, IReadOnlyList<int>? inspectionIds = null);
     Task<List<AdminG25InspectionContract.ListItem>> GetAdminG25InspectionsAsync();
 }
@@ -542,6 +543,83 @@ public class OrderService(
             return qpadmOrders.Concat(g25Orders).OrderByDescending(o => o.CreatedAt).ToList();
         }
 
+        public async Task<IEnumerable<AdminGetOrderContract.Response>> GetAllAdminAsync()
+        {
+            // Project owner info from application_users via a left join on CreatedBy → IdentityId so
+            // orders whose creator was never provisioned still appear (with null OwnerId/Email).
+            var qpadmOrders = await (
+                from order in dbContext.QpadmOrders.AsNoTracking()
+                join u in dbContext.Users.AsNoTracking()
+                    on order.CreatedBy equals u.IdentityId into userJoin
+                from owner in userJoin.DefaultIfEmpty()
+                select new AdminGetOrderContract.Response
+                {
+                    Id = order.Id,
+                    Price = order.Price,
+                    Service = "qpAdm",
+                    Status = order.Status.ToString(),
+                    GeneticInspectionId = order.GeneticInspection != null ? order.GeneticInspection.Id : 0,
+                    FirstName = order.GeneticInspection != null ? order.GeneticInspection.FirstName : string.Empty,
+                    MiddleName = order.GeneticInspection != null ? order.GeneticInspection.MiddleName : string.Empty,
+                    LastName = order.GeneticInspection != null ? order.GeneticInspection.LastName : string.Empty,
+                    Gender = order.GeneticInspection != null ? order.GeneticInspection.Gender.ToString() : null,
+                    HasProfilePicture = order.GeneticInspection != null
+                        && order.GeneticInspection.ProfilePicture != null
+                        && order.GeneticInspection.ProfilePicture.Length > 0,
+                    HasViewedResults = order.HasViewedResults,
+                    RegionIds = order.GeneticInspection != null
+                        ? order.GeneticInspection.GeneticInspectionRegions.Select(gir => gir.RegionId).ToList()
+                        : new List<int>(),
+                    EthnicityIds = order.GeneticInspection != null
+                        ? order.GeneticInspection.GeneticInspectionRegions.Select(gir => gir.Region.EthnicityId).Distinct().OrderBy(id => id).ToList()
+                        : new List<int>(),
+                    CreatedAt = order.CreatedAt,
+                    CreatedBy = order.CreatedBy,
+                    UpdatedAt = order.UpdatedAt,
+                    UpdatedBy = order.UpdatedBy,
+                    OwnerId = owner != null ? owner.Id : (int?)null,
+                    OwnerEmail = owner != null ? owner.Email : null,
+                    OwnerFirstName = owner != null ? owner.FirstName : string.Empty,
+                    OwnerLastName = owner != null ? owner.LastName : string.Empty,
+                })
+                .ToListAsync();
+
+            var g25Orders = await (
+                from order in dbContext.G25Orders.AsNoTracking()
+                join u in dbContext.Users.AsNoTracking()
+                    on order.CreatedBy equals u.IdentityId into userJoin
+                from owner in userJoin.DefaultIfEmpty()
+                select new AdminGetOrderContract.Response
+                {
+                    Id = order.Id,
+                    Price = order.Price,
+                    Service = "g25",
+                    Status = order.Status.ToString(),
+                    GeneticInspectionId = order.GeneticInspection != null ? order.GeneticInspection.Id : 0,
+                    FirstName = order.GeneticInspection != null ? order.GeneticInspection.FirstName : string.Empty,
+                    MiddleName = order.GeneticInspection != null ? order.GeneticInspection.MiddleName : string.Empty,
+                    LastName = order.GeneticInspection != null ? order.GeneticInspection.LastName : string.Empty,
+                    Gender = order.GeneticInspection != null ? order.GeneticInspection.Gender.ToString() : null,
+                    HasProfilePicture = order.GeneticInspection != null
+                        && order.GeneticInspection.ProfilePicture != null
+                        && order.GeneticInspection.ProfilePicture.Length > 0,
+                    HasViewedResults = order.HasViewedResults,
+                    RegionIds = new List<int>(),
+                    EthnicityIds = new List<int>(),
+                    CreatedAt = order.CreatedAt,
+                    CreatedBy = order.CreatedBy,
+                    UpdatedAt = order.UpdatedAt,
+                    UpdatedBy = order.UpdatedBy,
+                    OwnerId = owner != null ? owner.Id : (int?)null,
+                    OwnerEmail = owner != null ? owner.Email : null,
+                    OwnerFirstName = owner != null ? owner.FirstName : string.Empty,
+                    OwnerLastName = owner != null ? owner.LastName : string.Empty,
+                })
+                .ToListAsync();
+
+            return qpadmOrders.Concat(g25Orders).OrderByDescending(o => o.CreatedAt).ToList();
+        }
+
         public async Task<(GetOrderContract.Response? Response, int StatusCode)> UpdateAsync(int id, string identityId, UpdateOrderContract.Request request)
         {
             var order = await dbContext.QpadmOrders
@@ -644,7 +722,7 @@ public class OrderService(
             return true;
         }
 
-        public async Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId)
+        public async Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId, bool isAdmin = false)
         {
             var order = await dbContext.QpadmOrders
                 .AsNoTracking()
@@ -655,7 +733,7 @@ public class OrderService(
             if (order is null)
                 return (null, 404, $"Order with ID {orderId} not found.");
 
-            if (order.CreatedBy != identityId)
+            if (!isAdmin && order.CreatedBy != identityId)
                 return (null, 403, "You do not have permission to view this order's results.");
 
             if (order.Status != OrderStatus.Completed)
@@ -735,7 +813,7 @@ public class OrderService(
             return (response, 200, null);
         }
 
-        public async Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId)
+        public async Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId, bool isAdmin = false)
         {
             var order = await dbContext.G25Orders
                 .AsNoTracking()
@@ -744,7 +822,7 @@ public class OrderService(
             if (order is null)
                 return (null, 404, $"Order with ID {orderId} not found.");
 
-            if (order.CreatedBy != identityId)
+            if (!isAdmin && order.CreatedBy != identityId)
                 return (null, 403, null);
 
             var inspection = await dbContext.G25GeneticInspections
@@ -830,7 +908,7 @@ public class OrderService(
             return (response, 200, null);
         }
 
-        public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId)
+        public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId, bool isAdmin = false)
         {
             var order = await dbContext.QpadmOrders
                 .AsNoTracking()
@@ -841,7 +919,7 @@ public class OrderService(
             if (order is null)
                 return (null, null, 404, $"Order with ID {orderId} not found.");
 
-            if (order.CreatedBy != identityId)
+            if (!isAdmin && order.CreatedBy != identityId)
                 return (null, null, 403, "You do not have permission to access this order's data.");
 
             if (order.GeneticInspection?.RawGeneticFile?.MergedRawData is not { Length: > 0 } mergedData)
@@ -852,7 +930,7 @@ public class OrderService(
             return (mergedData, fileName, 200, null);
         }
 
-        public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId)
+        public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, bool isAdmin = false)
         {
             var order = await dbContext.QpadmOrders
                 .AsNoTracking()
@@ -862,7 +940,7 @@ public class OrderService(
             if (order is null)
                 return (null, null, 404, $"Order with ID {orderId} not found.");
 
-            if (order.CreatedBy != identityId)
+            if (!isAdmin && order.CreatedBy != identityId)
                 return (null, null, 403, "You do not have permission to access this order's profile picture.");
 
             if (order.GeneticInspection?.ProfilePicture is not { Length: > 0 } pictureData)
@@ -871,7 +949,7 @@ public class OrderService(
             return (pictureData, order.GeneticInspection.ProfilePictureFileName ?? "profile-picture", 200, null);
         }
 
-        public async Task<(bool Success, int StatusCode, string? Error)> MarkQpadmResultsAsViewedAsync(int orderId, string identityId)
+        public async Task<(bool Success, int StatusCode, string? Error)> MarkQpadmResultsAsViewedAsync(int orderId, string identityId, bool isAdmin = false)
         {
             var order = await dbContext.QpadmOrders
                 .FirstOrDefaultAsync(o => o.Id == orderId);
@@ -880,7 +958,12 @@ public class OrderService(
                 return (false, 404, $"qpAdm order with ID {orderId} not found.");
 
             if (order.CreatedBy != identityId)
+            {
+                // Admin previewing another user's results must not consume their "New Results" indicator.
+                if (isAdmin)
+                    return (true, 200, null);
                 return (false, 403, "You do not have permission to modify this order.");
+            }
 
             order.HasViewedResults = true;
             await dbContext.SaveChangesAsync();
@@ -888,7 +971,7 @@ public class OrderService(
             return (true, 200, null);
         }
 
-        public async Task<(bool Success, int StatusCode, string? Error)> MarkG25ResultsAsViewedAsync(int orderId, string identityId)
+        public async Task<(bool Success, int StatusCode, string? Error)> MarkG25ResultsAsViewedAsync(int orderId, string identityId, bool isAdmin = false)
         {
             var order = await dbContext.G25Orders
                 .FirstOrDefaultAsync(o => o.Id == orderId);
@@ -897,7 +980,11 @@ public class OrderService(
                 return (false, 404, $"G25 order with ID {orderId} not found.");
 
             if (order.CreatedBy != identityId)
+            {
+                if (isAdmin)
+                    return (true, 200, null);
                 return (false, 403, "You do not have permission to modify this order.");
+            }
 
             order.HasViewedResults = true;
             await dbContext.SaveChangesAsync();
