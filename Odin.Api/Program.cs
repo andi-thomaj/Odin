@@ -83,6 +83,13 @@ namespace Odin.Api
 
             builder.Host.UseSerilog((context, loggerConfig) =>
             {
+                // Read the connection string from context.Configuration (not the outer captured
+                // variable) so WebApplicationFactory test overrides via ConfigureAppConfiguration
+                // are visible — those run AFTER the outer `connectionString` was captured.
+                // Falls back to the outer value for prod/dev where the test factory isn't in play.
+                var sinkConnectionString = context.Configuration.GetConnectionString("DefaultConnection")
+                                           ?? connectionString;
+
                 // Read log level from configuration (defaults to Information)
                 var logLevelString = context.Configuration["Logging:LogLevel:Default"] ?? "Information";
                 var consoleLogLevel = Enum.TryParse<LogEventLevel>(logLevelString, ignoreCase: true, out var parsedLevel)
@@ -95,16 +102,30 @@ namespace Odin.Api
                     consoleLogLevel = LogEventLevel.Information;
                 }
 
+                // Under integration tests, flush each log event almost immediately so assertions
+                // don't have to wait out the default 5s batching window. Production keeps the
+                // library defaults (5s period, batch size 50) for throughput.
+                var isTesting = context.HostingEnvironment.IsEnvironment("Testing");
+                var batchPeriod = isTesting ? TimeSpan.FromMilliseconds(50) : TimeSpan.FromSeconds(5);
+                var batchSizeLimit = isTesting ? 1 : 50;
+
                 loggerConfig
                     .MinimumLevel.Is(consoleLogLevel)
                     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
                     .WriteTo.Console(restrictedToMinimumLevel: consoleLogLevel)
                     .WriteTo.PostgreSQL(
-                        connectionString: connectionString,
+                        connectionString: sinkConnectionString,
                         tableName: "logs",
                         columnOptions: columnWriters,
                         needAutoCreateTable: false,
-                        restrictedToMinimumLevel: LogEventLevel.Error
+                        restrictedToMinimumLevel: LogEventLevel.Error,
+                        period: batchPeriod,
+                        batchSizeLimit: batchSizeLimit,
+                        // `respectCase: true` is REQUIRED: the EF migration created the table with
+                        // quoted PascalCase columns ("Message", "Level", ...). Without it the sink
+                        // emits unquoted identifiers that Postgres folds to lowercase, every COPY
+                        // fails, and the logs table stays empty.
+                        respectCase: true
                     );
             });
 
@@ -400,6 +421,7 @@ namespace Odin.Api
             services.AddSingleton<Odin.Api.Storage.IR2Storage, Odin.Api.Storage.R2Storage>();
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserProvisioningService, UserProvisioningService>();
             services.AddScoped<IEthnicityService, EthnicityService>();
             services.AddScoped<IEraService, EraService>();
             services.AddScoped<IPopulationService, PopulationService>();
@@ -424,6 +446,7 @@ namespace Odin.Api
             services.AddScoped<IG25CalculationService, G25CalculationService>();
             services.AddScoped<ICalculatorService, CalculatorService>();
             services.AddScoped<IAdmixToolsEraService, AdmixToolsEraService>();
+            services.AddScoped<ILogCleanupService, LogCleanupService>();
             services.AddScoped<Odin.Api.Endpoints.Admin.IG25SeedImportService, Odin.Api.Endpoints.Admin.G25SeedImportService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
@@ -447,15 +470,23 @@ namespace Odin.Api
             services.AddSingleton<IUserIdProvider, UserIdProvider>();
 
             // ── Hangfire (background jobs) ───────────────────────────────
-            // Skipped in Testing so integration tests don't try to spin up the worker
-            // against the throwaway Postgres container.
+            // DI services (IBackgroundJobClient, IRecurringJobManager, ...) are registered in
+            // every environment so endpoints that inject them — e.g. RecomputeDistanceResults
+            // in G25AdminEndpoints — can be bound during host startup. ASP.NET Core eagerly
+            // resolves every endpoint's parameters when the pipeline builds, so a missing
+            // service here fails the entire test host with "Failure to infer one or more
+            // parameters". UsePostgreSqlStorage does not open a connection at registration
+            // time; tests never enqueue jobs or start the server, so the storage stays cold.
+            services.AddHangfire(hf => hf
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connectionString)));
+
+            // Worker process — skipped in Testing so the suite doesn't poll the throwaway
+            // Postgres container or compete with Respawn for table locks.
             if (!builder.Environment.IsEnvironment("Testing"))
             {
-                services.AddHangfire(hf => hf
-                    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                    .UseSimpleAssemblyNameTypeSerializer()
-                    .UseRecommendedSerializerSettings()
-                    .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connectionString)));
                 services.AddHangfireServer(opts =>
                 {
                     opts.WorkerCount = Math.Max(1, Environment.ProcessorCount / 2);
@@ -513,6 +544,19 @@ namespace Odin.Api
                     Authorization = new[] { new HangfireDashboardAuthFilter() },
                     DashboardTitle = "Odin background jobs"
                 });
+
+                // Recurring jobs. Registered after the Hangfire storage is wired (see AddHangfire above)
+                // and skipped in Testing because Hangfire itself is not registered there.
+                //
+                // logs-cleanup: wipe the `logs` table every 5 days at 03:00 UTC. Cron day-of-month
+                // `*/5` evaluates to days 1,6,11,16,21,26,31 — i.e. roughly every 5 days with a
+                // 1-day skew at month boundaries. That's acceptable for a logs-retention job.
+                var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+                recurringJobManager.AddOrUpdate<ILogCleanupService>(
+                    recurringJobId: "logs-cleanup",
+                    methodCall: svc => svc.DeleteAllLogsAsync(CancellationToken.None),
+                    cronExpression: "0 3 */5 * *",
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
             }
 
             // Version prefix — all business endpoints live under /v1 so breaking changes
@@ -545,6 +589,19 @@ namespace Odin.Api
             v1.MapG25AdminEndpoints();
             v1.MapCalculatorEndpoints();
             v1.MapAdmixToolsEraEndpoints();
+
+            // Testing-only diagnostics: lets integration tests force an unhandled exception
+            // through GlobalExceptionHandlerMiddleware to verify Serilog → logs table persistence.
+            // Never registered outside the Testing host environment.
+            if (app.Environment.IsEnvironment("Testing"))
+            {
+                v1.MapGet("/api/diagnostics/throw", (string? marker) =>
+                {
+                    throw new InvalidOperationException(
+                        $"Diagnostics throw triggered for log persistence test (marker: {marker ?? "<none>"})");
+                });
+            }
+
             await app.RunAsync();
         }
 

@@ -6,6 +6,7 @@ using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.Admin.Models;
+using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.IntegrationTests.Infrastructure;
 using static Odin.Api.IntegrationTests.Fakers.TestDataHelper;
@@ -33,13 +34,8 @@ public class G25AdminEndpointsTests(CustomWebApplicationFactory factory) : Integ
     [Fact]
     public async Task RecomputeDistanceResults_NoEras_ReturnsZeroErasAndNoUpserts()
     {
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/g25/recompute-distance-results",
-            new RecomputeG25DistancesContract.Request());
+        var body = await RecomputeDistanceResultsAsync();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<RecomputeG25DistancesContract.Response>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(0, body!.ErasConsidered);
         Assert.Equal(0, body.ResultsUpserted);
@@ -57,13 +53,8 @@ public class G25AdminEndpointsTests(CustomWebApplicationFactory factory) : Integ
 
         await DeleteAllDistanceResultsAsync(inspectionId);
 
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/g25/recompute-distance-results",
-            new RecomputeG25DistancesContract.Request());
+        var body = await RecomputeDistanceResultsAsync();
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<RecomputeG25DistancesContract.Response>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(2, body!.ErasConsidered);
         Assert.Equal(1, body.InspectionsProcessed);
@@ -99,12 +90,8 @@ public class G25AdminEndpointsTests(CustomWebApplicationFactory factory) : Integ
 
         await Task.Delay(1100);
 
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/g25/recompute-distance-results",
-            new RecomputeG25DistancesContract.Request { InspectionIds = [inspectionId] });
+        var body = await RecomputeDistanceResultsAsync(inspectionIds: [inspectionId]);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<RecomputeG25DistancesContract.Response>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(1, body!.ErasConsidered);
         Assert.Equal(1, body.InspectionsProcessed);
@@ -135,12 +122,8 @@ public class G25AdminEndpointsTests(CustomWebApplicationFactory factory) : Integ
         var orderId = await CreateG25OrderAsync();
         var inspectionId = await GetInspectionIdForOrderAsync(orderId);
 
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/g25/recompute-distance-results",
-            new RecomputeG25DistancesContract.Request { InspectionIds = [inspectionId] });
+        var body = await RecomputeDistanceResultsAsync(inspectionIds: [inspectionId]);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<RecomputeG25DistancesContract.Response>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(2, body!.ErasConsidered);
         Assert.Equal(1, body.InspectionsProcessed);
@@ -169,12 +152,8 @@ public class G25AdminEndpointsTests(CustomWebApplicationFactory factory) : Integ
         var inspectionId = await GetInspectionIdForOrderAsync(orderId);
         await DeleteAllDistanceResultsAsync(inspectionId);
 
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/g25/recompute-distance-results",
-            new RecomputeG25DistancesContract.Request { InspectionIds = [inspectionId] });
+        var body = await RecomputeDistanceResultsAsync(inspectionIds: [inspectionId]);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<RecomputeG25DistancesContract.Response>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(1, body!.ErasConsidered);
         Assert.Equal(1, body.InspectionsProcessed);
@@ -207,12 +186,8 @@ public class G25AdminEndpointsTests(CustomWebApplicationFactory factory) : Integ
         var inspectionId = await GetInspectionIdForOrderAsync(orderId);
         await DeleteAllDistanceResultsAsync(inspectionId);
 
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/g25/recompute-distance-results",
-            new RecomputeG25DistancesContract.Request { InspectionIds = [inspectionId] });
+        var body = await RecomputeDistanceResultsAsync(inspectionIds: [inspectionId]);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<RecomputeG25DistancesContract.Response>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(1, body!.ErasConsidered);
         Assert.Equal(1, body.InspectionsProcessed);
@@ -241,12 +216,8 @@ public class G25AdminEndpointsTests(CustomWebApplicationFactory factory) : Integ
         var inspectionId = await GetInspectionIdForOrderAsync(orderId);
         await DeleteAllDistanceResultsAsync(inspectionId);
 
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/g25/recompute-distance-results",
-            new RecomputeG25DistancesContract.Request { InspectionIds = [inspectionId] });
+        var body = await RecomputeDistanceResultsAsync(inspectionIds: [inspectionId]);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<RecomputeG25DistancesContract.Response>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(1, body!.ErasConsidered);
         Assert.Equal(1, body.InspectionsProcessed);
@@ -279,12 +250,8 @@ public class G25AdminEndpointsTests(CustomWebApplicationFactory factory) : Integ
         var inspectionId = await GetInspectionIdForOrderAsync(orderId);
         await DeleteAllDistanceResultsAsync(inspectionId);
 
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/g25/recompute-distance-results",
-            new RecomputeG25DistancesContract.Request { InspectionIds = [inspectionId] });
+        var body = await RecomputeDistanceResultsAsync(inspectionIds: [inspectionId]);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<RecomputeG25DistancesContract.Response>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(1, body!.ResultsUpserted);
 
@@ -308,15 +275,28 @@ public class G25AdminEndpointsTests(CustomWebApplicationFactory factory) : Integ
         var orderId = await CreateG25OrderAsync();
         var inspectionId = await GetInspectionIdForOrderAsync(orderId);
 
-        var response = await Client.PostAsJsonAsync(
-            "/api/admin/g25/recompute-distance-results",
-            new RecomputeG25DistancesContract.Request { InspectionIds = [inspectionId] });
+        var body = await RecomputeDistanceResultsAsync(inspectionIds: [inspectionId]);
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var body = await response.Content.ReadFromJsonAsync<RecomputeG25DistancesContract.Response>(JsonOptions);
         Assert.NotNull(body);
         Assert.Equal(1, body!.ErasConsidered);
         Assert.Equal(1, body.ResultsUpserted);
+    }
+
+    // The HTTP endpoint /api/admin/g25/recompute-distance-results enqueues a Hangfire job
+    // (see G25AdminEndpoints.RecomputeDistanceResults) and returns 202 Accepted with a jobId,
+    // not the synchronous result body these tests assert against. Since the Hangfire worker
+    // is intentionally not started in the Testing host, the underlying compute would never
+    // run via that path. These tests cover the recompute business logic, not the HTTP
+    // transport — so invoke the service method directly, the same call Hangfire makes when
+    // it picks up the queued job in production.
+    private async Task<RecomputeG25DistancesContract.Response> RecomputeDistanceResultsAsync(
+        IReadOnlyList<int>? inspectionIds = null)
+    {
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var service = scope.ServiceProvider.GetRequiredService<IOrderService>();
+        return await service.RecomputeG25DistanceResultsAsync(
+            "auth0|integration-default",
+            inspectionIds);
     }
 
     private async Task<int> SeedEraAsync(string eraNamePrefix, (string Label, string Coords)[] samples)

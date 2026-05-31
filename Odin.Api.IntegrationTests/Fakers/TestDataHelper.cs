@@ -21,7 +21,10 @@ public static class TestDataHelper
         string identityId,
         string role)
     {
-        var client = factory.CreateClient();
+        // Must use CreateDefaultClient with ApiVersionPrefixHandler so /api/... is rewritten
+        // to /v1/api/... — otherwise requests hit no route in the /v1 group and 404 instead
+        // of exercising the authorization policy. IntegrationTestBase.Client does the same.
+        var client = factory.CreateDefaultClient(new ApiVersionPrefixHandler());
         client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-Identity-Id", identityId);
         client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-App-Role", role);
         return client;
@@ -29,7 +32,7 @@ public static class TestDataHelper
 
     public static HttpClient CreateUnauthenticatedClient(CustomWebApplicationFactory factory)
     {
-        var client = factory.CreateClient();
+        var client = factory.CreateDefaultClient(new ApiVersionPrefixHandler());
         client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-Unauthenticated", "true");
         return client;
     }
