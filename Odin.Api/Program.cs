@@ -95,6 +95,13 @@ namespace Odin.Api
                     consoleLogLevel = LogEventLevel.Information;
                 }
 
+                // Under integration tests, flush each log event almost immediately so assertions
+                // don't have to wait out the default 5s batching window. Production keeps the
+                // library defaults (5s period, batch size 50) for throughput.
+                var isTesting = context.HostingEnvironment.IsEnvironment("Testing");
+                var batchPeriod = isTesting ? TimeSpan.FromMilliseconds(50) : TimeSpan.FromSeconds(5);
+                var batchSizeLimit = isTesting ? 1 : 50;
+
                 loggerConfig
                     .MinimumLevel.Is(consoleLogLevel)
                     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
@@ -104,7 +111,14 @@ namespace Odin.Api
                         tableName: "logs",
                         columnOptions: columnWriters,
                         needAutoCreateTable: false,
-                        restrictedToMinimumLevel: LogEventLevel.Error
+                        restrictedToMinimumLevel: LogEventLevel.Error,
+                        period: batchPeriod,
+                        batchSizeLimit: batchSizeLimit,
+                        // `respectCase: true` is REQUIRED: the EF migration created the table with
+                        // quoted PascalCase columns ("Message", "Level", ...). Without it the sink
+                        // emits unquoted identifiers that Postgres folds to lowercase, every COPY
+                        // fails, and the logs table stays empty.
+                        respectCase: true
                     );
             });
 
@@ -400,6 +414,7 @@ namespace Odin.Api
             services.AddSingleton<Odin.Api.Storage.IR2Storage, Odin.Api.Storage.R2Storage>();
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserProvisioningService, UserProvisioningService>();
             services.AddScoped<IEthnicityService, EthnicityService>();
             services.AddScoped<IEraService, EraService>();
             services.AddScoped<IPopulationService, PopulationService>();
@@ -424,6 +439,7 @@ namespace Odin.Api
             services.AddScoped<IG25CalculationService, G25CalculationService>();
             services.AddScoped<ICalculatorService, CalculatorService>();
             services.AddScoped<IAdmixToolsEraService, AdmixToolsEraService>();
+            services.AddScoped<ILogCleanupService, LogCleanupService>();
             services.AddScoped<Odin.Api.Endpoints.Admin.IG25SeedImportService, Odin.Api.Endpoints.Admin.G25SeedImportService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
@@ -513,6 +529,19 @@ namespace Odin.Api
                     Authorization = new[] { new HangfireDashboardAuthFilter() },
                     DashboardTitle = "Odin background jobs"
                 });
+
+                // Recurring jobs. Registered after the Hangfire storage is wired (see AddHangfire above)
+                // and skipped in Testing because Hangfire itself is not registered there.
+                //
+                // logs-cleanup: wipe the `logs` table every 5 days at 03:00 UTC. Cron day-of-month
+                // `*/5` evaluates to days 1,6,11,16,21,26,31 — i.e. roughly every 5 days with a
+                // 1-day skew at month boundaries. That's acceptable for a logs-retention job.
+                var recurringJobManager = app.Services.GetRequiredService<IRecurringJobManager>();
+                recurringJobManager.AddOrUpdate<ILogCleanupService>(
+                    recurringJobId: "logs-cleanup",
+                    methodCall: svc => svc.DeleteAllLogsAsync(CancellationToken.None),
+                    cronExpression: "0 3 */5 * *",
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
             }
 
             // Version prefix — all business endpoints live under /v1 so breaking changes
@@ -545,6 +574,19 @@ namespace Odin.Api
             v1.MapG25AdminEndpoints();
             v1.MapCalculatorEndpoints();
             v1.MapAdmixToolsEraEndpoints();
+
+            // Testing-only diagnostics: lets integration tests force an unhandled exception
+            // through GlobalExceptionHandlerMiddleware to verify Serilog → logs table persistence.
+            // Never registered outside the Testing host environment.
+            if (app.Environment.IsEnvironment("Testing"))
+            {
+                v1.MapGet("/api/diagnostics/throw", (string? marker) =>
+                {
+                    throw new InvalidOperationException(
+                        $"Diagnostics throw triggered for log persistence test (marker: {marker ?? "<none>"})");
+                });
+            }
+
             await app.RunAsync();
         }
 

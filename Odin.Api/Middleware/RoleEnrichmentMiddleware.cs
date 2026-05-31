@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -8,6 +9,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Authentication;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Services;
 
 namespace Odin.Api.Middleware
 {
@@ -21,6 +23,10 @@ namespace Odin.Api.Middleware
     /// <see cref="AppClaimTypes.EmailVerified"/> is derived from the Auth0 JWT <c>email_verified</c> when present;
     /// otherwise from Auth0 <c>/userinfo</c> using the saved access token (Auth0 API tokens often omit the claim).
     /// Userinfo is cached per access token to avoid parallel dashboard requests triggering Auth0 rate limits (HTTP 429).
+    /// When the access token is valid and the email is verified but no <c>application_users</c> row exists yet
+    /// (first request, or a row that was deleted out-of-band), this middleware delegates to
+    /// <see cref="IUserProvisioningService"/> to insert one before authorization runs — otherwise downstream
+    /// endpoints like order submission would throw "Authenticated user not found in the database."
     /// </summary>
     public class RoleEnrichmentMiddleware(
         RequestDelegate next,
@@ -32,6 +38,7 @@ namespace Odin.Api.Middleware
         public async Task InvokeAsync(
             HttpContext context,
             ApplicationDbContext dbContext,
+            IUserProvisioningService userProvisioning,
             IWebHostEnvironment environment)
         {
             if (environment.IsEnvironment("Testing"))
@@ -46,9 +53,29 @@ namespace Odin.Api.Middleware
 
                 if (!string.IsNullOrEmpty(identityId))
                 {
-                    var emailVerified = await ResolveAppEmailVerifiedAsync(context);
+                    var (accessToken, _) = await TryGetRawAccessTokenWithSourceAsync(context).ConfigureAwait(false);
+                    var emailVerified = await ResolveAppEmailVerifiedAsync(context, accessToken);
 
                     var user = await FindUserByIdentityAsync(dbContext, identityId);
+
+                    if (user is null && string.Equals(emailVerified, "true", StringComparison.OrdinalIgnoreCase))
+                    {
+                        try
+                        {
+                            user = await userProvisioning.EnsureUserAsync(
+                                context.User,
+                                accessToken,
+                                GetClientIp(context),
+                                context.RequestAborted);
+                        }
+                        catch (Exception ex)
+                        {
+                            logger.LogError(
+                                ex,
+                                "Role enrichment: JIT user provisioning threw for identity prefix {IdentityPrefix}.",
+                                identityId.Length > 16 ? identityId[..16] + "…" : identityId);
+                        }
+                    }
 
                     if (user is not null)
                     {
@@ -76,13 +103,24 @@ namespace Odin.Api.Middleware
             await next(context);
         }
 
-        private async Task<string> ResolveAppEmailVerifiedAsync(HttpContext context)
+        private static string? GetClientIp(HttpContext context)
+        {
+            var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(forwardedFor))
+            {
+                var first = forwardedFor.Split(',')[0].Trim();
+                if (IPAddress.TryParse(first, out _))
+                    return first;
+            }
+            return context.Connection.RemoteIpAddress?.ToString();
+        }
+
+        private async Task<string> ResolveAppEmailVerifiedAsync(HttpContext context, string? accessToken)
         {
             var fromJwt = Auth0EmailVerifiedClaims.GetJwtEmailVerifiedBoolean(context.User);
             if (fromJwt.HasValue)
                 return fromJwt.Value ? "true" : "false";
 
-            var (accessToken, _) = await TryGetRawAccessTokenWithSourceAsync(context).ConfigureAwait(false);
             if (string.IsNullOrEmpty(accessToken))
             {
                 logger.LogWarning(
