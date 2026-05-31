@@ -83,6 +83,13 @@ namespace Odin.Api
 
             builder.Host.UseSerilog((context, loggerConfig) =>
             {
+                // Read the connection string from context.Configuration (not the outer captured
+                // variable) so WebApplicationFactory test overrides via ConfigureAppConfiguration
+                // are visible — those run AFTER the outer `connectionString` was captured.
+                // Falls back to the outer value for prod/dev where the test factory isn't in play.
+                var sinkConnectionString = context.Configuration.GetConnectionString("DefaultConnection")
+                                           ?? connectionString;
+
                 // Read log level from configuration (defaults to Information)
                 var logLevelString = context.Configuration["Logging:LogLevel:Default"] ?? "Information";
                 var consoleLogLevel = Enum.TryParse<LogEventLevel>(logLevelString, ignoreCase: true, out var parsedLevel)
@@ -107,7 +114,7 @@ namespace Odin.Api
                     .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
                     .WriteTo.Console(restrictedToMinimumLevel: consoleLogLevel)
                     .WriteTo.PostgreSQL(
-                        connectionString: connectionString,
+                        connectionString: sinkConnectionString,
                         tableName: "logs",
                         columnOptions: columnWriters,
                         needAutoCreateTable: false,
