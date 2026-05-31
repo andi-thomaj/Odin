@@ -463,15 +463,23 @@ namespace Odin.Api
             services.AddSingleton<IUserIdProvider, UserIdProvider>();
 
             // ── Hangfire (background jobs) ───────────────────────────────
-            // Skipped in Testing so integration tests don't try to spin up the worker
-            // against the throwaway Postgres container.
+            // DI services (IBackgroundJobClient, IRecurringJobManager, ...) are registered in
+            // every environment so endpoints that inject them — e.g. RecomputeDistanceResults
+            // in G25AdminEndpoints — can be bound during host startup. ASP.NET Core eagerly
+            // resolves every endpoint's parameters when the pipeline builds, so a missing
+            // service here fails the entire test host with "Failure to infer one or more
+            // parameters". UsePostgreSqlStorage does not open a connection at registration
+            // time; tests never enqueue jobs or start the server, so the storage stays cold.
+            services.AddHangfire(hf => hf
+                .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+                .UseSimpleAssemblyNameTypeSerializer()
+                .UseRecommendedSerializerSettings()
+                .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connectionString)));
+
+            // Worker process — skipped in Testing so the suite doesn't poll the throwaway
+            // Postgres container or compete with Respawn for table locks.
             if (!builder.Environment.IsEnvironment("Testing"))
             {
-                services.AddHangfire(hf => hf
-                    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
-                    .UseSimpleAssemblyNameTypeSerializer()
-                    .UseRecommendedSerializerSettings()
-                    .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connectionString)));
                 services.AddHangfireServer(opts =>
                 {
                     opts.WorkerCount = Math.Max(1, Environment.ProcessorCount / 2);
