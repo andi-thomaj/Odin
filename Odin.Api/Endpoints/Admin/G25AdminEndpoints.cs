@@ -17,6 +17,11 @@ public static class G25AdminEndpoints
 
         endpoints.MapPost("/recompute-distance-results", RecomputeDistanceResults)
             .RequireRateLimiting("strict");
+
+        endpoints.MapPost("/import-distance-population-samples", ImportDistancePopulationSamples)
+            .RequireRateLimiting("strict")
+            .Produces<ImportG25DistancePopulationSamplesContract.Response>(StatusCodes.Status200OK)
+            .WithRequestTimeout(TimeSpan.FromMinutes(5));
     }
 
     private static async Task<IResult> GetInspections(IOrderService service)
@@ -41,5 +46,18 @@ public static class G25AdminEndpoints
             svc.RecomputeG25DistanceResultsAsync(identityId, inspectionIds));
 
         return Results.Accepted(value: new { jobId });
+    }
+
+    private static async Task<IResult> ImportDistancePopulationSamples(
+        IG25SeedImportService importService,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                         ?? httpContext.User.FindFirstValue("sub")
+                         ?? string.Empty;
+
+        var result = await importService.ImportDistancePopulationSamplesAsync(identityId, cancellationToken);
+        return Results.Ok(result);
     }
 }
