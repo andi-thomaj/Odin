@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.Extensions;
 
@@ -14,6 +15,10 @@ namespace Odin.Api.Endpoints.OrderManagement
             [".png"] = "image/png",
             [".webp"] = "image/webp"
         };
+
+        private static bool IsAdmin(HttpContext httpContext) =>
+            httpContext.User.HasClaim("app_role", AppRole.Admin.ToString());
+
         public static void MapOrderEndpoints(this IEndpointRouteBuilder app)
         {
             var endpoints = app.MapGroup("api/orders");
@@ -22,6 +27,13 @@ namespace Odin.Api.Endpoints.OrderManagement
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated")
                 .Produces<IEnumerable<GetOrderContract.Response>>(StatusCodes.Status200OK);
+
+            var adminEndpoints = app.MapGroup("api/admin/orders")
+                .RequireAuthorization("AdminOnly");
+
+            adminEndpoints.MapGet("/", GetAllAdmin)
+                .RequireRateLimiting("authenticated")
+                .Produces<IEnumerable<AdminGetOrderContract.Response>>(StatusCodes.Status200OK);
 
             endpoints.MapGet("/{id:int}", GetById)
                 .RequireAuthorization("EmailVerified")
@@ -81,6 +93,12 @@ namespace Odin.Api.Endpoints.OrderManagement
                              ?? string.Empty;
 
             var orders = await service.GetAllAsync(identityId);
+            return Results.Ok(orders);
+        }
+
+        private static async Task<IResult> GetAllAdmin(IOrderService service)
+        {
+            var orders = await service.GetAllAdminAsync();
             return Results.Ok(orders);
         }
 
@@ -175,7 +193,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                              ?? httpContext.User.FindFirstValue("sub")
                              ?? string.Empty;
 
-            var (result, statusCode, error) = await service.GetQpadmResultForOrderAsync(id, identityId);
+            var (result, statusCode, error) = await service.GetQpadmResultForOrderAsync(id, identityId, IsAdmin(httpContext));
 
             return statusCode switch
             {
@@ -192,7 +210,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                              ?? httpContext.User.FindFirstValue("sub")
                              ?? string.Empty;
 
-            var (result, statusCode, error) = await service.GetG25ResultForOrderAsync(id, identityId);
+            var (result, statusCode, error) = await service.GetG25ResultForOrderAsync(id, identityId, IsAdmin(httpContext));
 
             return statusCode switch
             {
@@ -209,7 +227,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                              ?? httpContext.User.FindFirstValue("sub")
                              ?? string.Empty;
 
-            var (fileBytes, fileName, statusCode, error) = await service.DownloadMergedDataForOrderAsync(id, identityId);
+            var (fileBytes, fileName, statusCode, error) = await service.DownloadMergedDataForOrderAsync(id, identityId, IsAdmin(httpContext));
 
             return statusCode switch
             {
@@ -226,7 +244,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                              ?? httpContext.User.FindFirstValue("sub")
                              ?? string.Empty;
 
-            var (fileBytes, fileName, statusCode, error) = await service.GetProfilePictureAsync(id, identityId);
+            var (fileBytes, fileName, statusCode, error) = await service.GetProfilePictureAsync(id, identityId, IsAdmin(httpContext));
 
             return statusCode switch
             {
@@ -242,7 +260,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                              ?? httpContext.User.FindFirstValue("sub")
                              ?? string.Empty;
 
-            var (success, statusCode, error) = await service.MarkQpadmResultsAsViewedAsync(id, identityId);
+            var (success, statusCode, error) = await service.MarkQpadmResultsAsViewedAsync(id, identityId, IsAdmin(httpContext));
 
             return statusCode switch
             {
@@ -258,7 +276,7 @@ namespace Odin.Api.Endpoints.OrderManagement
                              ?? httpContext.User.FindFirstValue("sub")
                              ?? string.Empty;
 
-            var (success, statusCode, error) = await service.MarkG25ResultsAsViewedAsync(id, identityId);
+            var (success, statusCode, error) = await service.MarkG25ResultsAsViewedAsync(id, identityId, IsAdmin(httpContext));
 
             return statusCode switch
             {
