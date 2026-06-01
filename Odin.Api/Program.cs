@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -167,6 +168,44 @@ namespace Odin.Api
                                 }
                                 return Task.CompletedTask;
                             }
+                        };
+                        // Hangfire dashboard is loaded by the browser via top-level navigation
+                        // (no Authorization header). Forward those requests to the cookie scheme so
+                        // HangfireDashboardAuthFilter sees a populated User. API requests keep the
+                        // JWT default — they always carry a Bearer header.
+                        options.ForwardDefaultSelector = context =>
+                            context.Request.Path.StartsWithSegments("/jobs")
+                                ? HangfireAuthScheme.Name
+                                : null;
+                    })
+                    .AddCookie(HangfireAuthScheme.Name, options =>
+                    {
+                        options.Cookie.Name = "odin_hangfire_session";
+                        options.Cookie.HttpOnly = true;
+                        // Lax lets the cookie ride along on the top-level GET when the admin opens
+                        // /jobs in a new tab from the SPA. Strict would block it. None would require
+                        // Secure on http://localhost during development and break dev entirely.
+                        options.Cookie.SameSite = SameSiteMode.Lax;
+                        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+                            ? CookieSecurePolicy.SameAsRequest
+                            : CookieSecurePolicy.Always;
+                        // Path-scope the cookie so it isn't sent on every API request — only on
+                        // Hangfire dashboard paths under /jobs.
+                        options.Cookie.Path = "/jobs";
+                        options.ExpireTimeSpan = TimeSpan.FromHours(1);
+                        options.SlidingExpiration = true;
+                        // Dashboard is a browser-rendered admin tool, not a login UI — return raw
+                        // 401/403 instead of trying to redirect to a /Account/Login that doesn't
+                        // exist on this app.
+                        options.Events.OnRedirectToLogin = ctx =>
+                        {
+                            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            return Task.CompletedTask;
+                        };
+                        options.Events.OnRedirectToAccessDenied = ctx =>
+                        {
+                            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                            return Task.CompletedTask;
                         };
                     });
             }
@@ -587,6 +626,7 @@ namespace Odin.Api
             v1.MapG25AdmixtureEraEndpoints();
             v1.MapG25CalculationEndpoints();
             v1.MapG25AdminEndpoints();
+            v1.MapHangfireSessionEndpoints();
             v1.MapCalculatorEndpoints();
             v1.MapAdmixToolsEraEndpoints();
 
