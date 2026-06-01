@@ -354,8 +354,6 @@ namespace Odin.Api
             services.AddHealthChecks()
                 .AddNpgSql(configuration.GetConnectionString("DefaultConnection")!);
 
-            services.AddOpenApi();
-            
             // ── CORS Configuration ───────────────────────────────────────
             var corsOrigins = BuildCorsAllowedOrigins(configuration);
 
@@ -421,6 +419,7 @@ namespace Odin.Api
             services.AddSingleton<Odin.Api.Storage.IR2Storage, Odin.Api.Storage.R2Storage>();
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserDataExportService, UserDataExportService>();
             services.AddScoped<IUserProvisioningService, UserProvisioningService>();
             services.AddScoped<IEthnicityService, EthnicityService>();
             services.AddScoped<IEraService, EraService>();
@@ -452,6 +451,8 @@ namespace Odin.Api
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
             services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
+            services.Configure<Odin.Api.Configuration.OrderLimitsOptions>(
+                configuration.GetSection(Odin.Api.Configuration.OrderLimitsOptions.SectionName));
 
             services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
             {
@@ -520,7 +521,6 @@ namespace Odin.Api
 
             if (!app.Environment.IsEnvironment("Testing"))
             {
-                app.MapOpenApi();
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {

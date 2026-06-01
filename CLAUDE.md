@@ -2,6 +2,14 @@
 
 This file is loaded in addition to the root `CLAUDE.md` when working anywhere under `Odin/`.
 
+## API versioning — `/v1` today, side-by-side `/v2` for breaking changes
+
+All business endpoints are mounted under `/v1` ([Odin.Api/Program.cs](Odin.Api/Program.cs) → `var v1 = app.MapGroup("/v1");`). SignalR hubs (`/hubs/...`) and infrastructure routes (`/health`, `/jobs`, `/swagger`) stay at the root by convention — they're not part of the versioned API surface.
+
+When a request/response contract has to change in a **breaking** way (renamed field, semantic change, removed field), add a `/v2` group alongside `/v1` rather than mutating the existing endpoint. Same handler can serve both by accepting a wider DTO and projecting per version, or each version can have its own endpoint methods — pick whichever keeps the per-endpoint code clearest. `/v1` stays alive until the FE schema regenerates, the FE migrates, and a deprecation window passes.
+
+Non-breaking changes (new field on a response, new optional field on a request) can ship in place on `/v1` — they're already non-breaking by construction. Don't pre-emptively v2 for these.
+
 ## Integration test database — Testcontainers Postgres
 
 `Odin.Api.IntegrationTests` boots a disposable **PostgreSQL 16 container** (via `Testcontainers.PostgreSql`) on every test run. Running the suite locally requires Docker. CI uses GitHub-hosted `ubuntu-latest`, where Docker is preinstalled — see [.github/workflows/backend-tests.yml](.github/workflows/backend-tests.yml), which runs both `Odin.Api.Tests` (unit) and `Odin.Api.IntegrationTests` as parallel jobs on every PR and on pushes to `master` / `development`.

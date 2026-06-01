@@ -47,6 +47,7 @@ jobs:
           dotnet test Odin.Api.Tests/Odin.Api.Tests.csproj \
             --configuration Release \
             --no-build \
+            --collect:"XPlat Code Coverage" \
             --logger "trx;LogFileName=unit-tests.trx" \
             --logger "console;verbosity=normal" \
             --results-directory ./TestResults
@@ -57,6 +58,15 @@ jobs:
         with:
           name: unit-test-results
           path: TestResults/*.trx
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-coverage
+          path: TestResults/**/coverage.cobertura.xml
           if-no-files-found: warn
           retention-days: 14
 
@@ -102,6 +112,7 @@ jobs:
           dotnet test Odin.Api.IntegrationTests/Odin.Api.IntegrationTests.csproj \
             --configuration Release \
             --no-build \
+            --collect:"XPlat Code Coverage" \
             --logger "trx;LogFileName=integration-tests.trx" \
             --logger "console;verbosity=normal" \
             --results-directory ./TestResults
@@ -112,5 +123,14 @@ jobs:
         with:
           name: integration-test-results
           path: TestResults/*.trx
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-coverage
+          path: TestResults/**/coverage.cobertura.xml
           if-no-files-found: warn
           retention-days: 14

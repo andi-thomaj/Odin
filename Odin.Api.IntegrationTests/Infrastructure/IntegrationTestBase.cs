@@ -14,6 +14,8 @@ namespace Odin.Api.IntegrationTests.Infrastructure;
 [Collection(nameof(IntegrationTestCollection))]
 public abstract class IntegrationTestBase : IAsyncLifetime
 {
+    private const string DefaultIdentityId = "auth0|integration-default";
+
     protected readonly CustomWebApplicationFactory Factory;
     protected readonly HttpClient Client;
     private Respawner? _respawner;
@@ -44,33 +46,80 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
         await _respawner.ResetAsync(connection);
 
-        Client.DefaultRequestHeaders.Remove("X-Test-Identity-Id");
-        Client.DefaultRequestHeaders.Remove("X-Test-App-Role");
-        Client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-Identity-Id", "auth0|integration-default");
-        Client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-App-Role", "Admin");
+        SetTestHeaders(Client, DefaultIdentityId, AppRole.Admin);
+        await SeedUserAsync(Client, DefaultIdentityId, AppRole.Admin, "Integration", "User",
+            "integration-default@test.local");
+    }
 
+    /// <summary>
+    /// Returns a fresh <see cref="HttpClient"/> scoped to the given test identity + role, with
+    /// the matching <c>application_users</c> row already JIT-provisioned + role-promoted. Use
+    /// this when a single test needs to act as more than one user (e.g. owner vs. admin paths,
+    /// authorization boundaries) — each call returns an independent client, so headers don't
+    /// cross-contaminate. The shared <see cref="Client"/> is the default-Admin convenience
+    /// handle and continues to work unchanged.
+    /// </summary>
+    protected async Task<HttpClient> CreateClientAsAsync(
+        string identityId,
+        AppRole role = AppRole.User,
+        string? email = null,
+        string firstName = "Test",
+        string lastName = "User")
+    {
+        var client = Factory.CreateDefaultClient(new ApiVersionPrefixHandler());
+        SetTestHeaders(client, identityId, role);
+
+        // Mirror the auth handler's case-handling — identity IDs flow into headers verbatim, but
+        // the email needs to be a deterministic, syntactically valid local-part.
+        var safeLocal = new string(identityId.Where(c => char.IsLetterOrDigit(c) || c == '-' || c == '.').ToArray());
+        if (string.IsNullOrEmpty(safeLocal)) safeLocal = "user";
+        await SeedUserAsync(client, identityId, role, firstName, lastName,
+            email ?? $"{safeLocal.ToLowerInvariant()}@test.local");
+
+        return client;
+    }
+
+    private static void SetTestHeaders(HttpClient client, string identityId, AppRole role)
+    {
+        client.DefaultRequestHeaders.Remove("X-Test-Identity-Id");
+        client.DefaultRequestHeaders.Remove("X-Test-App-Role");
+        client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-Identity-Id", identityId);
+        client.DefaultRequestHeaders.TryAddWithoutValidation("X-Test-App-Role", role.ToString());
+    }
+
+    private async Task SeedUserAsync(
+        HttpClient client,
+        string identityId,
+        AppRole role,
+        string firstName,
+        string lastName,
+        string email)
+    {
         var seedRequest = new CreateUserContract.Request
         {
-            IdentityId = "auth0|integration-default",
-            FirstName = "Integration",
-            LastName = "User",
-            Email = "integration-default@test.local"
+            IdentityId = identityId,
+            FirstName = firstName,
+            LastName = lastName,
+            Email = email,
         };
-        var seedResponse = await Client.PostAsJsonAsync("/api/users", seedRequest);
+        var seedResponse = await client.PostAsJsonAsync("/api/users", seedRequest);
         if (!seedResponse.IsSuccessStatusCode)
         {
             var body = await seedResponse.Content.ReadAsStringAsync();
             throw new InvalidOperationException(
-                $"Seed POST /api/users failed: {(int)seedResponse.StatusCode}. Body: {body}");
+                $"Seed POST /api/users for {identityId} failed: {(int)seedResponse.StatusCode}. Body: {body}");
         }
 
-        // The user-create endpoint always assigns AppRole.User regardless of the auth context,
-        // so the DB record needs to be promoted to Admin here for tests that exercise admin paths.
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var dbUser = await db.Users.SingleAsync(u => u.IdentityId == "auth0|integration-default");
-        dbUser.Role = AppRole.Admin;
-        await db.SaveChangesAsync();
+        // The user-create endpoint always assigns AppRole.User regardless of the auth context;
+        // promote in the DB when the test wanted a privileged role.
+        if (role != AppRole.User)
+        {
+            await using var scope = Factory.Services.CreateAsyncScope();
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var dbUser = await db.Users.SingleAsync(u => u.IdentityId == identityId);
+            dbUser.Role = role;
+            await db.SaveChangesAsync();
+        }
     }
 
     public Task DisposeAsync()

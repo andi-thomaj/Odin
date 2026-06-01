@@ -81,8 +81,13 @@ namespace Odin.Api.Data
             {
                 applied = (await context.Database.GetAppliedMigrationsAsync()).ToList();
             }
-            catch
+            catch (Exception ex)
             {
+                // First-run case: the __EFMigrationsHistory table doesn't exist yet, so the read
+                // throws. Treat it as "no migrations applied" and continue. Log at Warning so any
+                // less expected failure (permissions, transient connectivity) is visible.
+                logger.LogWarning(ex,
+                    "Could not read applied migrations from __EFMigrationsHistory; assuming empty history.");
                 applied = [];
             }
 

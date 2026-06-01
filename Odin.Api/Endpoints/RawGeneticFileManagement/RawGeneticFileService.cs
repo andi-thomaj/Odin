@@ -3,6 +3,7 @@ using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
+using Odin.Api.Services;
 
 namespace Odin.Api.Endpoints.RawGeneticFileManagement
 {
@@ -25,10 +26,16 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
             using var memoryStream = new MemoryStream();
             await request.File.CopyToAsync(memoryStream);
+            var data = memoryStream.ToArray();
+
+            if (!FileSignatureValidator.LooksLikeGeneticFile(data))
+                throw new InvalidOperationException(
+                    "Uploaded file does not look like a valid genetic data file. " +
+                    "Expected a vendor raw-data export (23andMe, AncestryDNA, MyHeritage, FTDNA, ...) as text, ZIP, or GZIP.");
 
             var rawGeneticFile = new RawGeneticFile
             {
-                RawDataFileName = request.File.FileName, RawData = memoryStream.ToArray(), CreatedBy = identityId
+                RawDataFileName = request.File.FileName, RawData = data, CreatedBy = identityId
             };
 
             dbContext.RawGeneticFiles.Add(rawGeneticFile);
