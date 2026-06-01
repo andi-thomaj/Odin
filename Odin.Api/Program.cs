@@ -419,6 +419,11 @@ namespace Odin.Api
                         .SetPreflightMaxAge(TimeSpan.FromHours(24));
                 });
             });
+            // Minimal-API endpoint metadata for Swashbuckle. Without this, ISwaggerProvider
+            // cannot be constructed and the per-request resolution inside UseSwagger's
+            // middleware throws InvalidOperationException on every request — surfacing as
+            // 400 "The request is invalid." via GlobalExceptionHandlerMiddleware.
+            services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(options =>
             {
                 options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
@@ -558,7 +563,10 @@ namespace Odin.Api
                 app.UseRateLimiter();
             app.UseRequestTimeouts();
 
-            if (!app.Environment.IsEnvironment("Testing"))
+            // Swagger only in Development. The middleware resolves ISwaggerProvider per
+            // request, so leaving it on in Production turns every endpoint into a 400 if
+            // anything in the OpenAPI graph fails to construct.
+            if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
