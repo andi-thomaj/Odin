@@ -5,6 +5,7 @@ using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
+using Odin.Api.Extensions;
 
 namespace Odin.Api.Endpoints.GeneticInspectionManagement
 {
@@ -36,8 +37,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             CreateGeneticInspectionContract.Request request,
             string identityId)
         {
-            var user = await dbContext.Users.FirstOrDefaultAsync(u => u.IdentityId == identityId)
-                ?? throw new InvalidOperationException("Authenticated user not found in the database.");
+            var user = await dbContext.Users.RequireByIdentityAsync(identityId);
 
             var utc = DateTime.UtcNow;
             var order = new QpadmOrder

@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Services;
 using Odin.Api.Storage;
 
 namespace Odin.Api.Endpoints.MediaManagement;
@@ -48,6 +49,10 @@ public class MediaService(
         using var ms = new MemoryStream();
         await file.CopyToAsync(ms);
         var data = ms.ToArray();
+
+        if (!FileSignatureValidator.IsWavAudio(data))
+            return (false, "Uploaded file is not a valid WAV (RIFF/WAVE) audio file.");
+
         var now = DateTime.UtcNow;
 
         var existing = await dbContext.MusicTrackFiles

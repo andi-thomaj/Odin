@@ -144,8 +144,6 @@ namespace Odin.Api.Middleware
                             cacheKey,
                             async entry =>
                             {
-                                entry.SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
-
                                 var client = httpClientFactory.CreateClient("Auth0UserInfo");
                                 string v = "false";
                                 int status = 0;
@@ -177,6 +175,15 @@ namespace Odin.Api.Middleware
                                         status);
                                     throw new InvalidOperationException($"userinfo_http_{status}");
                                 }
+
+                                // Asymmetric TTL: verified results are stable so we cache them long
+                                // (15 min) to soak Auth0 traffic; unverified results we re-check
+                                // soon (2 min) so a user who has just clicked the verification
+                                // email isn't locked out for the full window.
+                                var ttl = string.Equals(v, "true", StringComparison.OrdinalIgnoreCase)
+                                    ? TimeSpan.FromMinutes(15)
+                                    : TimeSpan.FromMinutes(2);
+                                entry.SetAbsoluteExpiration(ttl);
 
                                 return v;
                             })

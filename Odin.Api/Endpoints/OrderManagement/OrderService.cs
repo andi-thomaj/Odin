@@ -1,13 +1,16 @@
 using System.Diagnostics;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.Admin.Models;
 using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25Calculations.Models;
+using Odin.Api.Configuration;
 using Odin.Api.Endpoints.OrderManagement.Models;
+using Odin.Api.Extensions;
 using Odin.Api.Services;
 
 namespace Odin.Api.Endpoints.OrderManagement;
@@ -34,18 +37,17 @@ public class OrderService(
     ApplicationDbContext dbContext,
     IGeoLocationService geoLocationService,
     IG25CalculationService g25CalculationService,
+    IOptions<OrderLimitsOptions> orderLimitsOptions,
     ILogger<OrderService> logger) : IOrderService
 {
-        private const int MaxEthnicities = 4;
-        private const int MaxRegionsPerEthnicity = 4;
         private const string G25DistanceResultsVersion = "v1";
-        private const int G25DistanceMaxResults = 25;
+        private int MaxEthnicities => orderLimitsOptions.Value.MaxEthnicities;
+        private int MaxRegionsPerEthnicity => orderLimitsOptions.Value.MaxRegionsPerEthnicity;
+        private int G25DistanceMaxResults => orderLimitsOptions.Value.G25DistanceMaxResults;
 
         public async Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null)
         {
-            var user = await dbContext.Users
-                .FirstOrDefaultAsync(u => u.IdentityId == identityId)
-                ?? throw new InvalidOperationException("Authenticated user not found in the database.");
+            var user = await dbContext.Users.RequireByIdentityAsync(identityId);
 
             if ((user.Country is null || user.CountryCode is null) && ipAddress is not null)
             {
@@ -101,11 +103,17 @@ public class OrderService(
 
                 using var memoryStream = new MemoryStream();
                 await request.File!.CopyToAsync(memoryStream);
+                var data = memoryStream.ToArray();
+
+                if (!FileSignatureValidator.LooksLikeGeneticFile(data))
+                    throw new InvalidOperationException(
+                        "Uploaded file does not look like a valid genetic data file. " +
+                        "Expected a vendor raw-data export (23andMe, AncestryDNA, MyHeritage, FTDNA, ...) as text, ZIP, or GZIP.");
 
                 var rawGeneticFile = new RawGeneticFile
                 {
                     RawDataFileName = request.File.FileName,
-                    RawData = memoryStream.ToArray(),
+                    RawData = data,
                     CreatedBy = identityId
                 };
                 dbContext.RawGeneticFiles.Add(rawGeneticFile);
@@ -132,7 +140,10 @@ public class OrderService(
                 FirstName = request.FirstName,
                 MiddleName = request.MiddleName ?? string.Empty,
                 LastName = request.LastName,
-                Gender = Enum.Parse<Data.Enums.Gender>(request.Gender),
+                Gender = Enum.TryParse<Data.Enums.Gender>(request.Gender, ignoreCase: true, out var parsedGender)
+                    ? parsedGender
+                    : throw new InvalidOperationException(
+                        $"Invalid gender '{request.Gender}'. Expected 'Male' or 'Female'."),
                 RawGeneticFileId = rawGeneticFileId,
                 UserId = user.Id,
                 OrderId = order.Id,
@@ -206,11 +217,17 @@ public class OrderService(
 
                 using var memoryStream = new MemoryStream();
                 await request.File.CopyToAsync(memoryStream);
+                var data = memoryStream.ToArray();
+
+                if (!FileSignatureValidator.LooksLikeGeneticFile(data))
+                    throw new InvalidOperationException(
+                        "Uploaded file does not look like a valid genetic data file. " +
+                        "Expected a vendor raw-data export (23andMe, AncestryDNA, MyHeritage, FTDNA, ...) as text, ZIP, or GZIP.");
 
                 var rawGeneticFile = new RawGeneticFile
                 {
                     RawDataFileName = request.File.FileName,
-                    RawData = memoryStream.ToArray(),
+                    RawData = data,
                     CreatedBy = identityId
                 };
                 dbContext.RawGeneticFiles.Add(rawGeneticFile);
@@ -260,7 +277,10 @@ public class OrderService(
                 FirstName = request.FirstName,
                 MiddleName = request.MiddleName ?? string.Empty,
                 LastName = request.LastName,
-                Gender = Enum.Parse<Data.Enums.Gender>(request.Gender),
+                Gender = Enum.TryParse<Data.Enums.Gender>(request.Gender, ignoreCase: true, out var parsedGender)
+                    ? parsedGender
+                    : throw new InvalidOperationException(
+                        $"Invalid gender '{request.Gender}'. Expected 'Male' or 'Female'."),
                 RawGeneticFileId = rawGeneticFileId,
                 G25Coordinates = g25Coordinates,
                 UserId = user.Id,
@@ -1037,11 +1057,21 @@ public class OrderService(
                 response.InspectionsRequested = inspections.Count;
             }
 
+            // Batch-load all existing distance results for the inspections in scope in a single
+            // query rather than one round-trip per inspection. Tracked (no AsNoTracking) so the
+            // in-place mutations below register with the change tracker.
+            var inspectionIdsToLoad = inspections.Select(i => i.Id).ToList();
+            var allExisting = await dbContext.G25DistanceResults
+                .Where(r => inspectionIdsToLoad.Contains(r.GeneticInspectionId))
+                .ToListAsync();
+            var existingByInspection = allExisting
+                .GroupBy(r => r.GeneticInspectionId)
+                .ToDictionary(g => g.Key, g => g.ToDictionary(r => r.G25DistanceEraId));
+
             foreach (var inspection in inspections)
             {
-                var existingByEra = await dbContext.G25DistanceResults
-                    .Where(r => r.GeneticInspectionId == inspection.Id)
-                    .ToDictionaryAsync(r => r.G25DistanceEraId);
+                if (!existingByInspection.TryGetValue(inspection.Id, out var existingByEra))
+                    existingByEra = new Dictionary<int, G25DistanceResult>();
 
                 var highestExistingVersion = existingByEra.Values
                     .Select(r => r.ResultsVersion)
@@ -1113,7 +1143,6 @@ public class OrderService(
 
                 if (changedForInspection > 0)
                 {
-                    await dbContext.SaveChangesAsync();
                     response.InspectionsProcessed++;
                     response.ResultsUpserted += changedForInspection;
                 }
@@ -1121,6 +1150,14 @@ public class OrderService(
                 {
                     response.InspectionsSkipped++;
                 }
+            }
+
+            // Single commit at the end: all upserts go in one transaction. A mid-run failure
+            // leaves the previous run's results intact, so re-running is safe (the recompute
+            // bumps ResultsVersion, so partial writes from a prior attempt don't collide).
+            if (response.ResultsUpserted > 0)
+            {
+                await dbContext.SaveChangesAsync();
             }
 
             stopwatch.Stop();
@@ -1134,27 +1171,38 @@ public class OrderService(
 
         public async Task<List<AdminG25InspectionContract.ListItem>> GetAdminG25InspectionsAsync()
         {
+            // Project the latest-result fields via a single ordered subquery so EF emits one SQL
+            // statement instead of two scalar subqueries that each re-sort G25DistanceResults.
             return await dbContext.G25GeneticInspections
                 .AsNoTracking()
                 .OrderByDescending(gi => gi.Id)
-                .Select(gi => new AdminG25InspectionContract.ListItem
+                .Select(gi => new
                 {
-                    Id = gi.Id,
-                    OrderId = gi.OrderId,
-                    FirstName = gi.FirstName,
-                    MiddleName = gi.MiddleName,
-                    LastName = gi.LastName,
+                    gi.Id,
+                    gi.OrderId,
+                    gi.FirstName,
+                    gi.MiddleName,
+                    gi.LastName,
                     UserEmail = gi.User != null ? gi.User.Email : null,
                     HasCoordinates = gi.G25Coordinates != null && gi.G25Coordinates != "",
-                    ResultCount = gi.G25DistanceResults.Count,
-                    LatestResultsVersion = gi.G25DistanceResults
+                    ResultCount = gi.G25DistanceResults.Count(),
+                    Latest = gi.G25DistanceResults
                         .OrderByDescending(r => r.UpdatedAt)
-                        .Select(r => r.ResultsVersion)
+                        .Select(r => new { r.ResultsVersion, r.UpdatedAt })
                         .FirstOrDefault(),
-                    LatestResultsUpdatedAt = gi.G25DistanceResults
-                        .OrderByDescending(r => r.UpdatedAt)
-                        .Select(r => (DateTime?)r.UpdatedAt)
-                        .FirstOrDefault(),
+                })
+                .Select(x => new AdminG25InspectionContract.ListItem
+                {
+                    Id = x.Id,
+                    OrderId = x.OrderId,
+                    FirstName = x.FirstName,
+                    MiddleName = x.MiddleName,
+                    LastName = x.LastName,
+                    UserEmail = x.UserEmail,
+                    HasCoordinates = x.HasCoordinates,
+                    ResultCount = x.ResultCount,
+                    LatestResultsVersion = x.Latest != null ? x.Latest.ResultsVersion : null,
+                    LatestResultsUpdatedAt = x.Latest != null ? (DateTime?)x.Latest.UpdatedAt : null,
                 })
                 .ToListAsync();
         }

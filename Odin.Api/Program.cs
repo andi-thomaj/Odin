@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -167,6 +168,44 @@ namespace Odin.Api
                                 }
                                 return Task.CompletedTask;
                             }
+                        };
+                        // Hangfire dashboard is loaded by the browser via top-level navigation
+                        // (no Authorization header). Forward those requests to the cookie scheme so
+                        // HangfireDashboardAuthFilter sees a populated User. API requests keep the
+                        // JWT default — they always carry a Bearer header.
+                        options.ForwardDefaultSelector = context =>
+                            context.Request.Path.StartsWithSegments("/jobs")
+                                ? HangfireAuthScheme.Name
+                                : null;
+                    })
+                    .AddCookie(HangfireAuthScheme.Name, options =>
+                    {
+                        options.Cookie.Name = "odin_hangfire_session";
+                        options.Cookie.HttpOnly = true;
+                        // Lax lets the cookie ride along on the top-level GET when the admin opens
+                        // /jobs in a new tab from the SPA. Strict would block it. None would require
+                        // Secure on http://localhost during development and break dev entirely.
+                        options.Cookie.SameSite = SameSiteMode.Lax;
+                        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+                            ? CookieSecurePolicy.SameAsRequest
+                            : CookieSecurePolicy.Always;
+                        // Path-scope the cookie so it isn't sent on every API request — only on
+                        // Hangfire dashboard paths under /jobs.
+                        options.Cookie.Path = "/jobs";
+                        options.ExpireTimeSpan = TimeSpan.FromHours(1);
+                        options.SlidingExpiration = true;
+                        // Dashboard is a browser-rendered admin tool, not a login UI — return raw
+                        // 401/403 instead of trying to redirect to a /Account/Login that doesn't
+                        // exist on this app.
+                        options.Events.OnRedirectToLogin = ctx =>
+                        {
+                            ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                            return Task.CompletedTask;
+                        };
+                        options.Events.OnRedirectToAccessDenied = ctx =>
+                        {
+                            ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                            return Task.CompletedTask;
                         };
                     });
             }
@@ -354,8 +393,6 @@ namespace Odin.Api
             services.AddHealthChecks()
                 .AddNpgSql(configuration.GetConnectionString("DefaultConnection")!);
 
-            services.AddOpenApi();
-            
             // ── CORS Configuration ───────────────────────────────────────
             var corsOrigins = BuildCorsAllowedOrigins(configuration);
 
@@ -382,6 +419,11 @@ namespace Odin.Api
                         .SetPreflightMaxAge(TimeSpan.FromHours(24));
                 });
             });
+            // Minimal-API endpoint metadata for Swashbuckle. Without this, ISwaggerProvider
+            // cannot be constructed and the per-request resolution inside UseSwagger's
+            // middleware throws InvalidOperationException on every request — surfacing as
+            // 400 "The request is invalid." via GlobalExceptionHandlerMiddleware.
+            services.AddEndpointsApiExplorer();
             services.AddSwaggerGen(options =>
             {
                 options.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
@@ -421,6 +463,7 @@ namespace Odin.Api
             services.AddSingleton<Odin.Api.Storage.IR2Storage, Odin.Api.Storage.R2Storage>();
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserDataExportService, UserDataExportService>();
             services.AddScoped<IUserProvisioningService, UserProvisioningService>();
             services.AddScoped<IEthnicityService, EthnicityService>();
             services.AddScoped<IEraService, EraService>();
@@ -452,6 +495,8 @@ namespace Odin.Api
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
             services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
+            services.Configure<Odin.Api.Configuration.OrderLimitsOptions>(
+                configuration.GetSection(Odin.Api.Configuration.OrderLimitsOptions.SectionName));
 
             services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
             {
@@ -518,9 +563,11 @@ namespace Odin.Api
                 app.UseRateLimiter();
             app.UseRequestTimeouts();
 
-            if (!app.Environment.IsEnvironment("Testing"))
+            // Swagger only in Development. The middleware resolves ISwaggerProvider per
+            // request, so leaving it on in Production turns every endpoint into a 400 if
+            // anything in the OpenAPI graph fails to construct.
+            if (app.Environment.IsDevelopment())
             {
-                app.MapOpenApi();
                 app.UseSwagger();
                 app.UseSwaggerUI(options =>
                 {
@@ -587,6 +634,7 @@ namespace Odin.Api
             v1.MapG25AdmixtureEraEndpoints();
             v1.MapG25CalculationEndpoints();
             v1.MapG25AdminEndpoints();
+            v1.MapHangfireSessionEndpoints();
             v1.MapCalculatorEndpoints();
             v1.MapAdmixToolsEraEndpoints();
 

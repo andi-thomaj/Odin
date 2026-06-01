@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Odin.Api.Authentication;
 using Odin.Api.Endpoints.UserManagement.Models;
 using Odin.Api.Extensions;
 
@@ -20,6 +21,11 @@ namespace Odin.Api.Endpoints.UserManagement
                 .RequireRateLimiting("authenticated")
                 .Produces<CreateUserContract.Response>(StatusCodes.Status200OK);
 
+            endpoints.MapGet("/me/export", ExportMyData)
+                .RequireAuthorization("EmailVerified")
+                .RequireRateLimiting("strict")
+                .Produces<ExportMyDataContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/{identityId}", GetUserByIdentityId)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated")
@@ -39,6 +45,24 @@ namespace Odin.Api.Endpoints.UserManagement
                 .RequireAuthorization("AdminOnly")
                 .RequireRateLimiting("strict")
                 .Produces<UpdateUserRoleContract.Response>(StatusCodes.Status200OK);
+        }
+
+        private static async Task<IResult> ExportMyData(
+            IUserDataExportService exportService,
+            HttpContext httpContext,
+            CancellationToken cancellationToken)
+        {
+            var identityId = httpContext.User.GetIdentityId();
+            if (string.IsNullOrEmpty(identityId))
+                return Results.Unauthorized();
+
+            var bundle = await exportService.ExportAsync(identityId, cancellationToken);
+            if (bundle is null)
+                return Results.NotFound(new { Message = "No user record found for the authenticated identity." });
+
+            var fileName = $"odin-export-{DateTime.UtcNow:yyyyMMdd-HHmmss}.json";
+            httpContext.Response.Headers.ContentDisposition = $"attachment; filename=\"{fileName}\"";
+            return Results.Ok(bundle);
         }
 
         private static async Task<IResult> ListUsers(IUserService userService, int skip = 0, int take = 50)
