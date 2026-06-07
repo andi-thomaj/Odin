@@ -79,6 +79,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             foreach (var d in services.Where(x => x.ServiceType == typeof(IResendAudienceService)).ToList())
                 services.Remove(d);
             services.AddSingleton<IResendAudienceService, NoOpResendAudienceService>();
+
+            // The real clade finder calls the external Python tools API; swap in a fake.
+            foreach (var d in services
+                         .Where(x => x.ServiceType == typeof(Odin.Api.Endpoints.CladeFinderManagement.ICladeFinderService))
+                         .ToList())
+                services.Remove(d);
+            services.AddSingleton<Odin.Api.Endpoints.CladeFinderManagement.ICladeFinderService, FakeCladeFinderService>();
         });
     }
 

@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 using Odin.Api.Authentication;
 using Odin.Api.Services.Email;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.Admin;
+using Odin.Api.Endpoints.CladeFinderManagement;
 using Odin.Api.Endpoints.AppSettingsManagement;
 using Odin.Api.Endpoints.G25PopulationSampleManagement;
 using Odin.Api.Endpoints.G25DistancePopulationSampleManagement;
@@ -503,6 +505,20 @@ namespace Odin.Api
                 client.BaseAddress = new Uri("https://api.resend.com/");
                 client.Timeout = TimeSpan.FromSeconds(30);
             });
+
+            services.Configure<Odin.Api.Configuration.ToolsApiOptions>(
+                configuration.GetSection(Odin.Api.Configuration.ToolsApiOptions.SectionName));
+            services.AddHttpClient<
+                Odin.Api.Endpoints.CladeFinderManagement.ICladeFinderService,
+                Odin.Api.Endpoints.CladeFinderManagement.CladeFinderService>((sp, client) =>
+            {
+                var toolsOptions = sp.GetRequiredService<IOptions<Odin.Api.Configuration.ToolsApiOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(toolsOptions.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(toolsOptions.BaseUrl);
+                }
+                client.Timeout = TimeSpan.FromSeconds(toolsOptions.TimeoutSeconds);
+            });
             services.AddHttpClient("Auth0UserInfo", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
@@ -637,6 +653,7 @@ namespace Odin.Api
             v1.MapHangfireSessionEndpoints();
             v1.MapCalculatorEndpoints();
             v1.MapAdmixToolsEraEndpoints();
+            v1.MapCladeFinderEndpoints();
 
             // Testing-only diagnostics: lets integration tests force an unhandled exception
             // through GlobalExceptionHandlerMiddleware to verify Serilog → logs table persistence.
