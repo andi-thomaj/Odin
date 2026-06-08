@@ -4,18 +4,22 @@
 
 ### One-time setup
 
-Tests use a **real PostgreSQL** database (no Docker/Testcontainers). They apply EF migrations and reset data between tests.
+By default the suite boots a **disposable PostgreSQL 16 container** via [Testcontainers](https://dotnet.testcontainers.org/) (`postgres:16-alpine`), applies EF migrations + seed data, and resets data between tests with Respawn. **The only prerequisite is a running Docker-API daemon:**
 
-1. Create a dedicated database (once), e.g. `odin_integration_test`, with credentials your API can use.
-2. Prefer setting the connection string when running tests (overrides defaults):
+- **macOS / Windows:** install **Docker Desktop** (on macOS, Colima / OrbStack / Rancher Desktop also work). Testcontainers auto-detects the daemon via `/var/run/docker.sock` or the active `docker context` — no extra configuration.
+- **CI:** GitHub-hosted `ubuntu-latest` has Docker preinstalled (see [.github/workflows/backend-tests.yml](.github/workflows/backend-tests.yml)).
 
-   `ConnectionStrings__DefaultConnection` — full Npgsql connection string, for example:
+No database to create and no connection string to set — just have Docker running, then run the tests.
 
-   `Host=localhost;Port=5432;Database=odin_integration_test;Username=odin;Password=your_password`
+#### Optional: run against an external Postgres instead of the container
 
-3. If the variable is unset, the factory loads **Odin.Api** user secrets (`dotnet user secrets` on the API project). When the secret `ConnectionStrings:DefaultConnection` targets `ancestrify_development` or `odin_db`, the database name is rewritten to **`odin_integration_test`** so tests never hit the dev database. Create that database once on the server (`CREATE DATABASE odin_integration_test;`).
+Set `ConnectionStrings__DefaultConnection` (a full Npgsql connection string) before `dotnet test`; the factory then skips the container and runs Respawn against that database, for example:
 
-4. If there are no user secrets, defaults match [`Odin.Api/appsettings.Testing.json`](Odin.Api/appsettings.Testing.json).
+`Host=localhost;Port=5432;Database=odin_integration_test;Username=odin;Password=your_password`
+
+Create the database first (`CREATE DATABASE odin_integration_test;`). Leave the variable unset (or empty) to use the container — the default, and exactly what CI does. Defaults otherwise match [`Odin.Api/appsettings.Testing.json`](Odin.Api/appsettings.Testing.json).
+
+> ⚠️ Respawn **wipes every public table between tests** — only point the external option at a throwaway database, never one with data you care about.
 
 ### Running tests
 

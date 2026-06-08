@@ -26,6 +26,10 @@
     <PackageReference Include="Xunit.SkippableFact" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Needed to reference ASP.NET Core types (e.g. IFormFile) directly from test doubles. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Odin.Api\Odin.Api.csproj" />
   </ItemGroup>
   <ItemGroup>
