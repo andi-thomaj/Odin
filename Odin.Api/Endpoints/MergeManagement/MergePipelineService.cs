@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Options;
 using Odin.Api.Configuration;
 
@@ -145,7 +146,13 @@ namespace Odin.Api.Endpoints.MergeManagement
             return body;
         }
 
-        private sealed record ConvertDto(string Converted23Andme, string FileName, string SourceVendor);
+        // The snake_case policy maps Converted23Andme → "converted23_andme", but the tools-api emits
+        // "converted_23andme" (digit grouped with "23andme"). Pin it explicitly so the field binds —
+        // otherwise it deserializes to null and the merge job throws on Encoding.GetBytes(null).
+        private sealed record ConvertDto(
+            [property: JsonPropertyName("converted_23andme")] string Converted23Andme,
+            string FileName,
+            string SourceVendor);
         private sealed record MergeDto(string MergeId, string FileName, long SizeBytes, string Panel);
     }
 }
