@@ -13,6 +13,7 @@ using Odin.Api.Endpoints.CladeFinderManagement;
 using Odin.Api.Endpoints.CladeFinderManagement.Models;
 using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25Calculations.Models;
+using Odin.Api.Endpoints.MergeManagement;
 using Odin.Api.Configuration;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.Extensions;
@@ -30,7 +31,7 @@ public interface IOrderService
     Task<bool> DeleteAsync(int id);
     Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
-    Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId, bool isAdmin = false);
+    Task<(int StatusCode, string? Error, string? MergeId, string? FileName, byte[]? LegacyBytes)> ResolveMergedDataDownloadAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(bool Success, int StatusCode, string? Error)> MarkQpadmResultsAsViewedAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(bool Success, int StatusCode, string? Error)> MarkG25ResultsAsViewedAsync(int orderId, string identityId, bool isAdmin = false);
@@ -211,6 +212,12 @@ public class OrderService(
             // enqueued (Hangfire) after the order is safely committed. Enqueue failures must never affect
             // the order — the GET-time backfill recovers any order without a cached clade result.
             EnqueueYDnaCompute(geneticInspection.Id);
+
+            // The order's raw file starts as MergeStatus.NotStarted — i.e. it's now in the logical merge
+            // queue. We don't merge it on creation; we just nudge the dispatcher, which admits it only when
+            // in-flight merges are below the cap (2). Like the Y-DNA enqueue, a failure here must never break
+            // the order — the recurring dispatcher is the backstop.
+            EnqueueMergeDispatch();
 
             return new CreateOrderContract.Response
             {
@@ -837,7 +844,9 @@ public class OrderService(
                 FirstName = order.GeneticInspection.FirstName,
                 MiddleName = order.GeneticInspection.MiddleName,
                 LastName = order.GeneticInspection.LastName,
-                HasMergedRawData = order.GeneticInspection.RawGeneticFile?.MergedRawData is { Length: > 0 },
+                HasMergedRawData =
+                    order.GeneticInspection.RawGeneticFile is { MergeStatus: MergeStatus.Ready, MergeId.Length: > 0 }
+                    || order.GeneticInspection.RawGeneticFile?.MergedRawData is { Length: > 0 },
                 HasProfilePicture = order.GeneticInspection.ProfilePicture is { Length: > 0 },
                 Gender = order.GeneticInspection.Gender?.ToString(),
                 IntroTrackId = introTrack?.Id,
@@ -903,6 +912,24 @@ public class OrderService(
                 logger.LogError(ex,
                     "Failed to enqueue Y-DNA compute for inspection {InspectionId}; it will be backfilled on the next result view.",
                     geneticInspectionId);
+            }
+        }
+
+        /// <summary>
+        /// Nudges the merge dispatcher to admit waiting orders (up to the in-flight cap). The newly created
+        /// order is already in the queue via its raw file's <c>NotStarted</c> status, so this only triggers a
+        /// dispatch pass. Failures are swallowed so they never break order creation; the recurring dispatcher
+        /// is the backstop.
+        /// </summary>
+        private void EnqueueMergeDispatch()
+        {
+            try
+            {
+                backgroundJobClient.Enqueue<IMergeJob>(svc => svc.DispatchPendingMergesAsync(CancellationToken.None));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to enqueue merge dispatch after order creation.");
             }
         }
 
@@ -1084,7 +1111,14 @@ public class OrderService(
             return (response, 200, null);
         }
 
-        public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> DownloadMergedDataForOrderAsync(int orderId, string identityId, bool isAdmin = false)
+        /// <summary>
+        /// Authorizes the caller and resolves where this order's merged dataset lives. The automated merge
+        /// stores the bundle on the tools-api volume (returns <c>MergeId</c> for the endpoint to stream);
+        /// a legacy hand-uploaded blob is returned inline (<c>LegacyBytes</c>). The endpoint turns whichever
+        /// is set into the response, so the multi-GB stream never buffers through this service.
+        /// </summary>
+        public async Task<(int StatusCode, string? Error, string? MergeId, string? FileName, byte[]? LegacyBytes)>
+            ResolveMergedDataDownloadAsync(int orderId, string identityId, bool isAdmin = false)
         {
             var order = await dbContext.QpadmOrders
                 .AsNoTracking()
@@ -1093,17 +1127,28 @@ public class OrderService(
                 .FirstOrDefaultAsync(o => o.Id == orderId);
 
             if (order is null)
-                return (null, null, 404, $"Order with ID {orderId} not found.");
+                return (404, $"Order with ID {orderId} not found.", null, null, null);
 
             if (!isAdmin && order.CreatedBy != identityId)
-                return (null, null, 403, "You do not have permission to access this order's data.");
+                return (403, "You do not have permission to access this order's data.", null, null, null);
 
-            if (order.GeneticInspection?.RawGeneticFile?.MergedRawData is not { Length: > 0 } mergedData)
-                return (null, null, 404, "No merged data available for this order.");
+            var file = order.GeneticInspection?.RawGeneticFile;
 
-            var fileName = order.GeneticInspection.RawGeneticFile.MergedRawDataFileName ?? "merged-data";
+            // Preferred: the automated merge bundle on the tools-api volume.
+            if (file is { MergeStatus: MergeStatus.Ready, MergeId: { Length: > 0 } mergeId })
+            {
+                var name = string.IsNullOrWhiteSpace(file.MergeFileName) ? $"{mergeId}.tar.gz" : file.MergeFileName;
+                return (200, null, mergeId, name, null);
+            }
 
-            return (mergedData, fileName, 200, null);
+            // Legacy: a merged dataset that was uploaded by hand into the DB blob.
+            if (file?.MergedRawData is { Length: > 0 } legacy)
+            {
+                var name = file.MergedRawDataFileName ?? "merged-data";
+                return (200, null, null, name, legacy);
+            }
+
+            return (404, "No merged data available for this order.", null, null, null);
         }
 
         public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, bool isAdmin = false)

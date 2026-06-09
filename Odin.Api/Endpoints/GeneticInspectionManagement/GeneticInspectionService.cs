@@ -1,8 +1,10 @@
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
+using Odin.Api.Endpoints.MergeManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
 using Odin.Api.Extensions;
@@ -31,7 +33,9 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
     public class GeneticInspectionService(
         ApplicationDbContext dbContext,
-        INotificationService notificationService) : IGeneticInspectionService
+        INotificationService notificationService,
+        IBackgroundJobClient backgroundJobClient,
+        ILogger<GeneticInspectionService> logger) : IGeneticInspectionService
     {
         public async Task<CreateGeneticInspectionContract.Response> CreateAsync(
             CreateGeneticInspectionContract.Request request,
@@ -355,6 +359,14 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     inspection.Order.Id.ToString());
             }
 
+            // qpAdm results are in, so the large AADR merge bundle has served its purpose — reclaim the
+            // disk. Idempotent + status-guarded, so it's safe even if a result is resubmitted later.
+            if (inspection.Order.Status == OrderStatus.Completed
+                && inspection.RawGeneticFile is { MergeStatus: not MergeStatus.Deleted, MergeId.Length: > 0 })
+            {
+                EnqueueMergeDelete(inspection.RawGeneticFile.Id);
+            }
+
             var eras = await dbContext.QpadmEras
                 .AsNoTracking()
                 .Where(e => request.EraGroups.Select(g => g.EraId).Contains(e.Id))
@@ -384,6 +396,23 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                         }).ToList()
                 }).ToList()
             };
+        }
+
+        /// <summary>
+        /// Enqueues background deletion of the order's AADR merge bundle (on the tools-api volume) now that
+        /// results are in. Enqueue failures are swallowed so they never break result submission; the
+        /// recurring orphan-cleanup job is the safety net for any bundle that slips through.
+        /// </summary>
+        private void EnqueueMergeDelete(int rawGeneticFileId)
+        {
+            try
+            {
+                backgroundJobClient.Enqueue<IMergeJob>(svc => svc.DeleteAsync(rawGeneticFileId, CancellationToken.None));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Failed to enqueue merge-bundle deletion for raw file {FileId}.", rawGeneticFileId);
+            }
         }
 
         public async Task<SubmitQpadmResultContract.Response?> GetQpadmResultAsync(int inspectionId)

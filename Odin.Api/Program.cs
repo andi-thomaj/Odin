@@ -524,6 +524,25 @@ namespace Odin.Api
             services.AddScoped<
                 Odin.Api.Endpoints.CladeFinderManagement.IYHaplogroupComputeService,
                 Odin.Api.Endpoints.CladeFinderManagement.YHaplogroupComputeService>();
+
+            // Merge pipeline proxy (convert-to-23andMe + AADR merge). Its own HttpClient because the
+            // merge call is long-running (minutes) — uses MergeTimeoutSeconds, not TimeoutSeconds.
+            services.AddHttpClient<
+                Odin.Api.Endpoints.MergeManagement.IMergePipelineService,
+                Odin.Api.Endpoints.MergeManagement.MergePipelineService>((sp, client) =>
+            {
+                var toolsOptions = sp.GetRequiredService<IOptions<Odin.Api.Configuration.ToolsApiOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(toolsOptions.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(toolsOptions.BaseUrl);
+                }
+                client.Timeout = TimeSpan.FromSeconds(toolsOptions.MergeTimeoutSeconds);
+            });
+            // Background convert+merge / delete jobs (enqueued via Hangfire onto the "merge" queue).
+            services.AddScoped<
+                Odin.Api.Endpoints.MergeManagement.IMergeJob,
+                Odin.Api.Endpoints.MergeManagement.MergeJob>();
+
             services.AddHttpClient("Auth0UserInfo", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
@@ -553,9 +572,22 @@ namespace Odin.Api
             // Postgres container or compete with Respawn for table locks.
             if (!builder.Environment.IsEnvironment("Testing"))
             {
+                // Default server: everything except the "merge" queue (Y-DNA compute, cleanup, ...).
                 services.AddHangfireServer(opts =>
                 {
                     opts.WorkerCount = Math.Max(1, Environment.ProcessorCount / 2);
+                    opts.Queues = new[] { "default" };
+                });
+
+                // Dedicated low-concurrency server for the "merge" queue. The AADR merge is memory-heavy
+                // (mergeit on the HO panel); on the 32 GB host two can run side by side, but disk is the
+                // binding constraint (80 GB; each merge needs a multi-GB temp workspace), so keep this
+                // small. MergeJob.RunAsync is [Queue("merge")]. See the README ops notes.
+                services.AddHangfireServer(opts =>
+                {
+                    opts.ServerName = "merge-worker";
+                    opts.WorkerCount = 2;
+                    opts.Queues = new[] { "merge" };
                 });
             }
 
@@ -624,6 +656,25 @@ namespace Odin.Api
                     recurringJobId: "logs-cleanup",
                     methodCall: svc => svc.DeleteAllLogsAsync(CancellationToken.None),
                     cronExpression: "0 3 */5 * *",
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // merge-dispatch: bounded-queue admission. Every minute, admit waiting (NotStarted) qpAdm
+                // merges up to the in-flight cap (2). Backstop for the dispatch passes triggered on order
+                // creation and merge completion — also the only thing that refills capacity if those are
+                // missed. Runs on the default queue (it only enqueues to the "merge" queue, never merges).
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.MergeManagement.IMergeJob>(
+                    recurringJobId: "merge-dispatch",
+                    methodCall: svc => svc.DispatchPendingMergesAsync(CancellationToken.None),
+                    cronExpression: "* * * * *",
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // merge-cleanup: reclaim orphaned AADR merge bundles (completed orders, or past the
+                // retention window) daily at 04:00 UTC. Safety net for deletes that never fired; keeps
+                // the 80 GB disk bounded. CleanupOrphansAsync is [Queue("merge")] so it can't race a live merge.
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.MergeManagement.IMergeJob>(
+                    recurringJobId: "merge-cleanup",
+                    methodCall: svc => svc.CleanupOrphansAsync(CancellationToken.None),
+                    cronExpression: "0 4 * * *",
                     options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
             }
 
