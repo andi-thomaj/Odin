@@ -25,8 +25,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         Task<(byte[] Data, string FileName)?> DownloadGeneticFileAsync(int inspectionId);
         Task<bool> DeleteGeneticFileAsync(int inspectionId);
 
-        Task<SubmitQpadmResultContract.Response?> SubmitQpadmResultAsync(int inspectionId,
-            SubmitQpadmResultContract.Request request);
+        Task<(SubmitQpadmResultContract.Response? Response, int StatusCode, string? Error)> SubmitQpadmResultAsync(
+            int inspectionId, SubmitQpadmResultContract.Request request);
 
         Task<SubmitQpadmResultContract.Response?> GetQpadmResultAsync(int inspectionId);
     }
@@ -257,8 +257,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             return true;
         }
 
-        public async Task<SubmitQpadmResultContract.Response?> SubmitQpadmResultAsync(int inspectionId,
-            SubmitQpadmResultContract.Request request)
+        public async Task<(SubmitQpadmResultContract.Response? Response, int StatusCode, string? Error)>
+            SubmitQpadmResultAsync(int inspectionId, SubmitQpadmResultContract.Request request)
         {
             var inspection = await dbContext.QpadmGeneticInspections
                 .AsSplitQuery()
@@ -272,7 +272,16 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             if (inspection is null)
             {
-                return null;
+                return (null, StatusCodes.Status404NotFound, $"Genetic inspection with ID {inspectionId} not found.");
+            }
+
+            // Results may only be submitted once the AADR merge has finished — the scientist runs qpAdm on
+            // the merged dataset, so submitting before it is ready (or while it failed) is meaningless. Ready
+            // = available now; Deleted = it completed and was cleaned up after a prior submission (edits OK).
+            var mergeStatus = inspection.RawGeneticFile?.MergeStatus;
+            if (mergeStatus is not (MergeStatus.Ready or MergeStatus.Deleted))
+            {
+                return (null, StatusCodes.Status409Conflict, MergeNotReadyMessage(mergeStatus));
             }
 
             if (request.MergedRawDataFile is { Length: > 0 } mergedFile)
@@ -372,7 +381,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .Where(e => request.EraGroups.Select(g => g.EraId).Contains(e.Id))
                 .ToDictionaryAsync(e => e.Id);
 
-            return new SubmitQpadmResultContract.Response
+            var response = new SubmitQpadmResultContract.Response
             {
                 Id = inspection.QpadmResult.Id,
                 GeneticInspectionId = inspectionId,
@@ -396,7 +405,20 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                         }).ToList()
                 }).ToList()
             };
+
+            return (response, StatusCodes.Status201Created, null);
         }
+
+        /// <summary>Human-readable reason a submission was blocked, tailored to the current merge state.</summary>
+        private static string MergeNotReadyMessage(MergeStatus? status) => status switch
+        {
+            MergeStatus.Failed =>
+                "The AADR merge for this order failed, so qpAdm results can't be submitted yet. " +
+                "Resolve the merge (it is retried automatically) before submitting.",
+            _ =>
+                "The AADR merge for this order has not finished yet, so qpAdm results can't be submitted. " +
+                "Please wait until the merge is ready and try again.",
+        };
 
         /// <summary>
         /// Enqueues background deletion of the order's AADR merge bundle (on the tools-api volume) now that

@@ -58,6 +58,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("file-upload")
                 .Produces<SubmitQpadmResultContract.Response>(StatusCodes.Status201Created)
+                .Produces(StatusCodes.Status409Conflict) // AADR merge not finished — results can't be submitted yet
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
         }
 
@@ -164,11 +165,15 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return validationProblem;
             }
 
-            var response = await service.SubmitQpadmResultAsync(id, request);
+            var (response, statusCode, error) = await service.SubmitQpadmResultAsync(id, request);
 
-            return response is null
-                ? Results.NotFound(new { Message = $"Genetic inspection with ID {id} not found." })
-                : Results.Created($"/api/genetic-inspections/{id}/qpadm-result", response);
+            return statusCode switch
+            {
+                StatusCodes.Status201Created =>
+                    Results.Created($"/api/genetic-inspections/{id}/qpadm-result", response),
+                StatusCodes.Status409Conflict => Results.Conflict(new { Message = error }),
+                _ => Results.NotFound(new { Message = error ?? $"Genetic inspection with ID {id} not found." })
+            };
         }
 
     }

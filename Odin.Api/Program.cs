@@ -644,17 +644,21 @@ namespace Odin.Api
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapHealthChecks("/health");
 
-            // Hangfire dashboard — admin-only. Not mounted in Testing.
+            // Hangfire dashboard — mounted in every environment, gated to Admin users by
+            // HangfireDashboardAuthFilter (admins reach it via the SPA "Open Hangfire dashboard" button,
+            // which mints the /jobs-scoped cookie at /v1/api/admin/hangfire/session). A direct, cookie-less
+            // navigation to /jobs returns 401 by design — that is the admin gate, not a routing failure.
+            app.UseHangfireDashboard("/jobs", new DashboardOptions
+            {
+                Authorization = new[] { new HangfireDashboardAuthFilter() },
+                DashboardTitle = "Odin background jobs"
+            });
+
+            // Recurring jobs need a running Hangfire server, which is skipped in Testing — so register them
+            // only outside Testing (the dashboard above only reads storage and is safe to mount everywhere).
             if (!app.Environment.IsEnvironment("Testing"))
             {
-                app.UseHangfireDashboard("/jobs", new DashboardOptions
-                {
-                    Authorization = new[] { new HangfireDashboardAuthFilter() },
-                    DashboardTitle = "Odin background jobs"
-                });
-
-                // Recurring jobs. Registered after the Hangfire storage is wired (see AddHangfire above)
-                // and skipped in Testing because Hangfire itself is not registered there.
+                // Registered after the Hangfire storage is wired (see AddHangfire above).
                 //
                 // logs-cleanup: wipe the `logs` table every 5 days at 03:00 UTC. Cron day-of-month
                 // `*/5` evaluates to days 1,6,11,16,21,26,31 — i.e. roughly every 5 days with a
