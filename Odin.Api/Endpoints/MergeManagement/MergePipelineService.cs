@@ -33,6 +33,12 @@ namespace Odin.Api.Endpoints.MergeManagement
             content.Add(fileContent, "file", string.IsNullOrWhiteSpace(fileName) ? "upload.txt" : fileName);
 
             var dto = await SendAsync<ConvertDto>(HttpMethod.Post, "/v1/merge/convert", content, cancellationToken);
+            // System.Text.Json leaves unmatched fields null even on non-nullable record members, so a
+            // contract drift (renamed field, wrong casing) yields a null here rather than a parse error.
+            // Fail loudly at the boundary instead of letting it blow up deep in the merge job.
+            if (string.IsNullOrEmpty(dto.Converted23Andme))
+                throw new MergePipelineException(HttpStatusCode.BadGateway,
+                    "Merge convert API returned no converted 23andMe data.");
             return new ConvertResult(dto.Converted23Andme, dto.FileName, dto.SourceVendor);
         }
 

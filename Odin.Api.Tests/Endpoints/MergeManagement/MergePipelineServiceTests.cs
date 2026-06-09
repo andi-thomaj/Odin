@@ -100,6 +100,27 @@ public class MergePipelineServiceTests
     }
 
     [Fact]
+    public async Task ConvertAsync_Throws_WhenConvertedDataMissing()
+    {
+        // Simulates contract drift: a 200 whose converted field is absent/renamed. The boundary guard
+        // must turn this into a clear exception rather than returning a null that crashes the job later.
+        const string missingFieldJson = """
+            { "file_name": "converted.txt", "source_vendor": "ancestry" }
+            """;
+        var handler = new StubHandler((_, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(missingFieldJson, System.Text.Encoding.UTF8, "application/json"),
+            }));
+
+        var service = CreateService(handler, apiKey: "k");
+
+        var ex = await Assert.ThrowsAsync<MergePipelineException>(() =>
+            service.ConvertAsync("d"u8.ToArray(), "x.txt"));
+        Assert.Equal(HttpStatusCode.BadGateway, ex.StatusCode);
+    }
+
+    [Fact]
     public async Task ConvertAsync_Throws_WithStatusAndDetail_OnErrorResponse()
     {
         var handler = new StubHandler((_, _) =>
