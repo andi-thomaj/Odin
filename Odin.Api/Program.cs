@@ -560,13 +560,21 @@ namespace Odin.Api
             // in G25AdminEndpoints — can be bound during host startup. ASP.NET Core eagerly
             // resolves every endpoint's parameters when the pipeline builds, so a missing
             // service here fails the entire test host with "Failure to infer one or more
-            // parameters". UsePostgreSqlStorage does not open a connection at registration
-            // time; tests never enqueue jobs or start the server, so the storage stays cold.
-            services.AddHangfire(hf => hf
+            // parameters". The storage stays cold (no connection opened) until the first job
+            // is enqueued or the server starts — but the connection string must still PARSE
+            // when the storage is built. Order creation enqueues a Y-DNA compute job, so even
+            // in tests IBackgroundJobClient gets resolved and the storage gets built; read the
+            // connection string from the live configuration (not the outer `connectionString`
+            // captured before WebApplicationFactory's ConfigureAppConfiguration overrides apply)
+            // so the test host's container connection string is honored — same reason the
+            // Serilog sink above re-reads from context.Configuration.
+            services.AddHangfire((provider, hf) => hf
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
-                .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connectionString)));
+                .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(
+                    provider.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
+                        ?? connectionString)));
 
             // Worker process — skipped in Testing so the suite doesn't poll the throwaway
             // Postgres container or compete with Respawn for table locks.
