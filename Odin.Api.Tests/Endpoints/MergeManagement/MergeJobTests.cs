@@ -198,6 +198,52 @@ public class MergeJobTests
         Assert.False(called);
     }
 
+    [Fact]
+    public async Task CleanupOrphans_DeletesReadyBundleOlderThanRetentionHours()
+    {
+        await using var db = CreateDbContext();
+        var (_, fileId) = await SeedOrderAsync(db); // order stays Pending → only retention applies
+        var file = await db.RawGeneticFiles.SingleAsync(f => f.Id == fileId);
+        file.MergeStatus = MergeStatus.Ready;
+        file.MergeId = "insp-1-stale";
+        file.MergeFileName = "insp-1-stale.tar.gz";
+        file.MergeSizeBytes = 999;
+        file.UpdatedAt = DateTime.UtcNow.AddHours(-25); // just past the 24h window
+        await db.SaveChangesAsync();
+
+        string? deleted = null;
+        var proxy = new StubMergeService { OnDelete = id => { deleted = id; return Task.CompletedTask; } };
+        var job = CreateJob(db, proxy);
+
+        await job.CleanupOrphansAsync();
+
+        Assert.Equal("insp-1-stale", deleted);
+        var after = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
+        Assert.Equal(MergeStatus.Deleted, after.MergeStatus);
+    }
+
+    [Fact]
+    public async Task CleanupOrphans_KeepsRecentUnconsumedBundle()
+    {
+        await using var db = CreateDbContext();
+        var (_, fileId) = await SeedOrderAsync(db); // order stays Pending → only retention applies
+        var file = await db.RawGeneticFiles.SingleAsync(f => f.Id == fileId);
+        file.MergeStatus = MergeStatus.Ready;
+        file.MergeId = "insp-1-fresh";
+        file.UpdatedAt = DateTime.UtcNow.AddHours(-1); // well within the 24h window
+        await db.SaveChangesAsync();
+
+        var called = false;
+        var proxy = new StubMergeService { OnDelete = _ => { called = true; return Task.CompletedTask; } };
+        var job = CreateJob(db, proxy);
+
+        await job.CleanupOrphansAsync();
+
+        Assert.False(called);
+        var after = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
+        Assert.Equal(MergeStatus.Ready, after.MergeStatus);
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────
     private static MergeJob CreateJob(
         ApplicationDbContext db, IMergePipelineService proxy, IBackgroundJobClient? jobClient = null)

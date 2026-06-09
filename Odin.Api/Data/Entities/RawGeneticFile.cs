@@ -26,6 +26,9 @@ namespace Odin.Api.Data.Entities
         public string? MergeId { get; set; }
         public string? MergeFileName { get; set; }
         public long? MergeSizeBytes { get; set; }
+        // Wall-clock the automated convert+merge took to produce the bundle (set on success). Null
+        // until a merge completes; preserved after the bundle is deleted so the duration stays visible.
+        public double? MergeDurationSeconds { get; set; }
         public string? MergeError { get; set; }
 
         public bool IsDeleted { get; set; }

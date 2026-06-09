@@ -102,6 +102,9 @@ namespace Odin.Api.Endpoints.MergeManagement
 
             try
             {
+                // Time the whole convert+merge so the table can show how long the order took to merge.
+                var mergeStopwatch = System.Diagnostics.Stopwatch.StartNew();
+
                 // 1. Convert raw → 23andMe and persist (small, kept in the DB).
                 file.MergeStatus = MergeStatus.Converting;
                 await dbContext.SaveChangesAsync(cancellationToken);
@@ -129,6 +132,7 @@ namespace Odin.Api.Endpoints.MergeManagement
                 file.MergeStatus = MergeStatus.Ready;
                 file.MergeFileName = result.FileName;
                 file.MergeSizeBytes = result.SizeBytes;
+                file.MergeDurationSeconds = mergeStopwatch.Elapsed.TotalSeconds;
                 file.MergeError = null;
                 await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -177,13 +181,14 @@ namespace Odin.Api.Endpoints.MergeManagement
         }
 
         // How long an unconsumed (order-not-completed) merge bundle may linger before the cleanup
-        // sweep reclaims its disk. Generous enough for a scientist to download + run qpAdm.
-        private const int RetentionDays = 14;
+        // sweep reclaims its disk. With qpAdm automation a bundle is normally consumed (order Completed,
+        // inline-deleted) within minutes; this is only a backstop for stalled/never-completed orders.
+        private const int RetentionHours = 24;
 
         [Queue("merge")]
         public async Task CleanupOrphansAsync(CancellationToken cancellationToken = default)
         {
-            var cutoff = DateTime.UtcNow.AddDays(-RetentionDays);
+            var cutoff = DateTime.UtcNow.AddHours(-RetentionHours);
 
             var orphanIds = await dbContext.RawGeneticFiles
                 .IgnoreQueryFilters()

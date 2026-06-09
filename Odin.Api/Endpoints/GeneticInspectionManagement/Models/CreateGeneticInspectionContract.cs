@@ -86,6 +86,9 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
             public required string RawGeneticFileName { get; set; }
             public required string OrderStatus { get; set; }
             public required string MergeStatus { get; set; }
+            // How long the automated merge took, in seconds (null until a merge has completed). The FE
+            // formats this to minutes for the qpAdm Input table.
+            public double? MergeDurationSeconds { get; set; }
             public DateTime CreatedAt { get; set; }
             public string? Country { get; set; }
             public string? CountryCode { get; set; }
