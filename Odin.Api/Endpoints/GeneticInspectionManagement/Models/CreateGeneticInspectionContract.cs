@@ -85,6 +85,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement.Models
             public int RawGeneticFileId { get; set; }
             public required string RawGeneticFileName { get; set; }
             public required string OrderStatus { get; set; }
+            public required string MergeStatus { get; set; }
             public DateTime CreatedAt { get; set; }
             public string? Country { get; set; }
             public string? CountryCode { get; set; }

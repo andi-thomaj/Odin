@@ -319,11 +319,16 @@ namespace Odin.Api
                 // Exclude SignalR endpoints from global rate limiting (they have their own connection management)
                 options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
                 {
-                    // Skip rate limiting for SignalR hubs (negotiation and connection endpoints)
+                    // Skip rate limiting for SignalR hubs (negotiation and connection endpoints) and for
+                    // the Hangfire dashboard under /jobs — its stats endpoint auto-polls every couple of
+                    // seconds, which trips the per-minute window and surfaces as a 429 in the dashboard.
+                    // /jobs is already restricted to Admins by HangfireDashboardAuthFilter, so it doesn't
+                    // need IP/user rate limiting.
                     var path = context.Request.Path.Value ?? "";
-                    if (path.StartsWith("/hubs/", StringComparison.OrdinalIgnoreCase))
+                    if (path.StartsWith("/hubs/", StringComparison.OrdinalIgnoreCase)
+                        || path.StartsWith("/jobs", StringComparison.OrdinalIgnoreCase))
                     {
-                        // Return a no-op limiter for SignalR endpoints
+                        // Return a no-op limiter for these endpoints
                         return RateLimitPartition.GetNoLimiter(partitionKey: "");
                     }
 
