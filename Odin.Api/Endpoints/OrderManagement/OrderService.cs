@@ -142,7 +142,10 @@ public class OrderService(
 
                 var rawGeneticFile = new RawGeneticFile
                 {
-                    RawDataFileName = request.File.FileName,
+                    // Stamp the stored name with the order's subject name + a UTC timestamp so the per-user
+                    // (CreatedBy, RawDataFileName WHERE IsDeleted = false) uniqueness index never collides
+                    // when the same person re-uploads a same-named file (e.g. "genome.txt") across orders.
+                    RawDataFileName = BuildUniqueStoredFileName(request.File!.FileName, request.FirstName, request.LastName),
                     RawData = data,
                     CreatedBy = identityId
                 };
@@ -269,7 +272,10 @@ public class OrderService(
 
                 var rawGeneticFile = new RawGeneticFile
                 {
-                    RawDataFileName = request.File.FileName,
+                    // Stamp the stored name with the order's subject name + a UTC timestamp so the per-user
+                    // (CreatedBy, RawDataFileName WHERE IsDeleted = false) uniqueness index never collides
+                    // when the same person re-uploads a same-named file (e.g. "genome.txt") across orders.
+                    RawDataFileName = BuildUniqueStoredFileName(request.File!.FileName, request.FirstName, request.LastName),
                     RawData = data,
                     CreatedBy = identityId
                 };
@@ -900,6 +906,31 @@ public class OrderService(
         /// Hangfire storage hiccup) are swallowed: they must never break order creation or a result view,
         /// and the GET-time backfill re-attempts any inspection that lacks a cached clade result.
         /// </summary>
+        /// <summary>
+        /// Builds the stored file name for an uploaded genetic file, appending the order subject's first +
+        /// last name and a UTC timestamp so the per-user (CreatedBy, RawDataFileName) uniqueness index can
+        /// never collide when the same person uploads a same-named file across multiple orders. The original
+        /// extension is preserved (downstream merge/convert keys off it) and the result is capped at the
+        /// column's 200-char limit by trimming the original stem, never the uniqueness suffix.
+        /// </summary>
+        private static string BuildUniqueStoredFileName(string originalFileName, string firstName, string lastName)
+        {
+            const int maxLength = 200; // matches RawGeneticFileConfiguration.RawDataFileName max length
+
+            var extension = Path.GetExtension(originalFileName);
+            var stem = Path.GetFileNameWithoutExtension(originalFileName);
+
+            var who = string.Concat($"{firstName}{lastName}".Where(char.IsLetterOrDigit));
+            if (string.IsNullOrEmpty(who)) who = "user";
+
+            var suffix = $"-{who}-{DateTime.UtcNow:yyyyMMddHHmmssfff}{extension}";
+
+            var stemBudget = Math.Max(0, maxLength - suffix.Length);
+            if (stem.Length > stemBudget) stem = stem[..stemBudget];
+
+            return $"{stem}{suffix}";
+        }
+
         private void EnqueueYDnaCompute(int geneticInspectionId)
         {
             try
