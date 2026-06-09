@@ -493,6 +493,7 @@ namespace Odin.Api
             services.AddScoped<IAdmixToolsEraService, AdmixToolsEraService>();
             services.AddScoped<ILogCleanupService, LogCleanupService>();
             services.AddScoped<Odin.Api.Endpoints.Admin.IG25SeedImportService, Odin.Api.Endpoints.Admin.G25SeedImportService>();
+            services.AddScoped<IBackendCacheMaintenanceService, BackendCacheMaintenanceService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
@@ -519,6 +520,10 @@ namespace Odin.Api
                 }
                 client.Timeout = TimeSpan.FromSeconds(toolsOptions.TimeoutSeconds);
             });
+            // Background Y-DNA clade computation for qpAdm orders (enqueued via Hangfire at order time).
+            services.AddScoped<
+                Odin.Api.Endpoints.CladeFinderManagement.IYHaplogroupComputeService,
+                Odin.Api.Endpoints.CladeFinderManagement.YHaplogroupComputeService>();
             services.AddHttpClient("Auth0UserInfo", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
@@ -650,6 +655,7 @@ namespace Odin.Api
             v1.MapG25AdmixtureEraEndpoints();
             v1.MapG25CalculationEndpoints();
             v1.MapG25AdminEndpoints();
+            v1.MapCacheAdminEndpoints();
             v1.MapHangfireSessionEndpoints();
             v1.MapCalculatorEndpoints();
             v1.MapAdmixToolsEraEndpoints();

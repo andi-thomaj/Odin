@@ -19,6 +19,7 @@ namespace Odin.Api.Data.Entities
         public byte[]? ProfilePicture { get; set; }
         public string? ProfilePictureFileName { get; set; }
         public QpadmResult? QpadmResult { get; set; }
+        public QpadmCladeResult? QpadmCladeResult { get; set; }
         public int OrderId { get; set; }
         public QpadmOrder Order { get; set; }
     }

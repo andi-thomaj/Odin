@@ -15,6 +15,7 @@ namespace Odin.Api.Data
         public DbSet<QpadmPopulation> QpadmPopulations { get; set; }
         public DbSet<MusicTrack> MusicTracks { get; set; }
         public DbSet<QpadmResult> QpadmResults { get; set; }
+        public DbSet<QpadmCladeResult> QpadmCladeResults { get; set; }
         public DbSet<QpadmResultEraGroup> QpadmResultEraGroups { get; set; }
         public DbSet<QpadmOrder> QpadmOrders { get; set; }
         public DbSet<G25Order> G25Orders { get; set; }

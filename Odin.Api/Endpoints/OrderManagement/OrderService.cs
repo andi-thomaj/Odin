@@ -1,11 +1,16 @@
 using System.Diagnostics;
 using System.Text;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.Admin.Models;
+using Odin.Api.Endpoints.CladeFinderManagement;
+using Odin.Api.Endpoints.CladeFinderManagement.Models;
 using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25Calculations.Models;
 using Odin.Api.Configuration;
@@ -33,17 +38,41 @@ public interface IOrderService
     Task<List<AdminG25InspectionContract.ListItem>> GetAdminG25InspectionsAsync();
 }
 
+/// <summary>
+/// Cache keys for the per-order Ancient Origins result payloads. qpAdm and G25 order IDs are
+/// independent sequences and can collide, so each service is namespaced. The qpAdm key is also
+/// removed by the Y-DNA backfill job when a clade result is (re)computed.
+/// </summary>
+internal static class OrderResultCacheKeys
+{
+    internal static string Qpadm(int orderId) => $"order-result:qpadm:{orderId}";
+    internal static string G25(int orderId) => $"order-result:g25:{orderId}";
+}
+
 public class OrderService(
     ApplicationDbContext dbContext,
     IGeoLocationService geoLocationService,
     IG25CalculationService g25CalculationService,
+    IBackgroundJobClient backgroundJobClient,
     IOptions<OrderLimitsOptions> orderLimitsOptions,
+    IMemoryCache cache,
+    IHostEnvironment hostEnvironment,
     ILogger<OrderService> logger) : IOrderService
 {
         private const string G25DistanceResultsVersion = "v1";
         private int MaxEthnicities => orderLimitsOptions.Value.MaxEthnicities;
         private int MaxRegionsPerEthnicity => orderLimitsOptions.Value.MaxRegionsPerEthnicity;
         private int G25DistanceMaxResults => orderLimitsOptions.Value.G25DistanceMaxResults;
+        private static readonly TimeSpan ResultCacheDuration = TimeSpan.FromDays(5);
+
+        // The qpAdm payload embeds a Y-DNA tab whose status is "Pending" (no clade row yet — a backfill
+        // was just enqueued) or "Unavailable" (transient failure — re-enqueued to self-heal) until the
+        // background analysis lands. Those states change on a later view, so they must never be frozen in
+        // the cache; every other status is terminal. Deny-list form so any future transient status is
+        // treated as non-cacheable by default.
+        internal static bool IsQpadmResponseCacheable(GetOrderQpadmResultContract.Response response) =>
+            response.YDna is { Status: var status }
+            && status is not ("Pending" or nameof(CladeAnalysisStatus.Unavailable));
 
         public async Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null)
         {
@@ -175,6 +204,13 @@ public class OrderService(
 
             await dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            // Compute the Y-DNA clade from the uploaded raw data in the background and cache it, so the
+            // "Y-DNA Haplogroup" tab on the result view is ready without recomputing on every view. The
+            // clade service is an external call; running it inline would block order creation, so it is
+            // enqueued (Hangfire) after the order is safely committed. Enqueue failures must never affect
+            // the order — the GET-time backfill recovers any order without a cached clade result.
+            EnqueueYDnaCompute(geneticInspection.Id);
 
             return new CreateOrderContract.Response
             {
@@ -739,6 +775,7 @@ public class OrderService(
 
             dbContext.QpadmOrders.Remove(order);
             await dbContext.SaveChangesAsync();
+            cache.Remove(OrderResultCacheKeys.Qpadm(id));
             return true;
         }
 
@@ -761,6 +798,10 @@ public class OrderService(
 
             if (order.GeneticInspection is null)
                 return (null, 404, "No genetic inspection associated with this order.");
+
+            if (!hostEnvironment.IsEnvironment("Testing") &&
+                cache.TryGetValue(OrderResultCacheKeys.Qpadm(orderId), out GetOrderQpadmResultContract.Response? cachedResponse))
+                return (cachedResponse!, 200, null);
 
             var qpadmResult = await dbContext.QpadmResults
                 .AsNoTracking()
@@ -787,6 +828,9 @@ public class OrderService(
             // in-memory .Select() below where navigation properties aren't loaded.
             var trackIdsWithAudio = new HashSet<int>(
                 await dbContext.MusicTrackFiles.Select(f => f.MusicTrackId).ToListAsync());
+
+            var yDna = await BuildYDnaResultAsync(
+                order.GeneticInspection.Id, order.GeneticInspection.Gender?.ToString());
 
             var response = new GetOrderQpadmResultContract.Response
             {
@@ -827,10 +871,108 @@ public class OrderService(
                             StandardError = qrp.StandardError,
                             ZScore = qrp.ZScore,
                         }).ToList()
-                }).ToList()
+                }).ToList(),
+                YDna = yDna
             };
 
+            if (!hostEnvironment.IsEnvironment("Testing") && IsQpadmResponseCacheable(response))
+            {
+                cache.Set(OrderResultCacheKeys.Qpadm(orderId), response, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = ResultCacheDuration
+                });
+            }
+
             return (response, 200, null);
+        }
+
+        /// <summary>
+        /// Enqueues the background Y-DNA clade computation for an inspection. Enqueue failures (e.g. a
+        /// Hangfire storage hiccup) are swallowed: they must never break order creation or a result view,
+        /// and the GET-time backfill re-attempts any inspection that lacks a cached clade result.
+        /// </summary>
+        private void EnqueueYDnaCompute(int geneticInspectionId)
+        {
+            try
+            {
+                backgroundJobClient.Enqueue<IYHaplogroupComputeService>(
+                    svc => svc.ComputeAndPersistAsync(geneticInspectionId, CancellationToken.None));
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex,
+                    "Failed to enqueue Y-DNA compute for inspection {InspectionId}; it will be backfilled on the next result view.",
+                    geneticInspectionId);
+            }
+        }
+
+        /// <summary>
+        /// Builds the Y-DNA tab payload from the cached <see cref="QpadmCladeResult"/>. When no cache exists
+        /// (legacy / not-yet-computed orders) or a prior attempt was transiently <c>Unavailable</c>, it
+        /// enqueues a background backfill so the next view is served from cache. Female kits resolve to
+        /// <c>NotApplicable</c> without any service call.
+        /// </summary>
+        private async Task<GetOrderQpadmResultContract.YDnaResult> BuildYDnaResultAsync(
+            int geneticInspectionId, string? gender)
+        {
+            var record = await dbContext.QpadmCladeResults
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.GeneticInspectionId == geneticInspectionId);
+
+            var isFemale = string.Equals(gender, nameof(Gender.Female), StringComparison.OrdinalIgnoreCase);
+
+            if (record is null)
+            {
+                if (isFemale)
+                    return new GetOrderQpadmResultContract.YDnaResult
+                    {
+                        Status = nameof(CladeAnalysisStatus.NotApplicable),
+                        Message = "Y-DNA follows the direct paternal line and is only present in male kits, " +
+                                  "so a Y-DNA haplogroup can't be determined for this sample.",
+                    };
+
+                EnqueueYDnaCompute(geneticInspectionId);
+                return new GetOrderQpadmResultContract.YDnaResult
+                {
+                    Status = "Pending",
+                    Message = "Your Y-DNA analysis is being prepared — check back shortly.",
+                };
+            }
+
+            // A transient failure self-heals on view: re-enqueue while still showing the cached message.
+            if (record.Status == CladeAnalysisStatus.Unavailable && !isFemale)
+                EnqueueYDnaCompute(geneticInspectionId);
+
+            return new GetOrderQpadmResultContract.YDnaResult
+            {
+                Status = record.Status.ToString(),
+                Message = record.Message,
+                Clade = record.Status == CladeAnalysisStatus.Completed
+                    ? new AnalyzeCladeContract.Response
+                    {
+                        Clade = record.Clade,
+                        Score = record.Score,
+                        NextPrediction = record.NextPredictionClade is null
+                            ? null
+                            : new AnalyzeCladeContract.NextPrediction
+                            {
+                                Clade = record.NextPredictionClade,
+                                Score = record.NextPredictionScore ?? 0,
+                            },
+                        Downstream = record.Downstream
+                            .Select(d => new AnalyzeCladeContract.DownstreamClade { Clade = d.Clade, Children = d.Children })
+                            .ToList(),
+                        Lineage = record.Lineage.ToList(),
+                        Warning = record.Warning,
+                        Error = record.Error,
+                        PositivesUsed = record.PositivesUsed,
+                        NegativesUsed = record.NegativesUsed,
+                        YReads = record.YReads,
+                        SourceFormat = record.SourceFormat,
+                        EffectiveBuild = record.EffectiveBuild,
+                    }
+                    : null,
+            };
         }
 
         public async Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId, bool isAdmin = false)
@@ -844,6 +986,10 @@ public class OrderService(
 
             if (!isAdmin && order.CreatedBy != identityId)
                 return (null, 403, null);
+
+            if (!hostEnvironment.IsEnvironment("Testing") &&
+                cache.TryGetValue(OrderResultCacheKeys.G25(orderId), out GetOrderG25ResultContract.Response? cachedResponse))
+                return (cachedResponse!, 200, null);
 
             var inspection = await dbContext.G25GeneticInspections
                 .AsNoTracking()
@@ -924,6 +1070,16 @@ public class OrderService(
                 Admixture = admixture,
                 Pca = pca
             };
+
+            if (!hostEnvironment.IsEnvironment("Testing")
+                && order.Status == OrderStatus.Completed
+                && distanceResults.Count > 0)
+            {
+                cache.Set(OrderResultCacheKeys.G25(orderId), response, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = ResultCacheDuration
+                });
+            }
 
             return (response, 200, null);
         }
@@ -1049,7 +1205,7 @@ public class OrderService(
             }
 
             var inspections = await inspectionsQuery
-                .Select(gi => new { gi.Id, gi.FirstName, gi.LastName, gi.G25Coordinates })
+                .Select(gi => new { gi.Id, gi.OrderId, gi.FirstName, gi.LastName, gi.G25Coordinates })
                 .ToListAsync();
 
             if (response.InspectionsRequested == 0)
@@ -1067,6 +1223,9 @@ public class OrderService(
             var existingByInspection = allExisting
                 .GroupBy(r => r.GeneticInspectionId)
                 .ToDictionary(g => g.Key, g => g.ToDictionary(r => r.G25DistanceEraId));
+
+            // Order IDs whose cached G25 result payload must be busted once the recompute commits.
+            var changedOrderIds = new List<int>();
 
             foreach (var inspection in inspections)
             {
@@ -1145,6 +1304,7 @@ public class OrderService(
                 {
                     response.InspectionsProcessed++;
                     response.ResultsUpserted += changedForInspection;
+                    changedOrderIds.Add(inspection.OrderId);
                 }
                 else
                 {
@@ -1158,6 +1318,9 @@ public class OrderService(
             if (response.ResultsUpserted > 0)
             {
                 await dbContext.SaveChangesAsync();
+
+                foreach (var changedOrderId in changedOrderIds)
+                    cache.Remove(OrderResultCacheKeys.G25(changedOrderId));
             }
 
             stopwatch.Stop();
