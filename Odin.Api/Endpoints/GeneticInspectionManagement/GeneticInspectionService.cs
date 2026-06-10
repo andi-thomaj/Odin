@@ -25,6 +25,11 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         Task<(byte[] Data, string FileName)?> DownloadGeneticFileAsync(int inspectionId);
         Task<bool> DeleteGeneticFileAsync(int inspectionId);
 
+        /// <summary>Resolve the merged AADR bundle for download: the tools-api merge id and a client-named
+        /// .zip filename, gated on the merge being <see cref="MergeStatus.Ready"/>.</summary>
+        Task<(int StatusCode, string? Error, string? MergeId, string FileName)> ResolveMergedDataDownloadAsync(
+            int inspectionId);
+
         Task<(SubmitQpadmResultContract.Response? Response, int StatusCode, string? Error)> SubmitQpadmResultAsync(
             int inspectionId, SubmitQpadmResultContract.Request request);
 
@@ -259,6 +264,40 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             inspection.RawGeneticFile.IsDeleted = true;
             await dbContext.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<(int StatusCode, string? Error, string? MergeId, string FileName)>
+            ResolveMergedDataDownloadAsync(int inspectionId)
+        {
+            var inspection = await dbContext.QpadmGeneticInspections
+                .AsNoTracking()
+                .Include(gi => gi.RawGeneticFile)
+                .FirstOrDefaultAsync(gi => gi.Id == inspectionId);
+
+            if (inspection is null)
+                return (StatusCodes.Status404NotFound,
+                    $"Genetic inspection with ID {inspectionId} not found.", null, string.Empty);
+
+            var file = inspection.RawGeneticFile;
+            // The bundle lives on the tools-api volume only while the merge is Ready — it's deleted once
+            // the order completes (MergeStatus.Deleted), so anything other than Ready has nothing to serve.
+            if (file is null || string.IsNullOrWhiteSpace(file.MergeId) || file.MergeStatus != MergeStatus.Ready)
+                return (StatusCodes.Status409Conflict,
+                    "The merged dataset is not available to download (the merge must be Ready).", null, string.Empty);
+
+            var clientName = string.Join(" ",
+                new[] { inspection.FirstName, inspection.MiddleName, inspection.LastName }
+                    .Where(s => !string.IsNullOrWhiteSpace(s)));
+            return (StatusCodes.Status200OK, null, file.MergeId, $"{SafeFileStem(clientName)}_merged.zip");
+        }
+
+        /// <summary>Turn a client name into a filesystem-safe filename stem (letters/digits → kept, else "_").</summary>
+        private static string SafeFileStem(string name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return "client";
+            var stem = new string(name.Select(c => char.IsLetterOrDigit(c) ? c : '_').ToArray()).Trim('_');
+            return string.IsNullOrEmpty(stem) ? "client" : stem;
         }
 
         public async Task<(SubmitQpadmResultContract.Response? Response, int StatusCode, string? Error)>

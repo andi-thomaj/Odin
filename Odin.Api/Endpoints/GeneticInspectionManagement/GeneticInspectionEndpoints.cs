@@ -1,6 +1,9 @@
+using System.Formats.Tar;
+using System.IO.Compression;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
+using Odin.Api.Endpoints.MergeManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
 using Odin.Api.Extensions;
 
@@ -40,6 +43,12 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
 
             endpoints.MapGet("/{id:int}/genetic-file/download", DownloadGeneticFile)
+                .RequireAuthorization("ScientistOrAdmin")
+                .RequireRateLimiting("authenticated");
+
+            // Download the merged AADR product (the .geno/.snp/.ind triplet) as a .zip. The tools-api
+            // stores it as a .tar.gz, so we re-package it to .zip on the fly (streamed, no buffering).
+            endpoints.MapGet("/{id:int}/merged-data/download", DownloadMergedData)
                 .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("authenticated");
 
@@ -134,6 +143,56 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             var (data, fileName) = result.Value;
             return Results.File(data, "application/octet-stream", fileName);
+        }
+
+        private static async Task<IResult> DownloadMergedData(
+            IGeneticInspectionService service, IMergePipelineService mergeService, HttpContext httpContext, int id)
+        {
+            var (statusCode, error, mergeId, fileName) = await service.ResolveMergedDataDownloadAsync(id);
+            if (statusCode != StatusCodes.Status200OK)
+            {
+                return statusCode switch
+                {
+                    StatusCodes.Status409Conflict => Results.Conflict(new { Message = error }),
+                    _ => Results.NotFound(new { Message = error })
+                };
+            }
+
+            // Pull the bundle from the tools-api (it's a .tar.gz) without buffering, then re-package it to
+            // a .zip on the wire so the client gets a folder that opens natively on Windows/macOS.
+            var ct = httpContext.RequestAborted;
+            HttpResponseMessage upstream;
+            try
+            {
+                upstream = await mergeService.OpenDownloadAsync(mergeId!, ct);
+            }
+            catch (MergePipelineException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Results.NotFound(new { Message = "The merged dataset is no longer available for this order." });
+            }
+
+            return Results.Stream(async outputStream =>
+            {
+                using (upstream)
+                await using (var body = await upstream.Content.ReadAsStreamAsync(ct))
+                await using (var gunzip = new GZipStream(body, CompressionMode.Decompress))
+                using (var tar = new TarReader(gunzip))
+                using (var zip = new ZipArchive(outputStream, ZipArchiveMode.Create, leaveOpen: true))
+                {
+                    // The bundle holds the 3 merged files (<sample>_merged.geno/.snp/.ind). Copy each into
+                    // the zip; DataStream is valid only until the next entry, so we copy before advancing.
+                    while (await tar.GetNextEntryAsync(cancellationToken: ct) is { } entry)
+                    {
+                        if (entry.DataStream is null
+                            || entry.EntryType is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile))
+                            continue;
+
+                        var zipEntry = zip.CreateEntry(Path.GetFileName(entry.Name), CompressionLevel.Optimal);
+                        await using var entryStream = zipEntry.Open();
+                        await entry.DataStream.CopyToAsync(entryStream, ct);
+                    }
+                }
+            }, "application/zip", fileName);
         }
 
         private static async Task<IResult> DeleteGeneticFile(IGeneticInspectionService service, int id)
