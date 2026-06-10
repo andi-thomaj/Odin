@@ -322,6 +322,18 @@ public class MergeJobTests
 
         public Task DeleteAsync(string mergeId, CancellationToken cancellationToken = default)
             => OnDelete!(mergeId);
+
+        // The merge job never touches panel restore; these are admin-endpoint-only.
+        public Task<PanelStatusResult> GetPanelStatusAsync(string? panel, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<PanelUploadResult> UploadPanelFileAsync(
+            string ext, string? panel, string? sha256, Stream body, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<PanelActivateResult> ActivatePanelAsync(
+            string? panel, bool force, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
     }
 
     private sealed class FakeJobClient : IBackgroundJobClient

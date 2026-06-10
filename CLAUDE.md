@@ -69,3 +69,16 @@ endpoints.MapGet("/foo", GetFoo)
 ```
 
 Without `.Produces<T>()`, Swashbuckle emits an empty `content` for the 200 response and `gen:api` won't expose the type to the FE.
+
+## Admin merge-panel restore — streamed multi-GB upload (raised limits)
+
+The AADR `HO` merge panel is a pre-built upload (`v66_2M_aadr_PUB.{geno,snp,ind}`), not Poseidon-provisioned. `MergePanelAdminEndpoints` (`api/admin/merge-panel/*`, `AdminOnly`) proxies the tools-api `/v1/merge/panel/restore/*` flow: `GET status`, `POST upload` (one file at a time), `POST activate`. The frontend surfaces it as Admin → "Restore merge panel".
+
+These files are **2–10 GB**, so the upload path deliberately departs from the global 50 MB limits:
+
+- **Streamed, never buffered.** The browser sends each file as the **raw request body** (`application/octet-stream`); `ext`/`panel`/`sha256` ride as query params. The `upload` handler pipes `HttpContext.Request.Body` straight into `StreamContent` to the tools-api (`MergePipelineService.UploadPanelFileAsync`) — no `IFormFile`/multipart, no memory or temp-file spool.
+- **Per-route Kestrel cap lifted.** The handler sets `IHttpMaxRequestBodySizeFeature.MaxRequestBodySize = null` (the global cap in `Program.cs` stays 50 MB for every other route). Must run before the body is read — hence reading `Request.Body` directly rather than model-binding a form.
+- **Dedicated infinite-timeout client.** `MergePipelineService.PanelClientName` ("ToolsApiPanelRestore") has `Timeout = Timeout.InfiniteTimeSpan` so a slow multi-GB upload isn't killed by the 30-min merge-client timeout; it's bounded instead by the endpoint's **`PanelRestore`** request-timeout policy (2 h) + the request cancellation token.
+- **Reverse proxy is the likely failure point.** Coolify/Traefik enforces its own request-body-size and read/idle timeouts; these must be raised for this route on the server (not in code), or a large upload 413s/times out before reaching .NET.
+
+The 422 from activate carries a human-readable validation message (transposed `.geno`, `???` labels, truncated `.geno`); the FE shows it in a toast. Pass `force=true` to install despite "slow but usable" warnings.

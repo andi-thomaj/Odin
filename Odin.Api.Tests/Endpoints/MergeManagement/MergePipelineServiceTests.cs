@@ -144,7 +144,8 @@ public class MergePipelineServiceTests
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
         using var client = new HttpClient(handler);
         var options = Options.Create(new ToolsApiOptions { BaseUrl = "", ApiKey = "" });
-        var service = new MergePipelineService(client, options, NullLogger<MergePipelineService>.Instance);
+        var service = new MergePipelineService(
+            client, new StubHttpClientFactory(client), options, NullLogger<MergePipelineService>.Instance);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.ConvertAsync("d"u8.ToArray(), "x.txt"));
@@ -159,7 +160,15 @@ public class MergePipelineServiceTests
             ApiKey = apiKey,
             TimeoutSeconds = 30,
         });
-        return new MergePipelineService(client, options, NullLogger<MergePipelineService>.Instance);
+        return new MergePipelineService(
+            client, new StubHttpClientFactory(client), options, NullLogger<MergePipelineService>.Instance);
+    }
+
+    // The panel-upload client comes from IHttpClientFactory; these tests exercise convert/run/download
+    // /delete (the typed client), so the factory just hands back the same stubbed client.
+    private sealed class StubHttpClientFactory(HttpClient client) : IHttpClientFactory
+    {
+        public HttpClient CreateClient(string name) => client;
     }
 
     private sealed class StubHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> send)

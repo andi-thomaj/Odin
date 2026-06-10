@@ -10,10 +10,16 @@ namespace Odin.Api.Endpoints.MergeManagement
 {
     public sealed class MergePipelineService(
         HttpClient httpClient,
+        IHttpClientFactory httpClientFactory,
         IOptions<ToolsApiOptions> options,
         ILogger<MergePipelineService> logger) : IMergePipelineService
     {
         private readonly ToolsApiOptions _options = options.Value;
+
+        /// <summary>Named HttpClient with an infinite per-call timeout, used only for the multi-GB panel
+        /// upload — the upload is bounded instead by the endpoint's RequestTimeout policy + the request
+        /// cancellation token, so it isn't killed mid-transfer by the 30-min merge client timeout.</summary>
+        public const string PanelClientName = "ToolsApiPanelRestore";
 
         // odin-tools-api emits snake_case JSON (converted_23andme, merge_id, size_bytes, ...).
         private static readonly JsonSerializerOptions JsonOptions = new()
@@ -95,6 +101,100 @@ namespace Odin.Api.Endpoints.MergeManagement
             }
         }
 
+        public async Task<PanelStatusResult> GetPanelStatusAsync(
+            string? panel, CancellationToken cancellationToken = default)
+        {
+            EnsureConfigured();
+            var path = "/v1/merge/panel/status" + BuildQuery(("panel", panel));
+            using var request = BuildRequest(HttpMethod.Get, path);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            return await ReadPanelStatus(response, path, cancellationToken);
+        }
+
+        public async Task<PanelUploadResult> UploadPanelFileAsync(
+            string ext, string? panel, string? sha256, Stream body, CancellationToken cancellationToken = default)
+        {
+            EnsureConfigured();
+
+            var path = "/v1/merge/panel/restore/upload"
+                + BuildQuery(("ext", ext), ("panel", panel), ("sha256", sha256));
+            using var request = BuildRequest(HttpMethod.Post, path);
+            // StreamContent over the inbound request body: HttpClient sends it chunked, so a multi-GB
+            // file never buffers in memory or spools to disk on the .NET side.
+            var content = new StreamContent(body);
+            content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+            request.Content = content;
+
+            // The infinite-timeout client; the call is bounded by the caller's cancellationToken
+            // (the endpoint's RequestTimeout policy) instead of the 30-min merge client timeout.
+            var client = httpClientFactory.CreateClient(PanelClientName);
+            using var response = await client.SendAsync(
+                request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body2 = await response.Content.ReadAsStringAsync(cancellationToken);
+                logger.LogError("Panel upload API error {Status}: {Body}", (int)response.StatusCode, body2);
+                throw new MergePipelineException(response.StatusCode, ExtractDetail(body2));
+            }
+            var dto = await response.Content.ReadFromJsonAsync<PanelUploadDto>(JsonOptions, cancellationToken)
+                ?? throw new InvalidOperationException("Panel upload API returned an empty response.");
+            return new PanelUploadResult(dto.Panel, dto.Ext, dto.StagedSizeBytes, dto.Sha256);
+        }
+
+        public async Task<PanelActivateResult> ActivatePanelAsync(
+            string? panel, bool force, CancellationToken cancellationToken = default)
+        {
+            EnsureConfigured();
+
+            using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["panel"] = string.IsNullOrWhiteSpace(panel) ? "HO" : panel,
+                ["force"] = force ? "true" : "false",
+            });
+            using var request = BuildRequest(HttpMethod.Post, "/v1/merge/panel/restore/activate");
+            request.Content = content;
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                logger.LogWarning("Panel activate API error {Status}: {Body}", (int)response.StatusCode, body);
+                throw new MergePipelineException(response.StatusCode, ExtractDetail(body));
+            }
+            var dto = await response.Content.ReadFromJsonAsync<PanelActivateDto>(JsonOptions, cancellationToken)
+                ?? throw new InvalidOperationException("Panel activate API returned an empty response.");
+            return new PanelActivateResult(
+                dto.Panel, dto.Ready, dto.Layout, dto.NIndividuals, dto.NSnps, dto.NPopulationLabels,
+                dto.Warnings ?? []);
+        }
+
+        private async Task<PanelStatusResult> ReadPanelStatus(
+            HttpResponseMessage response, string path, CancellationToken cancellationToken)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                logger.LogError("Panel API error {Status} on {Path}: {Body}", (int)response.StatusCode, path, body);
+                throw new MergePipelineException(response.StatusCode, ExtractDetail(body));
+            }
+            var dto = await response.Content.ReadFromJsonAsync<PanelStatusDto>(JsonOptions, cancellationToken)
+                ?? throw new InvalidOperationException($"Panel API returned an empty response from {path}.");
+            var files = (dto.Files ?? []).Select(f =>
+                new PanelFileStatusResult(f.Ext, f.Present, f.SizeBytes, f.Staged, f.StagedSizeBytes)).ToList();
+            return new PanelStatusResult(
+                dto.Panel, dto.Prefix, dto.Ready, dto.Layout,
+                dto.NIndividuals, dto.NSnps, dto.NPopulationLabels, files);
+        }
+
+        /// <summary>Build a <c>?k=v&amp;…</c> query string, URL-escaping values and skipping null/empty ones.</summary>
+        private static string BuildQuery(params (string Key, string? Value)[] parameters)
+        {
+            var parts = parameters
+                .Where(p => !string.IsNullOrWhiteSpace(p.Value))
+                .Select(p => $"{p.Key}={Uri.EscapeDataString(p.Value!)}")
+                .ToArray();
+            return parts.Length == 0 ? string.Empty : "?" + string.Join("&", parts);
+        }
+
         private async Task<T> SendAsync<T>(
             HttpMethod method, string path, HttpContent content, CancellationToken cancellationToken)
         {
@@ -160,5 +260,32 @@ namespace Odin.Api.Endpoints.MergeManagement
             string FileName,
             string SourceVendor);
         private sealed record MergeDto(string MergeId, string FileName, long SizeBytes, string Panel);
+
+        // Panel restore DTOs. Pin the snake_case names that the SnakeCaseLower policy maps ambiguously
+        // (digit grouping in "n_snps", the boolean/size fields), mirroring the ConvertDto fix above.
+        private sealed record PanelUploadDto(
+            string Panel, string Ext,
+            [property: JsonPropertyName("staged_size_bytes")] long StagedSizeBytes,
+            string Sha256);
+
+        private sealed record PanelFileStatusDto(
+            string Ext, bool Present,
+            [property: JsonPropertyName("size_bytes")] long? SizeBytes,
+            bool Staged,
+            [property: JsonPropertyName("staged_size_bytes")] long? StagedSizeBytes);
+
+        private sealed record PanelStatusDto(
+            string Panel, string Prefix, bool Ready, string? Layout,
+            [property: JsonPropertyName("n_individuals")] int? NIndividuals,
+            [property: JsonPropertyName("n_snps")] int? NSnps,
+            [property: JsonPropertyName("n_population_labels")] int? NPopulationLabels,
+            IReadOnlyList<PanelFileStatusDto>? Files);
+
+        private sealed record PanelActivateDto(
+            string Panel, bool Ready, string? Layout,
+            [property: JsonPropertyName("n_individuals")] int? NIndividuals,
+            [property: JsonPropertyName("n_snps")] int? NSnps,
+            [property: JsonPropertyName("n_population_labels")] int? NPopulationLabels,
+            IReadOnlyList<string>? Warnings);
     }
 }

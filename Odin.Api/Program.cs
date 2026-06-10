@@ -334,6 +334,9 @@ namespace Odin.Api
             {
                 options.AddPolicy("Default", TimeSpan.FromSeconds(30));
                 options.AddPolicy("FileUpload", TimeSpan.FromMinutes(5));
+                // Admin AADR-panel restore: multi-GB uploads over a possibly-slow link. Bounds the
+                // whole stream-through (.NET -> tools-api); see MergePanelAdminEndpoints.
+                options.AddPolicy("PanelRestore", TimeSpan.FromHours(2));
             });
 
             services.AddDbContextPool<ApplicationDbContext>(options =>
@@ -422,6 +425,21 @@ namespace Odin.Api
                     client.BaseAddress = new Uri(toolsOptions.BaseUrl);
                 }
                 client.Timeout = TimeSpan.FromSeconds(toolsOptions.MergeTimeoutSeconds);
+            })
+            .ConfigurePrimaryHttpMessageHandler(CreateToolsApiHandler);
+
+            // Dedicated client for the admin AADR-panel upload only. Infinite per-call timeout so a
+            // multi-GB stream-through isn't killed by the 30-min merge client timeout; it's bounded
+            // instead by the endpoint's "PanelRestore" RequestTimeout policy + request cancellation.
+            services.AddHttpClient(
+                Odin.Api.Endpoints.MergeManagement.MergePipelineService.PanelClientName, (sp, client) =>
+            {
+                var toolsOptions = sp.GetRequiredService<IOptions<Odin.Api.Configuration.ToolsApiOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(toolsOptions.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(toolsOptions.BaseUrl);
+                }
+                client.Timeout = Timeout.InfiniteTimeSpan;
             })
             .ConfigurePrimaryHttpMessageHandler(CreateToolsApiHandler);
             // Background convert+merge / delete jobs (enqueued via Hangfire onto the "merge" queue).
