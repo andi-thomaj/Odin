@@ -575,13 +575,18 @@ namespace Odin.Api
                     options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
 
                 // merge-cleanup: reclaim orphaned AADR merge bundles (completed orders, or past the
-                // retention window) every hour, on the hour. Safety net for inline deletes that never
-                // fired; keeps the 80 GB disk bounded by reclaiming a missed bundle within ~1h instead of
-                // ~24h. CleanupOrphansAsync is [Queue("merge")] so it can't race a live merge.
+                // retention window) once a week. Safety net for inline deletes that never fired; keeps the
+                // 80 GB disk bounded. CleanupOrphansAsync is [Queue("merge")] so it can't race a live merge.
+                // The weekly cron is pinned to the deploy moment's weekday/hour/minute (UTC) so the first
+                // run lands one week after deployment rather than on a fixed calendar boundary — Hangfire
+                // never fires a cron job on registration, so the next occurrence of "this same weekday and
+                // time" is ~7 days out. Each deploy re-anchors the schedule to one week from that deploy.
+                var deployUtc = DateTime.UtcNow;
+                var weeklyFromDeployCron = $"{deployUtc.Minute} {deployUtc.Hour} * * {(int)deployUtc.DayOfWeek}";
                 recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.MergeManagement.IMergeJob>(
                     recurringJobId: "merge-cleanup",
                     methodCall: svc => svc.CleanupOrphansAsync(CancellationToken.None),
-                    cronExpression: "0 * * * *",
+                    cronExpression: weeklyFromDeployCron,
                     options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
             }
 
