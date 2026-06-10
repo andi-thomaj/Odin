@@ -355,6 +355,7 @@ namespace Odin.Api
             services.AddScoped<IPopulationService, PopulationService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
+            services.AddScoped<Odin.Api.Hubs.IGeneticInspectionRealtimeNotifier, Odin.Api.Hubs.GeneticInspectionRealtimeNotifier>();
             services.AddScoped<IAppSettingsService, AppSettingsService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<INotificationService, NotificationService>();

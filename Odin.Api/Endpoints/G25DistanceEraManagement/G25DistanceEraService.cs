@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25DistanceEraManagement.Models;
 
 namespace Odin.Api.Endpoints.G25DistanceEraManagement;
@@ -14,7 +16,7 @@ public interface IG25DistanceEraService
     Task<bool> DeleteAsync(int id, CancellationToken ct = default);
 }
 
-public class G25DistanceEraService(ApplicationDbContext dbContext) : IG25DistanceEraService
+public class G25DistanceEraService(ApplicationDbContext dbContext, IMemoryCache cache) : IG25DistanceEraService
 {
     public async Task<IReadOnlyList<GetG25DistanceEraContract.Response>> GetAllAsync(CancellationToken ct = default)
     {
@@ -88,6 +90,8 @@ public class G25DistanceEraService(ApplicationDbContext dbContext) : IG25Distanc
 
         dbContext.G25DistanceEras.Remove(entity);
         await dbContext.SaveChangesAsync(ct);
+        // Cascade removes the era's samples; drop the now-orphaned per-era sample cache.
+        cache.Remove(G25SampleCacheKeys.DistanceSamples(id));
         return true;
     }
 

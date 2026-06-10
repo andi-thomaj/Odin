@@ -2,6 +2,21 @@
 
 This file is loaded in addition to the root `CLAUDE.md` when working anywhere under `Odin/`.
 
+## Caching — in-process `IMemoryCache`, single instance, invalidate on write
+
+The API runs as a **single instance and is not designed to scale horizontally**, so caching is
+plain in-process `IMemoryCache` (registered in [Odin.Api/Program.cs](Odin.Api/Program.cs)) — no
+Redis / `IDistributedCache`. Follow the established pattern when caching read-mostly reference data:
+`TryGetValue` → query on miss → `Set` with an `AbsoluteExpirationRelativeToNow` TTL safety net;
+**skip the cache under the `Testing` environment** (`IHostEnvironment.IsEnvironment("Testing")`, so
+integration tests read fresh); and **invalidate on write** via `cache.Remove(key)` in the
+create/update/delete/import paths. Centralise keys in a small static class (e.g.
+`OrderResultCacheKeys`, `G25SampleCacheKeys`) rather than inlining strings, and keep
+[BackendCacheMaintenanceService](Odin.Api/Services/BackendCacheMaintenanceService.cs)'s "what gets
+cleared" doc-comment current. Reference implementations: `EraService` (`AllEras`),
+`G25CalculationService` (per-era distance samples), `PopulationService`/`EthnicityService`
+(invalidation). Admin can flush everything via `POST /v1/api/admin/cache/clear`.
+
 ## API versioning — `/v1` today, side-by-side `/v2` for breaking changes
 
 All business endpoints are mounted under `/v1` ([Odin.Api/Program.cs](Odin.Api/Program.cs) → `var v1 = app.MapGroup("/v1");`). SignalR hubs (`/hubs/...`) and infrastructure routes (`/health`, `/jobs`, `/swagger`) stay at the root by convention — they're not part of the versioned API surface.

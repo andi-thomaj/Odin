@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
+using Odin.Api.Hubs;
 
 namespace Odin.Api.Endpoints.MergeManagement
 {
@@ -11,6 +12,7 @@ namespace Odin.Api.Endpoints.MergeManagement
         ApplicationDbContext dbContext,
         IMergePipelineService mergeService,
         IBackgroundJobClient backgroundJobClient,
+        IGeneticInspectionRealtimeNotifier liveUpdates,
         TimeProvider timeProvider,
         ILogger<MergeJob> logger) : IMergeJob
     {
@@ -54,6 +56,7 @@ namespace Odin.Api.Endpoints.MergeManagement
 
                 file.MergeStatus = MergeStatus.Queued;
                 await dbContext.SaveChangesAsync(cancellationToken);
+                await BroadcastMergeStatusAsync(file, cancellationToken);
 
                 backgroundJobClient.Enqueue<IMergeJob>(svc => svc.RunAsync(candidate.InspectionId, CancellationToken.None));
             }
@@ -116,6 +119,7 @@ namespace Odin.Api.Endpoints.MergeManagement
                 // 1. Convert raw → 23andMe and persist (small, kept in the DB).
                 file.MergeStatus = MergeStatus.Converting;
                 await dbContext.SaveChangesAsync(cancellationToken);
+                await BroadcastMergeStatusAsync(file, cancellationToken);
 
                 var rawFileName = string.IsNullOrWhiteSpace(file.RawDataFileName) ? "raw-data.txt" : file.RawDataFileName;
                 var converted = await mergeService.ConvertAsync(file.RawData, rawFileName, cancellationToken);
@@ -128,6 +132,7 @@ namespace Odin.Api.Endpoints.MergeManagement
                 var mergeId = $"insp-{geneticInspectionId}-{Guid.NewGuid():N}";
                 file.MergeId = mergeId;
                 await dbContext.SaveChangesAsync(cancellationToken);
+                await BroadcastMergeStatusAsync(file, cancellationToken);
 
                 var result = await mergeService.RunMergeAsync(
                     mergeId,
@@ -143,6 +148,7 @@ namespace Odin.Api.Endpoints.MergeManagement
                 file.MergeDurationSeconds = mergeStopwatch.Elapsed.TotalSeconds;
                 file.MergeError = null;
                 await dbContext.SaveChangesAsync(cancellationToken);
+                await BroadcastMergeStatusAsync(file, cancellationToken);
 
                 logger.LogInformation(
                     "Merge for inspection {InspectionId} ready: id={MergeId}, {SizeBytes} bytes, panel={Panel}.",
@@ -185,6 +191,7 @@ namespace Odin.Api.Endpoints.MergeManagement
             file.MergeFileName = null;
             file.MergeSizeBytes = null;
             await dbContext.SaveChangesAsync(cancellationToken);
+            await BroadcastMergeStatusAsync(file, cancellationToken);
 
             logger.LogInformation("Deleted merge bundle {MergeId} for raw file {FileId} after order completion.",
                 file.MergeId, rawGeneticFileId);
@@ -235,7 +242,14 @@ namespace Odin.Api.Endpoints.MergeManagement
             file.MergeStatus = status;
             file.MergeError = error is null ? null : Truncate(error, 1000);
             await dbContext.SaveChangesAsync(cancellationToken);
+            await BroadcastMergeStatusAsync(file, cancellationToken);
         }
+
+        // Push a live "this row changed" signal so the "Clients Ancient Origins Results" table refreshes
+        // itself without a manual reload whenever a merge moves (a raw file can back more than one row,
+        // so this is a file-level event with no single inspection id).
+        private Task BroadcastMergeStatusAsync(RawGeneticFile file, CancellationToken cancellationToken) =>
+            liveUpdates.NotifyChangedAsync("MergeStatusChanged", inspectionId: null, cancellationToken);
 
         private static string SexCode(Gender? gender) => gender switch
         {

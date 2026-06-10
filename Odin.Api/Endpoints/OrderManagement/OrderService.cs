@@ -57,6 +57,7 @@ public partial class OrderService(
     IBackgroundJobClient backgroundJobClient,
     IOptions<OrderLimitsOptions> orderLimitsOptions,
     IMemoryCache cache,
+    Odin.Api.Hubs.IGeneticInspectionRealtimeNotifier liveUpdates,
     IHostEnvironment hostEnvironment,
     ILogger<OrderService> logger) : IOrderService
 {
@@ -208,6 +209,9 @@ public partial class OrderService(
 
             await dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
+
+            // A new qpAdm order is a new row in the Clients Ancient Origins Results table — push it live.
+            await liveUpdates.NotifyChangedAsync("Created", geneticInspection.Id);
 
             // Compute the Y-DNA clade from the uploaded raw data in the background and cache it, so the
             // "Y-DNA Haplogroup" tab on the result view is ready without recomputing on every view. The
@@ -761,6 +765,7 @@ public partial class OrderService(
             dbContext.QpadmGeneticInspectionRegions.AddRange(regionAssociations);
 
             await dbContext.SaveChangesAsync();
+            await liveUpdates.NotifyChangedAsync("Updated", order.GeneticInspection.Id);
 
             return (new GetOrderContract.Response
             {
@@ -796,6 +801,9 @@ public partial class OrderService(
             dbContext.QpadmOrders.Remove(order);
             await dbContext.SaveChangesAsync();
             cache.Remove(OrderResultCacheKeys.Qpadm(id));
+            // The row (and its inspection) is gone — refresh the table. Only the order id is in scope here,
+            // which is fine: the FE refetches the whole list rather than a single row.
+            await liveUpdates.NotifyChangedAsync("Deleted");
             return true;
         }
 

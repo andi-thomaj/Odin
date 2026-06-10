@@ -8,6 +8,7 @@ using Odin.Api.Endpoints.MergeManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement.Models;
 using Odin.Api.Extensions;
+using Odin.Api.Hubs;
 
 namespace Odin.Api.Endpoints.GeneticInspectionManagement
 {
@@ -40,6 +41,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         ApplicationDbContext dbContext,
         INotificationService notificationService,
         IBackgroundJobClient backgroundJobClient,
+        IGeneticInspectionRealtimeNotifier liveUpdates,
         ILogger<GeneticInspectionService> logger) : IGeneticInspectionService
     {
         public async Task<CreateGeneticInspectionContract.Response> CreateAsync(
@@ -95,6 +97,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             dbContext.QpadmGeneticInspectionRegions.AddRange(regionAssociations);
             await dbContext.SaveChangesAsync();
+
+            await liveUpdates.NotifyChangedAsync("Created", geneticInspection.Id);
 
             return new CreateGeneticInspectionContract.Response
             {
@@ -195,6 +199,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             dbContext.QpadmGeneticInspections.Remove(inspection);
             await dbContext.SaveChangesAsync();
+            await liveUpdates.NotifyChangedAsync("Deleted", id);
             return true;
         }
 
@@ -225,6 +230,8 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             dbContext.RawGeneticFiles.Add(rawGeneticFile);
             inspection.RawGeneticFileId = rawGeneticFile.Id;
             await dbContext.SaveChangesAsync();
+
+            await liveUpdates.NotifyChangedAsync("GeneticFileUploaded", inspectionId);
 
             return new UploadGeneticFileContract.Response
             {
@@ -263,6 +270,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             inspection.RawGeneticFile.IsDeleted = true;
             await dbContext.SaveChangesAsync();
+            await liveUpdates.NotifyChangedAsync("GeneticFileDeleted", inspectionId);
             return true;
         }
 
@@ -418,6 +426,10 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             {
                 EnqueueMergeDelete(inspection.RawGeneticFile.Id);
             }
+
+            // Submitting results changed this row's order status and its has-result flag — push a live
+            // refresh so the table reflects it without a manual reload.
+            await liveUpdates.NotifyChangedAsync("QpadmResultSubmitted", inspectionId);
 
             var eras = await dbContext.QpadmEras
                 .AsNoTracking()

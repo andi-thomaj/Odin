@@ -8,6 +8,7 @@ using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.MergeManagement;
+using Odin.Api.Hubs;
 
 namespace Odin.Api.Tests.Endpoints.MergeManagement;
 
@@ -250,7 +251,8 @@ public class MergeJobTests
     // ── helpers ───────────────────────────────────────────────────────────
     private static MergeJob CreateJob(
         ApplicationDbContext db, IMergePipelineService proxy, IBackgroundJobClient? jobClient = null)
-        => new(db, proxy, jobClient ?? new FakeJobClient(), TimeProvider.System, NullLogger<MergeJob>.Instance);
+        => new(db, proxy, jobClient ?? new FakeJobClient(), new NoopRealtimeNotifier(),
+            TimeProvider.System, NullLogger<MergeJob>.Instance);
 
     private static async Task<(int inspectionId, int fileId)> SeedOrderAsync(ApplicationDbContext db)
     {
@@ -293,6 +295,12 @@ public class MergeJobTests
             .UseInMemoryDatabase($"merge-tests-{Guid.NewGuid():N}")
             .Options;
         return new ApplicationDbContext(options);
+    }
+
+    private sealed class NoopRealtimeNotifier : IGeneticInspectionRealtimeNotifier
+    {
+        public Task NotifyChangedAsync(string reason, int? inspectionId = null,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
     private sealed class StubMergeService : IMergePipelineService

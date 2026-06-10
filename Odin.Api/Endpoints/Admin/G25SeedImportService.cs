@@ -1,9 +1,11 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.Admin.Models;
+using Odin.Api.Endpoints.G25Calculations;
 
 namespace Odin.Api.Endpoints.Admin;
 
@@ -20,7 +22,7 @@ public interface IG25SeedImportService
 /// re-run after the schema has been seeded, to pick up newly added rows in the JSON without
 /// touching existing records.
 /// </summary>
-public class G25SeedImportService(ApplicationDbContext dbContext) : IG25SeedImportService
+public class G25SeedImportService(ApplicationDbContext dbContext, IMemoryCache cache) : IG25SeedImportService
 {
     private const string ImporterTag = "G25SeedImport";
     private const int BatchSize = 1000;
@@ -59,6 +61,8 @@ public class G25SeedImportService(ApplicationDbContext dbContext) : IG25SeedImpo
         var skippedExistingLabel = 0;
         var skippedInvalidEra = 0;
         var skippedMalformed = 0;
+        // Eras that gained samples — their per-era distance-sample cache must be busted after import.
+        var affectedEraIds = new HashSet<int>();
 
         foreach (var seed in seeds)
         {
@@ -114,6 +118,7 @@ public class G25SeedImportService(ApplicationDbContext dbContext) : IG25SeedImpo
             // Reserve the label immediately so a duplicate Label inside the seed file
             // doesn't get inserted twice within a single run.
             existingLabels.Add(seed.SampleLabel);
+            affectedEraIds.Add(seed.G25DistanceEraId);
             inserted++;
 
             if (batch.Count < BatchSize)
@@ -131,6 +136,9 @@ public class G25SeedImportService(ApplicationDbContext dbContext) : IG25SeedImpo
             await dbContext.SaveChangesAsync(cancellationToken);
             dbContext.ChangeTracker.Clear();
         }
+
+        foreach (var eraId in affectedEraIds)
+            cache.Remove(G25SampleCacheKeys.DistanceSamples(eraId));
 
         stopwatch.Stop();
         return new ImportG25DistancePopulationSamplesContract.Response

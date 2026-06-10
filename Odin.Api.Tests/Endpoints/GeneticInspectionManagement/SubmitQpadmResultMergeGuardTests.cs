@@ -11,6 +11,7 @@ using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.NotificationManagement.Models;
+using Odin.Api.Hubs;
 
 namespace Odin.Api.Tests.Endpoints.GeneticInspectionManagement;
 
@@ -85,7 +86,8 @@ public class SubmitQpadmResultMergeGuardTests
         new() { EraGroups = [], OrderStatus = nameof(OrderStatus.InProcess) };
 
     private static GeneticInspectionService CreateService(ApplicationDbContext db) =>
-        new(db, new StubNotificationService(), new NoopJobClient(), NullLogger<GeneticInspectionService>.Instance);
+        new(db, new StubNotificationService(), new NoopJobClient(), new NoopRealtimeNotifier(),
+            NullLogger<GeneticInspectionService>.Instance);
 
     private static async Task<int> SeedAsync(ApplicationDbContext db, MergeStatus mergeStatus)
     {
@@ -150,5 +152,11 @@ public class SubmitQpadmResultMergeGuardTests
     {
         public string Create(Job job, IState state) => Guid.NewGuid().ToString("N");
         public bool ChangeState(string jobId, IState state, string expectedState) => true;
+    }
+
+    private sealed class NoopRealtimeNotifier : IGeneticInspectionRealtimeNotifier
+    {
+        public Task NotifyChangedAsync(string reason, int? inspectionId = null,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

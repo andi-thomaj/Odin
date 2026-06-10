@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25DistancePopulationSampleManagement.Models;
 
 namespace Odin.Api.Endpoints.G25DistancePopulationSampleManagement;
@@ -18,10 +20,18 @@ public interface IG25DistancePopulationSampleService
     Task<IReadOnlyList<string>> SearchLabelsAsync(string query, int limit = 50, CancellationToken cancellationToken = default);
 }
 
-public class G25DistancePopulationSampleService(ApplicationDbContext dbContext) : IG25DistancePopulationSampleService
+public class G25DistancePopulationSampleService(ApplicationDbContext dbContext, IMemoryCache cache) : IG25DistancePopulationSampleService
 {
     private const int MaxPageSize = 200;
     private const int MaxSearchLimit = 200;
+
+    // Bust the per-era distance-sample cache (see G25CalculationService) when a sample's data or era
+    // membership changes. Samples with no era never enter a cached set, so null is a no-op.
+    private void InvalidateEraSamples(int? eraId)
+    {
+        if (eraId is int id)
+            cache.Remove(G25SampleCacheKeys.DistanceSamples(id));
+    }
 
     public async Task<IReadOnlyList<GetG25DistancePopulationSampleContract.Response>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -203,6 +213,7 @@ public class G25DistancePopulationSampleService(ApplicationDbContext dbContext) 
 
         dbContext.G25DistancePopulationSamples.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
+        InvalidateEraSamples(entity.G25DistanceEraId);
 
         return new CreateG25DistancePopulationSampleContract.Response
         {
@@ -234,6 +245,10 @@ public class G25DistancePopulationSampleService(ApplicationDbContext dbContext) 
             .Include(e => e.ResearchLinks)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity is null) return null;
+
+        // Capture the era the sample belonged to before any reassignment so we can bust both the
+        // old and new era caches (a sample can move between eras on update).
+        var previousEraId = entity.G25DistanceEraId;
 
         G25DistanceEra? era = null;
         if (request.G25DistanceEraId is int eraId)
@@ -298,6 +313,8 @@ public class G25DistancePopulationSampleService(ApplicationDbContext dbContext) 
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        InvalidateEraSamples(previousEraId);
+        InvalidateEraSamples(entity.G25DistanceEraId);
 
         return new GetG25DistancePopulationSampleContract.Response
         {
@@ -326,8 +343,10 @@ public class G25DistancePopulationSampleService(ApplicationDbContext dbContext) 
         var entity = await dbContext.G25DistancePopulationSamples.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity is null) return false;
 
+        var eraId = entity.G25DistanceEraId;
         dbContext.G25DistancePopulationSamples.Remove(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
+        InvalidateEraSamples(eraId);
         return true;
     }
 }

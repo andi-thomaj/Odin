@@ -15,6 +15,7 @@ using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25Calculations.Models;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.OrderManagement.Models;
+using Odin.Api.Hubs;
 using Odin.Api.Services;
 
 namespace Odin.Api.Tests.Endpoints.OrderManagement;
@@ -247,6 +248,7 @@ public class OrderServiceCacheTests
             new StubBackgroundJobClient(),
             Options.Create(new OrderLimitsOptions()),
             cache,
+            new NoopRealtimeNotifier(),
             env ?? FakeHostEnvironment.Production(),
             NullLogger<OrderService>.Instance);
 
@@ -369,5 +371,11 @@ public class OrderServiceCacheTests
     {
         public string Create(Job job, IState state) => Guid.NewGuid().ToString("N");
         public bool ChangeState(string jobId, IState state, string expectedState) => true;
+    }
+
+    private sealed class NoopRealtimeNotifier : IGeneticInspectionRealtimeNotifier
+    {
+        public Task NotifyChangedAsync(string reason, int? inspectionId = null,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 }

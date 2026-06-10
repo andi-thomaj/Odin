@@ -1,5 +1,7 @@
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Hosting;
 using Odin.Api.Data;
 using Odin.Api.Endpoints.G25Calculations.Models;
 
@@ -17,11 +19,27 @@ public interface IG25CalculationService
         ComputeAdmixtureMultiContract.Request request, CancellationToken ct = default);
 }
 
-public class G25CalculationService(ApplicationDbContext dbContext) : IG25CalculationService
+/// <summary>
+/// Cache keys for G25 reference data. Distance population samples are read-mostly (edited only via
+/// the admin sample-management / import endpoints) yet loaded on every distance computation and
+/// once per era on every order recompute, so they are cached per era and invalidated on write.
+/// </summary>
+public static class G25SampleCacheKeys
+{
+    public static string DistanceSamples(int eraId) => $"g25-distance-samples:{eraId}";
+}
+
+public class G25CalculationService(
+    ApplicationDbContext dbContext,
+    IMemoryCache cache,
+    IHostEnvironment hostEnvironment) : IG25CalculationService
 {
     private const int MaxTargetCsvLength = 64 * 1024;
     private const int MaxTargetRows = 100;
     private const int MaxInlineSourceCsvLength = 4 * 1024 * 1024;
+
+    // TTL safety net in addition to write invalidation, matching the AllEras reference-data cache.
+    private static readonly TimeSpan SampleCacheDuration = TimeSpan.FromHours(1);
 
     public async Task<(ComputeDistancesContract.Response? Response, string? Error, bool NotFound)> ComputeDistancesAsync(
         ComputeDistancesContract.Request request, CancellationToken ct = default)
@@ -38,16 +56,12 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
         string sourceText;
         if (request.G25DistanceEraId is { } eraId)
         {
-            var samples = await dbContext.G25DistancePopulationSamples
-                .AsNoTracking()
-                .Where(s => s.G25DistanceEraId == eraId)
-                .Select(s => new { s.Label, s.Coordinates })
-                .ToListAsync(ct);
-            if (samples.Count == 0)
+            var sampleLines = await GetDistanceSampleLinesAsync(eraId, ct);
+            if (sampleLines.Count == 0)
             {
                 return (null, $"No distance population samples found for era id {eraId}.", true);
             }
-            sourceText = string.Join('\n', samples.Select(s => BuildSampleLine(s.Label, s.Coordinates)));
+            sourceText = string.Join('\n', sampleLines);
         }
         else
         {
@@ -141,6 +155,41 @@ public class G25CalculationService(ApplicationDbContext dbContext) : IG25Calcula
             ct);
 
         return (response, null);
+    }
+
+    /// <summary>
+    /// Returns the pre-formatted source lines for an era's distance population samples, caching the
+    /// result per era. The samples are stable reference data, so this turns the per-computation (and
+    /// per-era-per-inspection recompute) DB query + line formatting into a single warm-cache lookup.
+    /// Invalidated by the sample-management / import endpoints via <see cref="G25SampleCacheKeys"/>.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> GetDistanceSampleLinesAsync(int eraId, CancellationToken ct)
+    {
+        var cacheKey = G25SampleCacheKeys.DistanceSamples(eraId);
+
+        if (!hostEnvironment.IsEnvironment("Testing") &&
+            cache.TryGetValue(cacheKey, out IReadOnlyList<string>? cached))
+            return cached!;
+
+        var samples = await dbContext.G25DistancePopulationSamples
+            .AsNoTracking()
+            .Where(s => s.G25DistanceEraId == eraId)
+            .Select(s => new { s.Label, s.Coordinates })
+            .ToListAsync(ct);
+
+        var lines = (IReadOnlyList<string>)samples
+            .Select(s => BuildSampleLine(s.Label, s.Coordinates))
+            .ToList();
+
+        if (!hostEnvironment.IsEnvironment("Testing"))
+        {
+            cache.Set(cacheKey, lines, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = SampleCacheDuration
+            });
+        }
+
+        return lines;
     }
 
     private static string BuildSampleLine(string label, string coordinates)
