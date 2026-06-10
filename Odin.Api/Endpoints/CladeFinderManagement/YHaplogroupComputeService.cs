@@ -1,4 +1,5 @@
 using System.Net;
+using Hangfire;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
@@ -29,6 +30,9 @@ namespace Odin.Api.Endpoints.CladeFinderManagement
     {
         private const string ResultsVersion = "v1";
 
+        // Cap retries (Hangfire's default is 10, backing off over days). A transient tools-api outage
+        // should be retried a few times, then surface as Unavailable rather than retry indefinitely.
+        [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
         public async Task ComputeAndPersistAsync(int geneticInspectionId, CancellationToken cancellationToken = default)
         {
             var inspection = await dbContext.QpadmGeneticInspections

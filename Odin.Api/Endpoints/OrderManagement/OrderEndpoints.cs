@@ -97,9 +97,10 @@ namespace Odin.Api.Endpoints.OrderManagement
             return Results.Ok(orders);
         }
 
-        private static async Task<IResult> GetAllAdmin(IOrderService service)
+        private static async Task<IResult> GetAllAdmin(IOrderService service, int? skip = null, int? take = null)
         {
-            var orders = await service.GetAllAdminAsync();
+            // skip/take are optional query params; omitting them returns all orders (unchanged behaviour).
+            var orders = await service.GetAllAdminAsync(skip, take);
             return Results.Ok(orders);
         }
 

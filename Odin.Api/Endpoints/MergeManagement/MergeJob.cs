@@ -11,6 +11,7 @@ namespace Odin.Api.Endpoints.MergeManagement
         ApplicationDbContext dbContext,
         IMergePipelineService mergeService,
         IBackgroundJobClient backgroundJobClient,
+        TimeProvider timeProvider,
         ILogger<MergeJob> logger) : IMergeJob
     {
         // Hard cap on merge jobs in flight (Queued + Converting + Merging). Matches the merge queue's
@@ -23,10 +24,13 @@ namespace Odin.Api.Endpoints.MergeManagement
         [DisableConcurrentExecution(60)]
         public async Task DispatchPendingMergesAsync(CancellationToken cancellationToken = default)
         {
+            // Retrying counts as in-flight: such a job is still scheduled in Hangfire and occupies a
+            // merge slot, so it must be counted or the dispatcher would over-admit and build a backlog.
             var inFlight = await dbContext.RawGeneticFiles
                 .CountAsync(f => f.MergeStatus == MergeStatus.Queued
                     || f.MergeStatus == MergeStatus.Converting
-                    || f.MergeStatus == MergeStatus.Merging, cancellationToken);
+                    || f.MergeStatus == MergeStatus.Merging
+                    || f.MergeStatus == MergeStatus.Retrying, cancellationToken);
 
             var capacity = MaxInFlight - inFlight;
             if (capacity <= 0)
@@ -60,7 +64,11 @@ namespace Odin.Api.Endpoints.MergeManagement
         }
 
         // Serialized onto the low-concurrency "merge" queue (memory-heavy; see Program.cs).
+        // Cap retries (Hangfire's default is 10, with backoff stretching to days): a merge that keeps
+        // failing transiently — e.g. a 503 because the AADR panel isn't provisioned — should give up
+        // after a few attempts and surface as Failed, not retry for days while holding a merge worker.
         [Queue("merge")]
+        [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
         public async Task RunAsync(int geneticInspectionId, CancellationToken cancellationToken = default)
         {
             try
@@ -149,9 +157,11 @@ namespace Odin.Api.Endpoints.MergeManagement
             }
             catch (Exception ex)
             {
-                // 503 (AADR not provisioned) / 5xx / timeout / network → transient. Record the reason for
-                // visibility, then rethrow so Hangfire retries.
-                await SetStatusAsync(file, MergeStatus.Failed, Truncate(ex.Message, 1000), cancellationToken);
+                // 503 (AADR not provisioned) / 5xx / timeout / network → transient. Mark Retrying (not
+                // Failed) so the order isn't shown as failed mid-retry and the dispatcher keeps counting
+                // it as in-flight; then rethrow so Hangfire retries. If retries are exhausted, the job
+                // lands in Hangfire's FailedState and MergeJobFailureStateFilter reconciles it to Failed.
+                await SetStatusAsync(file, MergeStatus.Retrying, Truncate(ex.Message, 1000), cancellationToken);
                 logger.LogError(ex, "Merge for inspection {InspectionId} failed transiently; will retry.",
                     geneticInspectionId);
                 throw;
@@ -188,7 +198,7 @@ namespace Odin.Api.Endpoints.MergeManagement
         [Queue("merge")]
         public async Task CleanupOrphansAsync(CancellationToken cancellationToken = default)
         {
-            var cutoff = DateTime.UtcNow.AddHours(-RetentionHours);
+            var cutoff = timeProvider.GetUtcNow().UtcDateTime.AddHours(-RetentionHours);
 
             var orphanIds = await dbContext.RawGeneticFiles
                 .IgnoreQueryFilters()

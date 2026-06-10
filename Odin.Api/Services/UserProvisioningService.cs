@@ -143,24 +143,10 @@ public class UserProvisioningService(
             {
                 entry.SetAbsoluteExpiration(TimeSpan.FromMinutes(15));
                 var client = httpClientFactory.CreateClient("Auth0UserInfo");
-                Auth0UserInfoProfile? profile = null;
-                for (var attempt = 0; attempt < 3; attempt++)
-                {
-                    var (p, status) = await Auth0UserInfoClient.GetAsync(
-                        client,
-                        authority!,
-                        accessToken!,
-                        cancellationToken).ConfigureAwait(false);
-                    profile = p;
-                    if (status == 200)
-                        break;
-                    if (status == 429 && attempt < 2)
-                    {
-                        await Task.Delay(100 * (attempt + 1), cancellationToken).ConfigureAwait(false);
-                        continue;
-                    }
-                    break;
-                }
+                var (profile, _) = await Auth0RetryPolicy.ExecuteAsync(
+                    ct => Auth0UserInfoClient.GetAsync(client, authority!, accessToken!, ct),
+                    logger,
+                    cancellationToken: cancellationToken).ConfigureAwait(false);
                 return profile;
             }).ConfigureAwait(false);
 

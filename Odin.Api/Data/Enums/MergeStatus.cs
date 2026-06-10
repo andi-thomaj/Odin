@@ -27,8 +27,17 @@ namespace Odin.Api.Data.Enums
         /// <summary>The merge bundle is available on the tools-api volume and downloadable.</summary>
         Ready,
 
-        /// <summary>Conversion or merge failed. Transient failures are retried by Hangfire.</summary>
+        /// <summary>Conversion or merge failed terminally (a bad upload), or all retries were exhausted.</summary>
         Failed,
+
+        /// <summary>
+        /// A transient conversion/merge failure occurred and Hangfire will retry. Distinct from
+        /// <see cref="Failed"/> so (a) the order isn't shown as failed mid-retry, and (b) the dispatcher
+        /// still counts it as in-flight — it occupies a merge slot until it succeeds, fails terminally,
+        /// or exhausts retries. On retry exhaustion a Hangfire state filter reconciles it to Failed.
+        /// Stored as a string (HasConversion&lt;string&gt;), so adding this value needs no data migration.
+        /// </summary>
+        Retrying,
 
         /// <summary>The bundle has been deleted after the order was completed.</summary>
         Deleted

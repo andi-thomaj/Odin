@@ -73,7 +73,10 @@ public class MergeJobTests
         await Assert.ThrowsAsync<MergePipelineException>(() => job.RunAsync(inspectionId));
 
         var file = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
-        Assert.Equal(MergeStatus.Failed, file.MergeStatus); // recorded for visibility before Hangfire retries
+        // Transient failures are marked Retrying (not Failed) so the order isn't shown as failed mid-retry
+        // and the dispatcher keeps counting it in-flight; Hangfire retries, and exhaustion → Failed via
+        // MergeJobFailureStateFilter.
+        Assert.Equal(MergeStatus.Retrying, file.MergeStatus);
     }
 
     [Fact]
@@ -247,7 +250,7 @@ public class MergeJobTests
     // ── helpers ───────────────────────────────────────────────────────────
     private static MergeJob CreateJob(
         ApplicationDbContext db, IMergePipelineService proxy, IBackgroundJobClient? jobClient = null)
-        => new(db, proxy, jobClient ?? new FakeJobClient(), NullLogger<MergeJob>.Instance);
+        => new(db, proxy, jobClient ?? new FakeJobClient(), TimeProvider.System, NullLogger<MergeJob>.Instance);
 
     private static async Task<(int inspectionId, int fileId)> SeedOrderAsync(ApplicationDbContext db)
     {

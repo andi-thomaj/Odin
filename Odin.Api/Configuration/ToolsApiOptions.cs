@@ -23,4 +23,11 @@ public sealed class ToolsApiOptions
     /// <see cref="TimeoutSeconds"/>. Used by the dedicated merge HttpClient.
     /// </summary>
     public int MergeTimeoutSeconds { get; set; } = 1800;
+
+    /// <summary>
+    /// TCP connect timeout in seconds applied to both tools-api clients. Bounds how long a request
+    /// waits to establish a connection, so an unreachable host fails fast (≈this) instead of hanging
+    /// for the much larger overall <see cref="TimeoutSeconds"/> / <see cref="MergeTimeoutSeconds"/>.
+    /// </summary>
+    public int ConnectTimeoutSeconds { get; set; } = 5;
 }
