@@ -1,6 +1,7 @@
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Endpoints.GeneticInspectionManagement.Models;
 using Odin.Api.Endpoints.MergeManagement;
@@ -171,6 +172,11 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return Results.NotFound(new { Message = "The merged dataset is no longer available for this order." });
             }
 
+            // ZipArchive has only a synchronous write API (and flushes the central directory on dispose),
+            // but Kestrel forbids synchronous response I/O by default — so the stream aborts at the end
+            // with ERR_HTTP2_PROTOCOL_ERROR. Opt this one streamed-zip response into synchronous I/O.
+            httpContext.Features.Get<IHttpBodyControlFeature>()!.AllowSynchronousIO = true;
+
             return Results.Stream(async outputStream =>
             {
                 using (upstream)
@@ -187,7 +193,9 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                             || entry.EntryType is not (TarEntryType.RegularFile or TarEntryType.V7RegularFile))
                             continue;
 
-                        var zipEntry = zip.CreateEntry(Path.GetFileName(entry.Name), CompressionLevel.Optimal);
+                        // .geno is large + packed binary (poorly compressible) — Fastest avoids burning CPU
+                        // re-deflating it for marginal size gain over the panel's already-compact data.
+                        var zipEntry = zip.CreateEntry(Path.GetFileName(entry.Name), CompressionLevel.Fastest);
                         await using var entryStream = zipEntry.Open();
                         await entry.DataStream.CopyToAsync(entryStream, ct);
                     }
