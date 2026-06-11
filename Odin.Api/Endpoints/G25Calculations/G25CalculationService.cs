@@ -77,12 +77,21 @@ public class G25CalculationService(
 
         var maxResults = request.MaxResults is > 0 ? request.MaxResults.Value : 25;
 
-        var results = new List<ComputeDistancesContract.DistanceTargetResult>(parsed.Target!.Count);
-        for (var t = 0; t < parsed.Target.Count; t++)
+        ct.ThrowIfCancellationRequested();
+
+        // Each target is solved independently against the shared (read-only) source, so fan the
+        // CPU-bound work out across the thread pool and preserve input order via the indexed array.
+        var targetCount = parsed.Target!.Count;
+        var tasks = new Task<ComputeDistancesContract.DistanceTargetResult>[targetCount];
+        for (var t = 0; t < targetCount; t++)
         {
-            ct.ThrowIfCancellationRequested();
-            results.Add(G25AdmixtureSolver.ComputeDistances(parsed.Source!, parsed.Target, t, maxResults));
+            var index = t;
+            tasks[index] = Task.Run(
+                () => G25AdmixtureSolver.ComputeDistances(parsed.Source!, parsed.Target, index, maxResults),
+                ct);
         }
+
+        var results = (await Task.WhenAll(tasks)).ToList();
 
         return (new ComputeDistancesContract.Response { Results = results }, null, false);
     }
@@ -111,16 +120,22 @@ public class G25CalculationService(
         var aggregate = request.Aggregate ?? true;
         var printZeroes = request.PrintZeroes ?? false;
 
-        var results = new List<ComputeAdmixtureSingleContract.AdmixtureSingleResult>(parsed.Target!.Count);
-        for (var t = 0; t < parsed.Target.Count; t++)
+        ct.ThrowIfCancellationRequested();
+
+        // Targets are independent; run the per-target solves concurrently rather than awaiting each
+        // in turn. The indexed array keeps the response in the same order as the request.
+        var targetCount = parsed.Target!.Count;
+        var tasks = new Task<ComputeAdmixtureSingleContract.AdmixtureSingleResult>[targetCount];
+        for (var t = 0; t < targetCount; t++)
         {
-            ct.ThrowIfCancellationRequested();
-            var res = await Task.Run(
+            var index = t;
+            tasks[index] = Task.Run(
                 () => G25AdmixtureSolver.ComputeSingle(
-                    parsed.Source!, parsed.Target, t, cyclesMultiplier, slots, aggregate, printZeroes, ct),
+                    parsed.Source!, parsed.Target, index, cyclesMultiplier, slots, aggregate, printZeroes, ct),
                 ct);
-            results.Add(res);
         }
+
+        var results = (await Task.WhenAll(tasks)).ToList();
 
         return (new ComputeAdmixtureSingleContract.Response { Results = results }, null, false);
     }

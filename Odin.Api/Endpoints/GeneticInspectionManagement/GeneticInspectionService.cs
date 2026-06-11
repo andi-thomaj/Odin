@@ -17,7 +17,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
         Task<CreateGeneticInspectionContract.Response> CreateAsync(CreateGeneticInspectionContract.Request request,
             string identityId);
         Task<GetGeneticInspectionContract.Response?> GetByIdAsync(int id);
-        Task<IEnumerable<GetGeneticInspectionContract.Response>> GetAllAsync();
+        Task<IEnumerable<GetGeneticInspectionContract.Response>> GetAllAsync(int? skip = null, int? take = null);
         Task<bool> DeleteAsync(int id);
 
         Task<UploadGeneticFileContract.Response?> UploadGeneticFileAsync(int inspectionId,
@@ -154,9 +154,13 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             };
         }
 
-        public async Task<IEnumerable<GetGeneticInspectionContract.Response>> GetAllAsync()
+        public async Task<IEnumerable<GetGeneticInspectionContract.Response>> GetAllAsync(int? skip = null, int? take = null)
         {
-            return await dbContext.QpadmGeneticInspections
+            // The Includes are redundant once we project to a DTO (EF honours Include only when returning
+            // entities), but kept for readability of the navigations the projection touches. Paging is
+            // additive: when `take` is omitted the full list is returned (unchanged behaviour); when
+            // provided the newest page is sliced in Postgres instead of materializing every inspection.
+            var query = dbContext.QpadmGeneticInspections
                 .AsNoTracking()
                 .AsSplitQuery()
                 .Include(gi => gi.RawGeneticFile)
@@ -165,6 +169,7 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .Include(gi => gi.GeneticInspectionRegions)
                 .ThenInclude(gir => gir.Region)
                 .ThenInclude(r => r.Ethnicity)
+                .OrderByDescending(inspection => inspection.Order.CreatedAt)
                 .Select(inspection => new GetGeneticInspectionContract.Response
                 {
                     Id = inspection.Id,
@@ -184,8 +189,12 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     {
                         Id = gir.Region.Id, Name = gir.Region.Name, EthnicityName = gir.Region.Ethnicity.Name
                     }).ToList()
-                })
-                .ToListAsync();
+                });
+
+            if (take is not null)
+                query = query.Skip(Math.Max(0, skip ?? 0)).Take(Math.Clamp(take.Value, 1, 500));
+
+            return await query.ToListAsync();
         }
 
         public async Task<bool> DeleteAsync(int id)

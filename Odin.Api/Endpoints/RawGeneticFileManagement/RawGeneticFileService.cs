@@ -52,19 +52,17 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
         public async Task<GetGeneticFileContract.Response?> GetFileByIdAsync(int id, string identityId)
         {
-            var file = await dbContext.RawGeneticFiles
+            // Project in the DB (FileSize comes from a server-side length() on the blob column) so the
+            // multi-MB RawData / Converted23AndMeData / MergedRawData blobs are never loaded just to
+            // return metadata.
+            return await dbContext.RawGeneticFiles
                 .AsNoTracking()
-                .FirstOrDefaultAsync(f => f.Id == id && f.CreatedBy == identityId && !f.IsDeleted);
-
-            if (file is null)
-            {
-                return null;
-            }
-
-            return new GetGeneticFileContract.Response
-            {
-                Id = file.Id, FileName = file.RawDataFileName, FileSize = file.RawData.Length
-            };
+                .Where(f => f.Id == id && f.CreatedBy == identityId && !f.IsDeleted)
+                .Select(f => new GetGeneticFileContract.Response
+                {
+                    Id = f.Id, FileName = f.RawDataFileName, FileSize = f.RawData.Length
+                })
+                .FirstOrDefaultAsync();
         }
 
         public async Task<IEnumerable<GetGeneticFileContract.Response>> GetAllFilesAsync(string identityId)
@@ -81,11 +79,16 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
         public async Task<(byte[]? Data, string? FileName, int StatusCode)> DownloadFileAsync(int id, string identityId)
         {
+            // Only RawData is needed here; project it so the other blob columns (Converted23AndMeData,
+            // MergedRawData) aren't dragged into memory. The global !IsDeleted filter still applies, so
+            // a soft-deleted file returns null → 404.
             var file = await dbContext.RawGeneticFiles
                 .AsNoTracking()
-                .FirstOrDefaultAsync(f => f.Id == id);
+                .Where(f => f.Id == id)
+                .Select(f => new { f.RawData, f.RawDataFileName, f.CreatedBy })
+                .FirstOrDefaultAsync();
 
-            if (file is null || file.IsDeleted)
+            if (file is null)
             {
                 return (null, null, 404);
             }
@@ -100,14 +103,21 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
 
         public async Task<(bool Deleted, int StatusCode)> DeleteFileAsync(int id, string identityId)
         {
-            var file = await dbContext.RawGeneticFiles.FindAsync(id);
+            // Look up only the owner for the auth check — no need to materialize the (multi-MB) blobs
+            // just to flip a flag. IgnoreQueryFilters so an already soft-deleted row is still found
+            // (the delete stays idempotent, matching the previous FindAsync key-lookup semantics).
+            var meta = await dbContext.RawGeneticFiles
+                .IgnoreQueryFilters()
+                .Where(f => f.Id == id)
+                .Select(f => new { f.CreatedBy })
+                .FirstOrDefaultAsync();
 
-            if (file is null)
+            if (meta is null)
             {
                 return (false, 404);
             }
 
-            if (file.CreatedBy != identityId)
+            if (meta.CreatedBy != identityId)
             {
                 return (false, 403);
             }
@@ -120,8 +130,11 @@ namespace Odin.Api.Endpoints.RawGeneticFileManagement
                 throw new InvalidOperationException(
                     "This file cannot be deleted because it is used by an order that is still Pending or In Process.");
 
-            file.IsDeleted = true;
-            await dbContext.SaveChangesAsync();
+            // Set the flag with a direct UPDATE so the blobs are never read or rewritten.
+            await dbContext.RawGeneticFiles
+                .IgnoreQueryFilters()
+                .Where(f => f.Id == id)
+                .ExecuteUpdateAsync(s => s.SetProperty(f => f.IsDeleted, true));
             return (true, 200);
         }
     }
