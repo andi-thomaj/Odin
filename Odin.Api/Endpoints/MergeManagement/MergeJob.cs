@@ -1,6 +1,8 @@
 using System.Net;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Odin.Api.Configuration;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
@@ -14,12 +16,14 @@ namespace Odin.Api.Endpoints.MergeManagement
         IBackgroundJobClient backgroundJobClient,
         IGeneticInspectionRealtimeNotifier liveUpdates,
         TimeProvider timeProvider,
+        IOptions<MergeJobOptions> mergeOptions,
         ILogger<MergeJob> logger) : IMergeJob
     {
-        // Hard cap on merge jobs in flight (Queued + Converting + Merging). Matches the merge queue's
-        // WorkerCount, so admitted jobs run immediately with no Hangfire backlog; orders beyond the cap
-        // wait as NotStarted in the DB. See the plan / README ops notes.
-        private const int MaxInFlight = 2;
+        // Cap on merge jobs in flight (Queued + Converting + Merging). Defaults to 1 (serialized) — the
+        // 2M-panel mergeit needs ~25 GB RAM, so two at once OOM-kill each other. Matches the "merge"
+        // queue WorkerCount (Program.cs), so admitted jobs run immediately; orders beyond the cap wait
+        // as NotStarted in the DB. Configurable via Merge:MaxConcurrentMerges.
+        private readonly int _maxInFlight = Math.Max(1, mergeOptions.Value.MaxConcurrentMerges);
 
         // Serialized so the count→admit step can't over-admit when fired from several sources at once
         // (order creation, merge completion, the recurring safety net).
@@ -34,7 +38,7 @@ namespace Odin.Api.Endpoints.MergeManagement
                     || f.MergeStatus == MergeStatus.Merging
                     || f.MergeStatus == MergeStatus.Retrying, cancellationToken);
 
-            var capacity = MaxInFlight - inFlight;
+            var capacity = _maxInFlight - inFlight;
             if (capacity <= 0)
                 return;
 
@@ -63,15 +67,17 @@ namespace Odin.Api.Endpoints.MergeManagement
 
             if (candidates.Count > 0)
                 logger.LogInformation("Merge dispatcher admitted {Count} job(s) (was {InFlight}/{Cap} in flight).",
-                    candidates.Count, inFlight, MaxInFlight);
+                    candidates.Count, inFlight, _maxInFlight);
         }
 
         // Serialized onto the low-concurrency "merge" queue (memory-heavy; see Program.cs).
-        // Cap retries (Hangfire's default is 10, with backoff stretching to days): a merge that keeps
-        // failing transiently — e.g. a 503 because the AADR panel isn't provisioned — should give up
-        // after a few attempts and surface as Failed, not retry for days while holding a merge worker.
+        // NO automatic retries (Attempts = 0): the 2M-panel merge needs ~25 GB RAM, so an auto-retry of a
+        // failed merge just OOMs again and ties up the single merge worker. Any failure is recorded as
+        // Failed; an admin re-runs it (RequeueAsync) once the cause is addressed. Attempts = 0 also stops
+        // Hangfire from re-running a job whose worker died (e.g. a redeploy) — that surfaces as Failed via
+        // MergeJobFailureStateFilter instead.
         [Queue("merge")]
-        [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
+        [AutomaticRetry(Attempts = 0)]
         public async Task RunAsync(int geneticInspectionId, CancellationToken cancellationToken = default)
         {
             try
@@ -80,8 +86,8 @@ namespace Odin.Api.Endpoints.MergeManagement
             }
             finally
             {
-                // This job just left the in-flight set (success, terminal fail, or about to rethrow for a
-                // retry) — a slot may have freed, so admit the next waiting merge. Idempotent + capped.
+                // This job just left the in-flight set (success or terminal fail) — a slot may have freed,
+                // so admit the next waiting merge. Idempotent + capped.
                 backgroundJobClient.Enqueue<IMergeJob>(svc => svc.DispatchPendingMergesAsync(CancellationToken.None));
             }
         }
@@ -154,24 +160,46 @@ namespace Odin.Api.Endpoints.MergeManagement
                     "Merge for inspection {InspectionId} ready: id={MergeId}, {SizeBytes} bytes, panel={Panel}.",
                     geneticInspectionId, result.MergeId, result.SizeBytes, result.Panel);
             }
-            catch (MergePipelineException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
+            catch (MergePipelineException ex)
             {
-                // Terminal: the upload can't be converted/used. Retrying the same bytes won't help.
+                // No auto-retry: every tools-api failure is terminal here — a bad upload (400), the panel
+                // not provisioned (503), an OOM-killed mergeit or other tool failure (500), or a timeout.
+                // Record it as Failed; an admin re-runs it (RequeueAsync) once the cause is addressed.
                 await SetStatusAsync(file, MergeStatus.Failed, ex.Detail, cancellationToken);
-                logger.LogWarning("Merge for inspection {InspectionId} failed (terminal): {Detail}.",
-                    geneticInspectionId, ex.Detail);
+                logger.LogWarning("Merge for inspection {InspectionId} failed ({Status}): {Detail}.",
+                    geneticInspectionId, (int)ex.StatusCode, ex.Detail);
             }
             catch (Exception ex)
             {
-                // 503 (AADR not provisioned) / 5xx / timeout / network → transient. Mark Retrying (not
-                // Failed) so the order isn't shown as failed mid-retry and the dispatcher keeps counting
-                // it as in-flight; then rethrow so Hangfire retries. If retries are exhausted, the job
-                // lands in Hangfire's FailedState and MergeJobFailureStateFilter reconciles it to Failed.
-                await SetStatusAsync(file, MergeStatus.Retrying, Truncate(ex.Message, 1000), cancellationToken);
-                logger.LogError(ex, "Merge for inspection {InspectionId} failed transiently; will retry.",
-                    geneticInspectionId);
-                throw;
+                // Network/timeout/unexpected — also terminal (no auto-retry). Admin re-runs if appropriate.
+                await SetStatusAsync(file, MergeStatus.Failed, Truncate(ex.Message, 1000), cancellationToken);
+                logger.LogError(ex, "Merge for inspection {InspectionId} failed.", geneticInspectionId);
             }
+        }
+
+        public async Task RequeueAsync(int rawGeneticFileId, CancellationToken cancellationToken = default)
+        {
+            var file = await dbContext.RawGeneticFiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(f => f.Id == rawGeneticFileId, cancellationToken);
+            if (file is null)
+                throw new KeyNotFoundException($"No raw genetic file with id {rawGeneticFileId}.");
+
+            if (file.MergeStatus is MergeStatus.Queued or MergeStatus.Converting or MergeStatus.Merging)
+                throw new InvalidOperationException("A merge for this file is already in progress.");
+            if (file.MergeStatus is MergeStatus.Ready)
+                throw new InvalidOperationException("This merge is already complete.");
+
+            var previous = file.MergeStatus;
+            // Put it back in the logical queue (NotStarted); the dispatcher admits it when a slot is free.
+            file.MergeStatus = MergeStatus.NotStarted;
+            file.MergeError = null;
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await BroadcastMergeStatusAsync(file, cancellationToken);
+
+            backgroundJobClient.Enqueue<IMergeJob>(svc => svc.DispatchPendingMergesAsync(CancellationToken.None));
+            logger.LogInformation("Admin requeued merge for raw file {FileId} (was {Previous}).",
+                rawGeneticFileId, previous);
         }
 
         public async Task DeleteAsync(int rawGeneticFileId, CancellationToken cancellationToken = default)

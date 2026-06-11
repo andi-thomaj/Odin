@@ -88,3 +88,13 @@ The 422 from activate carries a human-readable validation message (transposed `.
 `MergePanelLabelsEndpoints` (`api/merge-panel/labels`, `ScientistOrAdmin`) proxies the tools-api `/v1/merge/panel/ind*` routes so Scientists/Admins can correct the AADR panel's **population labels** (column 3 of the `.ind`) without re-uploading the multi-GB panel: `GET /` (list samples), `PUT /row` (edit one by row index), `POST /rename` (rename a label across all samples that have it). The frontend page is Tools → "Panel Labels" (`requireScientistOrAdminBeforeLoad`, `DataGridPro` inline edit + rename dialog).
 
 The tools-api enforces the invariants (text-only on col 3, order-preserving — the `.geno` is keyed by row position; no whitespace in a label; atomic write + `*.ind.bak`); these endpoints just relay via `MergePipelineService` and map a 422 (validation) / 502 (tools-api unreachable) through the shared `Proxy(...)` helper. Adding methods to `IMergePipelineService` means the `StubMergeService` in `Odin.Api.Tests/.../MergeJobTests.cs` must implement them too, or the test project won't compile.
+
+## Merge execution model — serialized, no auto-retry, admin-only retry
+
+The AADR merge is memory-heavy (`mergeit` on the 2M panel needs **~25 GB RAM**), so the shared 30 GB host (both envs co-located) can only run **one at a time** — two concurrent merges OOM-kill each other (`mergeit` `exit -9`).
+
+- **Serialized.** `Merge:MaxConcurrentMerges` (`MergeJobOptions`, default **1**) sets BOTH the dispatcher's in-flight cap (`MergeJob._maxInFlight`) and the Hangfire `merge`-queue `WorkerCount` (Program.cs). Raise only with the RAM headroom for concurrent merges.
+- **No automatic retries.** `RunAsync` is `[AutomaticRetry(Attempts = 0)]`; any failure (bad upload 400, panel unavailable 503, OOM-killed `mergeit` 500, timeout) is recorded `MergeStatus.Failed` and does **not** rethrow — an auto-retry of a 25 GB merge just OOMs again and ties up the single worker. `MergeStatus.Retrying` is now unused in the normal path; `MergeJobFailureStateFilter` still reconciles a hard-crashed (worker-died) job to Failed.
+- **Admin-initiated retry only.** `IMergeJob.RequeueAsync(rawGeneticFileId)` resets a non-running merge to `NotStarted` and dispatches; exposed as `POST api/admin/merge/{rawGeneticFileId}/retry` (`AdminOnly`) and surfaced as a **Retry** button on the Input page's results grid (admin-only, shown for `Failed` rows). FE: `src/api/merge-admin.ts` + `useRetryMerge`.
+
+NB: serialized + no-retry stops the OOM *storm*, but a single big merge still needs ~25 GB — until the host gets more RAM or swap, large merges will land in `Failed` and admin retry won't help them (only the smaller-SNP-overlap merges that fit in the free RAM succeed).
