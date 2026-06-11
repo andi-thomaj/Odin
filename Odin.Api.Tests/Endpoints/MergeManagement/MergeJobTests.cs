@@ -59,7 +59,7 @@ public class MergeJobTests
     }
 
     [Fact]
-    public async Task RunAsync_AadrUnavailable_IsTransient_Rethrows()
+    public async Task RunAsync_MergeFailure_IsTerminalFailure_NoThrow()
     {
         await using var db = CreateDbContext();
         var (inspectionId, _) = await SeedOrderAsync(db);
@@ -67,17 +67,17 @@ public class MergeJobTests
         var proxy = new StubMergeService
         {
             OnConvert = (_, _) => Task.FromResult(new ConvertResult("x", "x_23andme.txt", "23andme")),
-            OnMerge = (_, _, _, _, _) => throw new MergePipelineException(HttpStatusCode.ServiceUnavailable, "panel not provisioned"),
+            OnMerge = (_, _, _, _, _) => throw new MergePipelineException(HttpStatusCode.InternalServerError, "mergeit failed (exit -9)"),
         };
         var job = CreateJob(db, proxy);
 
-        await Assert.ThrowsAsync<MergePipelineException>(() => job.RunAsync(inspectionId));
+        // No automatic retries: any merge failure is terminal (recorded Failed), and RunAsync does not
+        // rethrow — an admin re-runs it via RequeueAsync.
+        await job.RunAsync(inspectionId);
 
         var file = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
-        // Transient failures are marked Retrying (not Failed) so the order isn't shown as failed mid-retry
-        // and the dispatcher keeps counting it in-flight; Hangfire retries, and exhaustion → Failed via
-        // MergeJobFailureStateFilter.
-        Assert.Equal(MergeStatus.Retrying, file.MergeStatus);
+        Assert.Equal(MergeStatus.Failed, file.MergeStatus);
+        Assert.Contains("mergeit", file.MergeError);
     }
 
     [Fact]
@@ -248,11 +248,50 @@ public class MergeJobTests
         Assert.Equal(MergeStatus.Ready, after.MergeStatus);
     }
 
+    [Fact]
+    public async Task RequeueAsync_FailedMerge_ResetsToNotStarted_AndDispatches()
+    {
+        await using var db = CreateDbContext();
+        var (_, fileId) = await SeedOrderAsync(db);
+        var f = await db.RawGeneticFiles.SingleAsync(x => x.Id == fileId);
+        f.MergeStatus = MergeStatus.Failed;
+        f.MergeError = "mergeit failed (exit -9)";
+        await db.SaveChangesAsync();
+
+        var jobClient = new FakeJobClient();
+        var job = CreateJob(db, new StubMergeService(), jobClient);
+
+        await job.RequeueAsync(fileId);
+
+        var after = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
+        Assert.Equal(MergeStatus.NotStarted, after.MergeStatus);
+        Assert.Null(after.MergeError);
+        Assert.Equal(1, jobClient.CountOf(nameof(IMergeJob.DispatchPendingMergesAsync)));
+    }
+
+    [Fact]
+    public async Task RequeueAsync_InProgress_Throws()
+    {
+        await using var db = CreateDbContext();
+        var (_, fileId) = await SeedOrderAsync(db);
+        var f = await db.RawGeneticFiles.SingleAsync(x => x.Id == fileId);
+        f.MergeStatus = MergeStatus.Merging;
+        await db.SaveChangesAsync();
+
+        var job = CreateJob(db, new StubMergeService());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => job.RequeueAsync(fileId));
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────
     private static MergeJob CreateJob(
-        ApplicationDbContext db, IMergePipelineService proxy, IBackgroundJobClient? jobClient = null)
+        ApplicationDbContext db, IMergePipelineService proxy, IBackgroundJobClient? jobClient = null,
+        int maxInFlight = 2)
         => new(db, proxy, jobClient ?? new FakeJobClient(), new NoopRealtimeNotifier(),
-            TimeProvider.System, NullLogger<MergeJob>.Instance);
+            TimeProvider.System,
+            Microsoft.Extensions.Options.Options.Create(
+                new Odin.Api.Configuration.MergeJobOptions { MaxConcurrentMerges = maxInFlight }),
+            NullLogger<MergeJob>.Instance);
 
     private static async Task<(int inspectionId, int fileId)> SeedOrderAsync(ApplicationDbContext db)
     {

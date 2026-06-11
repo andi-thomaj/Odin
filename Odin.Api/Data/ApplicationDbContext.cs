@@ -28,6 +28,7 @@ namespace Odin.Api.Data
         public DbSet<G25DistancePopulationSample> G25DistancePopulationSamples { get; set; }
         public DbSet<G25PcaPopulationsSample> G25PcaPopulationsSamples { get; set; }
         public DbSet<QpadmPopulationSample> QpadmPopulationSamples { get; set; }
+        public DbSet<QpadmPopulationPanelSample> QpadmPopulationPanelSamples { get; set; }
         public DbSet<ResearchLink> ResearchLinks { get; set; }
         public DbSet<G25SavedCoordinate> G25SavedCoordinates { get; set; }
         public DbSet<G25TargetCoordinate> G25TargetCoordinates { get; set; }

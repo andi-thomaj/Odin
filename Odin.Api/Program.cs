@@ -18,6 +18,7 @@ using Odin.Api.Endpoints.G25PopulationSampleManagement;
 using Odin.Api.Endpoints.G25DistancePopulationSampleManagement;
 using Odin.Api.Endpoints.G25PcaPopulationsSampleManagement;
 using Odin.Api.Endpoints.QpadmPopulationSampleManagement;
+using Odin.Api.Endpoints.QpadmPopulationPanelSampleManagement;
 using Odin.Api.Endpoints.G25SavedCoordinateManagement;
 using Odin.Api.Endpoints.G25TargetCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
@@ -368,6 +369,7 @@ namespace Odin.Api
             services.AddScoped<IG25DistancePopulationSampleService, G25DistancePopulationSampleService>();
             services.AddScoped<IG25PcaPopulationsSampleService, G25PcaPopulationsSampleService>();
             services.AddScoped<IQpadmPopulationSampleService, QpadmPopulationSampleService>();
+            services.AddScoped<IQpadmPopulationPanelSampleService, QpadmPopulationPanelSampleService>();
             services.AddScoped<IG25SavedCoordinateService, G25SavedCoordinateService>();
             services.AddScoped<IG25TargetCoordinateService, G25TargetCoordinateService>();
             services.AddScoped<IG25RegionService, G25RegionService>();
@@ -396,6 +398,8 @@ namespace Odin.Api
 
             services.Configure<Odin.Api.Configuration.ToolsApiOptions>(
                 configuration.GetSection(Odin.Api.Configuration.ToolsApiOptions.SectionName));
+            services.Configure<Odin.Api.Configuration.MergeJobOptions>(
+                configuration.GetSection(Odin.Api.Configuration.MergeJobOptions.SectionName));
             services.AddHttpClient<
                 Odin.Api.Endpoints.CladeFinderManagement.ICladeFinderService,
                 Odin.Api.Endpoints.CladeFinderManagement.CladeFinderService>((sp, client) =>
@@ -496,13 +500,17 @@ namespace Odin.Api
                 });
 
                 // Dedicated low-concurrency server for the "merge" queue. The AADR merge is memory-heavy
-                // (mergeit on the HO panel); on the 32 GB host two can run side by side, but disk is the
-                // binding constraint (80 GB; each merge needs a multi-GB temp workspace), so keep this
-                // small. MergeJob.RunAsync is [Queue("merge")]. See the README ops notes.
+                // (mergeit on the 2M panel needs ~25 GB RAM), so by default merges run STRICTLY ONE AT A
+                // TIME — WorkerCount matches MergeJobOptions.MaxConcurrentMerges (also the dispatcher's
+                // in-flight cap), so two 25 GB merges can't run together and OOM-kill each other. Raise
+                // `Merge:MaxConcurrentMerges` only with the RAM headroom for it. MergeJob.RunAsync is
+                // [Queue("merge")]. See the README ops notes.
+                var mergeConcurrency = Math.Max(
+                    1, configuration.GetValue<int?>($"{Odin.Api.Configuration.MergeJobOptions.SectionName}:{nameof(Odin.Api.Configuration.MergeJobOptions.MaxConcurrentMerges)}") ?? 1);
                 services.AddHangfireServer(opts =>
                 {
                     opts.ServerName = "merge-worker";
-                    opts.WorkerCount = 2;
+                    opts.WorkerCount = mergeConcurrency;
                     opts.Queues = new[] { "merge" };
                 });
             }

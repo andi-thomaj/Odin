@@ -37,6 +37,12 @@
     <None Update="Data\SeedData\g25_distance_population_samples.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Data\SeedData\qpadm-population-panel-samples.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Data\SeedData\panel-labels-HO.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Data\SeedData\media\audio\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

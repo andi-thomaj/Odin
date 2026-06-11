@@ -1,4 +1,7 @@
+using Microsoft.Extensions.Logging;
 using Odin.Api.Data.Seeders;
+using Odin.Api.Endpoints.Admin;
+using Odin.Api.Endpoints.MergeManagement;
 
 namespace Odin.Api.Data;
 
@@ -11,13 +14,38 @@ namespace Odin.Api.Data;
 /// All sub-seeders are idempotent — they no-op when their target table already
 /// has rows — so re-running <see cref="SeedAsync"/> is safe.
 /// </summary>
-public class DatabaseSeeder(ApplicationDbContext context)
+public class DatabaseSeeder(
+    ApplicationDbContext context,
+    IMergePipelineService mergeService,
+    ILogger<DatabaseSeeder> logger)
 {
     /// <summary>Runs every seeder in dependency order — the entry point used by app startup.</summary>
     public async Task SeedAsync()
     {
         await SeedReferenceCatalogAsync();
+        await ApplyPanelLabelsAsync();
         await new MediaFileSeeder(context).SeedAsync();
+    }
+
+    /// <summary>
+    /// Applies the committed panel-labels snapshot (<c>Data/SeedData/panel-labels-HO.json</c>) to the
+    /// live <c>.ind</c> via tools-api — the deploy-time half of panel promotion (links are mirrored in
+    /// <see cref="SeedReferenceCatalogAsync"/>). Runs OUTSIDE the catalog transaction (it's an HTTP call,
+    /// not a DB op) and is non-fatal: the committed default is empty (no-op, no tools-api call), and a
+    /// tools-api failure is logged, not thrown, so a deploy never breaks on it.
+    /// </summary>
+    private async Task ApplyPanelLabelsAsync()
+    {
+        var snapshot = await PanelPromotionSnapshots.LoadLabelsAsync();
+        if (snapshot is not { Rows.Count: > 0 }) return; // no committed labels → nothing to apply
+
+        var result = await PanelPromotionSnapshots.ApplyLabelsAsync(mergeService, snapshot);
+        if (result.Applied)
+            logger.LogInformation(
+                "Panel-labels promotion: {Changed}/{Total} label(s) changed, {Missing} sample(s) not found.",
+                result.Changed, result.Total, result.MissingSamples.Count);
+        else
+            logger.LogWarning("Panel-labels promotion skipped (tools-api): {Error}", result.Error);
     }
 
     /// <summary>
@@ -35,6 +63,8 @@ public class DatabaseSeeder(ApplicationDbContext context)
         await new EthnicityAndRegionSeeder(context).SeedAsync();
         await new QpadmEraAndPopulationSeeder(context).SeedAsync();
         await new G25Seeder(context).SeedAsync();
+        // Links depend on populations being present; applies the committed promotion snapshot (no-op by default).
+        await new QpadmPopulationPanelSampleSeeder(context).SeedAsync();
         await transaction.CommitAsync();
     }
 }
