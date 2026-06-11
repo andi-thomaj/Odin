@@ -18,6 +18,7 @@ using Odin.Api.Endpoints.G25PopulationSampleManagement;
 using Odin.Api.Endpoints.G25DistancePopulationSampleManagement;
 using Odin.Api.Endpoints.G25PcaPopulationsSampleManagement;
 using Odin.Api.Endpoints.QpadmPopulationSampleManagement;
+using Odin.Api.Endpoints.QpadmPopulationPanelSampleManagement;
 using Odin.Api.Endpoints.G25SavedCoordinateManagement;
 using Odin.Api.Endpoints.G25TargetCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
@@ -368,6 +369,7 @@ namespace Odin.Api
             services.AddScoped<IG25DistancePopulationSampleService, G25DistancePopulationSampleService>();
             services.AddScoped<IG25PcaPopulationsSampleService, G25PcaPopulationsSampleService>();
             services.AddScoped<IQpadmPopulationSampleService, QpadmPopulationSampleService>();
+            services.AddScoped<IQpadmPopulationPanelSampleService, QpadmPopulationPanelSampleService>();
             services.AddScoped<IG25SavedCoordinateService, G25SavedCoordinateService>();
             services.AddScoped<IG25TargetCoordinateService, G25TargetCoordinateService>();
             services.AddScoped<IG25RegionService, G25RegionService>();

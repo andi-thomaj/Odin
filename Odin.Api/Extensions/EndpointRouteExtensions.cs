@@ -5,6 +5,7 @@ using Odin.Api.Endpoints.G25PopulationSampleManagement;
 using Odin.Api.Endpoints.G25DistancePopulationSampleManagement;
 using Odin.Api.Endpoints.G25PcaPopulationsSampleManagement;
 using Odin.Api.Endpoints.QpadmPopulationSampleManagement;
+using Odin.Api.Endpoints.QpadmPopulationPanelSampleManagement;
 using Odin.Api.Endpoints.G25SavedCoordinateManagement;
 using Odin.Api.Endpoints.G25TargetCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
@@ -50,6 +51,7 @@ namespace Odin.Api.Extensions
             v1.MapG25DistancePopulationSampleEndpoints();
             v1.MapG25PcaPopulationsSampleEndpoints();
             v1.MapQpadmPopulationSampleEndpoints();
+            v1.MapQpadmPopulationPanelSampleEndpoints();
             v1.MapG25SavedCoordinateEndpoints();
             v1.MapG25TargetCoordinateEndpoints();
             v1.MapG25RegionEndpoints();

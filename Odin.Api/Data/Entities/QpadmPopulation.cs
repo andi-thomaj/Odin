@@ -21,6 +21,12 @@ namespace Odin.Api.Data.Entities
         /// (typically <see cref="DateTime.UtcNow"/> ticks) and used as <c>?v=</c> on the public URL.
         /// </summary>
         public long? VideoAvatarVersion { get; set; }
+
+        /// <summary>
+        /// Merge-panel samples (by stable <c>.ind</c> sample id) linked to this population.
+        /// Many-to-many — see <see cref="QpadmPopulationPanelSample"/>.
+        /// </summary>
+        public List<QpadmPopulationPanelSample> PanelSamples { get; set; } = [];
     }
 
     public class QpadmPopulationConfiguration : IEntityTypeConfiguration<QpadmPopulation>
