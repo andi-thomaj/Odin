@@ -334,6 +334,18 @@ public class MergeJobTests
         public Task<PanelActivateResult> ActivatePanelAsync(
             string? panel, bool force, CancellationToken cancellationToken = default)
             => throw new NotImplementedException();
+
+        public Task<PanelIndRowsResult> GetPanelIndRowsAsync(
+            string? panel, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<PanelIndRowResult> SetPanelIndRowLabelAsync(
+            string? panel, int index, string label, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
+
+        public Task<PanelRenameLabelResult> RenamePanelLabelAsync(
+            string? panel, string fromLabel, string toLabel, CancellationToken cancellationToken = default)
+            => throw new NotImplementedException();
     }
 
     private sealed class FakeJobClient : IBackgroundJobClient

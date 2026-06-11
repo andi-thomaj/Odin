@@ -167,6 +167,58 @@ namespace Odin.Api.Endpoints.MergeManagement
                 dto.Warnings ?? []);
         }
 
+        public async Task<PanelIndRowsResult> GetPanelIndRowsAsync(
+            string? panel, CancellationToken cancellationToken = default)
+        {
+            EnsureConfigured();
+            var path = "/v1/merge/panel/ind" + BuildQuery(("panel", panel));
+            using var request = BuildRequest(HttpMethod.Get, path);
+            using var response = await httpClient.SendAsync(
+                request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            var dto = await ReadOrThrow<PanelIndRowsDto>(response, path, cancellationToken);
+            var rows = (dto.Rows ?? [])
+                .Select(r => new PanelIndRowResult(r.Index, r.Id, r.Sex, r.Label)).ToList();
+            return new PanelIndRowsResult(dto.Panel, dto.Prefix, dto.Count, rows);
+        }
+
+        public async Task<PanelIndRowResult> SetPanelIndRowLabelAsync(
+            string? panel, int index, string label, CancellationToken cancellationToken = default)
+        {
+            EnsureConfigured();
+            var path = "/v1/merge/panel/ind/row"
+                + BuildQuery(("panel", panel), ("index", index.ToString()), ("label", label));
+            using var request = BuildRequest(HttpMethod.Put, path);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            var dto = await ReadOrThrow<PanelIndRowDto>(response, path, cancellationToken);
+            return new PanelIndRowResult(dto.Index, dto.Id, dto.Sex, dto.Label);
+        }
+
+        public async Task<PanelRenameLabelResult> RenamePanelLabelAsync(
+            string? panel, string fromLabel, string toLabel, CancellationToken cancellationToken = default)
+        {
+            EnsureConfigured();
+            var path = "/v1/merge/panel/ind/rename-label"
+                + BuildQuery(("panel", panel), ("from_label", fromLabel), ("to_label", toLabel));
+            using var request = BuildRequest(HttpMethod.Post, path);
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            var dto = await ReadOrThrow<PanelRenameLabelDto>(response, path, cancellationToken);
+            return new PanelRenameLabelResult(dto.Panel, dto.FromLabel, dto.ToLabel, dto.RowsChanged);
+        }
+
+        /// <summary>Throw a <see cref="MergePipelineException"/> on a non-success status (preserving the
+        /// tools-api detail), else deserialize the JSON body.</summary>
+        private async Task<T> ReadOrThrow<T>(HttpResponseMessage response, string path, CancellationToken ct)
+        {
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(ct);
+                logger.LogWarning("Panel API error {Status} on {Path}: {Body}", (int)response.StatusCode, path, body);
+                throw new MergePipelineException(response.StatusCode, ExtractDetail(body));
+            }
+            return await response.Content.ReadFromJsonAsync<T>(JsonOptions, ct)
+                ?? throw new InvalidOperationException($"Panel API returned an empty response from {path}.");
+        }
+
         private async Task<PanelStatusResult> ReadPanelStatus(
             HttpResponseMessage response, string path, CancellationToken cancellationToken)
         {
@@ -287,5 +339,16 @@ namespace Odin.Api.Endpoints.MergeManagement
             [property: JsonPropertyName("n_snps")] int? NSnps,
             [property: JsonPropertyName("n_population_labels")] int? NPopulationLabels,
             IReadOnlyList<string>? Warnings);
+
+        private sealed record PanelIndRowDto(int Index, string Id, string Sex, string Label);
+
+        private sealed record PanelIndRowsDto(
+            string Panel, string Prefix, int Count, IReadOnlyList<PanelIndRowDto>? Rows);
+
+        private sealed record PanelRenameLabelDto(
+            string Panel,
+            [property: JsonPropertyName("from_label")] string FromLabel,
+            [property: JsonPropertyName("to_label")] string ToLabel,
+            [property: JsonPropertyName("rows_changed")] int RowsChanged);
     }
 }

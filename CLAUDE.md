@@ -82,3 +82,9 @@ These files are **2–10 GB**, so the upload path deliberately departs from the 
 - **Reverse proxy is the likely failure point.** Coolify/Traefik enforces its own request-body-size and read/idle timeouts; these must be raised for this route on the server (not in code), or a large upload 413s/times out before reaching .NET.
 
 The 422 from activate carries a human-readable validation message (transposed `.geno`, `???` labels, truncated `.geno`); the FE shows it in a toast. Pass `force=true` to install despite "slow but usable" warnings.
+
+## Panel sample labels — Scientist/Admin editor
+
+`MergePanelLabelsEndpoints` (`api/merge-panel/labels`, `ScientistOrAdmin`) proxies the tools-api `/v1/merge/panel/ind*` routes so Scientists/Admins can correct the AADR panel's **population labels** (column 3 of the `.ind`) without re-uploading the multi-GB panel: `GET /` (list samples), `PUT /row` (edit one by row index), `POST /rename` (rename a label across all samples that have it). The frontend page is Tools → "Panel Labels" (`requireScientistOrAdminBeforeLoad`, `DataGridPro` inline edit + rename dialog).
+
+The tools-api enforces the invariants (text-only on col 3, order-preserving — the `.geno` is keyed by row position; no whitespace in a label; atomic write + `*.ind.bak`); these endpoints just relay via `MergePipelineService` and map a 422 (validation) / 502 (tools-api unreachable) through the shared `Proxy(...)` helper. Adding methods to `IMergePipelineService` means the `StubMergeService` in `Odin.Api.Tests/.../MergeJobTests.cs` must implement them too, or the test project won't compile.

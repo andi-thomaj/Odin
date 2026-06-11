@@ -42,6 +42,21 @@ namespace Odin.Api.Endpoints.MergeManagement
         /// despite "slow but usable" warnings (transposed layout / '???' labels). Throws (422) on hard errors.</summary>
         Task<PanelActivateResult> ActivatePanelAsync(
             string? panel, bool force, CancellationToken cancellationToken = default);
+
+        // ── Panel .ind population-label view/edit (Scientist/Admin) ────────────────────────────
+        // Correct mislabeled samples in the panel's .ind without re-uploading the multi-GB panel.
+
+        /// <summary>List the panel's samples (.ind rows: index, id, sex, population label).</summary>
+        Task<PanelIndRowsResult> GetPanelIndRowsAsync(string? panel, CancellationToken cancellationToken = default);
+
+        /// <summary>Set the population label (col 3) of one sample by its row index. Throws (422) on a bad
+        /// label or out-of-range index.</summary>
+        Task<PanelIndRowResult> SetPanelIndRowLabelAsync(
+            string? panel, int index, string label, CancellationToken cancellationToken = default);
+
+        /// <summary>Rename a population label across every sample that currently has it; returns the count.</summary>
+        Task<PanelRenameLabelResult> RenamePanelLabelAsync(
+            string? panel, string fromLabel, string toLabel, CancellationToken cancellationToken = default);
     }
 
     /// <summary>Result of <see cref="IMergePipelineService.ConvertAsync"/>.</summary>
@@ -66,6 +81,16 @@ namespace Odin.Api.Endpoints.MergeManagement
     public sealed record PanelActivateResult(
         string Panel, bool Ready, string? Layout,
         int? NIndividuals, int? NSnps, int? NPopulationLabels, IReadOnlyList<string> Warnings);
+
+    /// <summary>One sample in the panel's .ind, addressed by genotype row order.</summary>
+    public sealed record PanelIndRowResult(int Index, string Id, string Sex, string Label);
+
+    /// <summary>All samples of a panel's .ind.</summary>
+    public sealed record PanelIndRowsResult(
+        string Panel, string Prefix, int Count, IReadOnlyList<PanelIndRowResult> Rows);
+
+    /// <summary>Result of renaming a population label across all samples that had it.</summary>
+    public sealed record PanelRenameLabelResult(string Panel, string FromLabel, string ToLabel, int RowsChanged);
 
     /// <summary>Raised when the tools API returns a non-success status, preserving the status code.</summary>
     public sealed class MergePipelineException(HttpStatusCode statusCode, string detail) : Exception(detail)
