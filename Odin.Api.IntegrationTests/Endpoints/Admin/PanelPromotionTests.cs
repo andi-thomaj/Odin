@@ -1,5 +1,3 @@
-using System.Net;
-using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Odin.Api.Data;
@@ -12,12 +10,11 @@ using Odin.Api.IntegrationTests.Infrastructure;
 namespace Odin.Api.IntegrationTests.Endpoints.Admin;
 
 /// <summary>
-/// Coverage for promoting Panel Labels edits between environments: the links full-mirror, the label
-/// diff-apply, the export endpoint, and the AdminOnly boundary. The committed SeedData snapshot files
-/// are intentionally empty (no-op), so link/label apply logic is exercised directly with in-memory
-/// snapshots; the import endpoint itself gets a smoke test.
+/// Coverage for the panel-promotion apply logic that the startup seeder runs on deploy: the links
+/// full-mirror (against the real DB) and the label diff-apply (against an in-memory tools-api fake).
+/// Exercised directly with in-memory snapshots since the committed SeedData files are empty no-ops.
 /// </summary>
-public class PanelPromotionEndpointsTests(CustomWebApplicationFactory factory) : IntegrationTestBase(factory)
+public class PanelPromotionTests(CustomWebApplicationFactory factory) : IntegrationTestBase(factory)
 {
     private const string Panel = "HO";
 
@@ -178,12 +175,7 @@ public class PanelPromotionEndpointsTests(CustomWebApplicationFactory factory) :
             ],
         };
 
-        LabelApplyResult result;
-        await using (var scope = Factory.Services.CreateAsyncScope())
-        {
-            var service = scope.ServiceProvider.GetRequiredService<IPanelPromotionService>();
-            result = await service.ApplyLabelsAsync(snapshot);
-        }
+        var result = await PanelPromotionSnapshots.ApplyLabelsAsync(fake, snapshot);
 
         Assert.True(result.Applied);
         Assert.Equal(2, result.Changed);
@@ -209,38 +201,10 @@ public class PanelPromotionEndpointsTests(CustomWebApplicationFactory factory) :
             Rows = [new PanelLabelRow { Id = "HO.001", Label = "A" }, new PanelLabelRow { Id = "HO.002", Label = "B" }],
         };
 
-        await using var scope = Factory.Services.CreateAsyncScope();
-        var service = scope.ServiceProvider.GetRequiredService<IPanelPromotionService>();
-        var result = await service.ApplyLabelsAsync(snapshot);
+        var result = await PanelPromotionSnapshots.ApplyLabelsAsync(fake, snapshot);
 
         Assert.True(result.Applied);
         Assert.Equal(0, result.Changed);
         Assert.Equal(2, result.Total);
-    }
-
-    // ── Import endpoint (HTTP smoke — committed snapshot is the empty no-op default) ──
-
-    [Fact]
-    public async Task Import_WithDefaultEmptySnapshot_ReturnsZeroes()
-    {
-        await SeedPopulationsAsync();
-
-        var response = await Client.PostAsync("/api/admin/panel-promotion/import", null);
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<PanelPromotionImportContract.Response>();
-        Assert.NotNull(body);
-        Assert.Equal(0, body.LinksAdded);
-        Assert.Equal(0, body.LinksRemoved);
-    }
-
-    // ── AuthZ ──────────────────────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task Import_AsScientist_IsForbidden()
-    {
-        var client = await CreateClientAsAsync("auth0|panel-promo-scientist2", AppRole.Scientist);
-        var response = await client.PostAsync("/api/admin/panel-promotion/import", null);
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
     }
 }

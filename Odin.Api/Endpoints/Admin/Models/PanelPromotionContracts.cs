@@ -34,24 +34,3 @@ public sealed class PanelLabelsSnapshot
     public string Panel { get; set; } = "HO";
     public List<PanelLabelRow> Rows { get; set; } = [];
 }
-
-public static class PanelPromotionImportContract
-{
-    /// <summary>Summary of applying the committed snapshots to the current environment.</summary>
-    public class Response
-    {
-        public int LinksAdded { get; set; }
-        public int LinksRemoved { get; set; }
-        public int LinksUnchanged { get; set; }
-        public List<string> UnknownPopulations { get; set; } = [];
-
-        public bool LabelsApplied { get; set; }
-        public int LabelsChanged { get; set; }
-        public int LabelsTotal { get; set; }
-        public List<string> MissingSamples { get; set; } = [];
-        /// <summary>Non-null when the label apply step failed (e.g. tools-api unreachable).</summary>
-        public string? LabelsError { get; set; }
-
-        public long DurationMs { get; set; }
-    }
-}

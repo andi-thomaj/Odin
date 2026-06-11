@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.Admin.Models;
+using Odin.Api.Endpoints.MergeManagement;
 
 namespace Odin.Api.Endpoints.Admin;
 
@@ -13,6 +14,16 @@ public sealed class LinksMirrorResult
     public int Removed { get; set; }
     public int Unchanged { get; set; }
     public List<string> UnknownPopulations { get; set; } = [];
+}
+
+/// <summary>Outcome of applying a labels snapshot to the live panel <c>.ind</c>.</summary>
+public sealed class LabelApplyResult
+{
+    public bool Applied { get; set; }
+    public int Changed { get; set; }
+    public int Total { get; set; }
+    public List<string> MissingSamples { get; set; } = [];
+    public string? Error { get; set; }
 }
 
 /// <summary>
@@ -129,6 +140,47 @@ public static class PanelPromotionSnapshots
         }
 
         await db.SaveChangesAsync(cancellationToken);
+        return result;
+    }
+
+    /// <summary>
+    /// Diffs a labels snapshot against the live <c>.ind</c> (via tools-api) and writes only the rows
+    /// whose label changed. Never throws — tools-api failures surface in <see cref="LabelApplyResult.Error"/>
+    /// so a deploy/seed never breaks on a tools-api hiccup. A no-diff run makes zero writes.
+    /// </summary>
+    public static async Task<LabelApplyResult> ApplyLabelsAsync(
+        IMergePipelineService mergeService, PanelLabelsSnapshot snapshot,
+        CancellationToken cancellationToken = default)
+    {
+        var result = new LabelApplyResult();
+        try
+        {
+            var ind = await mergeService.GetPanelIndRowsAsync(snapshot.Panel, cancellationToken);
+            var targetById = ind.Rows.ToDictionary(r => r.Id);
+
+            foreach (var row in snapshot.Rows)
+            {
+                if (!targetById.TryGetValue(row.Id, out var target))
+                {
+                    result.MissingSamples.Add(row.Id);
+                    continue;
+                }
+                result.Total++;
+                if (target.Label == row.Label) continue;
+
+                await mergeService.SetPanelIndRowLabelAsync(
+                    snapshot.Panel, target.Index, row.Label, cancellationToken);
+                result.Changed++;
+            }
+
+            result.Applied = true;
+        }
+        catch (Exception ex)
+        {
+            result.Applied = false;
+            result.Error = ex is MergePipelineException mpe ? mpe.Detail : ex.Message;
+        }
+
         return result;
     }
 }
