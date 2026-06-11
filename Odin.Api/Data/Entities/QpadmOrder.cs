@@ -34,6 +34,11 @@ namespace Odin.Api.Data.Entities
                 .WithOne(gi => gi.Order)
                 .HasForeignKey<QpadmGeneticInspection>(gi => gi.OrderId);
 
+            // Per-user order list filters on CreatedBy and orders by CreatedAt; the admin list orders
+            // by CreatedAt across all rows. Without these the listings full-scan the table.
+            builder.HasIndex(e => new { e.CreatedBy, e.CreatedAt });
+            builder.HasIndex(e => e.CreatedAt);
+
             builder.ToTable("qpadm_orders");
         }
     }

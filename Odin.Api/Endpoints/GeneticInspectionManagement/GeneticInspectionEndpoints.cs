@@ -79,9 +79,9 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
         }
 
-        private static async Task<IResult> GetAll(IGeneticInspectionService service)
+        private static async Task<IResult> GetAll(IGeneticInspectionService service, int? skip = null, int? take = null)
         {
-            var inspections = await service.GetAllAsync();
+            var inspections = await service.GetAllAsync(skip, take);
             return Results.Ok(inspections);
         }
 

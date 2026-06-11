@@ -31,6 +31,11 @@ namespace Odin.Api.Data.Entities
                 .HasForeignKey<G25GeneticInspection>(gi => gi.OrderId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Per-user order list filters on CreatedBy and orders by CreatedAt; the admin list orders
+            // by CreatedAt across all rows. Without these the listings full-scan the table.
+            builder.HasIndex(e => new { e.CreatedBy, e.CreatedAt });
+            builder.HasIndex(e => e.CreatedAt);
+
             builder.ToTable("g25_orders");
         }
     }

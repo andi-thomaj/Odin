@@ -398,8 +398,11 @@ namespace Odin.Api
 
             services.Configure<Odin.Api.Configuration.ToolsApiOptions>(
                 configuration.GetSection(Odin.Api.Configuration.ToolsApiOptions.SectionName));
+            // Merges are pinned to STRICTLY ONE AT A TIME and run sequentially. The in-flight cap is
+            // hardcoded to 1 here (NOT bound from `Merge:MaxConcurrentMerges`) so no appsettings/env
+            // override can ever let two ~25 GB merges run concurrently and OOM-kill each other.
             services.Configure<Odin.Api.Configuration.MergeJobOptions>(
-                configuration.GetSection(Odin.Api.Configuration.MergeJobOptions.SectionName));
+                opts => opts.MaxConcurrentMerges = 1);
             services.AddHttpClient<
                 Odin.Api.Endpoints.CladeFinderManagement.ICladeFinderService,
                 Odin.Api.Endpoints.CladeFinderManagement.CladeFinderService>((sp, client) =>
@@ -499,18 +502,15 @@ namespace Odin.Api
                     opts.Queues = new[] { "default" };
                 });
 
-                // Dedicated low-concurrency server for the "merge" queue. The AADR merge is memory-heavy
-                // (mergeit on the 2M panel needs ~25 GB RAM), so by default merges run STRICTLY ONE AT A
-                // TIME — WorkerCount matches MergeJobOptions.MaxConcurrentMerges (also the dispatcher's
-                // in-flight cap), so two 25 GB merges can't run together and OOM-kill each other. Raise
-                // `Merge:MaxConcurrentMerges` only with the RAM headroom for it. MergeJob.RunAsync is
-                // [Queue("merge")]. See the README ops notes.
-                var mergeConcurrency = Math.Max(
-                    1, configuration.GetValue<int?>($"{Odin.Api.Configuration.MergeJobOptions.SectionName}:{nameof(Odin.Api.Configuration.MergeJobOptions.MaxConcurrentMerges)}") ?? 1);
+                // Dedicated server for the "merge" queue with a SINGLE worker, so merges execute
+                // strictly sequentially — one finishes before the next starts. The AADR merge is
+                // memory-heavy (mergeit on the 2M panel needs ~25 GB RAM), so two can never run
+                // together and OOM-kill each other. WorkerCount is a hard literal 1 (not derived from
+                // config) to match the pinned in-flight cap above. MergeJob.RunAsync is [Queue("merge")].
                 services.AddHangfireServer(opts =>
                 {
                     opts.ServerName = "merge-worker";
-                    opts.WorkerCount = mergeConcurrency;
+                    opts.WorkerCount = 1;
                     opts.Queues = new[] { "merge" };
                 });
             }

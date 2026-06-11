@@ -8,7 +8,7 @@ namespace Odin.Api.Endpoints.MergeManagement
     public interface IMergeJob
     {
         /// <summary>
-        /// Admit waiting merges up to the in-flight cap (default 1; <c>Merge:MaxConcurrentMerges</c>). Picks
+        /// Admit waiting merges up to the in-flight cap (pinned to 1 — merges run strictly sequentially). Picks
         /// the oldest <c>NotStarted</c> qpAdm raw files (the logical FIFO queue), marks each <c>Queued</c>,
         /// and enqueues <see cref="RunAsync"/> for it — but only while (Queued + Converting + Merging) &lt;
         /// cap. Serialized across the cluster via <c>[DisableConcurrentExecution]</c> so the count→admit step

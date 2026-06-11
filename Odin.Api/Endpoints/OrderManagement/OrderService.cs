@@ -618,9 +618,17 @@ public partial class OrderService(
 
         public async Task<IEnumerable<AdminGetOrderContract.Response>> GetAllAdminAsync(int? skip = null, int? take = null)
         {
+            // When paging, only the newest (skip+take) rows from EACH table can contribute to the page:
+            // the globally newest N orders are necessarily within each table's own newest N. So bound
+            // the per-table DB read instead of materializing both full tables (the ORDER BY + LIMIT run
+            // in Postgres, served by the (CreatedAt) index). When take is null, behaviour is unchanged.
+            int? perTableLimit = take is null
+                ? null
+                : Math.Max(0, skip ?? 0) + Math.Clamp(take.Value, 1, 500);
+
             // Project owner info from application_users via a left join on CreatedBy → IdentityId so
             // orders whose creator was never provisioned still appear (with null OwnerId/Email).
-            var qpadmOrders = await (
+            IQueryable<AdminGetOrderContract.Response> qpadmQuery =
                 from order in dbContext.QpadmOrders.AsNoTracking()
                 join u in dbContext.Users.AsNoTracking()
                     on order.CreatedBy equals u.IdentityId into userJoin
@@ -654,10 +662,12 @@ public partial class OrderService(
                     OwnerEmail = owner != null ? owner.Email : null,
                     OwnerFirstName = owner != null ? owner.FirstName : string.Empty,
                     OwnerLastName = owner != null ? owner.LastName : string.Empty,
-                })
-                .ToListAsync();
+                };
+            if (perTableLimit is { } qpadmLimit)
+                qpadmQuery = qpadmQuery.OrderByDescending(o => o.CreatedAt).Take(qpadmLimit);
+            var qpadmOrders = await qpadmQuery.ToListAsync();
 
-            var g25Orders = await (
+            IQueryable<AdminGetOrderContract.Response> g25Query =
                 from order in dbContext.G25Orders.AsNoTracking()
                 join u in dbContext.Users.AsNoTracking()
                     on order.CreatedBy equals u.IdentityId into userJoin
@@ -687,14 +697,16 @@ public partial class OrderService(
                     OwnerEmail = owner != null ? owner.Email : null,
                     OwnerFirstName = owner != null ? owner.FirstName : string.Empty,
                     OwnerLastName = owner != null ? owner.LastName : string.Empty,
-                })
-                .ToListAsync();
+                };
+            if (perTableLimit is { } g25Limit)
+                g25Query = g25Query.OrderByDescending(o => o.CreatedAt).Take(g25Limit);
+            var g25Orders = await g25Query.ToListAsync();
 
             var combined = qpadmOrders.Concat(g25Orders).OrderByDescending(o => o.CreatedAt);
             // Optional, additive paging: when `take` is omitted the full list is returned (unchanged
-            // behaviour, so existing callers aren't affected). When provided, return that page of the
-            // combined, newest-first result. NOTE: both tables are still materialized before slicing —
-            // this bounds the response, not the DB read; DB-level paging needs a UNION rewrite (follow-up).
+            // behaviour, so existing callers aren't affected). When provided, each table was already
+            // bounded to the newest (skip+take) rows at the DB above, so this final merge/slice runs
+            // over at most 2*(skip+take) rows in memory rather than the whole tables.
             if (take is null)
                 return combined.ToList();
             return combined.Skip(Math.Max(0, skip ?? 0)).Take(Math.Clamp(take.Value, 1, 500)).ToList();

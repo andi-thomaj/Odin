@@ -19,10 +19,11 @@ namespace Odin.Api.Endpoints.MergeManagement
         IOptions<MergeJobOptions> mergeOptions,
         ILogger<MergeJob> logger) : IMergeJob
     {
-        // Cap on merge jobs in flight (Queued + Converting + Merging). Defaults to 1 (serialized) — the
-        // 2M-panel mergeit needs ~25 GB RAM, so two at once OOM-kill each other. Matches the "merge"
-        // queue WorkerCount (Program.cs), so admitted jobs run immediately; orders beyond the cap wait
-        // as NotStarted in the DB. Configurable via Merge:MaxConcurrentMerges.
+        // Cap on merge jobs in flight (Queued + Converting + Merging). Pinned to 1 — merges run strictly
+        // sequentially because the 2M-panel mergeit needs ~25 GB RAM and two at once OOM-kill each other.
+        // The value is hardcoded to 1 in Program.cs (not bound from config) and matches the single-worker
+        // "merge" Hangfire queue, so the admitted job runs immediately; orders beyond it wait as NotStarted
+        // in the DB. (The injected option stays settable so unit tests can exercise the admission math.)
         private readonly int _maxInFlight = Math.Max(1, mergeOptions.Value.MaxConcurrentMerges);
 
         // Serialized so the count→admit step can't over-admit when fired from several sources at once
