@@ -145,27 +145,11 @@ namespace Odin.Api.Middleware
                             async entry =>
                             {
                                 var client = httpClientFactory.CreateClient("Auth0UserInfo");
-                                string v = "false";
-                                int status = 0;
-                                for (var attempt = 0; attempt < 3; attempt++)
-                                {
-                                    var (v2, s2) = await Auth0UserInfoEmailVerified.GetAppEmailVerifiedWithStatusAsync(
-                                        client,
-                                        authority,
-                                        accessToken,
-                                        context.RequestAborted).ConfigureAwait(false);
-                                    v = v2;
-                                    status = s2;
-                                    if (s2 == 200)
-                                        break;
-                                    if (s2 == 429 && attempt < 2)
-                                    {
-                                        await Task.Delay(100 * (attempt + 1), context.RequestAborted).ConfigureAwait(false);
-                                        continue;
-                                    }
-
-                                    break;
-                                }
+                                var (v, status) = await Auth0RetryPolicy.ExecuteAsync(
+                                    ct => Auth0UserInfoEmailVerified.GetAppEmailVerifiedWithStatusAsync(
+                                        client, authority, accessToken, ct),
+                                    logger,
+                                    cancellationToken: context.RequestAborted).ConfigureAwait(false);
 
                                 if (status != 200)
                                 {

@@ -2,6 +2,21 @@
 
 This file is loaded in addition to the root `CLAUDE.md` when working anywhere under `Odin/`.
 
+## Caching — in-process `IMemoryCache`, single instance, invalidate on write
+
+The API runs as a **single instance and is not designed to scale horizontally**, so caching is
+plain in-process `IMemoryCache` (registered in [Odin.Api/Program.cs](Odin.Api/Program.cs)) — no
+Redis / `IDistributedCache`. Follow the established pattern when caching read-mostly reference data:
+`TryGetValue` → query on miss → `Set` with an `AbsoluteExpirationRelativeToNow` TTL safety net;
+**skip the cache under the `Testing` environment** (`IHostEnvironment.IsEnvironment("Testing")`, so
+integration tests read fresh); and **invalidate on write** via `cache.Remove(key)` in the
+create/update/delete/import paths. Centralise keys in a small static class (e.g.
+`OrderResultCacheKeys`, `G25SampleCacheKeys`) rather than inlining strings, and keep
+[BackendCacheMaintenanceService](Odin.Api/Services/BackendCacheMaintenanceService.cs)'s "what gets
+cleared" doc-comment current. Reference implementations: `EraService` (`AllEras`),
+`G25CalculationService` (per-era distance samples), `PopulationService`/`EthnicityService`
+(invalidation). Admin can flush everything via `POST /v1/api/admin/cache/clear`.
+
 ## API versioning — `/v1` today, side-by-side `/v2` for breaking changes
 
 All business endpoints are mounted under `/v1` ([Odin.Api/Program.cs](Odin.Api/Program.cs) → `var v1 = app.MapGroup("/v1");`). SignalR hubs (`/hubs/...`) and infrastructure routes (`/health`, `/jobs`, `/swagger`) stay at the root by convention — they're not part of the versioned API surface.
@@ -54,3 +69,22 @@ endpoints.MapGet("/foo", GetFoo)
 ```
 
 Without `.Produces<T>()`, Swashbuckle emits an empty `content` for the 200 response and `gen:api` won't expose the type to the FE.
+
+## Admin merge-panel restore — streamed multi-GB upload (raised limits)
+
+The AADR `HO` merge panel is a pre-built upload (`v66_2M_aadr_PUB.{geno,snp,ind}`), not Poseidon-provisioned. `MergePanelAdminEndpoints` (`api/admin/merge-panel/*`, `AdminOnly`) proxies the tools-api `/v1/merge/panel/restore/*` flow: `GET status`, `POST upload` (one file at a time), `POST activate`. The frontend surfaces it as Admin → "Restore merge panel".
+
+These files are **2–10 GB**, so the upload path deliberately departs from the global 50 MB limits:
+
+- **Streamed, never buffered.** The browser sends each file as the **raw request body** (`application/octet-stream`); `ext`/`panel`/`sha256` ride as query params. The `upload` handler pipes `HttpContext.Request.Body` straight into `StreamContent` to the tools-api (`MergePipelineService.UploadPanelFileAsync`) — no `IFormFile`/multipart, no memory or temp-file spool.
+- **Per-route Kestrel cap lifted.** The handler sets `IHttpMaxRequestBodySizeFeature.MaxRequestBodySize = null` (the global cap in `Program.cs` stays 50 MB for every other route). Must run before the body is read — hence reading `Request.Body` directly rather than model-binding a form.
+- **Dedicated infinite-timeout client.** `MergePipelineService.PanelClientName` ("ToolsApiPanelRestore") has `Timeout = Timeout.InfiniteTimeSpan` so a slow multi-GB upload isn't killed by the 30-min merge-client timeout; it's bounded instead by the endpoint's **`PanelRestore`** request-timeout policy (2 h) + the request cancellation token.
+- **Reverse proxy is the likely failure point.** Coolify/Traefik enforces its own request-body-size and read/idle timeouts; these must be raised for this route on the server (not in code), or a large upload 413s/times out before reaching .NET.
+
+The 422 from activate carries a human-readable validation message (transposed `.geno`, `???` labels, truncated `.geno`); the FE shows it in a toast. Pass `force=true` to install despite "slow but usable" warnings.
+
+## Panel sample labels — Scientist/Admin editor
+
+`MergePanelLabelsEndpoints` (`api/merge-panel/labels`, `ScientistOrAdmin`) proxies the tools-api `/v1/merge/panel/ind*` routes so Scientists/Admins can correct the AADR panel's **population labels** (column 3 of the `.ind`) without re-uploading the multi-GB panel: `GET /` (list samples), `PUT /row` (edit one by row index), `POST /rename` (rename a label across all samples that have it). The frontend page is Tools → "Panel Labels" (`requireScientistOrAdminBeforeLoad`, `DataGridPro` inline edit + rename dialog).
+
+The tools-api enforces the invariants (text-only on col 3, order-preserving — the `.geno` is keyed by row position; no whitespace in a label; atomic write + `*.ind.bak`); these endpoints just relay via `MergePipelineService` and map a 422 (validation) / 502 (tools-api unreachable) through the shared `Proxy(...)` helper. Adding methods to `IMergePipelineService` means the `StubMergeService` in `Odin.Api.Tests/.../MergeJobTests.cs` must implement them too, or the test project won't compile.

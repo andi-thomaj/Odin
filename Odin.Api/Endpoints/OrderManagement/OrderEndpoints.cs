@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Data.Entities;
+using Odin.Api.Endpoints.MergeManagement;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.Extensions;
 
@@ -96,9 +97,10 @@ namespace Odin.Api.Endpoints.OrderManagement
             return Results.Ok(orders);
         }
 
-        private static async Task<IResult> GetAllAdmin(IOrderService service)
+        private static async Task<IResult> GetAllAdmin(IOrderService service, int? skip = null, int? take = null)
         {
-            var orders = await service.GetAllAdminAsync();
+            // skip/take are optional query params; omitting them returns all orders (unchanged behaviour).
+            var orders = await service.GetAllAdminAsync(skip, take);
             return Results.Ok(orders);
         }
 
@@ -221,21 +223,51 @@ namespace Odin.Api.Endpoints.OrderManagement
             };
         }
 
-        private static async Task<IResult> DownloadMergedData(IOrderService service, HttpContext httpContext, int id)
+        private static async Task<IResult> DownloadMergedData(
+            IOrderService service, IMergePipelineService mergeService, HttpContext httpContext, int id)
         {
             var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
                              ?? httpContext.User.FindFirstValue("sub")
                              ?? string.Empty;
 
-            var (fileBytes, fileName, statusCode, error) = await service.DownloadMergedDataForOrderAsync(id, identityId, IsAdmin(httpContext));
+            var (statusCode, error, mergeId, fileName, legacyBytes) =
+                await service.ResolveMergedDataDownloadAsync(id, identityId, IsAdmin(httpContext));
 
-            return statusCode switch
+            if (statusCode != 200)
             {
-                200 => Results.File(fileBytes!, "application/octet-stream", fileName),
-                403 => Results.Forbid(),
-                400 => Results.BadRequest(new { Message = error }),
-                _ => Results.NotFound(new { Message = error })
-            };
+                return statusCode switch
+                {
+                    403 => Results.Forbid(),
+                    400 => Results.BadRequest(new { Message = error }),
+                    _ => Results.NotFound(new { Message = error })
+                };
+            }
+
+            // Legacy hand-uploaded blob: serve inline.
+            if (legacyBytes is not null)
+                return Results.File(legacyBytes, "application/octet-stream", fileName);
+
+            // Automated merge bundle: stream it straight from the tools-api so the multi-GB body never
+            // buffers in this process. The upstream response is disposed once the body is copied.
+            var ct = httpContext.RequestAborted;
+            HttpResponseMessage upstream;
+            try
+            {
+                upstream = await mergeService.OpenDownloadAsync(mergeId!, ct);
+            }
+            catch (MergePipelineException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return Results.NotFound(new { Message = "The merged dataset is no longer available for this order." });
+            }
+
+            return Results.Stream(async outputStream =>
+            {
+                using (upstream)
+                await using (var body = await upstream.Content.ReadAsStreamAsync(ct))
+                {
+                    await body.CopyToAsync(outputStream, ct);
+                }
+            }, "application/gzip", fileName);
         }
 
         private static async Task<IResult> GetProfilePicture(IOrderService service, HttpContext httpContext, int id)

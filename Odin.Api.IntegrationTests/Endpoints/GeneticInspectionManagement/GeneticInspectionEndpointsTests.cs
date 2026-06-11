@@ -298,6 +298,15 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
 
         await using var scope = Factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        // Results can only be submitted once the AADR merge has finished — simulate a completed merge.
+        var inspectionRow = await db.QpadmGeneticInspections
+            .Include(i => i.RawGeneticFile)
+            .FirstAsync(i => i.Id == createdInspection.Id);
+        inspectionRow.RawGeneticFile!.MergeStatus = MergeStatus.Ready;
+        inspectionRow.RawGeneticFile.MergeId = "test-merge";
+        await db.SaveChangesAsync();
+
         var era = await db.QpadmEras.Include(e => e.Populations).FirstAsync();
         var pops = era.Populations.Take(2).ToList();
 
@@ -321,6 +330,40 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         var result = await response.Content.ReadFromJsonAsync<SubmitQpadmResultContract.Response>(JsonOptions);
         Assert.NotNull(result);
         Assert.NotEmpty(result!.EraGroups);
+    }
+
+    [Fact]
+    public async Task SubmitQpadmResult_BeforeMergeFinished_ReturnsConflict()
+    {
+        await using var seedScope = Factory.Services.CreateAsyncScope();
+        var seeder = seedScope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
+        await seeder.SeedReferenceCatalogAsync();
+
+        // A fresh inspection's merge is NotStarted (the default) — results must be rejected with 409.
+        var createdInspection = await CreateTestInspectionAsync();
+
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var era = await db.QpadmEras.Include(e => e.Populations).FirstAsync();
+        var pops = era.Populations.Take(2).ToList();
+
+        using var form = new MultipartFormDataContent();
+        form.Add(new StringContent(era.Id.ToString()), "EraGroups[0].EraId");
+        form.Add(new StringContent("0.05"), "EraGroups[0].PValue");
+        form.Add(new StringContent("WHG, EHG"), "EraGroups[0].RightSources");
+        form.Add(new StringContent(pops[0].Id.ToString()), "EraGroups[0].Populations[0].PopulationId");
+        form.Add(new StringContent("60"), "EraGroups[0].Populations[0].Percentage");
+        form.Add(new StringContent("1.2"), "EraGroups[0].Populations[0].StandardError");
+        form.Add(new StringContent("2.5"), "EraGroups[0].Populations[0].ZScore");
+        form.Add(new StringContent(pops[1].Id.ToString()), "EraGroups[0].Populations[1].PopulationId");
+        form.Add(new StringContent("40"), "EraGroups[0].Populations[1].Percentage");
+        form.Add(new StringContent("0.8"), "EraGroups[0].Populations[1].StandardError");
+        form.Add(new StringContent("1.9"), "EraGroups[0].Populations[1].ZScore");
+
+        var response = await Client.PostAsync(
+            $"/api/genetic-inspections/{createdInspection.Id}/qpadm-result", form);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     [Fact]

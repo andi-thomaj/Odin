@@ -112,7 +112,10 @@ public class SerilogPostgresLoggingTests(CustomWebApplicationFactory factory) : 
     public async Task LogRow_PopulatesCoreColumns()
     {
         var marker = $"columns-{Guid.NewGuid():N}";
-        var before = DateTime.UtcNow.AddSeconds(-5);
+        // Serilog's Postgres sink stores the event timestamp as local wall-clock time, so bound the
+        // freshness window with DateTime.Now (not UtcNow) — comparing a local timestamp against UtcNow
+        // fails on any non-UTC machine while passing in CI (UTC). On a UTC host the two are identical.
+        var before = DateTime.Now.AddSeconds(-5);
 
         using (var scope = Factory.Services.CreateScope())
         {
@@ -133,7 +136,7 @@ public class SerilogPostgresLoggingTests(CustomWebApplicationFactory factory) : 
         Assert.False(string.IsNullOrWhiteSpace(row.MessageTemplate));
         Assert.Equal("Error", row.Level);
         Assert.True(row.Timestamp >= before, $"Timestamp {row.Timestamp:o} should be >= {before:o}");
-        Assert.True(row.Timestamp <= DateTime.UtcNow.AddSeconds(5));
+        Assert.True(row.Timestamp <= DateTime.Now.AddSeconds(5));
         Assert.NotNull(row.Exception);
         Assert.NotNull(row.Properties);
         Assert.Contains("Marker", row.Properties);

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Odin.Api.Data.Enums;
+using Odin.Api.Endpoints.CladeFinderManagement.Models;
 
 namespace Odin.Api.Endpoints.OrderManagement.Models
 {
@@ -301,6 +302,20 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public List<PopulationResult> Populations { get; set; } = [];
         }
 
+        /// <summary>
+        /// Cached Y-DNA clade outcome for the order. <see cref="Status"/> tells the UI whether to render the
+        /// clade (<c>Completed</c>, with <see cref="Clade"/> populated) or an informative message
+        /// (<c>NoYData</c> | <c>InvalidData</c> | <c>Unavailable</c> | <c>NotApplicable</c> | <c>Pending</c>).
+        /// </summary>
+        public class YDnaResult
+        {
+            public string Status { get; set; } = string.Empty;
+            public string? Message { get; set; }
+
+            /// <summary>The clade payload (same shape as the standalone clade finder); set only when <see cref="Status"/> is <c>Completed</c>.</summary>
+            public AnalyzeCladeContract.Response? Clade { get; set; }
+        }
+
         public class Response
         {
             public string FirstName { get; set; } = string.Empty;
@@ -313,6 +328,9 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public bool HasIntroAudioFile { get; set; }
             public string ResultsVersion { get; set; } = string.Empty;
             public List<EraGroupResult> EraGroups { get; set; } = [];
+
+            /// <summary>Y-DNA haplogroup result for the "Y-DNA Haplogroup" tab; null only on legacy orders not yet backfilled.</summary>
+            public YDnaResult? YDna { get; set; }
         }
     }
 

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
@@ -8,8 +9,28 @@ namespace Odin.Api.Data.Entities
         public int Id { get; set; }
         public required byte[] RawData { get; set; } = [];
         public required string RawDataFileName { get; set; }
+
+        // The user's raw upload normalized to 23andMe text (small) — produced by the automated
+        // convert+merge job and kept in the DB. Feeds the AADR merge and any future re-runs.
+        public byte[]? Converted23AndMeData { get; set; }
+        public string? Converted23AndMeFileName { get; set; }
+
+        // Legacy: merged dataset historically uploaded by hand as a DB blob. Superseded by the
+        // filesystem-backed merge (MergeId below); retained for backward compatibility.
         public byte[]? MergedRawData { get; set; }
         public string? MergedRawDataFileName { get; set; }
+
+        // Automated AADR merge tracking. The bundle bytes live on the odin-tools-api volume, not
+        // in Postgres — only this metadata is stored here.
+        public MergeStatus MergeStatus { get; set; } = MergeStatus.NotStarted;
+        public string? MergeId { get; set; }
+        public string? MergeFileName { get; set; }
+        public long? MergeSizeBytes { get; set; }
+        // Wall-clock the automated convert+merge took to produce the bundle (set on success). Null
+        // until a merge completes; preserved after the bundle is deleted so the duration stays visible.
+        public double? MergeDurationSeconds { get; set; }
+        public string? MergeError { get; set; }
+
         public bool IsDeleted { get; set; }
         public List<QpadmGeneticInspection> GeneticInspections { get; set; } = [];
     }
@@ -20,7 +41,13 @@ namespace Odin.Api.Data.Entities
         {
             builder.HasKey(e => e.Id);
             builder.Property(e => e.RawDataFileName).IsRequired().HasMaxLength(200);
+            builder.Property(e => e.Converted23AndMeFileName).HasMaxLength(200);
             builder.Property(e => e.MergedRawDataFileName).HasMaxLength(200);
+            builder.Property(e => e.MergeStatus).IsRequired().HasConversion<string>()
+                .HasDefaultValue(MergeStatus.NotStarted);
+            builder.Property(e => e.MergeId).HasMaxLength(64);
+            builder.Property(e => e.MergeFileName).HasMaxLength(200);
+            builder.Property(e => e.MergeError).HasMaxLength(1000);
             builder.Property(e => e.IsDeleted).HasDefaultValue(false);
 
             builder.HasQueryFilter(e => !e.IsDeleted);

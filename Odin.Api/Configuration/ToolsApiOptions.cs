@@ -16,4 +16,18 @@ public sealed class ToolsApiOptions
 
     /// <summary>Request timeout in seconds (clade detection on large files can be slow).</summary>
     public int TimeoutSeconds { get; set; } = 300;
+
+    /// <summary>
+    /// Timeout in seconds for the merge pipeline client. The AADR merge runs synchronously on the
+    /// tools API and can take many minutes on the HO panel, so this is far larger than
+    /// <see cref="TimeoutSeconds"/>. Used by the dedicated merge HttpClient.
+    /// </summary>
+    public int MergeTimeoutSeconds { get; set; } = 1800;
+
+    /// <summary>
+    /// TCP connect timeout in seconds applied to both tools-api clients. Bounds how long a request
+    /// waits to establish a connection, so an unreachable host fails fast (≈this) instead of hanging
+    /// for the much larger overall <see cref="TimeoutSeconds"/> / <see cref="MergeTimeoutSeconds"/>.
+    /// </summary>
+    public int ConnectTimeoutSeconds { get; set; } = 5;
 }

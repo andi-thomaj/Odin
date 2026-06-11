@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using Odin.Api.Authentication;
+using Odin.Api.Extensions;
 using Odin.Api.Services.Email;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
@@ -250,150 +251,32 @@ namespace Odin.Api
                 options.Level = CompressionLevel.Fastest);
 
             // ── Rate Limiting ───────────────────────────────────────────
-            services.AddRateLimiter(options =>
-            {
-                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-                options.OnRejected = async (context, cancellationToken) =>
-                {
-                    // Extract RetryAfter from lease metadata if available
-                    if (context.Lease.TryGetMetadata(MetadataName.RetryAfter.Name, out var retryAfterObj) 
-                        && retryAfterObj is TimeSpan retryAfter)
-                    {
-                        context.HttpContext.Response.Headers["Retry-After"] = 
-                            ((int)retryAfter.TotalSeconds).ToString();
-                    }
-                    
-                    // Extract policy name from endpoint metadata
-                    var policyName = context.HttpContext.GetEndpoint()
-                        ?.Metadata
-                        .GetMetadata<EnableRateLimitingAttribute>()
-                        ?.PolicyName ?? "unknown";
-                    
-                    var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
-                    var requestId = context.HttpContext.Items.TryGetValue("RequestId", out var id) 
-                        ? id?.ToString() 
-                        : "unknown";
-                    
-                    logger.LogWarning(
-                        "Rate limit exceeded. RequestId: {RequestId}, Policy: {Policy}, Path: {Path}",
-                        requestId,
-                        policyName,
-                        context.HttpContext.Request.Path);
+            // Policy definitions live in RateLimitingExtensions; UseRateLimiter() is wired into the
+            // pipeline AFTER UseAuthentication() below so per-user tiers/partitioning see context.User.
+            services.AddOdinRateLimiting();
 
-                    context.HttpContext.Response.ContentType = "application/json";
-                    var errorBody = new ErrorResponse
-                    {
-                        RequestId = requestId ?? string.Empty,
-                        StatusCode = StatusCodes.Status429TooManyRequests,
-                        Message = "Rate limit exceeded. Please try again later.",
-                        ErrorCode = "RATE_LIMIT_EXCEEDED"
-                    };
-                    var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
-                    await context.HttpContext.Response.WriteAsync(
-                        JsonSerializer.Serialize(errorBody, jsonOptions), cancellationToken);
-                };
-
-                // Helper to get client IP (handles X-Forwarded-For)
-                static string GetClientIp(HttpContext context)
-                {
-                    var forwardedFor = context.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-                    if (!string.IsNullOrEmpty(forwardedFor))
-                    {
-                        // Take first IP from comma-separated list
-                        var ip = forwardedFor.Split(',')[0].Trim();
-                        if (IPAddress.TryParse(ip, out _))
-                            return ip;
-                    }
-                    return context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                }
-
-                // Helper to get partition key (user ID or IP)
-                static string GetPartitionKey(HttpContext context)
-                {
-                    return context.User.Identity?.IsAuthenticated == true
-                        ? context.User.Identity.Name ?? GetClientIp(context)
-                        : GetClientIp(context);
-                }
-
-                // Global default policy - 30 req/min for unauthenticated, 100 req/min for authenticated
-                // Exclude SignalR endpoints from global rate limiting (they have their own connection management)
-                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-                {
-                    // Skip rate limiting for SignalR hubs (negotiation and connection endpoints)
-                    var path = context.Request.Path.Value ?? "";
-                    if (path.StartsWith("/hubs/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        // Return a no-op limiter for SignalR endpoints
-                        return RateLimitPartition.GetNoLimiter(partitionKey: "");
-                    }
-
-                    return RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: GetPartitionKey(context),
-                        factory: _ =>
-                        {
-                            var isAuthenticated = context.User.Identity?.IsAuthenticated == true;
-                            return new FixedWindowRateLimiterOptions
-                            {
-                                PermitLimit = isAuthenticated ? 100 : 30,
-                                Window = TimeSpan.FromMinutes(1),
-                                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                                QueueLimit = 0
-                            };
-                        });
-                });
-
-                // Authenticated policy - sliding window for better distribution
-                options.AddPolicy("authenticated", httpContext =>
-                    RateLimitPartition.GetSlidingWindowLimiter(
-                        partitionKey: GetPartitionKey(httpContext),
-                        factory: _ => new SlidingWindowRateLimiterOptions
-                        {
-                            PermitLimit = 100,
-                            Window = TimeSpan.FromMinutes(1),
-                            SegmentsPerWindow = 4,
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                            QueueLimit = 0
-                        }));
-
-                // File upload policy - strict limits
-                options.AddPolicy("file-upload", httpContext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: GetPartitionKey(httpContext),
-                        factory: _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = 10,
-                            Window = TimeSpan.FromMinutes(1),
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                            QueueLimit = 0
-                        }));
-
-                // Strict policy for sensitive/admin endpoints
-                options.AddPolicy("strict", httpContext =>
-                    RateLimitPartition.GetFixedWindowLimiter(
-                        partitionKey: GetPartitionKey(httpContext),
-                        factory: _ => new FixedWindowRateLimiterOptions
-                        {
-                            PermitLimit = 20,
-                            Window = TimeSpan.FromMinutes(1),
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                            QueueLimit = 0
-                        }));
-
-                // Concurrency limiter for resource-intensive operations
-                options.AddPolicy("concurrent", httpContext =>
-                    RateLimitPartition.GetConcurrencyLimiter(
-                        partitionKey: GetPartitionKey(httpContext),
-                        factory: _ => new ConcurrencyLimiterOptions
-                        {
-                            PermitLimit = 5,
-                            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                            QueueLimit = 0
-                        }));
-            });
+            // Abstracts the system clock so time-based logic (e.g. merge-bundle retention) is unit-
+            // testable with a fake clock instead of the ambient DateTime.UtcNow. New/edited code should
+            // prefer injecting TimeProvider; existing DateTime.UtcNow sites can migrate incrementally.
+            services.AddSingleton(TimeProvider.System);
 
             // ── Health Checks ───────────────────────────────────────────
+            // Postgres is the hard readiness gate (Unhealthy → 503 → pulled from the LB). Hangfire
+            // storage and tools-api reachability are reported as Degraded only: they're visible in the
+            // health payload but don't take the whole API out of rotation, since most endpoints don't
+            // depend on them.
+            services.AddHttpClient(Odin.Api.HealthChecks.ToolsApiHealthCheck.HttpClientName, client =>
+                client.Timeout = TimeSpan.FromSeconds(5));
             services.AddHealthChecks()
-                .AddNpgSql(configuration.GetConnectionString("DefaultConnection")!);
+                .AddNpgSql(configuration.GetConnectionString("DefaultConnection")!)
+                .AddCheck<Odin.Api.HealthChecks.HangfireStorageHealthCheck>(
+                    "hangfire",
+                    failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded,
+                    tags: ["ready"])
+                .AddCheck<Odin.Api.HealthChecks.ToolsApiHealthCheck>(
+                    "tools-api",
+                    failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded,
+                    tags: ["ready"]);
 
             // ── CORS Configuration ───────────────────────────────────────
             var corsOrigins = BuildCorsAllowedOrigins(configuration);
@@ -451,6 +334,9 @@ namespace Odin.Api
             {
                 options.AddPolicy("Default", TimeSpan.FromSeconds(30));
                 options.AddPolicy("FileUpload", TimeSpan.FromMinutes(5));
+                // Admin AADR-panel restore: multi-GB uploads over a possibly-slow link. Bounds the
+                // whole stream-through (.NET -> tools-api); see MergePanelAdminEndpoints.
+                options.AddPolicy("PanelRestore", TimeSpan.FromHours(2));
             });
 
             services.AddDbContextPool<ApplicationDbContext>(options =>
@@ -472,6 +358,7 @@ namespace Odin.Api
             services.AddScoped<IPopulationService, PopulationService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
+            services.AddScoped<Odin.Api.Hubs.IGeneticInspectionRealtimeNotifier, Odin.Api.Hubs.GeneticInspectionRealtimeNotifier>();
             services.AddScoped<IAppSettingsService, AppSettingsService>();
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<INotificationService, NotificationService>();
@@ -493,6 +380,7 @@ namespace Odin.Api
             services.AddScoped<IAdmixToolsEraService, AdmixToolsEraService>();
             services.AddScoped<ILogCleanupService, LogCleanupService>();
             services.AddScoped<Odin.Api.Endpoints.Admin.IG25SeedImportService, Odin.Api.Endpoints.Admin.G25SeedImportService>();
+            services.AddScoped<IBackendCacheMaintenanceService, BackendCacheMaintenanceService>();
             services.AddHttpClient<IGeoLocationService, GeoLocationService>();
 
             services.Configure<ResendEmailOptions>(configuration.GetSection(ResendEmailOptions.SectionName));
@@ -518,7 +406,47 @@ namespace Odin.Api
                     client.BaseAddress = new Uri(toolsOptions.BaseUrl);
                 }
                 client.Timeout = TimeSpan.FromSeconds(toolsOptions.TimeoutSeconds);
-            });
+            })
+            .ConfigurePrimaryHttpMessageHandler(CreateToolsApiHandler);
+            // Background Y-DNA clade computation for qpAdm orders (enqueued via Hangfire at order time).
+            services.AddScoped<
+                Odin.Api.Endpoints.CladeFinderManagement.IYHaplogroupComputeService,
+                Odin.Api.Endpoints.CladeFinderManagement.YHaplogroupComputeService>();
+
+            // Merge pipeline proxy (convert-to-23andMe + AADR merge). Its own HttpClient because the
+            // merge call is long-running (minutes) — uses MergeTimeoutSeconds, not TimeoutSeconds.
+            services.AddHttpClient<
+                Odin.Api.Endpoints.MergeManagement.IMergePipelineService,
+                Odin.Api.Endpoints.MergeManagement.MergePipelineService>((sp, client) =>
+            {
+                var toolsOptions = sp.GetRequiredService<IOptions<Odin.Api.Configuration.ToolsApiOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(toolsOptions.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(toolsOptions.BaseUrl);
+                }
+                client.Timeout = TimeSpan.FromSeconds(toolsOptions.MergeTimeoutSeconds);
+            })
+            .ConfigurePrimaryHttpMessageHandler(CreateToolsApiHandler);
+
+            // Dedicated client for the admin AADR-panel upload only. Infinite per-call timeout so a
+            // multi-GB stream-through isn't killed by the 30-min merge client timeout; it's bounded
+            // instead by the endpoint's "PanelRestore" RequestTimeout policy + request cancellation.
+            services.AddHttpClient(
+                Odin.Api.Endpoints.MergeManagement.MergePipelineService.PanelClientName, (sp, client) =>
+            {
+                var toolsOptions = sp.GetRequiredService<IOptions<Odin.Api.Configuration.ToolsApiOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(toolsOptions.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(toolsOptions.BaseUrl);
+                }
+                client.Timeout = Timeout.InfiniteTimeSpan;
+            })
+            .ConfigurePrimaryHttpMessageHandler(CreateToolsApiHandler);
+            // Background convert+merge / delete jobs (enqueued via Hangfire onto the "merge" queue).
+            services.AddScoped<
+                Odin.Api.Endpoints.MergeManagement.IMergeJob,
+                Odin.Api.Endpoints.MergeManagement.MergeJob>();
+
             services.AddHttpClient("Auth0UserInfo", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
@@ -536,21 +464,46 @@ namespace Odin.Api
             // in G25AdminEndpoints — can be bound during host startup. ASP.NET Core eagerly
             // resolves every endpoint's parameters when the pipeline builds, so a missing
             // service here fails the entire test host with "Failure to infer one or more
-            // parameters". UsePostgreSqlStorage does not open a connection at registration
-            // time; tests never enqueue jobs or start the server, so the storage stays cold.
-            services.AddHangfire(hf => hf
+            // parameters". The storage stays cold (no connection opened) until the first job
+            // is enqueued or the server starts — but the connection string must still PARSE
+            // when the storage is built. Order creation enqueues a Y-DNA compute job, so even
+            // in tests IBackgroundJobClient gets resolved and the storage gets built; read the
+            // connection string from the live configuration (not the outer `connectionString`
+            // captured before WebApplicationFactory's ConfigureAppConfiguration overrides apply)
+            // so the test host's container connection string is honored — same reason the
+            // Serilog sink above re-reads from context.Configuration.
+            services.AddHangfire((provider, hf) => hf
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
-                .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(connectionString)));
+                .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(
+                    provider.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
+                        ?? connectionString))
+                // Flip a merge order Retrying → Failed once Hangfire exhausts its retries (see
+                // MergeJobFailureStateFilter), so a dead job doesn't hold an in-flight merge slot forever.
+                .UseFilter(new Odin.Api.Endpoints.MergeManagement.MergeJobFailureStateFilter(
+                    provider.GetRequiredService<IServiceScopeFactory>())));
 
             // Worker process — skipped in Testing so the suite doesn't poll the throwaway
             // Postgres container or compete with Respawn for table locks.
             if (!builder.Environment.IsEnvironment("Testing"))
             {
+                // Default server: everything except the "merge" queue (Y-DNA compute, cleanup, ...).
                 services.AddHangfireServer(opts =>
                 {
                     opts.WorkerCount = Math.Max(1, Environment.ProcessorCount / 2);
+                    opts.Queues = new[] { "default" };
+                });
+
+                // Dedicated low-concurrency server for the "merge" queue. The AADR merge is memory-heavy
+                // (mergeit on the HO panel); on the 32 GB host two can run side by side, but disk is the
+                // binding constraint (80 GB; each merge needs a multi-GB temp workspace), so keep this
+                // small. MergeJob.RunAsync is [Queue("merge")]. See the README ops notes.
+                services.AddHangfireServer(opts =>
+                {
+                    opts.ServerName = "merge-worker";
+                    opts.WorkerCount = 2;
+                    opts.Queues = new[] { "merge" };
                 });
             }
 
@@ -575,8 +528,6 @@ namespace Odin.Api
             app.UseResponseCompression();
             app.UseCors("AllowFrontend");
             app.UseStaticFiles();
-            if (!app.Environment.IsEnvironment("Testing"))
-                app.UseRateLimiter();
             app.UseRequestTimeouts();
 
             // Swagger only in Development. The middleware resolves ISwaggerProvider per
@@ -593,23 +544,33 @@ namespace Odin.Api
             }
 
             app.UseAuthentication();
+            // Rate limiting must run AFTER authentication: the global limiter's authenticated tier
+            // (100 vs 30 req/min) and per-user partitioning both key off context.User, which is only
+            // populated once UseAuthentication has run. Placed before role enrichment so a throttled
+            // request is rejected before the (heavier) Auth0 role/email-verified lookup runs.
+            if (!app.Environment.IsEnvironment("Testing"))
+                app.UseRateLimiter();
             app.UseRoleEnrichment();
             app.UseAuthorization();
 
             app.MapHub<NotificationHub>("/hubs/notifications");
             app.MapHealthChecks("/health");
 
-            // Hangfire dashboard — admin-only. Not mounted in Testing.
+            // Hangfire dashboard — mounted in every environment, gated to Admin users by
+            // HangfireDashboardAuthFilter (admins reach it via the SPA "Open Hangfire dashboard" button,
+            // which mints the /jobs-scoped cookie at /v1/api/admin/hangfire/session). A direct, cookie-less
+            // navigation to /jobs returns 401 by design — that is the admin gate, not a routing failure.
+            app.UseHangfireDashboard("/jobs", new DashboardOptions
+            {
+                Authorization = new[] { new HangfireDashboardAuthFilter() },
+                DashboardTitle = "Odin background jobs"
+            });
+
+            // Recurring jobs need a running Hangfire server, which is skipped in Testing — so register them
+            // only outside Testing (the dashboard above only reads storage and is safe to mount everywhere).
             if (!app.Environment.IsEnvironment("Testing"))
             {
-                app.UseHangfireDashboard("/jobs", new DashboardOptions
-                {
-                    Authorization = new[] { new HangfireDashboardAuthFilter() },
-                    DashboardTitle = "Odin background jobs"
-                });
-
-                // Recurring jobs. Registered after the Hangfire storage is wired (see AddHangfire above)
-                // and skipped in Testing because Hangfire itself is not registered there.
+                // Registered after the Hangfire storage is wired (see AddHangfire above).
                 //
                 // logs-cleanup: wipe the `logs` table every 5 days at 03:00 UTC. Cron day-of-month
                 // `*/5` evaluates to days 1,6,11,16,21,26,31 — i.e. roughly every 5 days with a
@@ -620,40 +581,38 @@ namespace Odin.Api
                     methodCall: svc => svc.DeleteAllLogsAsync(CancellationToken.None),
                     cronExpression: "0 3 */5 * *",
                     options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // merge-dispatch: bounded-queue admission. Every minute, admit waiting (NotStarted) qpAdm
+                // merges up to the in-flight cap (2). Backstop for the dispatch passes triggered on order
+                // creation and merge completion — also the only thing that refills capacity if those are
+                // missed. Runs on the default queue (it only enqueues to the "merge" queue, never merges).
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.MergeManagement.IMergeJob>(
+                    recurringJobId: "merge-dispatch",
+                    methodCall: svc => svc.DispatchPendingMergesAsync(CancellationToken.None),
+                    cronExpression: "* * * * *",
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // merge-cleanup: reclaim orphaned AADR merge bundles (completed orders, or past the
+                // retention window) once a week. Safety net for inline deletes that never fired; keeps the
+                // 80 GB disk bounded. CleanupOrphansAsync is [Queue("merge")] so it can't race a live merge.
+                // The weekly cron is pinned to the deploy moment's weekday/hour/minute (UTC) so the first
+                // run lands one week after deployment rather than on a fixed calendar boundary — Hangfire
+                // never fires a cron job on registration, so the next occurrence of "this same weekday and
+                // time" is ~7 days out. Each deploy re-anchors the schedule to one week from that deploy.
+                var deployUtc = DateTime.UtcNow;
+                var weeklyFromDeployCron = $"{deployUtc.Minute} {deployUtc.Hour} * * {(int)deployUtc.DayOfWeek}";
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.MergeManagement.IMergeJob>(
+                    recurringJobId: "merge-cleanup",
+                    methodCall: svc => svc.CleanupOrphansAsync(CancellationToken.None),
+                    cronExpression: weeklyFromDeployCron,
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
             }
 
             // Version prefix — all business endpoints live under /v1 so breaking changes
             // can ship a v2 alongside without breaking existing clients. SignalR hubs and
             // health checks stay at the root by convention (not part of the API surface).
             var v1 = app.MapGroup("/v1");
-            v1.MapUserEndpoints();
-            v1.MapEthnicityEndpoints();
-            v1.MapEraEndpoints();
-            v1.MapPopulationEndpoints();
-            v1.MapRawGeneticFileEndpoints();
-            v1.MapGeneticInspectionEndpoints();
-            v1.MapOrderEndpoints();
-            v1.MapAppSettingsEndpoints();
-            v1.MapNotificationEndpoints();
-            v1.MapReportEndpoints();
-            v1.MapMediaEndpoints();
-            v1.MapG25PopulationSampleEndpoints();
-            v1.MapG25DistancePopulationSampleEndpoints();
-            v1.MapG25PcaPopulationsSampleEndpoints();
-            v1.MapQpadmPopulationSampleEndpoints();
-            v1.MapG25SavedCoordinateEndpoints();
-            v1.MapG25TargetCoordinateEndpoints();
-            v1.MapG25RegionEndpoints();
-            v1.MapG25EthnicityEndpoints();
-            v1.MapG25ContinentEndpoints();
-            v1.MapG25DistanceEraEndpoints();
-            v1.MapG25AdmixtureEraEndpoints();
-            v1.MapG25CalculationEndpoints();
-            v1.MapG25AdminEndpoints();
-            v1.MapHangfireSessionEndpoints();
-            v1.MapCalculatorEndpoints();
-            v1.MapAdmixToolsEraEndpoints();
-            v1.MapCladeFinderEndpoints();
+            v1.MapOdinV1Endpoints();
 
             // Testing-only diagnostics: lets integration tests force an unhandled exception
             // through GlobalExceptionHandlerMiddleware to verify Serilog → logs table persistence.
@@ -668,6 +627,21 @@ namespace Odin.Api
             }
 
             await app.RunAsync();
+        }
+
+        /// <summary>
+        /// Primary handler for both tools-api clients: a SocketsHttpHandler with a short ConnectTimeout
+        /// so an unreachable odin-tools-api fails fast (≈ConnectTimeout) instead of hanging for the long
+        /// overall request timeout (clade 300s / merge 1800s). PooledConnectionLifetime keeps DNS fresh.
+        /// </summary>
+        private static HttpMessageHandler CreateToolsApiHandler(IServiceProvider sp)
+        {
+            var opts = sp.GetRequiredService<IOptions<Odin.Api.Configuration.ToolsApiOptions>>().Value;
+            return new SocketsHttpHandler
+            {
+                ConnectTimeout = TimeSpan.FromSeconds(opts.ConnectTimeoutSeconds),
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+            };
         }
 
         /// <summary>
