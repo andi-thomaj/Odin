@@ -53,6 +53,13 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("authenticated");
 
+            // Manually delete the merged AADR bundle (reclaim disk). Scientist/Admin; the bundle is also
+            // auto-deleted on order completion + by the cleanup sweep. Idempotent (no-op if already gone).
+            endpoints.MapDelete("/{id:int}/merged-data", DeleteMergedData)
+                .RequireAuthorization("ScientistOrAdmin")
+                .RequireRateLimiting("authenticated")
+                .Produces(StatusCodes.Status204NoContent);
+
             endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile)
                 .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("authenticated")
@@ -201,6 +208,18 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                     }
                 }
             }, "application/zip", fileName);
+        }
+
+        private static async Task<IResult> DeleteMergedData(
+            IGeneticInspectionService service, IMergeJob mergeJob, int id, CancellationToken cancellationToken)
+        {
+            var inspection = await service.GetByIdAsync(id);
+            if (inspection is null)
+                return Results.NotFound(new { Message = $"Genetic inspection with ID {id} not found." });
+
+            // Deletes the bundle from the tools-api volume and marks the file Deleted. Idempotent.
+            await mergeJob.DeleteAsync(inspection.RawGeneticFileId, cancellationToken);
+            return Results.NoContent();
         }
 
         private static async Task<IResult> DeleteGeneticFile(IGeneticInspectionService service, int id)
