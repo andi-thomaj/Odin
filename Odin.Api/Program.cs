@@ -370,6 +370,7 @@ namespace Odin.Api
             services.AddScoped<IG25PcaPopulationsSampleService, G25PcaPopulationsSampleService>();
             services.AddScoped<IQpadmPopulationSampleService, QpadmPopulationSampleService>();
             services.AddScoped<IQpadmPopulationPanelSampleService, QpadmPopulationPanelSampleService>();
+            services.AddScoped<IPanelPromotionService, PanelPromotionService>();
             services.AddScoped<IG25SavedCoordinateService, G25SavedCoordinateService>();
             services.AddScoped<IG25TargetCoordinateService, G25TargetCoordinateService>();
             services.AddScoped<IG25RegionService, G25RegionService>();

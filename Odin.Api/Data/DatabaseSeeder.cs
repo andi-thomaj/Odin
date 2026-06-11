@@ -35,6 +35,8 @@ public class DatabaseSeeder(ApplicationDbContext context)
         await new EthnicityAndRegionSeeder(context).SeedAsync();
         await new QpadmEraAndPopulationSeeder(context).SeedAsync();
         await new G25Seeder(context).SeedAsync();
+        // Links depend on populations being present; applies the committed promotion snapshot (no-op by default).
+        await new QpadmPopulationPanelSampleSeeder(context).SeedAsync();
         await transaction.CommitAsync();
     }
 }

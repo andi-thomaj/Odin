@@ -86,6 +86,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
                          .ToList())
                 services.Remove(d);
             services.AddSingleton<Odin.Api.Endpoints.CladeFinderManagement.ICladeFinderService, FakeCladeFinderService>();
+
+            // The real merge pipeline proxies the external tools-api; swap in an in-memory fake so the
+            // panel-promotion label flow can be exercised. Singleton so tests can seed/read its rows.
+            foreach (var d in services
+                         .Where(x => x.ServiceType == typeof(Odin.Api.Endpoints.MergeManagement.IMergePipelineService))
+                         .ToList())
+                services.Remove(d);
+            services.AddSingleton<FakeMergePipelineService>();
+            services.AddSingleton<Odin.Api.Endpoints.MergeManagement.IMergePipelineService>(
+                sp => sp.GetRequiredService<FakeMergePipelineService>());
         });
     }
 
