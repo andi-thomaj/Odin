@@ -218,29 +218,6 @@ public class PanelPromotionEndpointsTests(CustomWebApplicationFactory factory) :
         Assert.Equal(2, result.Total);
     }
 
-    // ── Export endpoint (HTTP) ─────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task Export_ReturnsLinksByNameAndLabelsFromInd()
-    {
-        var pops = await SeedPopulationsAsync();
-        await AddLinkAsync(pops[0].Id, "HO.001");
-        var fake = Factory.Services.GetRequiredService<FakeMergePipelineService>();
-        fake.SetRows(Panel, [("HO.001", "M", "Label1"), ("HO.002", "F", "Label2")]);
-
-        var response = await Client.GetAsync($"/api/admin/panel-promotion/export?panel={Panel}");
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-        var body = await response.Content.ReadFromJsonAsync<PanelPromotionExportContract.Response>();
-        Assert.NotNull(body);
-        Assert.Equal([Panel], body.Links.Panels);
-        var link = Assert.Single(body.Links.Links);
-        Assert.Equal("HO.001", link.SampleId);
-        Assert.Equal(pops[0].Name, link.PopulationName);
-        Assert.Equal(2, body.Labels.Rows.Count);
-        Assert.Contains(body.Labels.Rows, r => r is { Id: "HO.002", Label: "Label2" });
-    }
-
     // ── Import endpoint (HTTP smoke — committed snapshot is the empty no-op default) ──
 
     [Fact]
@@ -258,14 +235,6 @@ public class PanelPromotionEndpointsTests(CustomWebApplicationFactory factory) :
     }
 
     // ── AuthZ ──────────────────────────────────────────────────────────────────────
-
-    [Fact]
-    public async Task Export_AsScientist_IsForbidden()
-    {
-        var client = await CreateClientAsAsync("auth0|panel-promo-scientist", AppRole.Scientist);
-        var response = await client.GetAsync($"/api/admin/panel-promotion/export?panel={Panel}");
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
-    }
 
     [Fact]
     public async Task Import_AsScientist_IsForbidden()

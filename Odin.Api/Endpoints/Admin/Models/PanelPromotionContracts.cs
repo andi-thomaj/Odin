@@ -35,16 +35,6 @@ public sealed class PanelLabelsSnapshot
     public List<PanelLabelRow> Rows { get; set; } = [];
 }
 
-public static class PanelPromotionExportContract
-{
-    /// <summary>The two artifacts an operator downloads on dev and commits to <c>Data/SeedData/</c>.</summary>
-    public class Response
-    {
-        public PanelLinksSnapshot Links { get; set; } = new();
-        public PanelLabelsSnapshot Labels { get; set; } = new();
-    }
-}
-
 public static class PanelPromotionImportContract
 {
     /// <summary>Summary of applying the committed snapshots to the current environment.</summary>

@@ -8,9 +8,6 @@ namespace Odin.Api.Endpoints.Admin;
 
 public interface IPanelPromotionService
 {
-    /// <summary>Snapshot the current environment's links (from DB) + labels (from tools-api) for download.</summary>
-    Task<PanelPromotionExportContract.Response> ExportAsync(string panel, CancellationToken cancellationToken = default);
-
     /// <summary>Apply the committed snapshot files onto the current environment: mirror links, then
     /// diff &amp; apply changed labels via tools-api.</summary>
     Task<PanelPromotionImportContract.Response> ImportAsync(string identityId, CancellationToken cancellationToken = default);
@@ -31,45 +28,15 @@ public sealed class LabelApplyResult
 }
 
 /// <summary>
-/// Admin-triggered promotion of Panel Labels edits (sample→population links + population labels)
-/// from a committed snapshot onto the current environment. Export reads live state; import applies
-/// the committed <c>Data/SeedData/</c> artifacts. Links go through the shared full-mirror in
-/// <see cref="PanelPromotionSnapshots"/>; labels are diffed against the live <c>.ind</c> and only
-/// changed rows are written.
+/// Admin-triggered promotion of Panel Labels edits (sample→population links + population labels) from
+/// a committed snapshot onto the current environment. The snapshot files are produced on dev by the
+/// <c>PanelPromotionSnapshotExportTests</c> seed-export utility and committed; import applies them
+/// here. Links go through the shared full-mirror in <see cref="PanelPromotionSnapshots"/>; labels are
+/// diffed against the live <c>.ind</c> and only changed rows are written.
 /// </summary>
 public class PanelPromotionService(ApplicationDbContext dbContext, IMergePipelineService mergeService)
     : IPanelPromotionService
 {
-    public async Task<PanelPromotionExportContract.Response> ExportAsync(
-        string panel, CancellationToken cancellationToken = default)
-    {
-        var normalizedPanel = panel.Trim();
-
-        var links = await dbContext.QpadmPopulationPanelSamples
-            .AsNoTracking()
-            .Where(e => e.Panel == normalizedPanel)
-            .OrderBy(e => e.SampleId)
-            .ThenBy(e => e.Population.Name)
-            .Select(e => new PanelLinkRow
-            {
-                Panel = e.Panel,
-                SampleId = e.SampleId,
-                PopulationName = e.Population.Name,
-            })
-            .ToListAsync(cancellationToken);
-
-        var ind = await mergeService.GetPanelIndRowsAsync(normalizedPanel, cancellationToken);
-        var labels = ind.Rows
-            .Select(r => new PanelLabelRow { Id = r.Id, Label = r.Label })
-            .ToList();
-
-        return new PanelPromotionExportContract.Response
-        {
-            Links = new PanelLinksSnapshot { Panels = [normalizedPanel], Links = links },
-            Labels = new PanelLabelsSnapshot { Panel = normalizedPanel, Rows = labels },
-        };
-    }
-
     public async Task<PanelPromotionImportContract.Response> ImportAsync(
         string identityId, CancellationToken cancellationToken = default)
     {
