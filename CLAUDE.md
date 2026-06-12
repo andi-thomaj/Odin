@@ -2,6 +2,41 @@
 
 This file is loaded in addition to the root `CLAUDE.md` when working anywhere under `Odin/`.
 
+## Auth — Auth0 JWT, DB-sourced roles, `email_verified` resolution
+
+JWT bearer is configured in [Odin.Api/Program.cs](Odin.Api/Program.cs) (`Jwt:Authority` / `Jwt:Audience`).
+After auth, [RoleEnrichmentMiddleware](Odin.Api/Middleware/RoleEnrichmentMiddleware.cs) attaches an
+`app_role` claim from the `application_users` table (roles are **DB-sourced on purpose** so promotions
+take effect immediately) and an `app_email_verified` claim. The middleware is fully bypassed under the
+`Testing` environment — [TestAuthHandler](Odin.Api/Authentication/TestAuthHandler.cs) supplies claims
+from `X-Test-*` headers instead.
+
+**`email_verified` resolution + the `/userinfo` optimization.** Auth0 API access tokens usually omit
+`email_verified`, so the middleware falls back to calling Auth0 `/userinfo` (cached per-token: 15 min
+verified / 2 min unverified). To remove that network call from the hot path, add a **post-login Auth0
+Action** that stamps a namespaced claim onto the **access token**, then set `Jwt:EmailVerifiedClaim` to
+that exact claim type:
+
+```js
+// Auth0 → Actions → Login flow
+exports.onExecutePostLogin = async (event, api) => {
+  const ns = "https://odin.ancestrify.io/"; // any namespace you control; must match Jwt:EmailVerifiedClaim
+  if (event.authorization) {
+    api.accessToken.setCustomClaim(`${ns}email_verified`, event.user.email_verified === true);
+  }
+};
+```
+
+Set `Jwt:EmailVerifiedClaim` (appsettings / `Jwt__EmailVerifiedClaim` env var) to
+`https://odin.ancestrify.io/email_verified`. [Auth0EmailVerifiedClaims.GetJwtEmailVerifiedBoolean](Odin.Api/Authentication/Auth0EmailVerifiedClaims.cs)
+reads it first; the `/userinfo` fallback stays for tokens issued before the Action, so rollout is
+zero-downtime and the fallback can be retired once all live tokens carry the claim. Leaving the key
+empty (the default) preserves the original `/userinfo` behaviour.
+
+The per-request role lookup is cached via [UserRoleCacheKeys](Odin.Api/Authentication/UserRoleCacheKeys.cs)
+and invalidated on every write to `User.Role` (see [UserService](Odin.Api/Endpoints/UserManagement/UserService.cs)
+`UpdateUserRoleAsync` / `DeleteUserAsync`) so promotions still apply immediately.
+
 ## Caching — in-process `IMemoryCache`, single instance, invalidate on write
 
 The API runs as a **single instance and is not designed to scale horizontally**, so caching is
