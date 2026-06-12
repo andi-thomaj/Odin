@@ -398,9 +398,10 @@ namespace Odin.Api
 
             services.Configure<Odin.Api.Configuration.ToolsApiOptions>(
                 configuration.GetSection(Odin.Api.Configuration.ToolsApiOptions.SectionName));
-            // Merges are pinned to STRICTLY ONE AT A TIME and run sequentially. The in-flight cap is
-            // hardcoded to 1 here (NOT bound from `Merge:MaxConcurrentMerges`) so no appsettings/env
-            // override can ever let two ~25 GB merges run concurrently and OOM-kill each other.
+            // Merges are pinned to STRICTLY ONE AT A TIME and run sequentially — a deliberate policy
+            // (the tools-api merges with trident at ~1.3 GB, so this is no longer a RAM necessity). The
+            // in-flight cap is hardcoded to 1 here (NOT bound from `Merge:MaxConcurrentMerges`) so no
+            // appsettings/env override can let two merges run concurrently.
             services.Configure<Odin.Api.Configuration.MergeJobOptions>(
                 opts => opts.MaxConcurrentMerges = 1);
             services.AddHttpClient<
@@ -503,10 +504,10 @@ namespace Odin.Api
                 });
 
                 // Dedicated server for the "merge" queue with a SINGLE worker, so merges execute
-                // strictly sequentially — one finishes before the next starts. The AADR merge is
-                // memory-heavy (mergeit on the 2M panel needs ~25 GB RAM), so two can never run
-                // together and OOM-kill each other. WorkerCount is a hard literal 1 (not derived from
-                // config) to match the pinned in-flight cap above. MergeJob.RunAsync is [Queue("merge")].
+                // strictly sequentially — one finishes before the next starts (a deliberate policy; the
+                // tools-api merges with trident at ~1.3 GB, so it's no longer a RAM necessity).
+                // WorkerCount is a hard literal 1 (not derived from config) to match the pinned in-flight
+                // cap above. MergeJob.RunAsync is [Queue("merge")].
                 services.AddHangfireServer(opts =>
                 {
                     opts.ServerName = "merge-worker";
