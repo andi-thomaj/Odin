@@ -20,7 +20,7 @@ namespace Odin.Api.Endpoints.MergeManagement
         /// <summary>
         /// Convert the inspection's raw upload to 23andMe (persisted in the DB), then merge it into the
         /// AADR panel (bundle stored on the tools-api volume). Idempotent: a Ready/Deleted file is left
-        /// untouched. <b>No automatic retries</b> — any failure (bad upload, panel unavailable, OOM, timeout)
+        /// untouched. <b>No automatic retries</b> — any failure (bad upload, panel unavailable, tool error, timeout)
         /// is recorded as <see cref="Data.Enums.MergeStatus.Failed"/>; an admin re-runs it via
         /// <see cref="RequeueAsync"/>. Enqueued only by the dispatcher (never directly).
         /// </summary>

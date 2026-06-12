@@ -20,7 +20,8 @@ namespace Odin.Api.Endpoints.MergeManagement
         ILogger<MergeJob> logger) : IMergeJob
     {
         // Cap on merge jobs in flight (Queued + Converting + Merging). Pinned to 1 — merges run strictly
-        // sequentially because the 2M-panel mergeit needs ~25 GB RAM and two at once OOM-kill each other.
+        // sequentially by deliberate policy (the tools-api merges with trident at ~1.3 GB; serializing
+        // is a choice, not a RAM necessity).
         // The value is hardcoded to 1 in Program.cs (not bound from config) and matches the single-worker
         // "merge" Hangfire queue, so the admitted job runs immediately; orders beyond it wait as NotStarted
         // in the DB. (The injected option stays settable so unit tests can exercise the admission math.)
@@ -71,9 +72,10 @@ namespace Odin.Api.Endpoints.MergeManagement
                     candidates.Count, inFlight, _maxInFlight);
         }
 
-        // Serialized onto the low-concurrency "merge" queue (memory-heavy; see Program.cs).
-        // NO automatic retries (Attempts = 0): the 2M-panel merge needs ~25 GB RAM, so an auto-retry of a
-        // failed merge just OOMs again and ties up the single merge worker. Any failure is recorded as
+        // Serialized onto the single-worker "merge" queue (see Program.cs).
+        // NO automatic retries (Attempts = 0): a failed merge usually fails for a reason an immediate
+        // retry won't fix (bad upload, panel not provisioned, timeout) and would just tie up the single
+        // merge worker; an admin re-runs it instead. Any failure is recorded as
         // Failed; an admin re-runs it (RequeueAsync) once the cause is addressed. Attempts = 0 also stops
         // Hangfire from re-running a job whose worker died (e.g. a redeploy) — that surfaces as Failed via
         // MergeJobFailureStateFilter instead.
@@ -164,7 +166,7 @@ namespace Odin.Api.Endpoints.MergeManagement
             catch (MergePipelineException ex)
             {
                 // No auto-retry: every tools-api failure is terminal here — a bad upload (400), the panel
-                // not provisioned (503), an OOM-killed mergeit or other tool failure (500), or a timeout.
+                // not provisioned (503), a merge tool failure (500), or a timeout.
                 // Record it as Failed; an admin re-runs it (RequeueAsync) once the cause is addressed.
                 await SetStatusAsync(file, MergeStatus.Failed, ex.Detail, cancellationToken);
                 logger.LogWarning("Merge for inspection {InspectionId} failed ({Status}): {Detail}.",
