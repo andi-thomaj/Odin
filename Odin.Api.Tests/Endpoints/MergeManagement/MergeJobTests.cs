@@ -249,6 +249,74 @@ public class MergeJobTests
     }
 
     [Fact]
+    public async Task DeleteAllReadyMergedData_DeletesEveryReadyBundle_AndReturnsCount()
+    {
+        await using var db = CreateDbContext();
+        await SeedReadyMergeAsync(db, "insp-a");
+        await SeedReadyMergeAsync(db, "insp-b");
+        await SeedOrderAsync(db); // NotStarted — must be left untouched
+
+        var deletedIds = new List<string>();
+        var proxy = new StubMergeService { OnDelete = id => { deletedIds.Add(id); return Task.CompletedTask; } };
+        var job = CreateJob(db, proxy);
+
+        var count = await job.DeleteAllReadyMergedDataAsync();
+
+        Assert.Equal(2, count);
+        Assert.Equal(new[] { "insp-a", "insp-b" }, deletedIds.OrderBy(x => x).ToArray());
+        Assert.Equal(2, await db.RawGeneticFiles.CountAsync(f => f.MergeStatus == MergeStatus.Deleted));
+        Assert.Equal(1, await db.RawGeneticFiles.CountAsync(f => f.MergeStatus == MergeStatus.NotStarted));
+    }
+
+    [Fact]
+    public async Task DeleteAllReadyMergedData_CountsOnlyBundlesItActuallyFreed()
+    {
+        await using var db = CreateDbContext();
+        await SeedReadyMergeAsync(db, "insp-a");
+        await SeedReadyMergeAsync(db, "insp-b");
+
+        // Simulate a concurrent delete: while the sweep deletes its first bundle, another path marks
+        // every OTHER Ready bundle Deleted. Those later iterations become no-ops and must NOT be counted.
+        var firstCall = true;
+        var proxy = new StubMergeService
+        {
+            OnDelete = async mergeId =>
+            {
+                if (!firstCall) return;
+                firstCall = false;
+                var others = await db.RawGeneticFiles
+                    .Where(f => f.MergeStatus == MergeStatus.Ready && f.MergeId != mergeId)
+                    .ToListAsync();
+                foreach (var o in others)
+                    o.MergeStatus = MergeStatus.Deleted;
+                await db.SaveChangesAsync();
+            },
+        };
+        var job = CreateJob(db, proxy);
+
+        var count = await job.DeleteAllReadyMergedDataAsync();
+
+        Assert.Equal(1, count); // only the bundle this call actually freed is counted
+        Assert.Equal(2, await db.RawGeneticFiles.CountAsync(f => f.MergeStatus == MergeStatus.Deleted));
+    }
+
+    [Fact]
+    public async Task DeleteAllReadyMergedData_WhenNoneReady_ReturnsZero_AndCallsNothing()
+    {
+        await using var db = CreateDbContext();
+        await SeedOrderAsync(db); // NotStarted only — nothing to delete
+
+        var called = false;
+        var proxy = new StubMergeService { OnDelete = _ => { called = true; return Task.CompletedTask; } };
+        var job = CreateJob(db, proxy);
+
+        var count = await job.DeleteAllReadyMergedDataAsync();
+
+        Assert.Equal(0, count);
+        Assert.False(called);
+    }
+
+    [Fact]
     public async Task RequeueAsync_FailedMerge_ResetsToNotStarted_AndDispatches()
     {
         await using var db = CreateDbContext();
@@ -292,6 +360,19 @@ public class MergeJobTests
             Microsoft.Extensions.Options.Options.Create(
                 new Odin.Api.Configuration.MergeJobOptions { MaxConcurrentMerges = maxInFlight }),
             NullLogger<MergeJob>.Instance);
+
+    /// <summary>Seed an order whose merge is already <c>Ready</c> with a bundle (a deletable bundle).</summary>
+    private static async Task<int> SeedReadyMergeAsync(ApplicationDbContext db, string mergeId)
+    {
+        var (_, fileId) = await SeedOrderAsync(db);
+        var file = await db.RawGeneticFiles.SingleAsync(f => f.Id == fileId);
+        file.MergeStatus = MergeStatus.Ready;
+        file.MergeId = mergeId;
+        file.MergeFileName = $"{mergeId}.tar.gz";
+        file.MergeSizeBytes = 123;
+        await db.SaveChangesAsync();
+        return fileId;
+    }
 
     private static async Task<(int inspectionId, int fileId)> SeedOrderAsync(ApplicationDbContext db)
     {

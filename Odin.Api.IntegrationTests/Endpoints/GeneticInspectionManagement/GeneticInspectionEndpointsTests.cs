@@ -285,6 +285,92 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         Assert.True(response.StatusCode is HttpStatusCode.NoContent or HttpStatusCode.OK);
     }
 
+    // ── DELETE /api/genetic-inspections/merged-data (bulk, admin-only) ───────────
+
+    [Fact]
+    public async Task DeleteAllMergedData_DeletesEveryReadyBundle_AndReturnsCount()
+    {
+        var a = await CreateTestInspectionAsync("Anne", "Ready");
+        var b = await CreateTestInspectionAsync("Ben", "Ready");
+        await CreateTestInspectionAsync("Cara", "NotMerged"); // stays NotStarted — must survive
+
+        await using (var scope = Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            foreach (var (id, mergeId) in new[] { (a.Id, "merge-a"), (b.Id, "merge-b") })
+            {
+                var row = await db.QpadmGeneticInspections
+                    .Include(i => i.RawGeneticFile)
+                    .FirstAsync(i => i.Id == id);
+                row.RawGeneticFile!.MergeStatus = MergeStatus.Ready;
+                row.RawGeneticFile.MergeId = mergeId;
+            }
+            await db.SaveChangesAsync();
+        }
+
+        var response = await Client.DeleteAsync("/api/genetic-inspections/merged-data");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<DeleteAllMergedDataContract.Response>();
+        Assert.NotNull(result);
+        Assert.Equal(2, result!.DeletedCount);
+
+        await using (var scope = Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            Assert.Equal(2, await db.RawGeneticFiles.CountAsync(f => f.MergeStatus == MergeStatus.Deleted));
+            Assert.Equal(1, await db.RawGeneticFiles.CountAsync(f => f.MergeStatus == MergeStatus.NotStarted));
+        }
+    }
+
+    [Fact]
+    public async Task DeleteAllMergedData_WhenNoneReady_ReturnsZeroCount()
+    {
+        await CreateTestInspectionAsync(); // merge stays NotStarted — nothing to free
+
+        var response = await Client.DeleteAsync("/api/genetic-inspections/merged-data");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var result = await response.Content.ReadFromJsonAsync<DeleteAllMergedDataContract.Response>();
+        Assert.NotNull(result);
+        Assert.Equal(0, result!.DeletedCount);
+    }
+
+    [Fact]
+    public async Task DeleteAllMergedData_AsScientist_ReturnsForbidden()
+    {
+        // Admin-only: a Scientist may delete a single bundle but not bulk-wipe them all.
+        using var scientistClient = CreateClientWithRole(Factory, "auth0|integration-default", "Scientist");
+
+        var response = await scientistClient.DeleteAsync("/api/genetic-inspections/merged-data");
+
+        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteMergedData_PerOrder_AsScientist_WhenReady_ReturnsNoContent()
+    {
+        // The other half of the auth split: a Scientist CAN delete a single bundle (ScientistOrAdmin).
+        var inspection = await CreateTestInspectionAsync("Sam", "Scientist");
+
+        await using (var scope = Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var row = await db.QpadmGeneticInspections
+                .Include(i => i.RawGeneticFile)
+                .FirstAsync(i => i.Id == inspection.Id);
+            row.RawGeneticFile!.MergeStatus = MergeStatus.Ready;
+            row.RawGeneticFile.MergeId = "scientist-single";
+            await db.SaveChangesAsync();
+        }
+
+        using var scientistClient = CreateClientWithRole(Factory, "auth0|integration-default", "Scientist");
+        var response = await scientistClient.DeleteAsync(
+            $"/api/genetic-inspections/{inspection.Id}/merged-data");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
     // ── POST /api/genetic-inspections/{id}/qpadm-result ────────────
 
     [Fact]

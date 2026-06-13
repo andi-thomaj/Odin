@@ -205,16 +205,25 @@ namespace Odin.Api.Endpoints.MergeManagement
                 rawGeneticFileId, previous);
         }
 
-        public async Task DeleteAsync(int rawGeneticFileId, CancellationToken cancellationToken = default)
+        public Task DeleteAsync(int rawGeneticFileId, CancellationToken cancellationToken = default) =>
+            TryDeleteBundleAsync(rawGeneticFileId, cancellationToken);
+
+        /// <summary>
+        /// Core bundle delete shared by the per-order delete, the orphan sweep, and the bulk "delete all"
+        /// action. Returns <c>true</c> only when it actually removed a live bundle (Ready→Deleted), and
+        /// <c>false</c> on a no-op (file gone, no <c>MergeId</c>, or already <c>Deleted</c>) so callers can
+        /// count genuine reclaims accurately even if a concurrent path already freed the same row.
+        /// </summary>
+        private async Task<bool> TryDeleteBundleAsync(int rawGeneticFileId, CancellationToken cancellationToken)
         {
             var file = await dbContext.RawGeneticFiles
                 .IgnoreQueryFilters()
                 .FirstOrDefaultAsync(f => f.Id == rawGeneticFileId, cancellationToken);
 
             if (file is null || string.IsNullOrWhiteSpace(file.MergeId))
-                return;
+                return false;
             if (file.MergeStatus == MergeStatus.Deleted)
-                return;
+                return false;
 
             await mergeService.DeleteAsync(file.MergeId, cancellationToken);
 
@@ -224,8 +233,52 @@ namespace Odin.Api.Endpoints.MergeManagement
             await dbContext.SaveChangesAsync(cancellationToken);
             await BroadcastMergeStatusAsync(file, cancellationToken);
 
-            logger.LogInformation("Deleted merge bundle {MergeId} for raw file {FileId} after order completion.",
+            logger.LogInformation("Deleted merge bundle {MergeId} for raw file {FileId}.",
                 file.MergeId, rawGeneticFileId);
+            return true;
+        }
+
+        public async Task<int> DeleteAllReadyMergedDataAsync(CancellationToken cancellationToken = default)
+        {
+            // Every bundle that still occupies disk is a Ready file with a MergeId — the same set the UI
+            // shows a download icon for. Unconditional (no retention/completed filter): this is the manual
+            // "free all disk now" action, so we reclaim them all.
+            var readyIds = await dbContext.RawGeneticFiles
+                .IgnoreQueryFilters()
+                .Where(f => f.MergeStatus == MergeStatus.Ready && f.MergeId != null)
+                .Select(f => f.Id)
+                .ToListAsync(cancellationToken);
+
+            if (readyIds.Count == 0)
+                return 0;
+
+            var deleted = 0;
+            foreach (var id in readyIds)
+            {
+                // Stop promptly if the admin's request was aborted, rather than grinding through every
+                // remaining id (each would throw on the cancel check and log a spurious failure).
+                cancellationToken.ThrowIfCancellationRequested();
+                try
+                {
+                    // Count only bundles this call actually freed — a concurrent delete (orphan sweep,
+                    // order-completion delete, a second admin click) may have already taken some.
+                    if (await TryDeleteBundleAsync(id, cancellationToken))
+                        deleted++;
+                }
+                catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                {
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    // Don't let one stuck bundle abort the whole sweep; surface what we managed to free.
+                    logger.LogError(ex, "Delete-all merged data: failed to delete bundle for raw file {FileId}.", id);
+                }
+            }
+
+            logger.LogInformation("Delete-all merged data: deleted {Deleted}/{Total} Ready bundle(s).",
+                deleted, readyIds.Count);
+            return deleted;
         }
 
         // How long an unconsumed (order-not-completed) merge bundle may linger before the cleanup
@@ -254,8 +307,8 @@ namespace Odin.Api.Endpoints.MergeManagement
             {
                 try
                 {
-                    await DeleteAsync(id, cancellationToken);
-                    deleted++;
+                    if (await TryDeleteBundleAsync(id, cancellationToken))
+                        deleted++;
                 }
                 catch (Exception ex)
                 {

@@ -39,6 +39,16 @@ namespace Odin.Api.Endpoints.MergeManagement
         Task DeleteAsync(int rawGeneticFileId, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Delete <b>every</b> still-<c>Ready</c> merge bundle on the tools-api volume right now,
+        /// regardless of order status or age — the admin "free all disk" action surfaced on the Input
+        /// results grid. Unlike <see cref="CleanupOrphansAsync"/> (which only reclaims completed/expired
+        /// orders), this is unconditional. Each delete is idempotent and isolated, so one stuck bundle
+        /// doesn't abort the rest. Returns the number of bundles deleted. Runs synchronously (the caller
+        /// is an HTTP request that reports the count), not on the Hangfire merge queue.
+        /// </summary>
+        Task<int> DeleteAllReadyMergedDataAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Safety net (recurring): delete any still-Ready merge bundle whose order is already Completed, or
         /// that is older than the retention window — covering deletes that failed to enqueue or never fired.
         /// Bounded disk is the whole point on the 80 GB host (see the plan's Part C).
