@@ -60,6 +60,14 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 .RequireRateLimiting("authenticated")
                 .Produces(StatusCodes.Status204NoContent);
 
+            // Bulk: delete EVERY Ready merge bundle now ("free all disk"). Admin-only and "strict"-limited
+            // because it's broadly destructive, unlike the per-order delete above. Returns how many were
+            // freed. The literal "merged-data" segment can't collide with the "{id:int}/merged-data" route.
+            endpoints.MapDelete("/merged-data", DeleteAllMergedData)
+                .RequireAuthorization("AdminOnly")
+                .RequireRateLimiting("strict")
+                .Produces<DeleteAllMergedDataContract.Response>(StatusCodes.Status200OK);
+
             endpoints.MapDelete("/{id:int}/genetic-file", DeleteGeneticFile)
                 .RequireAuthorization("ScientistOrAdmin")
                 .RequireRateLimiting("authenticated")
@@ -220,6 +228,12 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
             // Deletes the bundle from the tools-api volume and marks the file Deleted. Idempotent.
             await mergeJob.DeleteAsync(inspection.RawGeneticFileId, cancellationToken);
             return Results.NoContent();
+        }
+
+        private static async Task<IResult> DeleteAllMergedData(IMergeJob mergeJob, CancellationToken cancellationToken)
+        {
+            var deletedCount = await mergeJob.DeleteAllReadyMergedDataAsync(cancellationToken);
+            return Results.Ok(new DeleteAllMergedDataContract.Response { DeletedCount = deletedCount });
         }
 
         private static async Task<IResult> DeleteGeneticFile(IGeneticInspectionService service, int id)

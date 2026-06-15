@@ -6,8 +6,8 @@ namespace Odin.Api.IntegrationTests.Fakers;
 /// Test double for <see cref="IMergePipelineService"/>. The real one proxies the external tools-api;
 /// here only the panel <c>.ind</c> label view/edit methods are backed by an in-memory store so the
 /// panel-promotion label flow can be exercised. Registered as a singleton; tests seed rows via
-/// <see cref="SetRows"/> and read the result via <see cref="Rows"/>. The heavy merge/restore methods
-/// throw — no integration test path uses them.
+/// <see cref="SetRows"/> and read the result via <see cref="Rows"/>. <see cref="DeleteAsync"/> is a
+/// harmless no-op (so bundle-delete flows can be tested); the other heavy merge/restore methods throw.
 /// </summary>
 public sealed class FakeMergePipelineService : IMergePipelineService
 {
@@ -68,8 +68,10 @@ public sealed class FakeMergePipelineService : IMergePipelineService
     public Task<HttpResponseMessage> OpenDownloadAsync(string mergeId, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 
+    // Idempotent and side-effect-free against the real tools-api volume — a no-op here so bundle-delete
+    // flows (per-order + the bulk "delete all merged data") can be exercised without a live tools-api.
     public Task DeleteAsync(string mergeId, CancellationToken cancellationToken = default) =>
-        throw new NotSupportedException();
+        Task.CompletedTask;
 
     public Task<PanelStatusResult> GetPanelStatusAsync(string? panel, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();

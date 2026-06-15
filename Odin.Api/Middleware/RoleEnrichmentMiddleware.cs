@@ -117,7 +117,11 @@ namespace Odin.Api.Middleware
 
         private async Task<string> ResolveAppEmailVerifiedAsync(HttpContext context, string? accessToken)
         {
-            var fromJwt = Auth0EmailVerifiedClaims.GetJwtEmailVerifiedBoolean(context.User);
+            // Prefer the namespaced claim an Auth0 Action stamps onto the access token (configurable via
+            // Jwt:EmailVerifiedClaim). When present this resolves verification with zero network calls —
+            // the /userinfo fallback below only runs for tokens that predate the Action or omit the claim.
+            var customClaimType = configuration["Jwt:EmailVerifiedClaim"];
+            var fromJwt = Auth0EmailVerifiedClaims.GetJwtEmailVerifiedBoolean(context.User, customClaimType);
             if (fromJwt.HasValue)
                 return fromJwt.Value ? "true" : "false";
 
@@ -214,12 +218,28 @@ namespace Odin.Api.Middleware
             ApplicationDbContext dbContext,
             string identityId)
         {
+            // Cache the lookup per identity to keep the role/email-verified enrichment off the database on
+            // every authenticated request. Invalidated on writes to User.Role (UserService.UpdateUserRoleAsync /
+            // DeleteUserAsync), so promotions still apply immediately. Only successful lookups are cached —
+            // a miss is left uncached so a not-yet-provisioned user is re-checked (and JIT-provisioned) next
+            // request. This middleware short-circuits under the Testing environment, so the cache never runs
+            // in integration tests.
+            var cacheKey = UserRoleCacheKeys.ForIdentity(identityId);
+            if (memoryCache.TryGetValue(cacheKey, out User? cached) && cached is not null)
+                return cached;
+
             var user = await dbContext.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.IdentityId == identityId);
 
             if (user is not null)
+            {
+                memoryCache.Set(cacheKey, user, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = UserRoleCacheKeys.Ttl
+                });
                 return user;
+            }
 
             // Manual DB edits sometimes differ in casing from Auth0's sub; policies require exact app_role.
             user = await dbContext.Users
@@ -231,6 +251,11 @@ namespace Odin.Api.Middleware
                 logger.LogWarning(
                     "Role enrichment: matched application_users by case-insensitive identity_id. " +
                     "Update identity_id to match the access token sub exactly to avoid ambiguity.");
+
+                memoryCache.Set(cacheKey, user, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = UserRoleCacheKeys.Ttl
+                });
             }
 
             return user;

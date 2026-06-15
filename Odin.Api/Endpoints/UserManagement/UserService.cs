@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Odin.Api.Authentication;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Endpoints.UserManagement.Models;
@@ -22,7 +24,8 @@ namespace Odin.Api.Endpoints.UserManagement
 
     public class UserService(
         ApplicationDbContext dbContext,
-        IGeoLocationService geoLocationService) : IUserService
+        IGeoLocationService geoLocationService,
+        IMemoryCache cache) : IUserService
     {
         public async Task<CreateUserContract.Response> CreateUserAsync(CreateUserContract.Request request,
             string? ipAddress = null)
@@ -184,6 +187,9 @@ namespace Odin.Api.Endpoints.UserManagement
 
             await transaction.CommitAsync();
 
+            // Drop the cached role enrichment so a deleted user can't keep an app_role claim until TTL expiry.
+            cache.Remove(UserRoleCacheKeys.ForIdentity(user.IdentityId));
+
             return true;
         }
 
@@ -206,6 +212,9 @@ namespace Odin.Api.Endpoints.UserManagement
 
             user.UpdatedAt = DateTime.UtcNow;
             await dbContext.SaveChangesAsync();
+
+            // Invalidate the cached role enrichment so the promotion takes effect on the next request.
+            cache.Remove(UserRoleCacheKeys.ForIdentity(user.IdentityId));
 
             return new UpdateUserRoleContract.Response
             {
