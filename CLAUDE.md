@@ -37,6 +37,51 @@ The per-request role lookup is cached via [UserRoleCacheKeys](Odin.Api/Authentic
 and invalidated on every write to `User.Role` (see [UserService](Odin.Api/Endpoints/UserManagement/UserService.cs)
 `UpdateUserRoleAsync` / `DeleteUserAsync`) so promotions still apply immediately.
 
+## Multi-app data isolation — separate accounts + data per application (`X-App`)
+
+Several frontends (odin-react = `ancestrify`, odin-aurora = `aurora`, more later) share this backend, DB, and
+Auth0 tenant. The **same Auth0 sub is a SEPARATE account per app**: identity is the composite
+`application_users (IdentityId, App)`, and every user-owned row carries an `App`. Reference/seed data is shared
+(NOT partitioned).
+
+How it works:
+- Each frontend sends an **`X-App` header** (axios default header). SignalR can't set headers on its
+  WebSocket, so its hub URL carries `?app=<key>` instead — both are read by
+  [AppResolutionMiddleware](Odin.Api/Middleware/AppResolutionMiddleware.cs), which runs **after**
+  `UseAuthentication` and **before** `UseRoleEnrichment`, validates against the `applications` registry
+  (unknown/inactive ⇒ 400; missing ⇒ default `ancestrify`), and records the app on the scoped
+  [IAppContext](Odin.Api/Authentication/IAppContext.cs).
+- [ApplicationDbContext](Odin.Api/Data/ApplicationDbContext.cs) constructor-injects `IAppContext` (so it is
+  **`AddDbContext`, not pooled**) and applies a global query filter `App == _appContext.App` to every
+  [IAppScoped](Odin.Api/Data/Entities/IAppScoped.cs) entity, plus auto-stamps `App` on inserts in a
+  `SaveChanges` override. `RawGeneticFile` folds its soft-delete predicate into that filter; `Calculator`
+  uses `IsAdmin || App == current` (admin/global calculators show in every app).
+- The auth hot path keys on the app: provisioning sets `App`, and the role-lookup cache key is
+  `(identityId, app)`.
+
+**When you add code, remember:**
+- **New user-owned entity** ⇒ implement `IAppScoped` (add `App`, `IsRequired().HasMaxLength(50)`), add it to the
+  query-filter list in `ApplicationDbContext.OnModelCreating`, and (if uniqueness is per-user) make indexes
+  app-leading. New *reference* tables stay shared — don't implement `IAppScoped`.
+- **Background jobs that write app-scoped rows** run with no HTTP request (app defaults to `ancestrify`). Load
+  the owning entity with `IgnoreQueryFilters()` by PK, then `RequestAppContext.SetApp(entity.App)` so writes
+  land in the right app — see [YHaplogroupComputeService](Odin.Api/Endpoints/CladeFinderManagement/YHaplogroupComputeService.cs).
+  (The merge job only *updates* `RawGeneticFile`, so it needs no stamping today, but qpAdm/merge is currently
+  `ancestrify`-only — a future merge-using app would need the same treatment.)
+- **Admin user-management is app-scoped** (each app's admin manages that app — the global filter handles it; no
+  cross-app super-admin view yet). Consequence: the **first admin in a new app must be promoted via a one-time
+  DB edit** (`UPDATE application_users SET role='Admin' WHERE identity_id=… AND app=…`), since a fresh app login
+  provisions a default `User` account. Cross-app admin queries that are intentional must use
+  `IgnoreQueryFilters()`.
+- **SignalR's real-time push still targets the raw sub** ([UserIdProvider](Odin.Api/Hubs/UserIdProvider.cs)), so
+  a user signed into two apps may see a notification *toast* in both tabs — the *persisted* notification list is
+  correctly app-scoped. App-keying the live push is a deferred enhancement.
+
+The `applications` registry (key, display name, frontend URL, from-email, is_active) is seeded idempotently by
+[ApplicationsSeeder](Odin.Api/Data/Seeders/ApplicationsSeeder.cs) (startup + after test Respawn), NOT by the
+migration — so adding an app is one seed row + the frontend header, no schema change. Per-app branding columns
+exist for future email/redirect use.
+
 ## Caching — in-process `IMemoryCache`, single instance, invalidate on write
 
 The API runs as a **single instance and is not designed to scale horizontally**, so caching is

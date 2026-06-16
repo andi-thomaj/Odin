@@ -135,7 +135,7 @@ public class SubmitQpadmResultMergeGuardTests
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase($"submit-guard-{Guid.NewGuid():N}")
             .Options;
-        return new ApplicationDbContext(options);
+        return new ApplicationDbContext(options, new Odin.Api.Authentication.RequestAppContext());
     }
 
     private sealed class StubNotificationService : INotificationService

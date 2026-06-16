@@ -188,7 +188,7 @@ namespace Odin.Api.Endpoints.UserManagement
             await transaction.CommitAsync();
 
             // Drop the cached role enrichment so a deleted user can't keep an app_role claim until TTL expiry.
-            cache.Remove(UserRoleCacheKeys.ForIdentity(user.IdentityId));
+            cache.Remove(UserRoleCacheKeys.ForIdentity(user.IdentityId, user.App));
 
             return true;
         }
@@ -214,7 +214,7 @@ namespace Odin.Api.Endpoints.UserManagement
             await dbContext.SaveChangesAsync();
 
             // Invalidate the cached role enrichment so the promotion takes effect on the next request.
-            cache.Remove(UserRoleCacheKeys.ForIdentity(user.IdentityId));
+            cache.Remove(UserRoleCacheKeys.ForIdentity(user.IdentityId, user.App));
 
             return new UpdateUserRoleContract.Response
             {

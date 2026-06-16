@@ -1,10 +1,16 @@
 using Microsoft.EntityFrameworkCore;
+using Odin.Api.Authentication;
 using Odin.Api.Data.Entities;
 
 namespace Odin.Api.Data
 {
-    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : DbContext(options)
+    public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IAppContext appContext)
+        : DbContext(options)
     {
+        // Resolved per request by AppResolutionMiddleware; drives the app-scoped query filters + write
+        // stamping below. Defaults to AppKeys.Ancestrify outside a request (background jobs) — see IAppContext.
+        private readonly IAppContext _appContext = appContext;
+
         public DbSet<User> Users { get; set; }
         public DbSet<RawGeneticFile> RawGeneticFiles { get; set; }
         public DbSet<QpadmGeneticInspection> QpadmGeneticInspections { get; set; }
@@ -46,11 +52,63 @@ namespace Odin.Api.Data
         public DbSet<G25PcaResult> G25PcaResults { get; set; }
         public DbSet<Calculator> Calculators { get; set; }
         public DbSet<AdmixToolsEra> AdmixToolsEras { get; set; }
+        public DbSet<Application> Applications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+            // ── Multi-app data isolation ─────────────────────────────────────────────────────────────────
+            // Every IAppScoped entity is filtered to the current request's app, so reads cannot see another
+            // app's rows without an explicit IgnoreQueryFilters() (admin/cross-app + background paths). The
+            // filter references the injected IAppContext instance, which EF re-evaluates per query. Reference/
+            // seed tables are NOT IAppScoped and stay common to every app. Writes are stamped in SaveChanges.
+            modelBuilder.Entity<User>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<QpadmOrder>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<G25Order>().HasQueryFilter(e => e.App == _appContext.App);
+            // RawGeneticFile folds its existing soft-delete predicate in (one query filter per entity allowed).
+            modelBuilder.Entity<RawGeneticFile>().HasQueryFilter(e => !e.IsDeleted && e.App == _appContext.App);
+            modelBuilder.Entity<QpadmGeneticInspection>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<G25GeneticInspection>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<Report>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<Notification>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<G25SavedCoordinate>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<G25TargetCoordinate>().HasQueryFilter(e => e.App == _appContext.App);
+            // Calculator: admin/global rows (IsAdmin) are visible in every app; user rows are app-scoped.
+            modelBuilder.Entity<Calculator>().HasQueryFilter(e => e.IsAdmin || e.App == _appContext.App);
+            modelBuilder.Entity<QpadmResult>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<QpadmCladeResult>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<G25DistanceResult>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<G25AdmixtureResult>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<G25PcaResult>().HasQueryFilter(e => e.App == _appContext.App);
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            StampAppScoped();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override Task<int> SaveChangesAsync(
+            bool acceptAllChangesOnSuccess,
+            CancellationToken cancellationToken = default)
+        {
+            StampAppScoped();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
+
+        // Stamp the owning app on newly-added IAppScoped rows that don't already carry one. Code that sets App
+        // explicitly (e.g. provisioning, or a background job copying the parent inspection's app onto a result)
+        // wins, because we only fill when it's empty.
+        private void StampAppScoped()
+        {
+            var app = _appContext.App;
+            foreach (var entry in ChangeTracker.Entries<IAppScoped>())
+            {
+                if (entry.State == EntityState.Added && string.IsNullOrEmpty(entry.Entity.App))
+                    entry.Entity.App = app;
+            }
         }
     }
 }

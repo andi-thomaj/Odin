@@ -11,9 +11,12 @@ namespace Odin.Api.Data.Entities
     /// <c>AnalyzeCladeContract.Response</c> payload plus a <see cref="Status"/>/<see cref="Message"/> that
     /// tells the UI why a clade is or isn't available.
     /// </summary>
-    public class QpadmCladeResult : BaseEntity
+    public class QpadmCladeResult : BaseEntity, IAppScoped
     {
         public int Id { get; set; }
+        /// <summary>Owning application (applications.key). Set from the parent inspection when computed in a
+        /// background job; query-filtered — see <see cref="IAppScoped"/>.</summary>
+        public string App { get; set; } = string.Empty;
         public int GeneticInspectionId { get; set; }
         public QpadmGeneticInspection GeneticInspection { get; set; } = null!;
 
@@ -88,6 +91,8 @@ namespace Odin.Api.Data.Entities
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(e => e.GeneticInspectionId).IsUnique();
+
+            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
 
             builder.ToTable("qpadm_clade_results");
         }

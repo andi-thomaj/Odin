@@ -39,7 +39,8 @@ namespace Odin.Api.Middleware
             HttpContext context,
             ApplicationDbContext dbContext,
             IUserProvisioningService userProvisioning,
-            IWebHostEnvironment environment)
+            IWebHostEnvironment environment,
+            IAppContext appContext)
         {
             if (environment.IsEnvironment("Testing"))
             {
@@ -56,7 +57,7 @@ namespace Odin.Api.Middleware
                     var (accessToken, _) = await TryGetRawAccessTokenWithSourceAsync(context).ConfigureAwait(false);
                     var emailVerified = await ResolveAppEmailVerifiedAsync(context, accessToken);
 
-                    var user = await FindUserByIdentityAsync(dbContext, identityId);
+                    var user = await FindUserByIdentityAsync(dbContext, identityId, appContext.App);
 
                     if (user is null && string.Equals(emailVerified, "true", StringComparison.OrdinalIgnoreCase))
                     {
@@ -216,7 +217,8 @@ namespace Odin.Api.Middleware
 
         private async Task<User?> FindUserByIdentityAsync(
             ApplicationDbContext dbContext,
-            string identityId)
+            string identityId,
+            string app)
         {
             // Cache the lookup per identity to keep the role/email-verified enrichment off the database on
             // every authenticated request. Invalidated on writes to User.Role (UserService.UpdateUserRoleAsync /
@@ -224,7 +226,7 @@ namespace Odin.Api.Middleware
             // a miss is left uncached so a not-yet-provisioned user is re-checked (and JIT-provisioned) next
             // request. This middleware short-circuits under the Testing environment, so the cache never runs
             // in integration tests.
-            var cacheKey = UserRoleCacheKeys.ForIdentity(identityId);
+            var cacheKey = UserRoleCacheKeys.ForIdentity(identityId, app);
             if (memoryCache.TryGetValue(cacheKey, out User? cached) && cached is not null)
                 return cached;
 

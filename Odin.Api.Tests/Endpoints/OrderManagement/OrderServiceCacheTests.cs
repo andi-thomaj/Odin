@@ -332,7 +332,7 @@ public class OrderServiceCacheTests
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase($"order-cache-tests-{Guid.NewGuid():N}")
             .Options;
-        return new ApplicationDbContext(options);
+        return new ApplicationDbContext(options, new Odin.Api.Authentication.RequestAppContext());
     }
 
     private sealed class FakeHostEnvironment : IHostEnvironment

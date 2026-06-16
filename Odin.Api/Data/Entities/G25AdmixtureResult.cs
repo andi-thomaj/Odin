@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities;
 
-public class G25AdmixtureResult : BaseEntity
+public class G25AdmixtureResult : BaseEntity, IAppScoped
 {
     public int Id { get; set; }
+    /// <summary>Owning application (applications.key). Set from the parent inspection; query-filtered — see <see cref="IAppScoped"/>.</summary>
+    public string App { get; set; } = string.Empty;
     public int GeneticInspectionId { get; set; }
     public G25GeneticInspection GeneticInspection { get; set; } = null!;
     public double FitDistance { get; set; }
@@ -39,6 +41,8 @@ public class G25AdmixtureResultConfiguration : IEntityTypeConfiguration<G25Admix
             b.ToJson();
             b.Property(a => a.Name).IsRequired().HasMaxLength(500);
         });
+
+        builder.Property(e => e.App).IsRequired().HasMaxLength(50);
 
         builder.ToTable("g25_admixture_results");
     }

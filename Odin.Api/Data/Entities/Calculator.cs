@@ -4,9 +4,12 @@ using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
-    public class Calculator : BaseEntity
+    public class Calculator : BaseEntity, IAppScoped
     {
         public int Id { get; set; }
+        /// <summary>Owning application (applications.key). For admin/global rows (<see cref="IsAdmin"/>) the
+        /// query filter ignores this and shows them in every app. Auto-stamped — see <see cref="IAppScoped"/>.</summary>
+        public string App { get; set; } = string.Empty;
         public string Label { get; set; } = string.Empty;
         public string Coordinates { get; set; } = string.Empty;
         public CalculatorType Type { get; set; }
@@ -45,6 +48,8 @@ namespace Odin.Api.Data.Entities
             builder.HasIndex(e => e.IsAdmin);
             builder.HasIndex(e => e.AdmixToolsEraId);
             builder.HasIndex(e => new { e.UserId, e.Type });
+
+            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
 
             builder.ToTable("calculators");
         }
