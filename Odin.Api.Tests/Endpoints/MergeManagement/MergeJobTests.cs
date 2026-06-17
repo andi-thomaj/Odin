@@ -141,6 +141,28 @@ public class MergeJobTests
     }
 
     [Fact]
+    public async Task Dispatch_AdmitsMergeFromAnotherApp_NotJustAncestrify()
+    {
+        var dbName = $"merge-tests-{Guid.NewGuid():N}";
+
+        // Seed a qpAdm order under the "aurora" app — SaveChanges stamps App="aurora" on the rows.
+        await using (var auroraDb = CreateDbContext(dbName, "aurora"))
+            await SeedOrderAsync(auroraDb);
+
+        // The dispatcher runs as a background job with NO X-App, so its context defaults to ancestrify.
+        // Pre-fix it would see zero candidates (the aurora rows are filtered out) and admit nothing.
+        await using var jobDb = CreateDbContext(dbName);
+        var jobClient = new FakeJobClient();
+        var job = CreateJob(jobDb, new StubMergeService(), jobClient);
+
+        await job.DispatchPendingMergesAsync();
+
+        Assert.Equal(1, jobClient.CountOf(nameof(IMergeJob.RunAsync)));
+        Assert.Equal(1, await jobDb.RawGeneticFiles.IgnoreQueryFilters()
+            .CountAsync(f => f.MergeStatus == MergeStatus.Queued));
+    }
+
+    [Fact]
     public async Task Dispatch_NoCapacity_WhenCapInFlight_AdmitsNone()
     {
         await using var db = CreateDbContext();
@@ -359,6 +381,7 @@ public class MergeJobTests
             TimeProvider.System,
             Microsoft.Extensions.Options.Options.Create(
                 new Odin.Api.Configuration.MergeJobOptions { MaxConcurrentMerges = maxInFlight }),
+            new Odin.Api.Authentication.RequestAppContext(),
             NullLogger<MergeJob>.Instance);
 
     /// <summary>Seed an order whose merge is already <c>Ready</c> with a bundle (a deletable bundle).</summary>
@@ -410,11 +433,18 @@ public class MergeJobTests
     }
 
     private static ApplicationDbContext CreateDbContext()
+        => CreateDbContext($"merge-tests-{Guid.NewGuid():N}");
+
+    // Shared-name overload so a test can seed under one app and run the job under another (simulating a
+    // background job with no X-App). Pass `app` to pin the context's RequestAppContext for write stamping.
+    private static ApplicationDbContext CreateDbContext(string dbName, string? app = null)
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase($"merge-tests-{Guid.NewGuid():N}")
+            .UseInMemoryDatabase(dbName)
             .Options;
-        return new ApplicationDbContext(options, new Odin.Api.Authentication.RequestAppContext());
+        var appContext = new Odin.Api.Authentication.RequestAppContext();
+        if (app is not null) appContext.SetApp(app);
+        return new ApplicationDbContext(options, appContext);
     }
 
     private sealed class NoopRealtimeNotifier : IGeneticInspectionRealtimeNotifier

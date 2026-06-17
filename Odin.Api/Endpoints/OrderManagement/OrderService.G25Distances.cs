@@ -55,7 +55,12 @@ public partial class OrderService
                 return response;
             }
 
+            // Recompute is driven by a change to SHARED reference data (G25 distance population samples), so
+            // it runs GLOBALLY across every app — it ignores the per-app query filters here and stamps each
+            // new result with its own inspection's App below. (As a background job there's no X-App, so without
+            // IgnoreQueryFilters it would silently process only ancestrify and miss every other app's data.)
             var inspectionsQuery = dbContext.G25GeneticInspections
+                .IgnoreQueryFilters()
                 .Where(gi => gi.G25Coordinates != null && gi.G25Coordinates != "");
 
             if (inspectionIds is { Count: > 0 })
@@ -65,7 +70,7 @@ public partial class OrderService
             }
 
             var inspections = await inspectionsQuery
-                .Select(gi => new { gi.Id, gi.OrderId, gi.FirstName, gi.LastName, gi.G25Coordinates })
+                .Select(gi => new { gi.Id, gi.OrderId, gi.FirstName, gi.LastName, gi.G25Coordinates, gi.App })
                 .ToListAsync();
 
             if (response.InspectionsRequested == 0)
@@ -78,6 +83,7 @@ public partial class OrderService
             // in-place mutations below register with the change tracker.
             var inspectionIdsToLoad = inspections.Select(i => i.Id).ToList();
             var allExisting = await dbContext.G25DistanceResults
+                .IgnoreQueryFilters() // match the cross-app inspection scan above, else other apps' existing rows look missing
                 .Where(r => inspectionIdsToLoad.Contains(r.GeneticInspectionId))
                 .ToListAsync();
             var existingByInspection = allExisting
@@ -151,6 +157,10 @@ public partial class OrderService
                             G25DistanceEraId = era.Id,
                             ResultsVersion = inspectionVersion,
                             Populations = populations,
+                            // Stamp the new result with ITS inspection's app, not the ambient context (which is
+                            // ancestrify in a background job) — the run spans every app, so SaveChanges' single
+                            // default stamp would mislabel non-ancestrify results.
+                            App = inspection.App,
                             CreatedBy = identityId,
                             CreatedAt = now,
                             UpdatedAt = now,
