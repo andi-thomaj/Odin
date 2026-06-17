@@ -4,9 +4,11 @@ using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
-    public class QpadmGeneticInspection : BaseEntity
+    public class QpadmGeneticInspection : BaseEntity, IAppScoped
     {
         public int Id { get; set; }
+        /// <summary>Owning application (applications.key). Auto-stamped + query-filtered — see <see cref="IAppScoped"/>.</summary>
+        public string App { get; set; } = string.Empty;
         public int UserId { get; set; }
         public User User { get; set; }
         public string FirstName { get; set; }
@@ -33,6 +35,8 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.LastName).IsRequired().HasMaxLength(100);
             builder.Property(e => e.Gender).HasConversion<string>().HasMaxLength(10);
             builder.Property(e => e.ProfilePictureFileName).HasMaxLength(255);
+
+            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
 
             builder.ToTable("qpadm_genetic_inspections");
         }

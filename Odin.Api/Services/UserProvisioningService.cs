@@ -36,6 +36,7 @@ public class UserProvisioningService(
     IConfiguration configuration,
     IMemoryCache memoryCache,
     IGeoLocationService geoLocationService,
+    IAppContext appContext,
     ILogger<UserProvisioningService> logger) : IUserProvisioningService
 {
     public async Task<User?> EnsureUserAsync(
@@ -75,6 +76,7 @@ public class UserProvisioningService(
         var user = new User
         {
             IdentityId = identityId,
+            App = appContext.App,
             Email = profile.Email!,
             Username = profile.Nickname ?? profile.Email!,
             FirstName = firstName ?? string.Empty,

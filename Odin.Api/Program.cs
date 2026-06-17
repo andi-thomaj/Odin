@@ -294,6 +294,7 @@ namespace Odin.Api
                         .WithHeaders(
                             "Content-Type",
                             "Authorization",
+                            "X-App", // identifies the calling application (multi-app data isolation)
                             "X-Request-ID",
                             "X-SignalR-User-Agent", // SignalR specific header
                             "x-requested-with", // Common header SignalR may use
@@ -340,11 +341,28 @@ namespace Odin.Api
                 options.AddPolicy("PanelRestore", TimeSpan.FromHours(2));
             });
 
-            services.AddDbContextPool<ApplicationDbContext>(options =>
+            // Not pooled: the context constructor-injects the scoped IAppContext that drives the multi-app
+            // query filters + write stamping, which AddDbContextPool forbids (pooled instances take only
+            // options). This API runs as a single, non-horizontally-scaled instance, so the pooling cost is
+            // negligible. The ConfigureWarnings silences a benign EF warning raised because app-scoped entities
+            // reference unfiltered shared tables (e.g. Calculator→AdmixToolsEra) — those reference rows always
+            // exist, so the required-navigation/query-filter interaction is harmless here.
+            services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
-                    npgsqlOptions => npgsqlOptions.CommandTimeout(180)));
+                        npgsqlOptions => npgsqlOptions.CommandTimeout(180))
+                    .ConfigureWarnings(w => w.Ignore(
+                        Microsoft.EntityFrameworkCore.Diagnostics.CoreEventId
+                            .PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning)));
             services.AddScoped<ApplicationDbContextInitializer>();
             services.AddScoped<DatabaseSeeder>();
+
+            // Multi-app data isolation: one RequestAppContext per request (set by AppResolutionMiddleware from
+            // the X-App header), exposed read-only as IAppContext to the DbContext + auth hot path. The registry
+            // validates the header and carries per-app branding.
+            services.AddScoped<Odin.Api.Authentication.RequestAppContext>();
+            services.AddScoped<Odin.Api.Authentication.IAppContext>(
+                sp => sp.GetRequiredService<Odin.Api.Authentication.RequestAppContext>());
+            services.AddScoped<Odin.Api.Services.IApplicationRegistry, Odin.Api.Services.ApplicationRegistry>();
 
             // R2 (Cloudflare object storage) — population MP4 avatars and any future media.
             services.Configure<Odin.Api.Storage.R2Options>(
@@ -553,6 +571,9 @@ namespace Odin.Api
             }
 
             app.UseAuthentication();
+            // Resolve the calling app (X-App header) into IAppContext BEFORE role enrichment and any DB access,
+            // so provisioning/role lookup and the app-scoped query filters key on the right application.
+            app.UseAppResolution();
             // Rate limiting must run AFTER authentication: the global limiter's authenticated tier
             // (100 vs 30 req/min) and per-user partitioning both key off context.User, which is only
             // populated once UseAuthentication has run. Placed before role enrichment so a throttled

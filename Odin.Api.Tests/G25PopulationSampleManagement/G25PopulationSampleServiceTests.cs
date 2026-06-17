@@ -143,6 +143,6 @@ public class G25PopulationSampleServiceTests
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase($"g25-tests-{Guid.NewGuid():N}")
             .Options;
-        return new ApplicationDbContext(options);
+        return new ApplicationDbContext(options, new Odin.Api.Authentication.RequestAppContext());
     }
 }
