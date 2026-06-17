@@ -186,6 +186,26 @@ namespace Odin.Api.Migrations
                 table: "g25_orders",
                 columns: new[] { "App", "CreatedBy", "CreatedAt" });
 
+            // Before this migration there was no unique constraint on application_users.IdentityId, so
+            // pre-existing data could (and in production did) accumulate duplicate rows for the same Auth0
+            // sub. The UNIQUE (IdentityId, App) index below can't build over those duplicates. Merge them
+            // FK-safely: keep the lowest Id per IdentityId, repoint every child row to it, then delete the
+            // extras. Runs once (this migration applies once); afterwards the unique index prevents recurrence.
+            migrationBuilder.Sql(@"
+                CREATE TEMP TABLE _dup_application_users ON COMMIT DROP AS
+                SELECT ""Id"" AS dup_id, MIN(""Id"") OVER (PARTITION BY ""IdentityId"") AS keep_id
+                FROM application_users;
+                DELETE FROM _dup_application_users WHERE dup_id = keep_id;
+
+                UPDATE reports                   t SET ""UserId""          = d.keep_id FROM _dup_application_users d WHERE t.""UserId""          = d.dup_id;
+                UPDATE notifications             t SET ""RecipientUserId"" = d.keep_id FROM _dup_application_users d WHERE t.""RecipientUserId"" = d.dup_id;
+                UPDATE g25_saved_coordinates     t SET ""UserId""          = d.keep_id FROM _dup_application_users d WHERE t.""UserId""          = d.dup_id;
+                UPDATE g25_genetic_inspections   t SET ""UserId""          = d.keep_id FROM _dup_application_users d WHERE t.""UserId""          = d.dup_id;
+                UPDATE qpadm_genetic_inspections t SET ""UserId""          = d.keep_id FROM _dup_application_users d WHERE t.""UserId""          = d.dup_id;
+
+                DELETE FROM application_users WHERE ""Id"" IN (SELECT dup_id FROM _dup_application_users);
+            ");
+
             migrationBuilder.CreateIndex(
                 name: "IX_application_users_IdentityId_App",
                 table: "application_users",
