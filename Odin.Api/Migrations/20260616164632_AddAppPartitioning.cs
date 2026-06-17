@@ -17,17 +17,13 @@ namespace Odin.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropIndex(
-                name: "IX_raw_genetic_files_CreatedBy_RawDataFileName",
-                table: "raw_genetic_files");
-
-            migrationBuilder.DropIndex(
-                name: "IX_qpadm_orders_CreatedBy_CreatedAt",
-                table: "qpadm_orders");
-
-            migrationBuilder.DropIndex(
-                name: "IX_g25_orders_CreatedBy_CreatedAt",
-                table: "g25_orders");
+            // These three indexes are replaced below by App-leading versions. Production drifted and is
+            // missing some of them, and EF's DropIndex emits a bare `DROP INDEX` (no IF EXISTS), so a
+            // missing index aborts the whole migration and crash-loops startup. Drop idempotently instead:
+            // a real drop where the old index exists, a no-op where it doesn't.
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_raw_genetic_files_CreatedBy_RawDataFileName\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_qpadm_orders_CreatedBy_CreatedAt\";");
+            migrationBuilder.Sql("DROP INDEX IF EXISTS \"IX_g25_orders_CreatedBy_CreatedAt\";");
 
             migrationBuilder.AddColumn<string>(
                 name: "App",
