@@ -16,6 +16,7 @@ using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
 using Odin.Api.Endpoints.MediaManagement;
 using Odin.Api.Endpoints.ReportManagement;
+using Odin.Api.Endpoints.Subscribe;
 using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25ContinentManagement;
@@ -45,6 +46,7 @@ namespace Odin.Api.Extensions
             v1.MapOrderEndpoints();
             v1.MapAppSettingsEndpoints();
             v1.MapNotificationEndpoints();
+            v1.MapSubscribeEndpoints();
             v1.MapReportEndpoints();
             v1.MapMediaEndpoints();
             v1.MapG25PopulationSampleEndpoints();
