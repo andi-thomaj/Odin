@@ -373,11 +373,59 @@ public class MergeJobTests
         await Assert.ThrowsAsync<InvalidOperationException>(() => job.RequeueAsync(fileId));
     }
 
+    [Fact]
+    public async Task StopAsync_InProgress_KillsToolsApi_MarksFailed_AndDispatches()
+    {
+        await using var db = CreateDbContext();
+        var (_, fileId) = await SeedOrderAsync(db);
+        var f = await db.RawGeneticFiles.SingleAsync(x => x.Id == fileId);
+        f.MergeStatus = MergeStatus.Merging;
+        f.MergeId = "insp-1-abc";
+        await db.SaveChangesAsync();
+
+        string? cancelled = null;
+        var proxy = new StubMergeService { OnCancel = id => { cancelled = id; return Task.CompletedTask; } };
+        var jobClient = new FakeJobClient();
+        var job = CreateJob(db, proxy, jobClient);
+
+        await job.StopAsync(fileId);
+
+        var after = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
+        Assert.Equal(MergeStatus.Failed, after.MergeStatus);
+        Assert.Equal("insp-1-abc", cancelled); // tools-api forge was told to stop
+        Assert.Contains("stopped", after.MergeError, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, jobClient.CountOf(nameof(IMergeJob.DispatchPendingMergesAsync)));
+    }
+
+    [Fact]
+    public async Task StopAsync_NotInProgress_Throws()
+    {
+        await using var db = CreateDbContext();
+        var (_, fileId) = await SeedOrderAsync(db);
+        var f = await db.RawGeneticFiles.SingleAsync(x => x.Id == fileId);
+        f.MergeStatus = MergeStatus.Failed; // not Queued/Converting/Merging → nothing to stop
+        await db.SaveChangesAsync();
+
+        var job = CreateJob(db, new StubMergeService());
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => job.StopAsync(fileId));
+    }
+
+    [Fact]
+    public async Task StopAsync_MissingFile_ThrowsKeyNotFound()
+    {
+        await using var db = CreateDbContext();
+        var job = CreateJob(db, new StubMergeService());
+
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => job.StopAsync(999_999));
+    }
+
     // ── helpers ───────────────────────────────────────────────────────────
     private static MergeJob CreateJob(
         ApplicationDbContext db, IMergePipelineService proxy, IBackgroundJobClient? jobClient = null,
-        int maxInFlight = 2)
-        => new(db, proxy, jobClient ?? new FakeJobClient(), new NoopRealtimeNotifier(),
+        int maxInFlight = 2, JobStorage? jobStorage = null)
+        => new(db, proxy, jobClient ?? new FakeJobClient(), jobStorage ?? new FakeJobStorage(),
+            new NoopRealtimeNotifier(),
             TimeProvider.System,
             Microsoft.Extensions.Options.Options.Create(
                 new Odin.Api.Configuration.MergeJobOptions { MaxConcurrentMerges = maxInFlight }),
@@ -470,8 +518,13 @@ public class MergeJobTests
         public Task<HttpResponseMessage> OpenDownloadAsync(string mergeId, CancellationToken cancellationToken = default)
             => throw new NotImplementedException();
 
+        public Func<string, Task>? OnCancel { get; set; }
+
         public Task DeleteAsync(string mergeId, CancellationToken cancellationToken = default)
             => OnDelete!(mergeId);
+
+        public Task CancelMergeAsync(string mergeId, CancellationToken cancellationToken = default)
+            => (OnCancel ?? (_ => Task.CompletedTask))(mergeId);
 
         // The merge job never touches panel restore; these are admin-endpoint-only.
         public Task<PanelStatusResult> GetPanelStatusAsync(string? panel, CancellationToken cancellationToken = default)
@@ -504,5 +557,14 @@ public class MergeJobTests
         public string Create(Job job, IState state) { Jobs.Add(job); return Guid.NewGuid().ToString("N"); }
         public bool ChangeState(string jobId, IState state, string expectedState) => true;
         public int CountOf(string methodName) => Jobs.Count(j => j.Method.Name == methodName);
+    }
+
+    // StopAsync needs a JobStorage for its monitoring-API scan, but the guard paths (missing file /
+    // not-in-progress) return before touching it, so a throw-only stub is enough for these tests.
+    // The monitoring scan itself is Hangfire glue, verified end-to-end rather than here.
+    private sealed class FakeJobStorage : JobStorage
+    {
+        public override global::Hangfire.Storage.IStorageConnection GetConnection() => throw new NotImplementedException();
+        public override global::Hangfire.Storage.IMonitoringApi GetMonitoringApi() => throw new NotImplementedException();
     }
 }

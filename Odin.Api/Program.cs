@@ -502,9 +502,23 @@ namespace Odin.Api
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
-                .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(
-                    provider.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
-                        ?? connectionString))
+                .UsePostgreSqlStorage(
+                    c => c.UseNpgsqlConnection(
+                        provider.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
+                            ?? connectionString),
+                    new PostgreSqlStorageOptions
+                    {
+                        // Heartbeat-extend a running job's lease instead of using a fixed visibility window.
+                        // The AADR merge is disk-bound and can run >30 min on the shared host; with the
+                        // DEFAULT fixed 30-min InvisibilityTimeout, Hangfire decided the still-running merge
+                        // job was "lost" and re-fetched + re-ran it every 30 min — a perpetual loop that
+                        // never reached Succeeded/Failed (each re-run kicked off a fresh tools-api forge,
+                        // which again ran >30 min, re-fetched again, forever). Sliding timeout keeps the
+                        // lease alive while the worker is genuinely processing, so a long merge runs exactly
+                        // once. InvisibilityTimeout below is now only the ceiling for a truly dead worker.
+                        UseSlidingInvisibilityTimeout = true,
+                        InvisibilityTimeout = TimeSpan.FromHours(2),
+                    })
                 // Flip a merge order Retrying → Failed once Hangfire exhausts its retries (see
                 // MergeJobFailureStateFilter), so a dead job doesn't hold an in-flight merge slot forever.
                 .UseFilter(new Odin.Api.Endpoints.MergeManagement.MergeJobFailureStateFilter(

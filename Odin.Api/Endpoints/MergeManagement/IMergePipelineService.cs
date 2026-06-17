@@ -25,6 +25,10 @@ namespace Odin.Api.Endpoints.MergeManagement
         /// <summary>Delete a merge bundle. Idempotent — succeeds even if it was already gone.</summary>
         Task DeleteAsync(string mergeId, CancellationToken cancellationToken = default);
 
+        /// <summary>Cancel an in-flight merge on the tools-api: SIGKILL its running tool subprocess and
+        /// drop any bundle for the id. Idempotent — succeeds even if nothing is running.</summary>
+        Task CancelMergeAsync(string mergeId, CancellationToken cancellationToken = default);
+
         // ── Admin panel restore (upload a pre-built AADR panel after a crash/redeploy) ──────────
         // The "HO" panel is no longer Poseidon-provisioned; an operator uploads a packed triplet
         // (v66_2M_aadr_PUB.{geno,snp,ind}). These proxy /v1/merge/panel/restore/* on the tools-api.

@@ -1,3 +1,5 @@
+using Hangfire;
+
 namespace Odin.Api.Endpoints.MergeManagement
 {
     /// <summary>
@@ -5,6 +7,14 @@ namespace Odin.Api.Endpoints.MergeManagement
     /// enqueued at qpAdm order creation (onto the serialized "merge" queue); <see cref="DeleteAsync"/>
     /// is enqueued when the order is completed. Both take Hangfire-serializable arguments.
     /// </summary>
+    /// <remarks>
+    /// The <c>[Queue("merge")]</c> attributes below MUST live on this <b>interface</b>, not only on the
+    /// concrete <c>MergeJob</c>. Jobs are enqueued via <c>Enqueue&lt;IMergeJob&gt;(svc =&gt; svc.RunAsync(..))</c>,
+    /// so Hangfire reads the queue attribute from the <i>interface</i> method it was handed; an attribute on
+    /// the concrete method is never seen, and the job silently lands on the multi-worker "default" queue
+    /// instead of the dedicated single-worker "merge" queue — which broke the strictly-serialized guarantee
+    /// (it let re-fetched merge jobs run concurrently and produced overlapping forges).
+    /// </remarks>
     public interface IMergeJob
     {
         /// <summary>
@@ -24,6 +34,12 @@ namespace Odin.Api.Endpoints.MergeManagement
         /// is recorded as <see cref="Data.Enums.MergeStatus.Failed"/>; an admin re-runs it via
         /// <see cref="RequeueAsync"/>. Enqueued only by the dispatcher (never directly).
         /// </summary>
+        /// <remarks><c>[AutomaticRetry(Attempts = 0)]</c> is here (not on the concrete method) for the same
+        /// reason as <c>[Queue]</c> — Hangfire reads filter attributes off the enqueued interface method. On
+        /// the concrete method it was ignored, so a hard-throwing merge would have taken Hangfire's default
+        /// 10 retries instead of failing fast.</remarks>
+        [Queue("merge")]
+        [AutomaticRetry(Attempts = 0)]
         Task RunAsync(int geneticInspectionId, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -34,6 +50,15 @@ namespace Odin.Api.Endpoints.MergeManagement
         /// only way a failed merge is re-attempted.
         /// </summary>
         Task RequeueAsync(int rawGeneticFileId, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Stop an <b>in-progress</b> merge (<c>Queued</c>/<c>Converting</c>/<c>Merging</c>): delete its
+        /// Hangfire job (so the running <see cref="RunAsync"/> is cancelled and never re-run), kill the
+        /// tools-api tool subprocess + drop any partial bundle, and mark the file <c>Failed</c> so an admin
+        /// can re-run it via <see cref="RequeueAsync"/>. Throws <see cref="KeyNotFoundException"/> if the file
+        /// is missing, or <see cref="InvalidOperationException"/> (→409) if no merge is in progress.
+        /// </summary>
+        Task StopAsync(int rawGeneticFileId, CancellationToken cancellationToken = default);
 
         /// <summary>Delete a completed order's merge bundle from the tools-api volume and mark it Deleted.</summary>
         Task DeleteAsync(int rawGeneticFileId, CancellationToken cancellationToken = default);
@@ -53,6 +78,7 @@ namespace Odin.Api.Endpoints.MergeManagement
         /// that is older than the retention window — covering deletes that failed to enqueue or never fired.
         /// Bounded disk is the whole point on the 80 GB host (see the plan's Part C).
         /// </summary>
+        [Queue("merge")]
         Task CleanupOrphansAsync(CancellationToken cancellationToken = default);
     }
 }
