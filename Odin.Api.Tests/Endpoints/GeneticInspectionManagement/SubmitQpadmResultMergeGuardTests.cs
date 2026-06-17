@@ -16,9 +16,10 @@ using Odin.Api.Hubs;
 namespace Odin.Api.Tests.Endpoints.GeneticInspectionManagement;
 
 /// <summary>
-/// A Scientist/Admin must not be able to submit qpAdm results until the AADR merge has finished.
-/// Enforced in the service so it holds regardless of caller; these cover the guard's decision per
-/// merge state. (Authorization to the ScientistOrAdmin role is enforced on the endpoint.)
+/// Submitting qpAdm results is intentionally NOT gated on the AADR merge status — a Scientist/Admin
+/// may enter results while the merge is still running, has failed, or never started. These assert
+/// submission succeeds in every merge state. (Authorization to the ScientistOrAdmin role is enforced
+/// on the endpoint.)
 /// </summary>
 public class SubmitQpadmResultMergeGuardTests
 {
@@ -27,37 +28,11 @@ public class SubmitQpadmResultMergeGuardTests
     [InlineData(MergeStatus.Queued)]
     [InlineData(MergeStatus.Converting)]
     [InlineData(MergeStatus.Merging)]
-    public async Task Submit_BlockedWith409_WhileMergeUnfinished(MergeStatus status)
-    {
-        await using var db = CreateDbContext();
-        var inspectionId = await SeedAsync(db, status);
-        var service = CreateService(db);
-
-        var (response, statusCode, error) = await service.SubmitQpadmResultAsync(inspectionId, NewRequest());
-
-        Assert.Null(response);
-        Assert.Equal(StatusCodes.Status409Conflict, statusCode);
-        Assert.Contains("merge", error, StringComparison.OrdinalIgnoreCase);
-        Assert.False(await db.QpadmResults.AnyAsync()); // nothing persisted
-    }
-
-    [Fact]
-    public async Task Submit_Blocked_WhenMergeFailed_WithFailureMessage()
-    {
-        await using var db = CreateDbContext();
-        var inspectionId = await SeedAsync(db, MergeStatus.Failed);
-        var service = CreateService(db);
-
-        var (_, statusCode, error) = await service.SubmitQpadmResultAsync(inspectionId, NewRequest());
-
-        Assert.Equal(StatusCodes.Status409Conflict, statusCode);
-        Assert.Contains("failed", error, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Theory]
+    [InlineData(MergeStatus.Failed)]
+    [InlineData(MergeStatus.Retrying)]
     [InlineData(MergeStatus.Ready)]
-    [InlineData(MergeStatus.Deleted)] // edits after completion: the merge did finish, just got cleaned up
-    public async Task Submit_Allowed_WhenMergeFinished(MergeStatus status)
+    [InlineData(MergeStatus.Deleted)]
+    public async Task Submit_Allowed_RegardlessOfMergeStatus(MergeStatus status)
     {
         await using var db = CreateDbContext();
         var inspectionId = await SeedAsync(db, status);

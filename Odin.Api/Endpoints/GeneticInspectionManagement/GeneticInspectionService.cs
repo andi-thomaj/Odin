@@ -335,15 +335,11 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
                 return (null, StatusCodes.Status404NotFound, $"Genetic inspection with ID {inspectionId} not found.");
             }
 
-            // Results may only be submitted once the AADR merge has finished — the scientist runs qpAdm on
-            // the merged dataset, so submitting before it is ready (or while it failed) is meaningless. Ready
-            // = available now; Deleted = it completed and was cleaned up after a prior submission (edits OK).
-            var mergeStatus = inspection.RawGeneticFile?.MergeStatus;
-            if (mergeStatus is not (MergeStatus.Ready or MergeStatus.Deleted))
-            {
-                return (null, StatusCodes.Status409Conflict, MergeNotReadyMessage(mergeStatus));
-            }
-
+            // NB: result submission is intentionally NOT gated on the AADR merge status. A scientist may
+            // submit qpAdm results while the merge is still running, has failed, or never started (e.g.
+            // results computed out-of-band) — the merge bundle is only an internal convenience, not a
+            // prerequisite for entering results. The bundle cleanup below stays guarded on MergeId so a
+            // never-completed merge simply has nothing to delete.
             if (request.MergedRawDataFile is { Length: > 0 } mergedFile)
             {
                 using var ms = new MemoryStream();
@@ -472,17 +468,6 @@ namespace Odin.Api.Endpoints.GeneticInspectionManagement
 
             return (response, StatusCodes.Status201Created, null);
         }
-
-        /// <summary>Human-readable reason a submission was blocked, tailored to the current merge state.</summary>
-        private static string MergeNotReadyMessage(MergeStatus? status) => status switch
-        {
-            MergeStatus.Failed =>
-                "The AADR merge for this order failed, so qpAdm results can't be submitted yet. " +
-                "Resolve the merge (it is retried automatically) before submitting.",
-            _ =>
-                "The AADR merge for this order has not finished yet, so qpAdm results can't be submitted. " +
-                "Please wait until the merge is ready and try again.",
-        };
 
         /// <summary>
         /// Enqueues background deletion of the order's AADR merge bundle (on the tools-api volume) now that
