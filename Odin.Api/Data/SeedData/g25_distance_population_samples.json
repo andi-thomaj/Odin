@@ -10158,7 +10158,7 @@
     ]
   },
   {
-    "SampleLabel": "https://doi.org/10.1016/j.cell.2025.05.009",
+    "SampleLabel": "Hungary Pannonia (100-500 AD)",
     "Coordinates": "Hunnic_Pannonian,0.119977,0.103394,0.038985,0.015353,0.020109,0.004706,0.004656,0.003476,-0.003023,0.003457,-0.002192,0.002468,-0.006699,-0.003806,0.001247,0.00167,0.002221,0.001437,0.004321,-0.000125,-0.003743,0.003748,0.002307,0.002666,-0.00217",
     "Ids": "NEP1,NEP2,CSB-3,KMT-2785,SEI-1,SEI-5,SEI-6,SZLA-646,CSK-101,CSK-126,CSK-127,CSK-135,CSK-137,CSK-18,CSK-25,CSK-61,CSK-9,KAP-2,MEM-2,NKL-1038,NKL-899,OFU-190,OFU-191,OFU-422,PM-5,PMD-564,SPF-1,SZB-1,VIG-94-1,PTL013,A181029,HDB001",
     "G25DistanceEraId": 3,
@@ -10182,7 +10182,7 @@
     ]
   },
   {
-    "SampleLabel": "Pannonian Germanic / Gepid (450–500 AD)",
+    "SampleLabel": "Pannonian Gepido-Germanic(450–500 AD)",
     "Coordinates": "Pannonian_Germanic,0.114334,0.083439,0.041245,0.014502,0.021982,0.003284,0.004537,0.005326,0.000079,0.0062,-0.006171,0.004016,-0.006204,-0.005856,0.004556,0.000452,-0.000011,0.001094,0.004635,0.001202,-0.000782,0.000782,0.000015,0.005993,-0.001369",
     "Ids": "Bal_111,Bal_143,Bal_144,Bal_146,Bal_148,Bal_149,Bal_150,Bal_267,Bal_268,Bal_269,FVD001,FVD002,FVD004,FVD005,FVD006,FVD007,FVD008,FVD009,FVD010,FVD011,FVD012,FVD013,Hacs_10,Hacs_13,Hacs_15,Hacs_16,Hacs_17,Hacs_18,Hacs_19,Hacs_1,Hacs_20,Hacs_21,Hacs_22,Hacs_24,Hacs_4,Hacs_5,PTL002,PTL003,PTL004,TGB005,TGB023,TGH010,TGH012,TGH015,TGH016,TGH019,TGH028,TGH058,TGH068",
     "G25DistanceEraId": 3,
@@ -10674,7 +10674,7 @@
     ]
   },
   {
-    "SampleLabel": "Romania Balkan Sarmatian (100-500 AD)",
+    "SampleLabel": "Romania Daco-Sarmatian (100-500 AD)",
     "Coordinates": "Balkan_Sarmatian,0.12236,0.145728,0.019139,-0.01074,0.022774,-0.003905,0.004759,0.000519,-0.001943,0.011298,-0.000893,0.007119,-0.009515,0.008429,-0.008822,-0.006165,-0.000489,0.00019,0.006662,-0.006472,-0.006364,0.003957,-0.002188,-0.003404,-0.003772",
     "Ids": "BOT-2,LMF-6,RAM-13,TRE-33",
     "G25DistanceEraId": 3,
@@ -10686,7 +10686,7 @@
     ]
   },
   {
-    "SampleLabel": "Pontic Roman (350 AD)",
+    "SampleLabel": "Pontic (350 AD)",
     "Coordinates": "Pontic_Roman,0.116479,0.150298,-0.010056,-0.051788,0.016208,-0.023241,-0.000313,-0.005692,0.007636,0.026971,0.005413,0.007244,-0.007929,-0.006422,-0.008369,-0.001503,0.007041,0.003083,0.003226,-0.006128,-0.009649,-0.001649,-0.002506,0.000442,0.002156",
     "Ids": "SRR26291260,SRR26291262,SRR26291264",
     "G25DistanceEraId": 3,
@@ -10706,6 +10706,194 @@
       {
         "Label": "Ancient DNA and Paleoproteomic Analysis on Roman Imperial-Era Individuals from Histria, Romania",
         "Link": "https://papers.ssrn.com/sol3/papers.cfm?abstract_id=4610283"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Hunnic / Xiongnu (0–400 AD)",
+    "Coordinates": "Hunnic_Xiongnu,0.040407,-0.392502,0.085795,-0.022933,-0.078168,-0.038347,0.015159,0.026537,0.006851,0.013576,-0.019649,0.000375,0.007062,-0.000413,0.000272,-0.001856,0.001695,-0.001963,0.001948,0.01038,-0.020713,-0.003772,-0.016515,-0.000663,-0.002096",
+    "Ids": "RISE603,IMA006",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://www.nature.com/articles/s41586-018-0094-2"
+      },
+      {
+        "Label": "The spatiotemporal distribution of human pathogens in ancient Eurasia",
+        "Link": "https://www.nature.com/articles/s41586-025-09192-8"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Volga Uralic (0–500 AD)",
+    "Coordinates": "Volga_Ural_Uralic,0.097698,-0.059634,0.083092,0.065031,-0.045581,0.000744,0.009779,0.011705,-0.011203,-0.033197,0.024178,-0.004771,0.015527,-0.039146,-0.003785,-0.003057,-0.003738,-0.000134,-0.011041,-0.00965,0.005421,0.005448,-0.002609,0.007411,-0.001989",
+    "Ids": "19265,I19266,AB127,AB128,CGG021462,CGG021464,I19110,I32621,I32629,CGG021459,CGG021460,CGG021461,CGG021463,I32627,I32631,I32623,CGG021458,EZH008",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Long shared haplotypes identify the southern Urals as a primary source for the 10th century Hungarians",
+        "Link": "https://www.cell.com/cell/fulltext/S0092-8674(25)01033-5"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Volga-Oka Finnic (190–375 AD)",
+    "Coordinates": "Volga_Oka_Finnic,0.11787,0.02945,0.093694,0.088861,0.001881,0.017229,0.011542,0.015897,-0.005908,-0.03993,0.012378,-0.009625,0.021688,-0.000076,-0.011235,0.000648,0.002796,-0.002407,-0.006397,0.003127,0.002371,-0.000989,0.002944,-0.006587,0.001144",
+    "Ids": "BOL001,BOL002,BOL003,BOL004,BOL005,BOL006,BOL007,BOL008,BOL009",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic admixture and language shift in the medieval Volga-Oka interfluve",
+        "Link": "https://www.cell.com/current-biology/fulltext/S0960-9822(22)01826-7"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Baltic-Finnic (0–200 AD)",
+    "Coordinates": "Baltic_Finnic,0.127482,0.114078,0.098051,0.093563,0.041957,0.03449,0.011829,0.021153,-0.001704,-0.032377,0.003897,-0.017384,0.028989,0.030736,-0.006243,-0.004552,-0.002043,0.000549,0.002472,0.000584,-0.002787,0.000536,0.008381,-0.009479,-0.001916",
+    "Ids": "s19_VII15_1,s19_VIII5_2,s19_VIII9_1",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "The Arrival of Siberian Ancestry Connecting the Eastern Baltic to Uralic Speakers further East",
+        "Link": "https://www.cell.com/fulltext/S0960-9822(19)30424-5"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Alan (200–350 AD)",
+    "Coordinates": "Alan,0.107247,0.105615,-0.018269,0.00201,-0.027219,0.006229,0.008748,-0.000077,-0.044859,-0.026384,-0.000866,0.007826,-0.012075,-0.005979,0.008837,-0.004478,0.007765,-0.001802,-0.007388,0.00906,0.005213,0.001305,0.00011,-0.005074,-0.001384",
+    "Ids": "lib40al,CGG021451,CGG021996,CGG022000,CGG022002,CGG022003,CGG022004,CGG022005,AB105",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Steppe Ancestry in western Eurasia and the spread of the Germanic Languages",
+        "Link": "https://www.nature.com/articles/s41586-024-07634-3"
+      },
+      {
+        "Label": "Ancient DNA reveals the prehistory of the Uralic and Yeniseian peoples",
+        "Link": "https://www.nature.com/articles/s41586-025-09189-3"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Sarmatian (120–250 AD)",
+    "Coordinates": "Sarmatian,0.11314,0.051589,0.036807,0.062339,-0.025051,0.023371,-0.001034,-0.001846,-0.031865,-0.034479,-0.003735,-0.001499,-0.000892,-0.019515,0.017074,0.014903,-0.000104,-0.005828,-0.002187,0.002251,-0.011105,-0.000915,0.002391,0.003784,-0.001964",
+    "Ids": "chy001,chy002,tem001,tem002,tem003",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomes suggest the eastern Pontic-Caspian steppe as the source of western Iron Age nomads",
+        "Link": "https://www.science.org/doi/10.1126/sciadv.aat4457"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Sargat / Proto-Ugric (150–375 AD)",
+    "Coordinates": "Sargat_Proto_Ugric,0.088782,-0.134727,0.086738,0.065246,-0.066679,-0.007065,-0.001175,0.008077,-0.008317,-0.03177,0.026036,-0.008592,0.018483,-0.058398,-0.007284,-0.003226,-0.006432,0.000802,-0.001173,-0.006753,-0.010939,0.012035,0.006409,0.001205,-0.011017",
+    "Ids": "I6826,I32779,I33844",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA reveals the prehistory of the Uralic and Yeniseian peoples",
+        "Link": "https://www.nature.com/articles/s41586-025-09189-3"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Tashtyk (250 AD)",
+    "Coordinates": "Tashtyk,0.107563,-0.002539,0.065054,0.079135,-0.009232,0.012829,0.009283,-0.014307,-0.012578,-0.026971,-0.006821,-0.003746,0.001858,-0.013074,0.026465,0.021944,-0.001695,0.008805,-0.007794,0.010818,-0.016533,0.004637,-0.014112,0.01199,0.000838",
+    "Ids": "lc8544,KE9609",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA reveals the prehistory of the Uralic and Yeniseian peoples",
+        "Link": "https://www.nature.com/articles/s41586-025-09189-3"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Old Bering Sea (0–600 AD)",
+    "Coordinates": "Old_Bering_Sea,0.043708,-0.35117,0.12083,0.047029,-0.117561,-0.034694,-0.119855,-0.142286,0.003027,-0.012647,0.02228,-0.006264,0.006392,-0.020698,-0.032709,-0.015592,-0.005085,0.011275,0.035874,0.021785,0.022161,-0.042611,0.006508,0.028655,0.031494",
+    "Ids": "I7621,NEO241,NEO242,NEO253,I1525",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "The population history of northeastern Siberia since the Pleistocene",
+        "Link": "https://www.nature.com/articles/s41586-019-1279-z"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Kamchatkan Paleo-Siberian (400–500 AD)",
+    "Coordinates": "Kamchatkan,0.075692,-0.233064,0.091075,0.100454,-0.09371,0.00502,-0.033254,-0.042345,-0.015135,-0.049021,0.010311,-0.005545,0.014271,-0.052985,0.012283,0.011535,-0.009909,-0.001013,0.002074,0.009879,-0.037247,0.010696,0.016022,-0.002651,-0.004131",
+    "Ids": "KMT001,KMT002",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Middle Holocene Siberian genomes reveal highly connected gene pools throughout North Asia",
+        "Link": "https://www.cell.com/current-biology/fulltext/S0960-9822(22)01892-9"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Gepidic / Danubian Germanic (300–550 AD)",
+    "Coordinates": "Gepidic_Danubian_Germanic,0.122549,0.129141,0.040541,0.026163,0.025543,0.007344,0.003917,0.000231,0.001704,0.00079,-0.002084,0.001698,-0.006715,-0.006422,-0.00009,0.005259,0.006041,-0.001014,0.003792,0.000084,-0.002433,0.003359,0.005485,0.00727,0.00004",
+    "Ids": "R6681,R6688,I15549,I27295,I27296,I27298",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic history of the Balkans from Roman frontier to Slavic migrations",
+        "Link": "https://doi.org/10.1016/j.cell.2023.10.018"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Moesia Dacian (200-300 AD)",
+    "Coordinates": "Daco_Thracian_Moesian_Roman,0.122075,0.161215,0.003489,-0.056202,0.027313,-0.018198,0.001528,-0.006692,0.007005,0.036675,0.007916,0.009479,-0.01587,0.005987,-0.020663,-0.005271,0.01294,0.002534,0.005971,-0.011256,-0.009982,0.000494,-0.001325,0.003404,-0.001198",
+    "Ids": "I15510,I15518,I15490,I15504",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic history of the Balkans from Roman frontier to Slavic migrations",
+        "Link": "https://doi.org/10.1016/j.cell.2023.10.018"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Moesia Thracian (450 AD)",
+    "Coordinates": "Thracian_Moesian_Roman,0.118376,0.154869,0.006977,-0.049904,0.01708,-0.01757,0.000117,-0.003923,0.007772,0.022142,0.009825,-0.000225,-0.013974,-0.015276,-0.014997,-0.001459,0.016037,0.000443,-0.002639,-0.003564,-0.014974,-0.000124,-0.000123,0.012893,0.001736",
+    "Ids": "I15554,I15555",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic history of the Balkans from Roman frontier to Slavic migrations",
+        "Link": "https://doi.org/10.1016/j.cell.2023.10.018"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Moesia East Mediterranean (80–350 AD)",
+    "Coordinates": "Eastern_Mediterranean_Roman,0.109538,0.151613,-0.034207,-0.062985,-0.002227,-0.022082,0.001714,-0.005117,-0.00788,0.019703,0.002235,0.003914,-0.005632,0.003651,-0.013053,-0.002714,0.00563,-0.000872,0.005072,-0.002847,-0.002525,0.003368,-0.001428,-0.001354,-0.005093",
+    "Ids": "R6769,I15486,I15488,I15489,I15500,I15502,I15508,I15513,I15517,I15524,I15525,I15526,I15528,I15529,I15532,I15551,R6750",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic history of the Balkans from Roman frontier to Slavic migrations",
+        "Link": "https://doi.org/10.1016/j.cell.2023.10.018"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Slovakia Celto-Germanic Pannonia (0-450 AD)",
+    "Coordinates": "Celto_Germanic_Pannonian,0.129303,0.129785,0.059811,0.038437,0.035391,0.015283,0.001175,0.004707,-0.000655,-0.00277,-0.003345,0.000899,-0.006095,-0.006551,0.010016,0.008459,0.002451,0.001698,0.006159,0.001001,0.003993,0.004303,-0.000049,0.013665,-0.001197",
+    "Ids": "R2202,DA119,R2204,R2207,R2208",
+    "G25DistanceEraId": 3,
+    "ResearchLinks": [
+      {
+        "Label": "Stable population structure in Europe since the Iron Age, despite high mobility",
+        "Link": "https://elifesciences.org/articles/79714"
       }
     ]
   }
