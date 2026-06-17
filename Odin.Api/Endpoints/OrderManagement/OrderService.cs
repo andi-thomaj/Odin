@@ -32,7 +32,7 @@ public interface IOrderService
     Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(int StatusCode, string? Error, string? MergeId, string? FileName, byte[]? LegacyBytes)> ResolveMergedDataDownloadAsync(int orderId, string identityId, bool isAdmin = false);
-    Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, bool isAdmin = false);
+    Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, ServiceType service, bool isAdmin = false);
     Task<(bool Success, int StatusCode, string? Error)> MarkQpadmResultsAsViewedAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(bool Success, int StatusCode, string? Error)> MarkG25ResultsAsViewedAsync(int orderId, string identityId, bool isAdmin = false);
     Task<RecomputeG25DistancesContract.Response> RecomputeG25DistanceResultsAsync(string identityId, IReadOnlyList<int>? inspectionIds = null);
@@ -1209,23 +1209,52 @@ public partial class OrderService(
             return (404, "No merged data available for this order.", null, null, null);
         }
 
-        public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, bool isAdmin = false)
+        public async Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, ServiceType service, bool isAdmin = false)
         {
-            var order = await dbContext.QpadmOrders
-                .AsNoTracking()
-                .Include(o => o.GeneticInspection)
-                .FirstOrDefaultAsync(o => o.Id == orderId);
+            // qpAdm and G25 orders live in separate tables with independent identity sequences, so the same
+            // numeric ID can exist in both. The caller's service type disambiguates which table to read from
+            // — querying the wrong one would 404 (G25 orders were previously invisible here) or, on an ID
+            // collision, return the other order's picture.
+            string? createdBy;
+            byte[]? pictureData;
+            string? pictureFileName;
 
-            if (order is null)
-                return (null, null, 404, $"Order with ID {orderId} not found.");
+            if (service == ServiceType.g25)
+            {
+                var order = await dbContext.G25Orders
+                    .AsNoTracking()
+                    .Include(o => o.GeneticInspection)
+                    .FirstOrDefaultAsync(o => o.Id == orderId);
 
-            if (!isAdmin && order.CreatedBy != identityId)
+                if (order is null)
+                    return (null, null, 404, $"Order with ID {orderId} not found.");
+
+                createdBy = order.CreatedBy;
+                pictureData = order.GeneticInspection?.ProfilePicture;
+                pictureFileName = order.GeneticInspection?.ProfilePictureFileName;
+            }
+            else
+            {
+                var order = await dbContext.QpadmOrders
+                    .AsNoTracking()
+                    .Include(o => o.GeneticInspection)
+                    .FirstOrDefaultAsync(o => o.Id == orderId);
+
+                if (order is null)
+                    return (null, null, 404, $"Order with ID {orderId} not found.");
+
+                createdBy = order.CreatedBy;
+                pictureData = order.GeneticInspection?.ProfilePicture;
+                pictureFileName = order.GeneticInspection?.ProfilePictureFileName;
+            }
+
+            if (!isAdmin && createdBy != identityId)
                 return (null, null, 403, "You do not have permission to access this order's profile picture.");
 
-            if (order.GeneticInspection?.ProfilePicture is not { Length: > 0 } pictureData)
+            if (pictureData is not { Length: > 0 })
                 return (null, null, 404, $"No profile picture found for order with ID {orderId}.");
 
-            return (pictureData, order.GeneticInspection.ProfilePictureFileName ?? "profile-picture", 200, null);
+            return (pictureData, pictureFileName ?? "profile-picture", 200, null);
         }
 
         public async Task<(bool Success, int StatusCode, string? Error)> MarkQpadmResultsAsViewedAsync(int orderId, string identityId, bool isAdmin = false)

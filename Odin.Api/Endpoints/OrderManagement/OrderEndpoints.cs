@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Data.Entities;
+using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.MergeManagement;
 using Odin.Api.Endpoints.OrderManagement.Models;
 using Odin.Api.Extensions;
@@ -270,13 +271,15 @@ namespace Odin.Api.Endpoints.OrderManagement
             }, "application/gzip", fileName);
         }
 
-        private static async Task<IResult> GetProfilePicture(IOrderService service, HttpContext httpContext, int id)
+        // serviceType disambiguates the qpAdm vs G25 order tables (which share an ID space); defaults to
+        // qpAdm so existing callers that omit it keep working.
+        private static async Task<IResult> GetProfilePicture(IOrderService orderService, HttpContext httpContext, int id, [FromQuery(Name = "service")] ServiceType serviceType = ServiceType.qpAdm)
         {
             var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
                              ?? httpContext.User.FindFirstValue("sub")
                              ?? string.Empty;
 
-            var (fileBytes, fileName, statusCode, error) = await service.GetProfilePictureAsync(id, identityId, IsAdmin(httpContext));
+            var (fileBytes, fileName, statusCode, error) = await orderService.GetProfilePictureAsync(id, identityId, serviceType, IsAdmin(httpContext));
 
             return statusCode switch
             {
