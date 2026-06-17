@@ -2,6 +2,7 @@ using System.Net;
 using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Odin.Api.Authentication;
 using Odin.Api.Configuration;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
@@ -17,6 +18,7 @@ namespace Odin.Api.Endpoints.MergeManagement
         IGeneticInspectionRealtimeNotifier liveUpdates,
         TimeProvider timeProvider,
         IOptions<MergeJobOptions> mergeOptions,
+        RequestAppContext appContext,
         ILogger<MergeJob> logger) : IMergeJob
     {
         // Cap on merge jobs in flight (Queued + Converting + Merging). Pinned to 1 — merges run strictly
@@ -32,9 +34,14 @@ namespace Odin.Api.Endpoints.MergeManagement
         [DisableConcurrentExecution(60)]
         public async Task DispatchPendingMergesAsync(CancellationToken cancellationToken = default)
         {
+            // The merge worker is a single, app-agnostic queue (one job at a time across every app), so the
+            // dispatcher coordinates GLOBALLY: it counts in-flight and picks candidates across all apps with
+            // IgnoreQueryFilters(). Without this, a background run (no X-App) would only ever see ancestrify —
+            // it would never admit another app's merges, and could over-admit by undercounting in-flight ones.
             // Retrying counts as in-flight: such a job is still scheduled in Hangfire and occupies a
             // merge slot, so it must be counted or the dispatcher would over-admit and build a backlog.
             var inFlight = await dbContext.RawGeneticFiles
+                .IgnoreQueryFilters()
                 .CountAsync(f => f.MergeStatus == MergeStatus.Queued
                     || f.MergeStatus == MergeStatus.Converting
                     || f.MergeStatus == MergeStatus.Merging
@@ -44,9 +51,11 @@ namespace Odin.Api.Endpoints.MergeManagement
             if (capacity <= 0)
                 return;
 
-            // Oldest-first across the waiting (NotStarted) qpAdm raw files — one inspection per file.
+            // Oldest-first across the waiting (NotStarted) qpAdm raw files — one inspection per file, any app.
             var candidates = await dbContext.QpadmGeneticInspections
-                .Where(gi => gi.RawGeneticFile != null && gi.RawGeneticFile.MergeStatus == MergeStatus.NotStarted)
+                .IgnoreQueryFilters()
+                .Where(gi => gi.RawGeneticFile != null && !gi.RawGeneticFile.IsDeleted
+                    && gi.RawGeneticFile.MergeStatus == MergeStatus.NotStarted)
                 .GroupBy(gi => gi.RawGeneticFileId)
                 .Select(g => new { FileId = g.Key, InspectionId = g.Min(x => x.Id) })
                 .OrderBy(x => x.FileId)
@@ -56,6 +65,7 @@ namespace Odin.Api.Endpoints.MergeManagement
             foreach (var candidate in candidates)
             {
                 var file = await dbContext.RawGeneticFiles
+                    .IgnoreQueryFilters()
                     .FirstOrDefaultAsync(f => f.Id == candidate.FileId, cancellationToken);
                 if (file is null || file.MergeStatus != MergeStatus.NotStarted)
                     continue; // re-check under the lock — another dispatch may have just taken it
@@ -97,7 +107,11 @@ namespace Odin.Api.Endpoints.MergeManagement
 
         private async Task RunCoreAsync(int geneticInspectionId, CancellationToken cancellationToken)
         {
+            // Background job: no HTTP request set the app context, so load the inspection across all apps
+            // (by PK, filters off) and pin the request app to it, so writes + any app-scoped reads below
+            // stay aligned with the inspection's app rather than defaulting to ancestrify.
             var inspection = await dbContext.QpadmGeneticInspections
+                .IgnoreQueryFilters()
                 .Include(gi => gi.RawGeneticFile)
                 .FirstOrDefaultAsync(gi => gi.Id == geneticInspectionId, cancellationToken);
 
@@ -108,6 +122,8 @@ namespace Odin.Api.Endpoints.MergeManagement
                     geneticInspectionId);
                 return;
             }
+
+            appContext.SetApp(inspection.App);
 
             // Idempotent: don't redo a finished merge, and never resurrect one deleted after completion.
             if (file.MergeStatus is MergeStatus.Ready or MergeStatus.Deleted)

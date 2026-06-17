@@ -63,11 +63,24 @@ How it works:
 - **New user-owned entity** ⇒ implement `IAppScoped` (add `App`, `IsRequired().HasMaxLength(50)`), add it to the
   query-filter list in `ApplicationDbContext.OnModelCreating`, and (if uniqueness is per-user) make indexes
   app-leading. New *reference* tables stay shared — don't implement `IAppScoped`.
-- **Background jobs that write app-scoped rows** run with no HTTP request (app defaults to `ancestrify`). Load
-  the owning entity with `IgnoreQueryFilters()` by PK, then `RequestAppContext.SetApp(entity.App)` so writes
-  land in the right app — see [YHaplogroupComputeService](Odin.Api/Endpoints/CladeFinderManagement/YHaplogroupComputeService.cs).
-  (The merge job only *updates* `RawGeneticFile`, so it needs no stamping today, but qpAdm/merge is currently
-  `ancestrify`-only — a future merge-using app would need the same treatment.)
+- **Background jobs run with no HTTP request, so `IAppContext` defaults to `ancestrify`** — every job that
+  reads or writes `IAppScoped` data must be made app-aware, or it silently sees/affects only ancestrify.
+  Three patterns, by job shape:
+  - **Per-entity job** (processes one owning entity): load it by PK with `IgnoreQueryFilters()`, then
+    `RequestAppContext.SetApp(entity.App)` so the rest of the job is pinned to that entity's app. See
+    [YHaplogroupComputeService](Odin.Api/Endpoints/CladeFinderManagement/YHaplogroupComputeService.cs) and
+    `MergeJob.RunCoreAsync` ([MergeJob.cs](Odin.Api/Endpoints/MergeManagement/MergeJob.cs)).
+  - **Global coordinator / sweep** (one shared resource serving all apps): query across apps with
+    `IgnoreQueryFilters()` and do **not** pin a single app. `MergeJob.DispatchPendingMergesAsync` counts
+    in-flight and picks candidates globally because the `merge` Hangfire queue is a single app-agnostic
+    worker; `CleanupOrphansAsync` already sweeps cross-app. The per-merge runner it enqueues then pins the
+    app per-entity (above).
+  - **Cross-app batch over shared reference data**: scan every app with `IgnoreQueryFilters()` and stamp each
+    new `IAppScoped` row from **its own source entity's `App`** (not the ambient context, which can't vary
+    per row). See `OrderService.RecomputeG25DistanceResultsAsync`
+    ([OrderService.G25Distances.cs](Odin.Api/Endpoints/OrderManagement/OrderService.G25Distances.cs)) — driven
+    by a shared population-sample change, so it refreshes all apps' G25 distance results in one run.
+  Reach for the per-entity pattern by default; only sweep/stamp-per-row when the job legitimately spans apps.
 - **Admin user-management is app-scoped** (each app's admin manages that app — the global filter handles it; no
   cross-app super-admin view yet). Consequence: the **first admin in a new app must be promoted via a one-time
   DB edit** (`UPDATE application_users SET role='Admin' WHERE identity_id=… AND app=…`), since a fresh app login
