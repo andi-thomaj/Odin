@@ -56,8 +56,14 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
             }
             response.Found = true;
 
+            // Anchor the whole heatmap on the **nearest named subclade** (shared with the relative-frequency
+            // endpoint): the deepest ancestor that is a recognisable named clade (e.g. a deep E-V13 branch →
+            // E-V13), so the data is recognisable and well-populated rather than the bare letter or terminal.
+            var anchorClade = await HaplogroupAnchor.ResolveAsync(dbContext, clade, cancellationToken);
+            response.DisplayClade = anchorClade;
+
             var bins = await dbContext.Database
-                .SqlQueryRaw<GeoBinRow>(BinsSql, clade)
+                .SqlQueryRaw<GeoBinRow>(BinsSql, anchorClade)
                 .ToListAsync(cancellationToken);
             foreach (var b in bins)
             {
@@ -80,14 +86,14 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
             }
 
             var countries = await dbContext.Database
-                .SqlQueryRaw<CountryRow>(CountrySql, clade)
+                .SqlQueryRaw<CountryRow>(CountrySql, anchorClade)
                 .ToListAsync(cancellationToken);
             response.ModernByCountry = countries
                 .Select(c => new HaplogroupDistributionContract.CountryCount { Country = c.Country, Count = c.Count })
                 .ToList();
 
             var migration = await dbContext.Database
-                .SqlQueryRaw<MigrationRow>(MigrationSql, clade)
+                .SqlQueryRaw<MigrationRow>(MigrationSql, anchorClade)
                 .ToListAsync(cancellationToken);
             response.Migration = migration
                 .Select(m => new HaplogroupDistributionContract.MigrationPoint
@@ -103,7 +109,7 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
             // Modern frequency choropleth: ancestor-match the clade to its most-specific available
             // frequency clade (e.g. J-Z1865 → J1 → J), then return that clade's per-country %.
             var freq = await dbContext.Database
-                .SqlQueryRaw<FrequencyRow>(FrequencySql, clade)
+                .SqlQueryRaw<FrequencyRow>(FrequencySql, anchorClade)
                 .ToListAsync(cancellationToken);
             if (freq.Count > 0)
             {

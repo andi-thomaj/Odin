@@ -12,6 +12,11 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap.Models
             /// <summary>The queried clade (a YFull node id, e.g. <c>R-M269</c>).</summary>
             public string Clade { get; set; } = string.Empty;
 
+            /// <summary>The clade the heatmap is actually shown for — the nearest recognisable *named*
+            /// subclade of the queried clade (e.g. a deep E-V13 sub-branch → <c>E-V13</c>). Equals
+            /// <see cref="Clade"/> when the clade is already a named subclade or has no named ancestor.</summary>
+            public string DisplayClade { get; set; } = string.Empty;
+
             /// <summary>False when the clade is not present in the imported tree (empty distribution).</summary>
             public bool Found { get; set; }
 

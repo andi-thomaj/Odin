@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Odin.Api.Data;
 using Odin.Api.Data.Enums;
@@ -51,6 +52,9 @@ public class HaplogroupHeatmapTests(CustomWebApplicationFactory factory) : Integ
 
         public Task<HaploGeoPage<HaploGeoNodeDto>> GetNodesAsync(int offset, int limit, CancellationToken ct = default) =>
             Task.FromResult(new HaploGeoPage<HaploGeoNodeDto>(offset, limit, _nodes.Count, _nodes.Skip(offset).Take(limit).ToList()));
+
+        public Task<HaploGeoPage<HaploGeoFrequencyDto>> GetFrequenciesAsync(int offset, int limit, CancellationToken ct = default) =>
+            Task.FromResult(new HaploGeoPage<HaploGeoFrequencyDto>(offset, limit, 0, []));
     }
 
     private async Task RunImportAsync()
@@ -60,6 +64,25 @@ public class HaplogroupHeatmapTests(CustomWebApplicationFactory factory) : Integ
         var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
         var service = new HaplogroupImportService(db, new FakeExportClient(), cache, NullLogger<HaplogroupImportService>.Instance);
         await service.ImportAsync("integration-test");
+    }
+
+    /// <summary>Records the clade it's asked for and returns a canned grid — the real grid is computed by
+    /// the tools-api, which isn't running in tests.</summary>
+    private sealed class FakeRelativeFrequencyClient : IHaplogroupRelativeFrequencyClient
+    {
+        public string? RequestedClade { get; private set; }
+        public string? RequestedLayer { get; private set; }
+
+        public Task<HaploGeoRelativeFrequencyDto> GetAsync(
+            string clade, string layer, double radiusKm, CancellationToken cancellationToken = default)
+        {
+            RequestedClade = clade;
+            RequestedLayer = layer;
+            return Task.FromResult(new HaploGeoRelativeFrequencyDto(
+                Clade: clade, Layer: layer, RadiusKm: radiusKm, CellSize: 1.0,
+                FrequencyClade: layer == "modern" ? clade : null, MaxValue: 75.0, CladeCount: 2, TotalCount: 4,
+                Cells: [new HaploGeoRfCellDto(48.0, 20.0, 75.0)]));
+        }
     }
 
     [Fact]
@@ -89,6 +112,8 @@ public class HaplogroupHeatmapTests(CustomWebApplicationFactory factory) : Integ
 
         Assert.NotNull(body);
         Assert.True(body!.Found);
+        // R-M269 is itself a named subclade, so the heatmap anchors on it (not the bare letter).
+        Assert.Equal("R-M269", body.DisplayClade);
         // R-M269 subtree = {R-M269, R-U106, R-P312}: 2 ancient (a1, a2) + 2 modern (m1, m2). The 'I' sample is excluded.
         Assert.Equal(2, body.TotalAncient);
         Assert.Equal(2, body.TotalModern);
@@ -102,6 +127,49 @@ public class HaplogroupHeatmapTests(CustomWebApplicationFactory factory) : Integ
         Assert.Equal("R", body.Migration[0].Clade);
         Assert.Equal("R-M269", body.Migration[^1].Clade);
         Assert.True(body.Migration[0].Tmrca >= body.Migration[^1].Tmrca);
+    }
+
+    [Fact]
+    public async Task RelativeFrequency_AnchorsClade_ProxiesGrid_AndMapsResponse()
+    {
+        await RunImportAsync();
+
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
+        var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+        var fakeClient = new FakeRelativeFrequencyClient();
+        var service = new HaplogroupRelativeFrequencyService(db, fakeClient, cache, env);
+
+        var response = await service.GetAsync("R-M269", "modern", 99999); // radius is clamped to the max
+
+        Assert.True(response.Found);
+        Assert.Equal("R-M269", response.DisplayClade); // R-M269 is a named subclade → anchors to itself
+        Assert.Equal("R-M269", fakeClient.RequestedClade); // the anchored clade is what the grid is asked for
+        Assert.Equal("modern", fakeClient.RequestedLayer);
+        Assert.Equal(2000.0, response.RadiusKm); // clamped
+        Assert.Equal("R-M269", response.FrequencyClade);
+        Assert.Equal(75.0, response.MaxValue);
+        Assert.Single(response.Cells);
+    }
+
+    [Fact]
+    public async Task RelativeFrequency_UnknownClade_ReturnsNotFound_WithoutCallingGrid()
+    {
+        await RunImportAsync();
+
+        using var scope = CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var cache = scope.ServiceProvider.GetRequiredService<IMemoryCache>();
+        var env = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+        var fakeClient = new FakeRelativeFrequencyClient();
+        var service = new HaplogroupRelativeFrequencyService(db, fakeClient, cache, env);
+
+        var response = await service.GetAsync("Z-DOESNOTEXIST", "ancient", 300);
+
+        Assert.False(response.Found);
+        Assert.Empty(response.Cells);
+        Assert.Null(fakeClient.RequestedClade); // never proxied for an unknown clade
     }
 
     [Fact]

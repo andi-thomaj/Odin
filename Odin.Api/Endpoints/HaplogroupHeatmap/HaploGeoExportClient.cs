@@ -24,7 +24,7 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
 
     public sealed record HaploGeoFrequencyDto(
         string Country, string HcKey, string CladeNodeId, double Percentage, int SampleSize,
-        int StudyCount, string? License);
+        int StudyCount, string? License, string? Source = null, double? Lat = null, double? Lon = null);
 
     public sealed record HaploGeoSampleDto(
         string GeneticId, string IndividualId, string TreeNodeId,

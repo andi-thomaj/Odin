@@ -12,5 +12,8 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
         public const string ImportToken = "haplo:import-token";
 
         public static string Distribution(int token, string clade) => $"haplo:dist:{token}:{clade}";
+
+        public static string RelativeFrequency(int token, string clade, string layer, double radiusKm) =>
+            $"haplo:rf:{token}:{layer}:{clade}:{radiusKm:0.###}";
     }
 }

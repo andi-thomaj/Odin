@@ -28,6 +28,16 @@ namespace Odin.Api.Data.Entities
         public int StudyCount { get; set; }
 
         public string License { get; set; } = "CC BY-SA 4.0";
+
+        /// <summary>Provenance of the row: <c>Wikipedia</c> | <c>UYSD</c> | <c>YFull</c> | a study DOI | …
+        /// The frequency layer is multi-source; this tags each row so the mix is auditable.</summary>
+        public string? Source { get; set; }
+
+        /// <summary>Optional sub-country centroid for region-level rows (e.g. YFull/UYSD regions). When
+        /// present, the relative-frequency surface interpolates this point directly instead of snapping
+        /// to the country centroid; null for country-level rows.</summary>
+        public double? Lat { get; set; }
+        public double? Lon { get; set; }
     }
 
     public class ModernHaplogroupFrequencyConfiguration : IEntityTypeConfiguration<ModernHaplogroupFrequency>
@@ -39,6 +49,7 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.HcKey).IsRequired().HasMaxLength(10);
             builder.Property(e => e.CladeNodeId).IsRequired().HasMaxLength(120);
             builder.Property(e => e.License).IsRequired().HasMaxLength(50);
+            builder.Property(e => e.Source).HasMaxLength(60);
 
             // The distribution query ancestor-matches the user's clade to a CladeNodeId.
             builder.HasIndex(e => e.CladeNodeId);

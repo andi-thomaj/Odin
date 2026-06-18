@@ -228,3 +228,20 @@ see [`Endpoints/HaplogroupHeatmap/`](Odin.Api/Endpoints/HaplogroupHeatmap/).
   busts every cached clade; cache is skipped under `Testing`.
 - **Provisioning note:** the import is a no-op-then-503 until the tools-api has the AADR `.anno` +
   `tree.json` (it already does, for the merge tool + clade finder). No new data download anywhere.
+- **Relative-frequency surface (heatmap's 3rd mode, HRAS-style).** `GET api/clade-finder/relative-frequency?clade=&layer=ancient|modern&radiusKm=` (`EmailVerified`,
+  `HaplogroupRelativeFrequencyService` + `Models/RelativeFrequencyContract`) is a **live proxy** to the
+  tools-api's numpy kernel grid (unlike the DB-served distribution): `ancient` = clade ÷ all-ancient
+  sample ratio, `modern` = interpolated country frequencies. It anchors the clade via the shared
+  `HaplogroupAnchor.ResolveAsync` (the single source of the named-subclade set, also used by the
+  distribution) and caches per (import-token, clade, layer, radius) like the distribution. The FE renders
+  it as a Highcharts `geoheatmap` (3rd toggle in `CladeHaplogroupHeatmap`).
+- **⚠️ The import now re-attaches the run before marking it Completed.** `LoadAsync` clears the change
+  tracker between insert batches, which **detached the `HaplogroupImportRun`** — so the Completed/Failed
+  status never persisted and `GetImportTokenAsync` (which keys on Completed runs) was stuck at token 0,
+  breaking cache-busting for *both* the distribution and relative-frequency endpoints. Fixed with
+  `dbContext.HaplogroupImportRuns.Update(run)` before the status `SaveChanges`. Don't remove it.
+- **Multi-source frequency layer.** `modern_haplogroup_frequencies` now carries `Source`
+  (Wikipedia | YFull | UYSD | a DOI) + optional `Lat`/`Lon` (sub-country region centroids; the RF surface
+  interpolates the point when present, else the country centroid). Built by the rerunnable tools-api pulls
+  (see odin-tools-api `scripts/fetch_*.py` + `frequency_merge.py`) and carried through the export/import
+  unchanged. The FE frequency choropleth + RF surface read it the same way.
