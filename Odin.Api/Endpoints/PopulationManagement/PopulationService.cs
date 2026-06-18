@@ -19,6 +19,7 @@ public interface IPopulationService
     Task<(GetPopulationContract.AdminResponse? Response, string? Error, bool NotFound)> UpdateAsync(int id, string identityId, UpdatePopulationContract.Request request, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
     Task<(bool Success, string? Error, bool NotFound)> UploadVideoAvatarAsync(int id, IFormFile file, string identityId, CancellationToken cancellationToken = default);
+    Task<(bool Success, string? Error, bool NotFound)> UploadKeyframeAsync(int id, IFormFile file, string identityId, CancellationToken cancellationToken = default);
     Task<bool> DeleteVideoAvatarAsync(int id, string identityId, CancellationToken cancellationToken = default);
     Task<(int Updated, int Unmatched, int MissingOnDisk, int Failed)> SyncVideoAvatarsFromDiskAsync(string identityId, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<GetPopulationContract.VideoAvatarListItem>> GetVideoAvatarsListAsync(CancellationToken cancellationToken = default);
@@ -37,6 +38,45 @@ public partial class PopulationService(
     {
         VideoContentType,
     };
+    private const long MaxKeyframeBytes = 10 * 1024 * 1024;
+    private const string KeyframeContentType = "image/webp";
+    private static readonly HashSet<string> AllowedKeyframeContentTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        KeyframeContentType,
+    };
+
+    /// <summary>Allowed Higgsfield video models → their valid "mode" values. Must stay in sync with the
+    /// frontend's <c>VIDEO_MODEL_MODES</c> in <c>ancestry-video-media/manifest.ts</c> and the media
+    /// server's per-model arg builders.</summary>
+    private static readonly Dictionary<string, string[]> VideoModelModes = new(StringComparer.Ordinal)
+    {
+        ["seedance_2_0"] = ["std", "fast"],
+        ["kling3_0"] = ["pro", "std", "4k"],
+    };
+    private static readonly int[] AllowedVideoDurations = [5, 10];
+
+    /// <summary>Trim a prompt, collapsing blank/whitespace to <c>null</c> ("use the frontend default template").</summary>
+    private static string? NormalizePrompt(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+
+    /// <summary>Keep a video model only if it's a known id, else <c>null</c> (default).</summary>
+    private static string? NormalizeVideoModel(string? model)
+    {
+        var m = model?.Trim();
+        return !string.IsNullOrEmpty(m) && VideoModelModes.ContainsKey(m) ? m : null;
+    }
+
+    /// <summary>Keep a mode only if valid for the (normalized) model, else <c>null</c> (model default).</summary>
+    private static string? NormalizeVideoMode(string? model, string? mode)
+    {
+        var m = NormalizeVideoModel(model);
+        var mo = mode?.Trim();
+        if (m is null || string.IsNullOrEmpty(mo)) return null;
+        return VideoModelModes[m].Contains(mo, StringComparer.Ordinal) ? mo : null;
+    }
+
+    /// <summary>Keep a duration only if it's an allowed value (5/10), else <c>null</c> (default 5).</summary>
+    private static int? NormalizeVideoDuration(int? duration) =>
+        duration is { } d && AllowedVideoDurations.Contains(d) ? d : null;
 
     /// <summary>R2 object key for a population's MP4 avatar, derived from the population's Name.
     /// Name-based (not ID-based) so the (name → video) pairing is stable across DB reseeds and
@@ -47,6 +87,11 @@ public partial class PopulationService(
     /// <c>ancestrify</c> bucket.</summary>
     public static string AvatarKey(string populationName) =>
         $"qpAdm/population-videos/{Slugify(populationName)}.mp4";
+
+    /// <summary>R2 object key for a population's keyframe WEBP — the still that the avatar video is
+    /// animated from. Same slug scheme as <see cref="AvatarKey"/> (just the <c>.webp</c> sibling).</summary>
+    public static string KeyframeKey(string populationName) =>
+        $"qpAdm/population-videos/{Slugify(populationName)}.webp";
 
     /// <summary>URL-safe, ASCII-folded, lowercase slug. Must stay byte-for-byte identical to the
     /// frontend's <c>slugifyPopulationName</c> in <c>odin-react/src/api/populations.ts</c> —
@@ -102,6 +147,12 @@ public partial class PopulationService(
                 MusicTrackName = p.MusicTrack.Name,
                 HasVideoAvatar = p.VideoAvatarVersion != null,
                 VideoVersion = p.VideoAvatarVersion != null ? p.VideoAvatarVersion.Value.ToString() : null,
+                KeyframeVersion = p.KeyframeVersion != null ? p.KeyframeVersion.Value.ToString() : null,
+                ImagePrompt = p.ImagePrompt,
+                VideoPrompt = p.VideoPrompt,
+                VideoModel = p.VideoModel,
+                VideoMode = p.VideoMode,
+                VideoDurationSeconds = p.VideoDurationSeconds,
             })
             .ToListAsync(cancellationToken);
     }
@@ -125,6 +176,12 @@ public partial class PopulationService(
                 MusicTrackName = p.MusicTrack.Name,
                 HasVideoAvatar = p.VideoAvatarVersion != null,
                 VideoVersion = p.VideoAvatarVersion != null ? p.VideoAvatarVersion.Value.ToString() : null,
+                KeyframeVersion = p.KeyframeVersion != null ? p.KeyframeVersion.Value.ToString() : null,
+                ImagePrompt = p.ImagePrompt,
+                VideoPrompt = p.VideoPrompt,
+                VideoModel = p.VideoModel,
+                VideoMode = p.VideoMode,
+                VideoDurationSeconds = p.VideoDurationSeconds,
             })
             .FirstOrDefaultAsync(cancellationToken);
     }
@@ -145,6 +202,11 @@ public partial class PopulationService(
             Color = request.Color.Trim(),
             EraId = request.EraId,
             MusicTrackId = request.MusicTrackId,
+            ImagePrompt = NormalizePrompt(request.ImagePrompt),
+            VideoPrompt = NormalizePrompt(request.VideoPrompt),
+            VideoModel = NormalizeVideoModel(request.VideoModel),
+            VideoMode = NormalizeVideoMode(request.VideoModel, request.VideoMode),
+            VideoDurationSeconds = NormalizeVideoDuration(request.VideoDurationSeconds),
             CreatedAt = now,
             CreatedBy = identityId,
             UpdatedAt = now,
@@ -174,6 +236,7 @@ public partial class PopulationService(
         var newKey = AvatarKey(newName);
         var nameChanged = !string.Equals(oldKey, newKey, StringComparison.Ordinal);
         var hadAvatar = entity.VideoAvatarVersion is not null;
+        var hadKeyframe = entity.KeyframeVersion is not null;
 
         // R2 keys derive from the slugified Name, so a rename that changes the slug must move
         // the avatar object so the URL the frontend reads keeps pointing at the right bytes.
@@ -206,6 +269,34 @@ public partial class PopulationService(
             }
         }
 
+        // Move the keyframe webp the same way on a slug-changing rename. Best-effort (the keyframe is a
+        // secondary asset) — a failure just leaves the thumbnail stale until it's re-published.
+        if (nameChanged && hadKeyframe)
+        {
+            var oldWebpKey = KeyframeKey(oldName);
+            var newWebpKey = KeyframeKey(newName);
+            try
+            {
+                await r2Storage.CopyAsync(oldWebpKey, newWebpKey, cancellationToken);
+                try
+                {
+                    await r2Storage.DeleteAsync(oldWebpKey, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex,
+                        "Population {Id} renamed but the old keyframe key '{OldKey}' could not be deleted; orphan will remain",
+                        id, oldWebpKey);
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex,
+                    "Population {Id} rename: could not move keyframe webp to the new key; the thumbnail may be stale until re-published",
+                    id);
+            }
+        }
+
         entity.Name = newName;
         entity.Description = request.Description?.Trim() ?? string.Empty;
         entity.GeoJson = request.GeoJson.Trim();
@@ -213,6 +304,11 @@ public partial class PopulationService(
         entity.Color = request.Color.Trim();
         entity.EraId = request.EraId;
         entity.MusicTrackId = request.MusicTrackId;
+        entity.ImagePrompt = NormalizePrompt(request.ImagePrompt);
+        entity.VideoPrompt = NormalizePrompt(request.VideoPrompt);
+        entity.VideoModel = NormalizeVideoModel(request.VideoModel);
+        entity.VideoMode = NormalizeVideoMode(request.VideoModel, request.VideoMode);
+        entity.VideoDurationSeconds = NormalizeVideoDuration(request.VideoDurationSeconds);
         entity.UpdatedAt = DateTime.UtcNow;
         entity.UpdatedBy = identityId;
 
@@ -221,6 +317,8 @@ public partial class PopulationService(
         // for the previous name and never refetches under the new key.
         if (nameChanged && hadAvatar)
             entity.VideoAvatarVersion = entity.UpdatedAt.Ticks;
+        if (nameChanged && hadKeyframe)
+            entity.KeyframeVersion = entity.UpdatedAt.Ticks;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         cache.Remove(ErasCacheKey);
@@ -246,6 +344,19 @@ public partial class PopulationService(
             {
                 logger.LogWarning(ex,
                     "Failed to remove R2 avatar for deleted population {Id}; continuing", id);
+            }
+        }
+
+        if (entity.KeyframeVersion is not null)
+        {
+            try
+            {
+                await r2Storage.DeleteAsync(KeyframeKey(entity.Name), cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex,
+                    "Failed to remove R2 keyframe for deleted population {Id}; continuing", id);
             }
         }
 
@@ -324,6 +435,34 @@ public partial class PopulationService(
 
         var now = DateTime.UtcNow;
         population.VideoAvatarVersion = now.Ticks;
+        population.UpdatedAt = now;
+        population.UpdatedBy = identityId;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        cache.Remove(ErasCacheKey);
+        return (true, null, false);
+    }
+
+    public async Task<(bool Success, string? Error, bool NotFound)> UploadKeyframeAsync(
+        int id, IFormFile file, string identityId, CancellationToken cancellationToken = default)
+    {
+        if (file.Length == 0)
+            return (false, "Uploaded file is empty.", false);
+        if (file.Length > MaxKeyframeBytes)
+            return (false, $"File exceeds the {MaxKeyframeBytes / (1024 * 1024)} MB limit.", false);
+        if (!AllowedKeyframeContentTypes.Contains(file.ContentType))
+            return (false, $"Invalid content type '{file.ContentType}'. Allowed: {KeyframeContentType}.", false);
+
+        var population = await dbContext.QpadmPopulations.FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+        if (population is null) return (false, null, true);
+
+        await using (var stream = file.OpenReadStream())
+        {
+            await r2Storage.UploadAsync(KeyframeKey(population.Name), stream, KeyframeContentType, cancellationToken);
+        }
+
+        var now = DateTime.UtcNow;
+        population.KeyframeVersion = now.Ticks;
         population.UpdatedAt = now;
         population.UpdatedBy = identityId;
 
