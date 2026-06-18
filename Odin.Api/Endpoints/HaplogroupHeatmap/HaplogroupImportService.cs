@@ -61,6 +61,10 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
                 run.SampleCount = samples.Count;
                 run.NodeCount = nodes.Count;
                 run.UnresolvedCount = meta.UnresolvedCount;
+                // LoadAsync clears the change tracker between insert batches, which detaches `run` — re-attach
+                // it (as Modified) so this status update actually persists. Without this the run is stuck
+                // "Running" and GetImportTokenAsync (which keys on Completed runs) never sees a fresh import.
+                dbContext.HaplogroupImportRuns.Update(run);
                 await dbContext.SaveChangesAsync(cancellationToken);
 
                 // Bust the distribution cache token so every cached per-clade response is superseded.
@@ -75,6 +79,8 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
                 run.Status = HaplogroupImportStatus.Failed;
                 run.CompletedAt = DateTime.UtcNow;
                 run.Error = ex.Message.Length > 4000 ? ex.Message[..4000] : ex.Message;
+                // A failure inside LoadAsync may have cleared the tracker too — re-attach so Failed persists.
+                dbContext.HaplogroupImportRuns.Update(run);
                 await dbContext.SaveChangesAsync(CancellationToken.None);
                 // Don't rethrow: AutomaticRetry is 0 and the failure is recorded for the admin to re-run.
                 logger.LogError(ex, "Haplogroup import {RunId} failed; reference tables left unchanged.", run.Id);
@@ -172,6 +178,9 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
                         SampleSize = f.SampleSize,
                         StudyCount = f.StudyCount,
                         License = string.IsNullOrWhiteSpace(f.License) ? "CC BY-SA 4.0" : f.License,
+                        Source = string.IsNullOrWhiteSpace(f.Source) ? "Wikipedia" : f.Source,
+                        Lat = f.Lat,
+                        Lon = f.Lon,
                     }),
                     dbContext.ModernHaplogroupFrequencies, cancellationToken);
             }

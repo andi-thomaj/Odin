@@ -461,6 +461,24 @@ namespace Odin.Api
                 Odin.Api.Endpoints.HaplogroupHeatmap.IHaplogroupDistributionService,
                 Odin.Api.Endpoints.HaplogroupHeatmap.HaplogroupDistributionService>();
 
+            // Relative-frequency surface (heatmap's 3rd mode): a live per-request compute proxy to the
+            // tools-api (like the clade finder), so it uses the standard TimeoutSeconds, not the long import one.
+            services.AddHttpClient<
+                Odin.Api.Endpoints.HaplogroupHeatmap.IHaplogroupRelativeFrequencyClient,
+                Odin.Api.Endpoints.HaplogroupHeatmap.HaplogroupRelativeFrequencyClient>((sp, client) =>
+            {
+                var toolsOptions = sp.GetRequiredService<IOptions<Odin.Api.Configuration.ToolsApiOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(toolsOptions.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(toolsOptions.BaseUrl);
+                }
+                client.Timeout = TimeSpan.FromSeconds(toolsOptions.TimeoutSeconds);
+            })
+            .ConfigurePrimaryHttpMessageHandler(CreateToolsApiHandler);
+            services.AddScoped<
+                Odin.Api.Endpoints.HaplogroupHeatmap.IHaplogroupRelativeFrequencyService,
+                Odin.Api.Endpoints.HaplogroupHeatmap.HaplogroupRelativeFrequencyService>();
+
             // Merge pipeline proxy (convert-to-23andMe + AADR merge). Its own HttpClient because the
             // merge call is long-running (minutes) — uses MergeTimeoutSeconds, not TimeoutSeconds.
             services.AddHttpClient<

@@ -56,18 +56,10 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
             }
             response.Found = true;
 
-            // Anchor the whole heatmap on the **nearest named subclade** — walk up the lineage to the
-            // deepest ancestor that is a recognisable named clade (e.g. a deep E-V13 sub-branch → E-V13,
-            // a deep R-U106 branch → R-U106), so the data is recognisable and well-populated rather than
-            // the bare top-level letter or an ultra-specific terminal. Falls back to the clade itself.
-            var chain = await dbContext.Database
-                .SqlQueryRaw<AncestorRow>(AncestorChainSql, clade)
-                .ToListAsync(cancellationToken);
-            var anchorClade = chain
-                .Where(a => NamedSubclades.Contains(a.Id))
-                .OrderBy(a => a.Depth) // depth 0 = the clade itself; smallest depth = most specific named ancestor
-                .Select(a => a.Id)
-                .FirstOrDefault() ?? clade;
+            // Anchor the whole heatmap on the **nearest named subclade** (shared with the relative-frequency
+            // endpoint): the deepest ancestor that is a recognisable named clade (e.g. a deep E-V13 branch →
+            // E-V13), so the data is recognisable and well-populated rather than the bare letter or terminal.
+            var anchorClade = await HaplogroupAnchor.ResolveAsync(dbContext, clade, cancellationToken);
             response.DisplayClade = anchorClade;
 
             var bins = await dbContext.Database
@@ -230,38 +222,6 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
             ORDER BY "Percentage" DESC
             """;
 
-        // Ancestor chain (id + depth, depth 0 = the clade) — used to find the nearest named subclade.
-        private const string AncestorChainSql = """
-            WITH RECURSIVE ancestors AS (
-                SELECT "Id", "ParentId", 0 AS depth FROM y_haplogroup_tree_nodes WHERE "Id" = {0}
-                UNION ALL
-                SELECT n."Id", n."ParentId", a.depth + 1
-                FROM y_haplogroup_tree_nodes n JOIN ancestors a ON n."Id" = a."ParentId"
-            )
-            SELECT "Id" AS "Id", depth AS "Depth" FROM ancestors ORDER BY depth
-            """;
-
-        // Recognisable "named subclade" YFull node ids (resolved from significant defining SNPs across all
-        // haplogroups). The heatmap anchors a clade on the nearest of these, so users see e.g. E-V13 /
-        // R-M269 / J-P58 rather than the bare letter or an ultra-deep terminal. Regenerate on a YFull bump.
-        private static readonly HashSet<string> NamedSubclades = new(StringComparer.OrdinalIgnoreCase)
-        {
-            "C", "C-M217", "C-M347", "C-M38", "C-M407", "C-M48", "C-M8", "D-M174", "D-M64.1",
-            "E-M123", "E-M132", "E-M2", "E-M215", "E-M293", "E-M34", "E-M329", "E-M35", "E-M3895",
-            "E-M78", "E-M84", "E-V12", "E-V13", "E-V16", "E-V22", "E-V6", "E-V65",
-            "G", "G-L13", "G-L497", "G-M342", "G-M377", "G-M406", "G-P15", "G-P303", "G-U1",
-            "H-M197", "H-M52", "H-M69", "H-M82",
-            "I-DF29", "I-L158", "I-L161", "I-L621", "I-M223", "I-M423", "I-M436", "I-Z58", "I-Z63", "I1", "I2",
-            "J-L283", "J-M102", "J-M158", "J-M205", "J-M241", "J-M410", "J-M67", "J-M68", "J-P58", "J1", "J2",
-            "L", "L-L1307", "L-M27", "L-M317",
-            "N", "N-L1026", "N-P43", "N-TAT", "N-VL29", "N-Z1936",
-            "O-M119", "O-M122", "O-M134", "O-M268", "O-M7", "O-M95", "O-P201", "O-P49",
-            "Q", "Q-L54", "Q-L56", "Q-M25", "Q-M3", "Q-M378",
-            "R-DF27", "R-L21", "R-L23", "R-L51", "R-L52", "R-M198", "R-M222", "R-M269", "R-M417", "R-M458",
-            "R-P312", "R-U106", "R-U152", "R-Z2103", "R-Z280", "R-Z282", "R-Z283", "R-Z93", "R1a", "R2",
-            "T", "T-M70", "T-P77",
-        };
-
         // Unmapped result types for SqlQueryRaw — matched to column aliases by name.
         private sealed class GeoBinRow
         {
@@ -294,12 +254,6 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
             public string CladeNodeId { get; set; } = string.Empty;
             public double Percentage { get; set; }
             public int SampleSize { get; set; }
-        }
-
-        private sealed class AncestorRow
-        {
-            public string Id { get; set; } = string.Empty;
-            public int Depth { get; set; }
         }
     }
 }
