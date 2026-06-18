@@ -71,7 +71,6 @@ namespace Odin.Api.Extensions
             v1.MapCalculatorEndpoints();
             v1.MapAdmixToolsEraEndpoints();
             v1.MapCladeFinderEndpoints();
-            v1.MapHaplogroupImportAdminEndpoints();
             return v1;
         }
     }

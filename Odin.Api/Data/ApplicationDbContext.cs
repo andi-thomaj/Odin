@@ -54,12 +54,6 @@ namespace Odin.Api.Data
         public DbSet<AdmixToolsEra> AdmixToolsEras { get; set; }
         public DbSet<Application> Applications { get; set; }
 
-        // Y-haplogroup heatmap reference data (imported from odin-tools-api; shared, NOT app-scoped).
-        public DbSet<YHaplogroupSample> YHaplogroupSamples { get; set; }
-        public DbSet<YHaplogroupTreeNode> YHaplogroupTreeNodes { get; set; }
-        public DbSet<HaplogroupImportRun> HaplogroupImportRuns { get; set; }
-        public DbSet<ModernHaplogroupFrequency> ModernHaplogroupFrequencies { get; set; }
-
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
