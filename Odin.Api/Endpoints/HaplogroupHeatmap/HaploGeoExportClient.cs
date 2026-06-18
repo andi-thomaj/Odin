@@ -26,7 +26,8 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
         double Latitude, double Longitude,
         double? DateMeanBp, double? DateSdBp, string? FullDate,
         string Era, string Layer,
-        string? Country, string? Locality, string? GroupId, string? Sex, string? Assessment);
+        string? Country, string? Locality, string? GroupId, string? Sex, string? Assessment,
+        string? Source = "AADR");
 
     public sealed record HaploGeoNodeDto(
         string Id, string? ParentId, double? Tmrca, double? Formed, string? Snps,

@@ -44,6 +44,11 @@ namespace Odin.Api.Data.Entities
         public string? Assessment { get; set; }
 
         public string DatasetVersion { get; set; } = string.Empty;
+
+        /// <summary>Provenance: <c>AADR</c>, <c>HGDP-Bergstrom2020</c> (deep-Y backfill), or
+        /// <c>Rrenjet</c> (Albanian DNA Project, used with permission). Lets enrichment rows be
+        /// counted or removed independently.</summary>
+        public string Source { get; set; } = "AADR";
     }
 
     public class YHaplogroupSampleConfiguration : IEntityTypeConfiguration<YHaplogroupSample>
@@ -66,6 +71,7 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.Sex).HasMaxLength(20);
             builder.Property(e => e.Assessment).HasMaxLength(50);
             builder.Property(e => e.DatasetVersion).IsRequired().HasMaxLength(50);
+            builder.Property(e => e.Source).IsRequired().HasMaxLength(50).HasDefaultValue("AADR");
 
             // The heatmap joins samples to a clade's subtree by node id, then filters/groups by layer+era.
             builder.HasIndex(e => e.TreeNodeId);

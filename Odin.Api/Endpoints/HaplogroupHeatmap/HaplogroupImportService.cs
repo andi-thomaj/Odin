@@ -154,6 +154,7 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
                         Sex = s.Sex,
                         Assessment = s.Assessment,
                         DatasetVersion = datasetVersion,
+                        Source = string.IsNullOrWhiteSpace(s.Source) ? "AADR" : s.Source,
                     }),
                     dbContext.YHaplogroupSamples, cancellationToken);
             }
