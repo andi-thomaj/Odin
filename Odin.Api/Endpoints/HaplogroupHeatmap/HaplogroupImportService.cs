@@ -50,8 +50,10 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
                     (o, l) => exportClient.GetNodesAsync(o, l, cancellationToken), meta.NodeCount, cancellationToken);
                 var samples = await FetchAllAsync(
                     (o, l) => exportClient.GetSamplesAsync(o, l, cancellationToken), meta.SampleCount, cancellationToken);
+                var frequencies = await FetchAllAsync(
+                    (o, l) => exportClient.GetFrequenciesAsync(o, l, cancellationToken), meta.FrequencyCount, cancellationToken);
 
-                await LoadAsync(nodes, samples, meta.DatasetVersion, cancellationToken);
+                await LoadAsync(nodes, samples, frequencies, meta.DatasetVersion, cancellationToken);
 
                 run.Status = HaplogroupImportStatus.Completed;
                 run.CompletedAt = DateTime.UtcNow;
@@ -105,13 +107,15 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
         /// mid-load failure never leaves the heatmap half-updated.
         /// </summary>
         private async Task LoadAsync(
-            List<HaploGeoNodeDto> nodes, List<HaploGeoSampleDto> samples, string datasetVersion,
+            List<HaploGeoNodeDto> nodes, List<HaploGeoSampleDto> samples,
+            List<HaploGeoFrequencyDto> frequencies, string datasetVersion,
             CancellationToken cancellationToken)
         {
             await using var tx = await dbContext.Database.BeginTransactionAsync(cancellationToken);
 
             await dbContext.YHaplogroupSamples.ExecuteDeleteAsync(cancellationToken);
             await dbContext.YHaplogroupTreeNodes.ExecuteDeleteAsync(cancellationToken);
+            await dbContext.ModernHaplogroupFrequencies.ExecuteDeleteAsync(cancellationToken);
 
             var autoDetect = dbContext.ChangeTracker.AutoDetectChangesEnabled;
             dbContext.ChangeTracker.AutoDetectChangesEnabled = false;
@@ -154,8 +158,22 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
                         Sex = s.Sex,
                         Assessment = s.Assessment,
                         DatasetVersion = datasetVersion,
+                        Source = string.IsNullOrWhiteSpace(s.Source) ? "AADR" : s.Source,
                     }),
                     dbContext.YHaplogroupSamples, cancellationToken);
+
+                await InsertBatchedAsync(
+                    frequencies.Select(f => new ModernHaplogroupFrequency
+                    {
+                        Country = f.Country,
+                        HcKey = f.HcKey,
+                        CladeNodeId = f.CladeNodeId,
+                        Percentage = f.Percentage,
+                        SampleSize = f.SampleSize,
+                        StudyCount = f.StudyCount,
+                        License = string.IsNullOrWhiteSpace(f.License) ? "CC BY-SA 4.0" : f.License,
+                    }),
+                    dbContext.ModernHaplogroupFrequencies, cancellationToken);
             }
             finally
             {

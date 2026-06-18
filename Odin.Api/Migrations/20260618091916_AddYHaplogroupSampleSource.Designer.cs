@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Odin.Api.Data;
@@ -12,9 +13,11 @@ using Odin.Api.Data;
 namespace Odin.Api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260618091916_AddYHaplogroupSampleSource")]
+    partial class AddYHaplogroupSampleSource
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1089,50 +1092,6 @@ namespace Odin.Api.Migrations
                     b.HasIndex("Timestamp");
 
                     b.ToTable("logs", (string)null);
-                });
-
-            modelBuilder.Entity("Odin.Api.Data.Entities.ModernHaplogroupFrequency", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("CladeNodeId")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<string>("Country")
-                        .IsRequired()
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<string>("HcKey")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)");
-
-                    b.Property<string>("License")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
-
-                    b.Property<double>("Percentage")
-                        .HasColumnType("double precision");
-
-                    b.Property<int>("SampleSize")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("StudyCount")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CladeNodeId");
-
-                    b.ToTable("modern_haplogroup_frequencies", (string)null);
                 });
 
             modelBuilder.Entity("Odin.Api.Data.Entities.MusicTrack", b =>
