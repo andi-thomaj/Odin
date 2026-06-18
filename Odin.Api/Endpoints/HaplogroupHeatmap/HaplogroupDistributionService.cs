@@ -100,6 +100,25 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
                 })
                 .ToList();
 
+            // Modern frequency choropleth: ancestor-match the clade to its most-specific available
+            // frequency clade (e.g. J-Z1865 → J1 → J), then return that clade's per-country %.
+            var freq = await dbContext.Database
+                .SqlQueryRaw<FrequencyRow>(FrequencySql, clade)
+                .ToListAsync(cancellationToken);
+            if (freq.Count > 0)
+            {
+                response.ModernFrequencyClade = freq[0].CladeNodeId;
+                response.ModernFrequency = freq
+                    .Select(f => new HaplogroupDistributionContract.CountryFrequency
+                    {
+                        Country = f.Country,
+                        HcKey = f.HcKey,
+                        Percentage = f.Percentage,
+                        SampleSize = f.SampleSize,
+                    })
+                    .ToList();
+            }
+
             return response;
         }
 
@@ -176,6 +195,27 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
             ORDER BY "Tmrca" DESC NULLS LAST
             """;
 
+        // Walk the clade's ancestors (depth 0 = the clade), join to the frequency table, and keep only
+        // the rows for the **closest** ancestor that has frequency data (the most-specific available).
+        private const string FrequencySql = """
+            WITH RECURSIVE ancestors AS (
+                SELECT "Id", "ParentId", 0 AS depth FROM y_haplogroup_tree_nodes WHERE "Id" = {0}
+                UNION ALL
+                SELECT n."Id", n."ParentId", a.depth + 1
+                FROM y_haplogroup_tree_nodes n JOIN ancestors a ON n."Id" = a."ParentId"
+            ),
+            matched AS (
+                SELECT a.depth, f."Country", f."HcKey", f."CladeNodeId", f."Percentage", f."SampleSize"
+                FROM ancestors a
+                JOIN modern_haplogroup_frequencies f ON f."CladeNodeId" = a."Id"
+            )
+            SELECT "Country" AS "Country", "HcKey" AS "HcKey", "CladeNodeId" AS "CladeNodeId",
+                   "Percentage" AS "Percentage", "SampleSize" AS "SampleSize"
+            FROM matched
+            WHERE depth = (SELECT min(depth) FROM matched)
+            ORDER BY "Percentage" DESC
+            """;
+
         // Unmapped result types for SqlQueryRaw — matched to column aliases by name.
         private sealed class GeoBinRow
         {
@@ -199,6 +239,15 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
             public double Lat { get; set; }
             public double Lon { get; set; }
             public int SampleCount { get; set; }
+        }
+
+        private sealed class FrequencyRow
+        {
+            public string Country { get; set; } = string.Empty;
+            public string HcKey { get; set; } = string.Empty;
+            public string CladeNodeId { get; set; } = string.Empty;
+            public double Percentage { get; set; }
+            public int SampleSize { get; set; }
         }
     }
 }

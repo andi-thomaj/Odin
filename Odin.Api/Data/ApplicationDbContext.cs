@@ -58,6 +58,7 @@ namespace Odin.Api.Data
         public DbSet<YHaplogroupSample> YHaplogroupSamples { get; set; }
         public DbSet<YHaplogroupTreeNode> YHaplogroupTreeNodes { get; set; }
         public DbSet<HaplogroupImportRun> HaplogroupImportRuns { get; set; }
+        public DbSet<ModernHaplogroupFrequency> ModernHaplogroupFrequencies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

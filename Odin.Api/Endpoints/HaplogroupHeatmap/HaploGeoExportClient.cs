@@ -15,10 +15,16 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
         Task<HaploGeoExportMeta> GetMetaAsync(CancellationToken cancellationToken = default);
         Task<HaploGeoPage<HaploGeoSampleDto>> GetSamplesAsync(int offset, int limit, CancellationToken cancellationToken = default);
         Task<HaploGeoPage<HaploGeoNodeDto>> GetNodesAsync(int offset, int limit, CancellationToken cancellationToken = default);
+        Task<HaploGeoPage<HaploGeoFrequencyDto>> GetFrequenciesAsync(int offset, int limit, CancellationToken cancellationToken = default);
     }
 
     public sealed record HaploGeoExportMeta(
-        string DatasetVersion, int SampleCount, int NodeCount, int UnresolvedCount, int SkippedNoCoords);
+        string DatasetVersion, int SampleCount, int NodeCount, int UnresolvedCount, int SkippedNoCoords,
+        int FrequencyCount = 0);
+
+    public sealed record HaploGeoFrequencyDto(
+        string Country, string HcKey, string CladeNodeId, double Percentage, int SampleSize,
+        int StudyCount, string? License);
 
     public sealed record HaploGeoSampleDto(
         string GeneticId, string IndividualId, string TreeNodeId,
@@ -58,6 +64,10 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap
         public Task<HaploGeoPage<HaploGeoNodeDto>> GetNodesAsync(
             int offset, int limit, CancellationToken cancellationToken = default) =>
             GetAsync<HaploGeoPage<HaploGeoNodeDto>>($"part=nodes&offset={offset}&limit={limit}", cancellationToken);
+
+        public Task<HaploGeoPage<HaploGeoFrequencyDto>> GetFrequenciesAsync(
+            int offset, int limit, CancellationToken cancellationToken = default) =>
+            GetAsync<HaploGeoPage<HaploGeoFrequencyDto>>($"part=frequencies&offset={offset}&limit={limit}", cancellationToken);
 
         private async Task<T> GetAsync<T>(string query, CancellationToken cancellationToken)
         {

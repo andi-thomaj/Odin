@@ -29,6 +29,25 @@ namespace Odin.Api.Endpoints.HaplogroupHeatmap.Models
 
             /// <summary>Migration path: each ancestor clade's TMRCA-weighted centroid, oldest first.</summary>
             public List<MigrationPoint> Migration { get; set; } = [];
+
+            /// <summary>Present-day frequency by country for the user's most-specific available clade
+            /// (aggregated from Wikipedia, CC BY-SA) — drives the modern-frequency choropleth.</summary>
+            public List<CountryFrequency> ModernFrequency { get; set; } = [];
+
+            /// <summary>The clade the frequencies are for (an ancestor of the queried clade, e.g. <c>J</c>),
+            /// or null if none of the user's lineage has frequency data.</summary>
+            public string? ModernFrequencyClade { get; set; }
+        }
+
+        public sealed class CountryFrequency
+        {
+            public string Country { get; set; } = string.Empty;
+
+            /// <summary>Highcharts world-map join key (ISO-3166-1 alpha-2, lowercase).</summary>
+            public string HcKey { get; set; } = string.Empty;
+
+            public double Percentage { get; set; }
+            public int SampleSize { get; set; }
         }
 
         public sealed class EraBin
