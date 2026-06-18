@@ -51,6 +51,9 @@ public class HaplogroupHeatmapTests(CustomWebApplicationFactory factory) : Integ
 
         public Task<HaploGeoPage<HaploGeoNodeDto>> GetNodesAsync(int offset, int limit, CancellationToken ct = default) =>
             Task.FromResult(new HaploGeoPage<HaploGeoNodeDto>(offset, limit, _nodes.Count, _nodes.Skip(offset).Take(limit).ToList()));
+
+        public Task<HaploGeoPage<HaploGeoFrequencyDto>> GetFrequenciesAsync(int offset, int limit, CancellationToken ct = default) =>
+            Task.FromResult(new HaploGeoPage<HaploGeoFrequencyDto>(offset, limit, 0, []));
     }
 
     private async Task RunImportAsync()
@@ -89,6 +92,8 @@ public class HaplogroupHeatmapTests(CustomWebApplicationFactory factory) : Integ
 
         Assert.NotNull(body);
         Assert.True(body!.Found);
+        // R-M269 is itself a named subclade, so the heatmap anchors on it (not the bare letter).
+        Assert.Equal("R-M269", body.DisplayClade);
         // R-M269 subtree = {R-M269, R-U106, R-P312}: 2 ancient (a1, a2) + 2 modern (m1, m2). The 'I' sample is excluded.
         Assert.Equal(2, body.TotalAncient);
         Assert.Equal(2, body.TotalModern);
