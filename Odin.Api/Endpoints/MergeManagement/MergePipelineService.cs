@@ -101,6 +101,20 @@ namespace Odin.Api.Endpoints.MergeManagement
             }
         }
 
+        public async Task CancelMergeAsync(string mergeId, CancellationToken cancellationToken = default)
+        {
+            EnsureConfigured();
+
+            using var request = BuildRequest(HttpMethod.Post, $"/v1/merge/{Uri.EscapeDataString(mergeId)}/cancel");
+            using var response = await httpClient.SendAsync(request, cancellationToken);
+            if (!response.IsSuccessStatusCode)
+            {
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
+                logger.LogError("Merge cancel API error {Status}: {Body}", (int)response.StatusCode, body);
+                throw new MergePipelineException(response.StatusCode, ExtractDetail(body));
+            }
+        }
+
         public async Task<PanelStatusResult> GetPanelStatusAsync(
             string? panel, CancellationToken cancellationToken = default)
         {

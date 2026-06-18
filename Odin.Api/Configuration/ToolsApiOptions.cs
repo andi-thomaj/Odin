@@ -21,8 +21,15 @@ public sealed class ToolsApiOptions
     /// Timeout in seconds for the merge pipeline client. The AADR merge runs synchronously on the
     /// tools API and can take many minutes on the HO panel, so this is far larger than
     /// <see cref="TimeoutSeconds"/>. Used by the dedicated merge HttpClient.
+    /// <para>
+    /// Set to 1h: the merge is disk-bound on the shared host and has been observed at ~31 min (it
+    /// drifted past the previous 1800s/30-min value as the disk filled), which made the .NET client
+    /// abandon the call right as the work completed and discard the result. Keep this comfortably
+    /// above the real merge wall-time, and below the Hangfire <c>InvisibilityTimeout</c> ceiling
+    /// (2h, see Program.cs) so the job's lease never expires mid-call.
+    /// </para>
     /// </summary>
-    public int MergeTimeoutSeconds { get; set; } = 1800;
+    public int MergeTimeoutSeconds { get; set; } = 3600;
 
     /// <summary>
     /// TCP connect timeout in seconds applied to both tools-api clients. Bounds how long a request

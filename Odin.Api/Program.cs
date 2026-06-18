@@ -439,6 +439,28 @@ namespace Odin.Api
                 Odin.Api.Endpoints.CladeFinderManagement.IYHaplogroupComputeService,
                 Odin.Api.Endpoints.CladeFinderManagement.YHaplogroupComputeService>();
 
+            // Y-haplogroup heatmap: typed client over the tools-api export, the rerunnable import job,
+            // and the per-clade distribution reader. Same tools-api base URL/key/handler as the clade finder.
+            services.AddHttpClient<
+                Odin.Api.Endpoints.HaplogroupHeatmap.IHaploGeoExportClient,
+                Odin.Api.Endpoints.HaplogroupHeatmap.HaploGeoExportClient>((sp, client) =>
+            {
+                var toolsOptions = sp.GetRequiredService<IOptions<Odin.Api.Configuration.ToolsApiOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(toolsOptions.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(toolsOptions.BaseUrl);
+                }
+                // The export's first call parses + computes centroids (seconds); allow more than the default.
+                client.Timeout = TimeSpan.FromSeconds(toolsOptions.MergeTimeoutSeconds);
+            })
+            .ConfigurePrimaryHttpMessageHandler(CreateToolsApiHandler);
+            services.AddScoped<
+                Odin.Api.Endpoints.HaplogroupHeatmap.IHaplogroupImportService,
+                Odin.Api.Endpoints.HaplogroupHeatmap.HaplogroupImportService>();
+            services.AddScoped<
+                Odin.Api.Endpoints.HaplogroupHeatmap.IHaplogroupDistributionService,
+                Odin.Api.Endpoints.HaplogroupHeatmap.HaplogroupDistributionService>();
+
             // Merge pipeline proxy (convert-to-23andMe + AADR merge). Its own HttpClient because the
             // merge call is long-running (minutes) — uses MergeTimeoutSeconds, not TimeoutSeconds.
             services.AddHttpClient<
@@ -502,9 +524,23 @@ namespace Odin.Api
                 .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
                 .UseSimpleAssemblyNameTypeSerializer()
                 .UseRecommendedSerializerSettings()
-                .UsePostgreSqlStorage(c => c.UseNpgsqlConnection(
-                    provider.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
-                        ?? connectionString))
+                .UsePostgreSqlStorage(
+                    c => c.UseNpgsqlConnection(
+                        provider.GetRequiredService<IConfiguration>().GetConnectionString("DefaultConnection")
+                            ?? connectionString),
+                    new PostgreSqlStorageOptions
+                    {
+                        // Heartbeat-extend a running job's lease instead of using a fixed visibility window.
+                        // The AADR merge is disk-bound and can run >30 min on the shared host; with the
+                        // DEFAULT fixed 30-min InvisibilityTimeout, Hangfire decided the still-running merge
+                        // job was "lost" and re-fetched + re-ran it every 30 min — a perpetual loop that
+                        // never reached Succeeded/Failed (each re-run kicked off a fresh tools-api forge,
+                        // which again ran >30 min, re-fetched again, forever). Sliding timeout keeps the
+                        // lease alive while the worker is genuinely processing, so a long merge runs exactly
+                        // once. InvisibilityTimeout below is now only the ceiling for a truly dead worker.
+                        UseSlidingInvisibilityTimeout = true,
+                        InvisibilityTimeout = TimeSpan.FromHours(2),
+                    })
                 // Flip a merge order Retrying → Failed once Hangfire exhausts its retries (see
                 // MergeJobFailureStateFilter), so a dead job doesn't hold an in-flight merge slot forever.
                 .UseFilter(new Odin.Api.Endpoints.MergeManagement.MergeJobFailureStateFilter(

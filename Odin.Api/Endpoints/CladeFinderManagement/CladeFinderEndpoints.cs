@@ -1,6 +1,8 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Odin.Api.Endpoints.CladeFinderManagement.Models;
+using Odin.Api.Endpoints.HaplogroupHeatmap;
+using Odin.Api.Endpoints.HaplogroupHeatmap.Models;
 using Odin.Api.Extensions;
 
 namespace Odin.Api.Endpoints.CladeFinderManagement
@@ -17,6 +19,26 @@ namespace Odin.Api.Endpoints.CladeFinderManagement
                 .RequireRateLimiting("file-upload")
                 .Produces<AnalyzeCladeContract.Response>(StatusCodes.Status200OK)
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
+
+            // Geographic distribution (ancient + modern) + migration path for a clade — drives the
+            // result-page heatmap. Read-only, cached per clade; served from the imported reference tables.
+            endpoints.MapGet("/distribution", GetDistribution)
+                .RequireAuthorization("EmailVerified")
+                .Produces<HaplogroupDistributionContract.Response>(StatusCodes.Status200OK);
+        }
+
+        private static async Task<IResult> GetDistribution(
+            IHaplogroupDistributionService service,
+            [FromQuery] string clade,
+            CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(clade))
+            {
+                return Results.BadRequest(new { Message = "A clade is required." });
+            }
+
+            var response = await service.GetAsync(clade, cancellationToken);
+            return Results.Ok(response);
         }
 
         private static async Task<IResult> Analyze(

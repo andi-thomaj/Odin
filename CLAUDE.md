@@ -187,8 +187,11 @@ The tools-api enforces the invariants (text-only on col 3, order-preserving — 
 Merges run **one at a time** by **deliberate policy** (not a RAM constraint — the tools-api merges with Poseidon `trident` at ~1.3 GB; the old `mergeit` engine that needed ~25 GB was removed). The user wants merges kept strictly serialized; keep it that way.
 
 - **Serialized — pinned to one at a time.** Merges run **strictly sequentially**: the dispatcher's in-flight cap (`MergeJob._maxInFlight`) and the Hangfire `merge`-queue `WorkerCount` are both **hardcoded to 1** in `Program.cs`. `MaxConcurrentMerges` is deliberately **not** bound from config (`Program.cs` wires `MergeJobOptions` to a literal `1`), so no appsettings/Coolify override can let two merges run concurrently. The `MergeJobOptions.MaxConcurrentMerges` setter survives only so `MergeJobTests` can exercise the dispatcher's admission arithmetic with other caps. **Do not raise these** — serialized-at-1 is a standing user preference, not a RAM limit.
-- **No automatic retries.** `RunAsync` is `[AutomaticRetry(Attempts = 0)]`; any failure (bad upload 400, panel unavailable 503, tool error 500, timeout) is recorded `MergeStatus.Failed` and does **not** rethrow — an immediate retry usually fails the same way and ties up the single worker; an admin re-runs it instead. `MergeStatus.Retrying` is now unused in the normal path; `MergeJobFailureStateFilter` still reconciles a hard-crashed (worker-died) job to Failed.
+- **⚠️ `[Queue]` / `[AutomaticRetry]` MUST be on `IMergeJob` (the interface), not the concrete `MergeJob`.** Jobs are enqueued via `Enqueue<IMergeJob>(svc => svc.RunAsync(..))`, so Hangfire reads filter attributes off the **interface** method; the same attribute on the concrete method is silently ignored. They were on the concrete `MergeJob` for a while, so merges actually ran on the multi-worker **`default`** queue (not the single-worker `merge` queue) AND got Hangfire's **default 10 retries** instead of `Attempts = 0`. This — combined with the invisibility bug below — let re-fetched merge jobs run **concurrently** (overlapping forges). If you add a queue/retry policy, put it on the interface.
+- **⚠️ Long merges + Hangfire invisibility timeout.** `UsePostgreSqlStorage` is configured with **`UseSlidingInvisibilityTimeout = true`** (+ a 2 h `InvisibilityTimeout` ceiling) in `Program.cs`. This is **load-bearing, not cosmetic**: the AADR merge is disk-bound and runs ~31 min on the shared host — longer than Hangfire.PostgreSql's **default fixed 30-min invisibility window**. Without the sliding timeout, the storage decided the still-running merge job was "lost" and **re-fetched + re-ran the same job every 30 min** — a perpetual loop (the merge never reached Succeeded/Failed; each re-run kicked off a fresh tools-api forge that again ran >30 min). The sliding timeout heartbeats the lease while a worker is genuinely processing, so a long merge runs exactly once. **Don't remove it**, and keep `ToolsApi:MergeTimeoutSeconds` (now 3600s) below that 2 h ceiling and above the real merge wall-time.
+- **No automatic retries.** `RunAsync` is `[AutomaticRetry(Attempts = 0)]` (on the interface — see above); any failure (bad upload 400, panel unavailable 503, tool error 500, timeout) is recorded `MergeStatus.Failed` and does **not** rethrow — an immediate retry usually fails the same way and ties up the single worker; an admin re-runs it instead. `MergeStatus.Retrying` is now unused in the normal path; `MergeJobFailureStateFilter` still reconciles a hard-crashed (worker-died) job to Failed.
 - **Admin-initiated retry only.** `IMergeJob.RequeueAsync(rawGeneticFileId)` resets a non-running merge to `NotStarted` and dispatches; exposed as `POST api/admin/merge/{rawGeneticFileId}/retry` (`AdminOnly`) and surfaced as a **Retry** button on the Input page's results grid (admin-only, shown for `Failed` rows). FE: `src/api/merge-admin.ts` + `useRetryMerge`.
+- **Admin Stop (cancel an in-progress merge).** `IMergeJob.StopAsync(rawGeneticFileId)` stops a `Queued`/`Converting`/`Merging` merge: it (1) deletes the running Hangfire `RunAsync` job (found via the monitoring API by inspection id — best-effort, so a monitoring hiccup can't block the stop) so the invocation's cancellation token fires and it never re-runs, (2) calls `IMergePipelineService.CancelMergeAsync(mergeId)` → tools-api `POST /v1/merge/{mergeId}/cancel`, which SIGKILLs the running tool subprocess (plink/trident/convertf) and drops any partial bundle, and (3) marks the file `Failed` ("Merge stopped by an administrator.") so an admin can Retry. Exposed as `POST api/admin/merge/{rawGeneticFileId}/stop` (`AdminOnly`), surfaced as a red **Stop** button on the Input grid for in-progress rows. FE: `mergeAdminApi.stop` + `useStopMerge`. (404 if the file is gone, 409 if no merge is in progress.)
 
 NB: with trident a merge peaks at ~1.3 GB and never OOMs — no swap/host-resize needed. Merge *latency* (~31 min) is now bound by the host's slow disk, not RAM; that's an infra lever (faster disk), not a code one.
 
@@ -199,3 +202,29 @@ NB: with trident a merge peaks at ~1.3 GB and never OOMs — no swap/host-resize
 ## Public pre-launch waitlist subscribe endpoint
 
 `POST /v1/api/public/subscribe` ([`SubscribeEndpoints`](Odin.Api/Endpoints/Subscribe/SubscribeEndpoints.cs), **`AllowAnonymous`**, `strict` rate limit) is the pre-launch waitlist signup the marketing site calls while self-service registration is disabled. It takes `{ email }`, validates it (`MailAddress.TryCreate`), and forwards to the Resend Audience via `IResendAudienceService.AddContactAsync` — **no DB entity**, Resend is the store of record for the waitlist. Resend/infra failures are **logged and masked** as `{ success: true }` so anonymous visitors never see a 500 (and we don't leak internals); only an invalid/empty email returns 400. Integration coverage: `SubscribeEndpointsTests` (the test host registers `NoOpResendAudienceService`, so no real Resend calls).
+
+## Y-haplogroup heatmap — imported reference data + distribution endpoint
+
+The clade-finder result page shows a map of where a user's paternal haplogroup is found (ancient +
+present-day) plus its migration path. The geo/date data is **imported into Postgres** from
+odin-tools-api (which owns the on-server AADR `.anno` + YFull `tree.json`) and served from there —
+see [`Endpoints/HaplogroupHeatmap/`](Odin.Api/Endpoints/HaplogroupHeatmap/).
+
+- **Reference tables (shared, NOT `IAppScoped`):** `YHaplogroupSample` (one geolocated individual →
+  resolved YFull node, `Layer` ancient/modern, `Era`), `YHaplogroupTreeNode` (clade topology +
+  TMRCA + precomputed migration **centroid**), `HaplogroupImportRun` (provenance). Do not add an
+  `App` column or a query filter — this is shared seed-like data.
+- **Rerunnable import** (`IHaplogroupImportService`, Hangfire `default` queue): pulls the paginated
+  `GET /v1/clade-finder/haplo-geo-export` from the tools-api and **replaces both tables wholesale in
+  one transaction** (`ExecuteDeleteAsync` + batched insert). Idempotent — re-run on a new AADR/YFull
+  release. Attributes (`[Queue]`/`[AutomaticRetry(0)]`/`[DisableConcurrentExecution]`) are on the
+  **interface** (Hangfire reads them there — same gotcha as `IMergeJob`). Triggered by admin
+  `POST api/admin/haplogroup-import/start` (`AdminOnly`) + `GET .../status`; FE under Reference
+  Data → QpAdm → "Haplogroup data". Headless re-runs: enqueue the job from the Hangfire dashboard.
+- **Distribution** (`GET api/clade-finder/distribution?clade=…`, `EmailVerified`): recursive-CTE
+  subtree expansion + ancestor-chain migration over the tree, via `Database.SqlQueryRaw<T>` (columns
+  are **PascalCase → quoted** in the SQL). Cached per clade, keyed by the latest completed import
+  run id (`HaplogroupCacheKeys.ImportToken`, removed by the import on success) so a fresh import
+  busts every cached clade; cache is skipped under `Testing`.
+- **Provisioning note:** the import is a no-op-then-503 until the tools-api has the AADR `.anno` +
+  `tree.json` (it already does, for the merge tool + clade finder). No new data download anywhere.

@@ -1,5 +1,6 @@
 using System.Net;
 using Hangfire;
+using Hangfire.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Odin.Api.Authentication;
@@ -15,6 +16,7 @@ namespace Odin.Api.Endpoints.MergeManagement
         ApplicationDbContext dbContext,
         IMergePipelineService mergeService,
         IBackgroundJobClient backgroundJobClient,
+        JobStorage jobStorage,
         IGeneticInspectionRealtimeNotifier liveUpdates,
         TimeProvider timeProvider,
         IOptions<MergeJobOptions> mergeOptions,
@@ -82,15 +84,14 @@ namespace Odin.Api.Endpoints.MergeManagement
                     candidates.Count, inFlight, _maxInFlight);
         }
 
-        // Serialized onto the single-worker "merge" queue (see Program.cs).
-        // NO automatic retries (Attempts = 0): a failed merge usually fails for a reason an immediate
-        // retry won't fix (bad upload, panel not provisioned, timeout) and would just tie up the single
-        // merge worker; an admin re-runs it instead. Any failure is recorded as
-        // Failed; an admin re-runs it (RequeueAsync) once the cause is addressed. Attempts = 0 also stops
-        // Hangfire from re-running a job whose worker died (e.g. a redeploy) — that surfaces as Failed via
-        // MergeJobFailureStateFilter instead.
-        [Queue("merge")]
-        [AutomaticRetry(Attempts = 0)]
+        // Serialized onto the single-worker "merge" queue; NO automatic retries. Both behaviours are set by
+        // [Queue("merge")] + [AutomaticRetry(Attempts = 0)] on IMergeJob.RunAsync — Hangfire reads filter
+        // attributes off the enqueued INTERFACE method, so attributes here on the concrete method would be
+        // silently ignored (which is exactly the bug that put merges on the multi-worker "default" queue).
+        // Rationale: a failed merge usually fails for a reason an immediate retry won't fix (bad upload,
+        // panel not provisioned, timeout) and would just tie up the single merge worker; an admin re-runs it
+        // (RequeueAsync) instead. Attempts = 0 also stops Hangfire from re-running a job whose worker died
+        // (e.g. a redeploy) — that surfaces as Failed via MergeJobFailureStateFilter instead.
         public async Task RunAsync(int geneticInspectionId, CancellationToken cancellationToken = default)
         {
             try
@@ -221,6 +222,85 @@ namespace Odin.Api.Endpoints.MergeManagement
                 rawGeneticFileId, previous);
         }
 
+        public async Task StopAsync(int rawGeneticFileId, CancellationToken cancellationToken = default)
+        {
+            var file = await dbContext.RawGeneticFiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(f => f.Id == rawGeneticFileId, cancellationToken);
+            if (file is null)
+                throw new KeyNotFoundException($"No raw genetic file with id {rawGeneticFileId}.");
+            if (file.MergeStatus is not (MergeStatus.Queued or MergeStatus.Converting or MergeStatus.Merging))
+                throw new InvalidOperationException("No merge is in progress for this file.");
+
+            // 1. Delete the Hangfire job running this inspection's merge so RunAsync stops (its cancellation
+            //    token fires, aborting the in-flight convert/merge HTTP call) and is never re-run. Without
+            //    this, a job stopped mid-Converting would proceed to Merging and overwrite the Failed below.
+            var inspectionId = await dbContext.QpadmGeneticInspections
+                .IgnoreQueryFilters()
+                .Where(gi => gi.RawGeneticFileId == rawGeneticFileId)
+                .Select(gi => (int?)gi.Id)
+                .MinAsync(cancellationToken);
+            if (inspectionId is int insp)
+                CancelHangfireMergeJob(insp);
+
+            // 2. Kill the running tool on the tools-api (forge can take a poll cycle to notice the cancelled
+            //    token) and drop any bundle a just-finished merge may have written. Best-effort.
+            if (!string.IsNullOrWhiteSpace(file.MergeId))
+            {
+                try
+                {
+                    await mergeService.CancelMergeAsync(file.MergeId, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "Stop merge: tools-api cancel for {MergeId} failed (continuing).", file.MergeId);
+                }
+            }
+
+            // 3. Terminal state so the row clears and the dispatcher won't re-admit it; an admin can Retry.
+            //    (RunAsync's own cancellation catch may also write Failed — idempotent.)
+            await SetStatusAsync(file, MergeStatus.Failed, "Merge stopped by an administrator.", cancellationToken);
+
+            // A merge slot just freed — admit the next waiting merge.
+            backgroundJobClient.Enqueue<IMergeJob>(svc => svc.DispatchPendingMergesAsync(CancellationToken.None));
+            logger.LogInformation("Admin stopped in-progress merge for raw file {FileId} (inspection {InspectionId}).",
+                rawGeneticFileId, inspectionId);
+        }
+
+        // Find and delete the Hangfire RunAsync job for this inspection. Merges are serialized (1 at a
+        // time) on the single-worker "merge" queue, but scan BOTH the processing set (Converting/Merging —
+        // RunAsync actively running) and the enqueued set (the brief Queued window before a worker picks
+        // it). IBackgroundJobClient.Delete cancels a processing job's token and removes an enqueued one
+        // before it runs. ("default" is scanned too, defensively, for any job mis-routed there.)
+        private void CancelHangfireMergeJob(int inspectionId)
+        {
+            static bool Matches(global::Hangfire.Common.Job? job, int inspectionId) =>
+                job is not null
+                && job.Method.Name == nameof(IMergeJob.RunAsync)
+                && job.Args.Count > 0 && job.Args[0] is int id && id == inspectionId;
+
+            // Best-effort: a monitoring-API hiccup must not block the stop. Even if this no-ops, the
+            // tools-api kill (step 2) + the Failed write (step 3) + the sliding invisibility timeout
+            // (so the job isn't re-fetched) already halt the merge; the only thing lost is cancelling a
+            // job still in its brief Converting window before it reaches the killable Merging step.
+            try
+            {
+                var monitor = jobStorage.GetMonitoringApi();
+                foreach (var (jobId, dto) in monitor.ProcessingJobs(0, 500))
+                    if (Matches(dto.Job, inspectionId))
+                        backgroundJobClient.Delete(jobId);
+
+                foreach (var queue in new[] { "merge", "default" })
+                    foreach (var (jobId, dto) in monitor.EnqueuedJobs(queue, 0, 500))
+                        if (Matches(dto.Job, inspectionId))
+                            backgroundJobClient.Delete(jobId);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Stop merge: could not scan/cancel the Hangfire job for inspection {InspectionId} (continuing).", inspectionId);
+            }
+        }
+
         public Task DeleteAsync(int rawGeneticFileId, CancellationToken cancellationToken = default) =>
             TryDeleteBundleAsync(rawGeneticFileId, cancellationToken);
 
@@ -302,7 +382,7 @@ namespace Odin.Api.Endpoints.MergeManagement
         // inline-deleted) within minutes; this is only a backstop for stalled/never-completed orders.
         private const int RetentionHours = 24;
 
-        [Queue("merge")]
+        // [Queue("merge")] is on IMergeJob.CleanupOrphansAsync (Hangfire reads it off the interface method).
         public async Task CleanupOrphansAsync(CancellationToken cancellationToken = default)
         {
             var cutoff = timeProvider.GetUtcNow().UtcDateTime.AddHours(-RetentionHours);

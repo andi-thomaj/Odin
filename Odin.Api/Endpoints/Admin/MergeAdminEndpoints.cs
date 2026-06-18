@@ -18,6 +18,11 @@ public static class MergeAdminEndpoints
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict);
+
+        endpoints.MapPost("/{rawGeneticFileId:int}/stop", StopMerge)
+            .Produces(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
     }
 
     private static async Task<IResult> RetryMerge(
@@ -27,6 +32,24 @@ public static class MergeAdminEndpoints
         {
             await mergeJob.RequeueAsync(rawGeneticFileId, cancellationToken);
             return Results.Ok(new { rawGeneticFileId, requeued = true });
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Results.Conflict(ex.Message);
+        }
+    }
+
+    private static async Task<IResult> StopMerge(
+        int rawGeneticFileId, IMergeJob mergeJob, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await mergeJob.StopAsync(rawGeneticFileId, cancellationToken);
+            return Results.Ok(new { rawGeneticFileId, stopped = true });
         }
         catch (KeyNotFoundException ex)
         {
