@@ -202,3 +202,29 @@ NB: with trident a merge peaks at ~1.3 GB and never OOMs — no swap/host-resize
 ## Public pre-launch waitlist subscribe endpoint
 
 `POST /v1/api/public/subscribe` ([`SubscribeEndpoints`](Odin.Api/Endpoints/Subscribe/SubscribeEndpoints.cs), **`AllowAnonymous`**, `strict` rate limit) is the pre-launch waitlist signup the marketing site calls while self-service registration is disabled. It takes `{ email }`, validates it (`MailAddress.TryCreate`), and forwards to the Resend Audience via `IResendAudienceService.AddContactAsync` — **no DB entity**, Resend is the store of record for the waitlist. Resend/infra failures are **logged and masked** as `{ success: true }` so anonymous visitors never see a 500 (and we don't leak internals); only an invalid/empty email returns 400. Integration coverage: `SubscribeEndpointsTests` (the test host registers `NoOpResendAudienceService`, so no real Resend calls).
+
+## Y-haplogroup heatmap — imported reference data + distribution endpoint
+
+The clade-finder result page shows a map of where a user's paternal haplogroup is found (ancient +
+present-day) plus its migration path. The geo/date data is **imported into Postgres** from
+odin-tools-api (which owns the on-server AADR `.anno` + YFull `tree.json`) and served from there —
+see [`Endpoints/HaplogroupHeatmap/`](Odin.Api/Endpoints/HaplogroupHeatmap/).
+
+- **Reference tables (shared, NOT `IAppScoped`):** `YHaplogroupSample` (one geolocated individual →
+  resolved YFull node, `Layer` ancient/modern, `Era`), `YHaplogroupTreeNode` (clade topology +
+  TMRCA + precomputed migration **centroid**), `HaplogroupImportRun` (provenance). Do not add an
+  `App` column or a query filter — this is shared seed-like data.
+- **Rerunnable import** (`IHaplogroupImportService`, Hangfire `default` queue): pulls the paginated
+  `GET /v1/clade-finder/haplo-geo-export` from the tools-api and **replaces both tables wholesale in
+  one transaction** (`ExecuteDeleteAsync` + batched insert). Idempotent — re-run on a new AADR/YFull
+  release. Attributes (`[Queue]`/`[AutomaticRetry(0)]`/`[DisableConcurrentExecution]`) are on the
+  **interface** (Hangfire reads them there — same gotcha as `IMergeJob`). Triggered by admin
+  `POST api/admin/haplogroup-import/start` (`AdminOnly`) + `GET .../status`; FE under Reference
+  Data → QpAdm → "Haplogroup data". Headless re-runs: enqueue the job from the Hangfire dashboard.
+- **Distribution** (`GET api/clade-finder/distribution?clade=…`, `EmailVerified`): recursive-CTE
+  subtree expansion + ancestor-chain migration over the tree, via `Database.SqlQueryRaw<T>` (columns
+  are **PascalCase → quoted** in the SQL). Cached per clade, keyed by the latest completed import
+  run id (`HaplogroupCacheKeys.ImportToken`, removed by the import on success) so a fresh import
+  busts every cached clade; cache is skipped under `Testing`.
+- **Provisioning note:** the import is a no-op-then-503 until the tools-api has the AADR `.anno` +
+  `tree.json` (it already does, for the merge tool + clade finder). No new data download anywhere.

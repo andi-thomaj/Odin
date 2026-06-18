@@ -73,6 +73,10 @@ public sealed class FakeMergePipelineService : IMergePipelineService
     public Task DeleteAsync(string mergeId, CancellationToken cancellationToken = default) =>
         Task.CompletedTask;
 
+    // No live tools-api to cancel against — a no-op so the admin "Stop merge" flow can be exercised.
+    public Task CancelMergeAsync(string mergeId, CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
+
     public Task<PanelStatusResult> GetPanelStatusAsync(string? panel, CancellationToken cancellationToken = default) =>
         throw new NotSupportedException();
 
