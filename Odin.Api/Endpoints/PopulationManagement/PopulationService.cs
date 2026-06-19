@@ -45,33 +45,26 @@ public partial class PopulationService(
         KeyframeContentType,
     };
 
-    /// <summary>Allowed Higgsfield video models → their valid "mode" values. Must stay in sync with the
-    /// frontend's <c>VIDEO_MODEL_MODES</c> in <c>ancestry-video-media/manifest.ts</c> and the media
-    /// server's per-model arg builders.</summary>
-    private static readonly Dictionary<string, string[]> VideoModelModes = new(StringComparer.Ordinal)
-    {
-        ["seedance_2_0"] = ["std", "fast"],
-        ["kling3_0"] = ["pro", "std", "4k"],
-    };
+    /// <summary>Valid video "mode" values for the single configured video model (Seedance 2.0). The model
+    /// itself is named in ONE place — the media server's <c>VIDEO_MODEL_ID</c>; the frontend no longer
+    /// sends a model. Keep this in sync with the media server's <c>VIDEO_MODES</c> and the frontend's
+    /// <c>VIDEO_MODES</c>.</summary>
+    private static readonly string[] AllowedVideoModes = ["std", "fast"];
     private static readonly int[] AllowedVideoDurations = [5, 10];
 
     /// <summary>Trim a prompt, collapsing blank/whitespace to <c>null</c> ("use the frontend default template").</summary>
     private static string? NormalizePrompt(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 
-    /// <summary>Keep a video model only if it's a known id, else <c>null</c> (default).</summary>
-    private static string? NormalizeVideoModel(string? model)
-    {
-        var m = model?.Trim();
-        return !string.IsNullOrEmpty(m) && VideoModelModes.ContainsKey(m) ? m : null;
-    }
+    /// <summary>Vestigial: the model is fixed server-side (media server <c>VIDEO_MODEL_ID</c>) and the FE
+    /// sends none, so this is null in practice. Kept so an explicitly-set value is still validated.</summary>
+    private static string? NormalizeVideoModel(string? model) =>
+        string.Equals(model?.Trim(), "seedance_2_0", StringComparison.Ordinal) ? "seedance_2_0" : null;
 
-    /// <summary>Keep a mode only if valid for the (normalized) model, else <c>null</c> (model default).</summary>
-    private static string? NormalizeVideoMode(string? model, string? mode)
+    /// <summary>Keep a mode only if it's a valid mode for the configured model, else <c>null</c> (default).</summary>
+    private static string? NormalizeVideoMode(string? mode)
     {
-        var m = NormalizeVideoModel(model);
         var mo = mode?.Trim();
-        if (m is null || string.IsNullOrEmpty(mo)) return null;
-        return VideoModelModes[m].Contains(mo, StringComparer.Ordinal) ? mo : null;
+        return !string.IsNullOrEmpty(mo) && AllowedVideoModes.Contains(mo) ? mo : null;
     }
 
     /// <summary>Keep a duration only if it's an allowed value (5/10), else <c>null</c> (default 5).</summary>
@@ -205,7 +198,7 @@ public partial class PopulationService(
             ImagePrompt = NormalizePrompt(request.ImagePrompt),
             VideoPrompt = NormalizePrompt(request.VideoPrompt),
             VideoModel = NormalizeVideoModel(request.VideoModel),
-            VideoMode = NormalizeVideoMode(request.VideoModel, request.VideoMode),
+            VideoMode = NormalizeVideoMode(request.VideoMode),
             VideoDurationSeconds = NormalizeVideoDuration(request.VideoDurationSeconds),
             CreatedAt = now,
             CreatedBy = identityId,
@@ -307,7 +300,7 @@ public partial class PopulationService(
         entity.ImagePrompt = NormalizePrompt(request.ImagePrompt);
         entity.VideoPrompt = NormalizePrompt(request.VideoPrompt);
         entity.VideoModel = NormalizeVideoModel(request.VideoModel);
-        entity.VideoMode = NormalizeVideoMode(request.VideoModel, request.VideoMode);
+        entity.VideoMode = NormalizeVideoMode(request.VideoMode);
         entity.VideoDurationSeconds = NormalizeVideoDuration(request.VideoDurationSeconds);
         entity.UpdatedAt = DateTime.UtcNow;
         entity.UpdatedBy = identityId;
