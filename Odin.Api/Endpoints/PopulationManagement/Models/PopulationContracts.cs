@@ -17,6 +17,18 @@ public static class GetPopulationContract
         public bool HasVideoAvatar { get; set; }
         /// <summary>Cache-bust marker; surfaces in the admin grid so re-uploads don't show stale browser-cached video.</summary>
         public string? VideoVersion { get; set; }
+        /// <summary>Cache-bust marker for the published keyframe webp; <c>null</c> ⇒ no keyframe published.</summary>
+        public string? KeyframeVersion { get; set; }
+        /// <summary>Admin override for the image-generation prompt; <c>null</c> ⇒ frontend default template.</summary>
+        public string? ImagePrompt { get; set; }
+        /// <summary>Admin override for the video-generation prompt; <c>null</c> ⇒ frontend default template.</summary>
+        public string? VideoPrompt { get; set; }
+        /// <summary>Higgsfield video model id (<c>seedance_2_0</c> | <c>kling3_0</c>); <c>null</c> ⇒ default.</summary>
+        public string? VideoModel { get; set; }
+        /// <summary>Video model mode (Kling <c>pro|std|4k</c>, Seedance <c>std|fast</c>); <c>null</c> ⇒ default.</summary>
+        public string? VideoMode { get; set; }
+        /// <summary>Video clip duration in seconds (5 | 10); <c>null</c> ⇒ default (5).</summary>
+        public int? VideoDurationSeconds { get; set; }
     }
 
     public class VideoAvatarListItem
@@ -41,6 +53,16 @@ public static class CreatePopulationContract
         public required string Color { get; set; }
         public required int EraId { get; set; }
         public required int MusicTrackId { get; set; }
+        /// <summary>Admin override for the image-generation prompt; <c>null</c>/blank ⇒ frontend default template.</summary>
+        public string? ImagePrompt { get; set; }
+        /// <summary>Admin override for the video-generation prompt; <c>null</c>/blank ⇒ frontend default template.</summary>
+        public string? VideoPrompt { get; set; }
+        /// <summary>Higgsfield video model id (<c>seedance_2_0</c> | <c>kling3_0</c>); <c>null</c> ⇒ default.</summary>
+        public string? VideoModel { get; set; }
+        /// <summary>Video model mode (Kling <c>pro|std|4k</c>, Seedance <c>std|fast</c>); <c>null</c> ⇒ default.</summary>
+        public string? VideoMode { get; set; }
+        /// <summary>Video clip duration in seconds (5 | 10); <c>null</c> ⇒ default (5).</summary>
+        public int? VideoDurationSeconds { get; set; }
     }
 }
 
@@ -55,5 +77,15 @@ public static class UpdatePopulationContract
         public required string Color { get; set; }
         public required int EraId { get; set; }
         public required int MusicTrackId { get; set; }
+        /// <summary>Admin override for the image-generation prompt; <c>null</c>/blank ⇒ frontend default template.</summary>
+        public string? ImagePrompt { get; set; }
+        /// <summary>Admin override for the video-generation prompt; <c>null</c>/blank ⇒ frontend default template.</summary>
+        public string? VideoPrompt { get; set; }
+        /// <summary>Higgsfield video model id (<c>seedance_2_0</c> | <c>kling3_0</c>); <c>null</c> ⇒ default.</summary>
+        public string? VideoModel { get; set; }
+        /// <summary>Video model mode (Kling <c>pro|std|4k</c>, Seedance <c>std|fast</c>); <c>null</c> ⇒ default.</summary>
+        public string? VideoMode { get; set; }
+        /// <summary>Video clip duration in seconds (5 | 10); <c>null</c> ⇒ default (5).</summary>
+        public int? VideoDurationSeconds { get; set; }
     }
 }

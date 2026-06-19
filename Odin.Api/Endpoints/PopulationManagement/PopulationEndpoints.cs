@@ -55,6 +55,13 @@ public static class PopulationEndpoints
             .RequireRateLimiting("strict")
             .Produces(StatusCodes.Status204NoContent);
 
+        endpoints.MapPut("/{id:int}/keyframe", UploadKeyframe)
+            .DisableAntiforgery()
+            .RequireAuthorization("AdminOnly")
+            .RequireRateLimiting("file-upload")
+            .Produces(StatusCodes.Status204NoContent)
+            .WithRequestTimeout(TimeSpan.FromMinutes(5));
+
         endpoints.MapPost("/video-avatars/sync-from-disk", SyncVideoAvatarsFromDisk)
             .RequireAuthorization("AdminOnly")
             .RequireRateLimiting("strict")
@@ -112,6 +119,18 @@ public static class PopulationEndpoints
         if (identityId is null) return Results.Unauthorized();
 
         var (success, error, notFound) = await service.UploadVideoAvatarAsync(id, file, identityId, cancellationToken);
+        if (notFound) return Results.NotFound();
+        return success
+            ? Results.NoContent()
+            : Results.BadRequest(new { Message = error });
+    }
+
+    private static async Task<IResult> UploadKeyframe(HttpContext httpContext, IPopulationService service, int id, IFormFile file, CancellationToken cancellationToken)
+    {
+        var identityId = ResolveIdentityId(httpContext);
+        if (identityId is null) return Results.Unauthorized();
+
+        var (success, error, notFound) = await service.UploadKeyframeAsync(id, file, identityId, cancellationToken);
         if (notFound) return Results.NotFound();
         return success
             ? Results.NoContent()
