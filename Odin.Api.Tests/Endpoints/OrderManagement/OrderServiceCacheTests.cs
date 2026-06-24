@@ -15,6 +15,8 @@ using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25Calculations.Models;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.OrderManagement.Models;
+using Odin.Api.Endpoints.Payments;
+using Odin.Api.Endpoints.Payments.Models;
 using Odin.Api.Hubs;
 using Odin.Api.Services;
 
@@ -250,7 +252,19 @@ public class OrderServiceCacheTests
             cache,
             new NoopRealtimeNotifier(),
             env ?? FakeHostEnvironment.Production(),
+            new StubAppStorePurchaseService(),
+            Options.Create(new AppleIapOptions()),
             NullLogger<OrderService>.Instance);
+
+    private sealed class StubAppStorePurchaseService : IAppStorePurchaseService
+    {
+        // The cache tests never exercise the paid path; these throw if unexpectedly invoked.
+        public VerifiedAppStoreTransaction ValidateTransaction(string signedTransactionJws, ServiceType expectedService)
+            => throw new NotSupportedException();
+
+        public AppStoreNotification ParseNotification(string signedPayload)
+            => throw new NotSupportedException();
+    }
 
     private static async Task<int> SeedQpadmOrderAsync(
         ApplicationDbContext db, OrderStatus status, string owner, bool withInspection)

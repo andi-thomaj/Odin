@@ -24,6 +24,12 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string? G25Coordinates { get; set; }
             public IFormFile? ProfilePicture { get; set; }
 
+            /// <summary>
+            /// Apple StoreKit 2 signed transaction JWS proving payment. Required by the iOS paid-order
+            /// endpoint (<c>POST /orders/purchase</c>); ignored by the legacy admin <c>POST /orders</c>.
+            /// </summary>
+            public string? AppStoreTransaction { get; set; }
+
             public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
             {
                 if (string.IsNullOrWhiteSpace(FirstName))

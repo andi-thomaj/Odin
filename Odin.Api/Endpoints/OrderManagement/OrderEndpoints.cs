@@ -42,7 +42,20 @@ namespace Odin.Api.Endpoints.OrderManagement
                 .RequireRateLimiting("authenticated")
                 .Produces<GetOrderContract.Response>(StatusCodes.Status200OK);
 
+            // Free order creation is now ADMIN-ONLY. Paid users go through POST /purchase below, which
+            // requires a validated Apple StoreKit transaction. (iOS and web share X-App: ancestrify, so the
+            // paid path can't be distinguished by app — hence a dedicated endpoint rather than per-app gating.)
             endpoints.MapPost("/", Create)
+                .DisableAntiforgery()
+                .RequireAuthorization("AdminOnly")
+                .RequireRateLimiting("file-upload")
+                .Produces<CreateOrderContract.Response>(StatusCodes.Status201Created)
+                .WithRequestTimeout(TimeSpan.FromMinutes(5));
+
+            // Paid order creation (iOS in-app purchase): requires a valid Apple StoreKit 2 signed
+            // transaction. The order is created only after the purchase is server-validated; replaying the
+            // same transaction returns the order it already created (idempotent on the Apple transaction id).
+            endpoints.MapPost("/purchase", CreatePurchase)
                 .DisableAntiforgery()
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("file-upload")
@@ -141,6 +154,47 @@ namespace Odin.Api.Endpoints.OrderManagement
             {
                 var response = await service.CreateAsync(request, identityId, ipAddress);
                 return Results.Created($"/api/orders/{response.Id}", response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { Message = ex.Message });
+            }
+        }
+
+        // Paid order creation gated on a validated Apple StoreKit transaction. The same multipart form as
+        // Create, plus the AppStoreTransaction (signed JWS) field. Idempotent on the Apple transaction id.
+        private static async Task<IResult> CreatePurchase(
+            IOrderService service,
+            HttpContext httpContext,
+            [FromForm] CreateOrderContract.Request request)
+        {
+            var validationProblem = request.ValidateAndGetProblem();
+            if (validationProblem is not null)
+            {
+                return validationProblem;
+            }
+
+            if (string.IsNullOrWhiteSpace(request.AppStoreTransaction))
+            {
+                return Results.BadRequest(new { Message = "A completed in-app purchase is required to create an order." });
+            }
+
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            var ipAddress = httpContext.Request.Headers["X-Forwarded-For"]
+                                .FirstOrDefault()?.Split(',')[0].Trim()
+                            ?? httpContext.Connection.RemoteIpAddress?.ToString();
+
+            try
+            {
+                var response = await service.CreatePaidAsync(request, identityId, ipAddress);
+                return Results.Created($"/api/orders/{response.Id}", response);
+            }
+            catch (Payments.Models.AppStorePurchaseException ex)
+            {
+                return Results.BadRequest(new { Message = ex.Message });
             }
             catch (InvalidOperationException ex)
             {

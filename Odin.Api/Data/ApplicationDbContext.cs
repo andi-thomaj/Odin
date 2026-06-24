@@ -53,6 +53,7 @@ namespace Odin.Api.Data
         public DbSet<Calculator> Calculators { get; set; }
         public DbSet<AdmixToolsEra> AdmixToolsEras { get; set; }
         public DbSet<Application> Applications { get; set; }
+        public DbSet<AppStoreTransaction> AppStoreTransactions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -67,6 +68,7 @@ namespace Odin.Api.Data
             modelBuilder.Entity<User>().HasQueryFilter(e => e.App == _appContext.App);
             modelBuilder.Entity<QpadmOrder>().HasQueryFilter(e => e.App == _appContext.App);
             modelBuilder.Entity<G25Order>().HasQueryFilter(e => e.App == _appContext.App);
+            modelBuilder.Entity<AppStoreTransaction>().HasQueryFilter(e => e.App == _appContext.App);
             // RawGeneticFile folds its existing soft-delete predicate in (one query filter per entity allowed).
             modelBuilder.Entity<RawGeneticFile>().HasQueryFilter(e => !e.IsDeleted && e.App == _appContext.App);
             modelBuilder.Entity<QpadmGeneticInspection>().HasQueryFilter(e => e.App == _appContext.App);

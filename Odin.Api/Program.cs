@@ -380,6 +380,11 @@ namespace Odin.Api
             services.AddScoped<Odin.Api.Hubs.IGeneticInspectionRealtimeNotifier, Odin.Api.Hubs.GeneticInspectionRealtimeNotifier>();
             services.AddScoped<IAppSettingsService, AppSettingsService>();
             services.AddScoped<IOrderService, OrderService>();
+            // Apple StoreKit 2 IAP validation (iOS paid-order flow). Singleton: it lazily loads + caches the
+            // Apple root certificate and holds no per-request state.
+            services.AddSingleton<
+                Odin.Api.Endpoints.Payments.IAppStorePurchaseService,
+                Odin.Api.Endpoints.Payments.AppStorePurchaseService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IMediaService, MediaService>();
@@ -407,6 +412,8 @@ namespace Odin.Api
             services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
             services.Configure<Odin.Api.Configuration.OrderLimitsOptions>(
                 configuration.GetSection(Odin.Api.Configuration.OrderLimitsOptions.SectionName));
+            services.Configure<Odin.Api.Configuration.AppleIapOptions>(
+                configuration.GetSection(Odin.Api.Configuration.AppleIapOptions.SectionName));
 
             services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
             {

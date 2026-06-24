@@ -117,6 +117,11 @@ public static class TestDataHelper
         content.Add(new StringContent(Faker.Name.LastName()), "LastName");
         content.Add(new StringContent("Male"), "Gender");
         content.Add(new StringContent("0"), "Service");
+        // Orders are now paid (iOS IAP). The /orders/purchase endpoint validates this StoreKit transaction;
+        // under the Testing environment the signature check is skipped, so an unsigned-but-well-formed JWS
+        // with the right bundle/product is accepted. A fresh transaction id per call keeps the unique
+        // (App, TransactionId) index from collapsing multiple orders into one.
+        content.Add(new StringContent(BuildAppStoreTransactionJws(ServiceType.qpAdm)), "AppStoreTransaction");
 
         foreach (var regionId in regionIds)
             content.Add(new StringContent(regionId.ToString()), "RegionIds");
@@ -133,10 +138,45 @@ public static class TestDataHelper
             content.Add(filePart, "File", "kit.csv");
         }
 
-        var response = await client.PostAsync("/api/orders", content);
+        var response = await client.PostAsync("/api/orders/purchase", content);
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<CreateOrderContract.Response>(JsonOptions))!;
     }
+
+    /// <summary>
+    /// Builds a well-formed (but UNSIGNED) StoreKit 2 transaction JWS for tests. The Testing environment
+    /// disables signature verification, so only the decoded payload (bundle id + product id → service) is
+    /// checked. Defaults to the qpAdm/G25 product ids that match <c>AppleIapOptions</c>' defaults.
+    /// </summary>
+    public static string BuildAppStoreTransactionJws(
+        ServiceType service,
+        string? transactionId = null,
+        string? bundleId = null,
+        string? productId = null,
+        string environment = "Xcode")
+    {
+        transactionId ??= Guid.NewGuid().ToString("N");
+        bundleId ??= "io.ancestrify.app";
+        productId ??= service == ServiceType.g25 ? "io.ancestrify.app.g25" : "io.ancestrify.app.qpadm";
+
+        var header = Base64UrlEncode("{\"alg\":\"ES256\",\"x5c\":[]}"u8.ToArray());
+        var payloadJson = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            bundleId,
+            productId,
+            transactionId,
+            originalTransactionId = transactionId,
+            purchaseDate = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            type = "Consumable",
+            environment,
+        });
+        var payload = Base64UrlEncode(System.Text.Encoding.UTF8.GetBytes(payloadJson));
+        var signature = Base64UrlEncode("test-signature"u8.ToArray());
+        return $"{header}.{payload}.{signature}";
+    }
+
+    private static string Base64UrlEncode(byte[] bytes) =>
+        Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
 
     public static async Task SetOrderStatusAsync(
         IServiceProvider services,

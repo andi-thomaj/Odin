@@ -11,6 +11,7 @@ using Odin.Api.Endpoints.G25TargetCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.OrderManagement;
+using Odin.Api.Endpoints.Payments;
 using Odin.Api.Endpoints.PopulationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
@@ -44,6 +45,7 @@ namespace Odin.Api.Extensions
             v1.MapRawGeneticFileEndpoints();
             v1.MapGeneticInspectionEndpoints();
             v1.MapOrderEndpoints();
+            v1.MapAppStoreWebhookEndpoints();
             v1.MapAppSettingsEndpoints();
             v1.MapNotificationEndpoints();
             v1.MapSubscribeEndpoints();

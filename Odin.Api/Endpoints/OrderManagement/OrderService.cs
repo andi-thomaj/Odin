@@ -16,6 +16,8 @@ using Odin.Api.Endpoints.G25Calculations.Models;
 using Odin.Api.Endpoints.MergeManagement;
 using Odin.Api.Configuration;
 using Odin.Api.Endpoints.OrderManagement.Models;
+using Odin.Api.Endpoints.Payments;
+using Odin.Api.Endpoints.Payments.Models;
 using Odin.Api.Extensions;
 using Odin.Api.Services;
 
@@ -24,6 +26,12 @@ namespace Odin.Api.Endpoints.OrderManagement;
 public interface IOrderService
 {
     Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null);
+    /// <summary>
+    /// Creates an order gated on a validated Apple StoreKit purchase (iOS in-app purchase). Validates the
+    /// signed transaction, then creates the order and records the consumed transaction atomically. Idempotent
+    /// on the Apple transaction id: replaying the same transaction returns the order it already created.
+    /// </summary>
+    Task<CreateOrderContract.Response> CreatePaidAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null);
     Task<GetOrderContract.Response?> GetByIdAsync(int id, string identityId);
     Task<IEnumerable<GetOrderContract.Response>> GetAllAsync(string identityId);
     Task<IEnumerable<AdminGetOrderContract.Response>> GetAllAdminAsync(int? skip = null, int? take = null);
@@ -59,8 +67,13 @@ public partial class OrderService(
     IMemoryCache cache,
     Odin.Api.Hubs.IGeneticInspectionRealtimeNotifier liveUpdates,
     IHostEnvironment hostEnvironment,
+    IAppStorePurchaseService appStorePurchase,
+    IOptions<AppleIapOptions> appleIapOptions,
     ILogger<OrderService> logger) : IOrderService
 {
+    /// <summary>A server-validated Apple purchase to record against a newly created order.</summary>
+    private sealed record PaidPurchase(VerifiedAppStoreTransaction Transaction, decimal Price);
+
         private const string G25DistanceResultsVersion = "v1";
         private int MaxEthnicities => orderLimitsOptions.Value.MaxEthnicities;
         private int MaxRegionsPerEthnicity => orderLimitsOptions.Value.MaxRegionsPerEthnicity;
@@ -76,7 +89,11 @@ public partial class OrderService(
             response.YDna is { Status: var status }
             && status is not ("Pending" or nameof(CladeAnalysisStatus.Unavailable));
 
-        public async Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null)
+        public Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null)
+            => CreateInternalAsync(request, identityId, ipAddress, paid: null);
+
+        private async Task<CreateOrderContract.Response> CreateInternalAsync(
+            CreateOrderContract.Request request, string identityId, string? ipAddress, PaidPurchase? paid)
         {
             var user = await dbContext.Users.RequireByIdentityAsync(identityId);
 
@@ -88,7 +105,7 @@ public partial class OrderService(
             }
 
             if (request.Service == ServiceType.g25)
-                return await CreateG25OrderAsync(request, identityId, user);
+                return await CreateG25OrderAsync(request, identityId, user, paid);
 
             await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
@@ -159,7 +176,7 @@ public partial class OrderService(
             var now = DateTime.UtcNow;
             var order = new QpadmOrder
             {
-                Price = 0m,
+                Price = paid?.Price ?? 0m,
                 Status = OrderStatus.Pending,
                 CreatedBy = identityId,
                 CreatedAt = now,
@@ -207,6 +224,12 @@ public partial class OrderService(
 
             dbContext.QpadmGeneticInspectionRegions.AddRange(regionAssociations);
 
+            // Record the paid purchase in the SAME transaction as the order, so a successful order always
+            // has its consumed AppStoreTransaction row (and vice-versa) — the unique (App, TransactionId)
+            // index then makes a replay return this order instead of creating a second one.
+            if (paid is not null)
+                RecordPurchase(paid, qpadmOrder: order, g25Order: null);
+
             await dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
 
@@ -239,7 +262,8 @@ public partial class OrderService(
         private async Task<CreateOrderContract.Response> CreateG25OrderAsync(
             CreateOrderContract.Request request,
             string identityId,
-            User user)
+            User user,
+            PaidPurchase? paid)
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
@@ -315,7 +339,7 @@ public partial class OrderService(
             var now = DateTime.UtcNow;
             var order = new G25Order
             {
-                Price = 0m,
+                Price = paid?.Price ?? 0m,
                 Status = OrderStatus.Pending,
                 CreatedBy = identityId,
                 CreatedAt = now,
@@ -354,6 +378,10 @@ public partial class OrderService(
 
             dbContext.G25GeneticInspections.Add(geneticInspection);
 
+            // Record the paid purchase atomically with the order (see the qpAdm path for why).
+            if (paid is not null)
+                RecordPurchase(paid, qpadmOrder: null, g25Order: order);
+
             await dbContext.SaveChangesAsync();
             // Commit the order + inspection create before running the distance compute below.
             // The compute is expensive and is a Phase 2 target for background-jobification;
@@ -386,6 +414,106 @@ public partial class OrderService(
                 Status = order.Status.ToString(),
                 GeneticInspectionId = geneticInspection.Id
             };
+        }
+
+        public async Task<CreateOrderContract.Response> CreatePaidAsync(
+            CreateOrderContract.Request request, string identityId, string? ipAddress = null)
+        {
+            // 1. Verify the Apple StoreKit transaction (signature + bundle + product↔service). Throws
+            //    AppStorePurchaseException (→ 400) on any failure; the iOS app then keeps the StoreKit
+            //    transaction unfinished so it can retry rather than losing the purchase.
+            var verified = appStorePurchase.ValidateTransaction(
+                request.AppStoreTransaction ?? string.Empty, request.Service);
+
+            // 2. Idempotency fast-path: this transaction already created an order — return it unchanged.
+            var prior = await FindOrderForTransactionAsync(verified.TransactionId);
+            if (prior is not null)
+                return prior;
+
+            var price = request.Service == ServiceType.g25
+                ? appleIapOptions.Value.G25Price
+                : appleIapOptions.Value.QpadmPrice;
+
+            try
+            {
+                return await CreateInternalAsync(request, identityId, ipAddress, new PaidPurchase(verified, price));
+            }
+            catch (DbUpdateException)
+            {
+                // Lost a race to insert the same transaction (unique (App, TransactionId)). The winner's
+                // order is committed — return it so the purchase still resolves to exactly one order.
+                var raced = await FindOrderForTransactionAsync(verified.TransactionId);
+                if (raced is not null)
+                    return raced;
+                throw;
+            }
+        }
+
+        /// <summary>Returns the order a consumed Apple transaction already created, or null if none.</summary>
+        private async Task<CreateOrderContract.Response?> FindOrderForTransactionAsync(string transactionId)
+        {
+            var txn = await dbContext.AppStoreTransactions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
+            if (txn is null)
+                return null;
+
+            if (txn.Service == ServiceType.g25 && txn.G25OrderId is { } g25OrderId)
+            {
+                var order = await dbContext.G25Orders
+                    .AsNoTracking()
+                    .Include(o => o.GeneticInspection)
+                    .FirstOrDefaultAsync(o => o.Id == g25OrderId);
+                return order is null ? null : new CreateOrderContract.Response
+                {
+                    Id = order.Id,
+                    Price = order.Price,
+                    Service = ServiceType.g25.ToString(),
+                    Status = order.Status.ToString(),
+                    GeneticInspectionId = order.GeneticInspection?.Id ?? 0,
+                };
+            }
+
+            if (txn.Service == ServiceType.qpAdm && txn.QpadmOrderId is { } qpadmOrderId)
+            {
+                var order = await dbContext.QpadmOrders
+                    .AsNoTracking()
+                    .Include(o => o.GeneticInspection)
+                    .FirstOrDefaultAsync(o => o.Id == qpadmOrderId);
+                return order is null ? null : new CreateOrderContract.Response
+                {
+                    Id = order.Id,
+                    Price = order.Price,
+                    Service = ServiceType.qpAdm.ToString(),
+                    Status = order.Status.ToString(),
+                    GeneticInspectionId = order.GeneticInspection?.Id ?? 0,
+                };
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Adds the consumed <see cref="AppStoreTransaction"/> row for a paid order. App is auto-stamped by
+        /// SaveChanges (IAppScoped). Exactly one of <paramref name="qpadmOrder"/> / <paramref name="g25Order"/>
+        /// is set; the order must already have a database id (it is saved before this is called).
+        /// </summary>
+        private void RecordPurchase(PaidPurchase paid, QpadmOrder? qpadmOrder, G25Order? g25Order)
+        {
+            dbContext.AppStoreTransactions.Add(new AppStoreTransaction
+            {
+                TransactionId = paid.Transaction.TransactionId,
+                OriginalTransactionId = paid.Transaction.OriginalTransactionId,
+                ProductId = paid.Transaction.ProductId,
+                Service = paid.Transaction.Service,
+                Status = AppStoreTransactionStatus.Consumed,
+                QpadmOrderId = qpadmOrder?.Id,
+                G25OrderId = g25Order?.Id,
+                PurchaseDate = paid.Transaction.PurchaseDate,
+                Environment = paid.Transaction.Environment,
+                RawJws = paid.Transaction.RawJws,
+                CreatedBy = qpadmOrder?.CreatedBy ?? g25Order?.CreatedBy ?? string.Empty,
+            });
         }
 
         private async Task<int> ComputeAndPersistG25DistancesAsync(
