@@ -38,9 +38,10 @@ public sealed class AppleIapOptions
     public bool VerifySignature { get; set; } = true;
 
     /// <summary>
-    /// Filesystem path to the Apple Root CA - G3 certificate (DER <c>AppleRootCA-G3.cer</c>, the public
-    /// cert from apple.com/certificateauthority) used to anchor the chain. Required when
-    /// <see cref="VerifySignature"/> is true.
+    /// Optional filesystem path to an Apple Root CA - G3 certificate (DER <c>AppleRootCA-G3.cer</c>) used to
+    /// anchor the chain. When empty (the default), the API uses the <c>AppleRootCA-G3.cer</c> bundled with it
+    /// (embedded resource), so no file needs deploying. Set this only to override with a rotated root without
+    /// a rebuild.
     /// </summary>
     public string? AppleRootCertPath { get; set; }
 

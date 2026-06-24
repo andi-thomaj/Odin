@@ -137,13 +137,21 @@ namespace Odin.Api.Endpoints.Payments
 
         private X509Certificate2 LoadAppleRoot()
         {
-            if (string.IsNullOrWhiteSpace(_options.AppleRootCertPath))
-                throw new AppStorePurchaseException(
-                    "AppleIap:AppleRootCertPath is not configured but signature verification is enabled. " +
-                    "Point it at AppleRootCA-G3.cer (from apple.com/certificateauthority), or set " +
-                    "AppleIap:VerifySignature=false for local/Xcode StoreKit testing.");
+            // An explicit path wins (e.g. a rotated root mounted at deploy time without a rebuild).
+            if (!string.IsNullOrWhiteSpace(_options.AppleRootCertPath))
+                return X509CertificateLoader.LoadCertificateFromFile(_options.AppleRootCertPath);
 
-            return X509CertificateLoader.LoadCertificateFromFile(_options.AppleRootCertPath);
+            // Otherwise use the Apple Root CA - G3 bundled with the API (embedded resource), so production
+            // works with no file to deploy — just AppleIap:VerifySignature=true (the default).
+            const string resourceName = "Odin.Api.Certificates.AppleRootCA-G3.cer";
+            var assembly = typeof(AppStorePurchaseService).Assembly;
+            using var stream = assembly.GetManifestResourceStream(resourceName)
+                ?? throw new AppStorePurchaseException(
+                    $"Bundled Apple root certificate '{resourceName}' was not found and AppleIap:AppleRootCertPath " +
+                    "is not set. Set the path, or AppleIap:VerifySignature=false for local/Xcode StoreKit testing.");
+            using var memory = new MemoryStream();
+            stream.CopyTo(memory);
+            return X509CertificateLoader.LoadCertificate(memory.ToArray());
         }
 
         private static string GetString(JsonElement element, string property) =>

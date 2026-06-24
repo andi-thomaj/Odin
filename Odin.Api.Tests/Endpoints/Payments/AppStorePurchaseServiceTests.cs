@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -77,6 +78,21 @@ public class AppStorePurchaseServiceTests
     {
         var service = CreateService();
         Assert.Throws<AppStorePurchaseException>(() => service.ValidateTransaction("", ServiceType.qpAdm));
+    }
+
+    [Fact]
+    public void AppleRootCertificate_IsBundledAsEmbeddedResource()
+    {
+        // Production verification relies on this cert shipping inside the API assembly. Guard against it
+        // being renamed/dropped from the csproj.
+        var assembly = typeof(AppStorePurchaseService).Assembly;
+        using var stream = assembly.GetManifestResourceStream("Odin.Api.Certificates.AppleRootCA-G3.cer");
+        Assert.NotNull(stream);
+
+        using var memory = new MemoryStream();
+        stream!.CopyTo(memory);
+        using var cert = X509CertificateLoader.LoadCertificate(memory.ToArray());
+        Assert.Contains("Apple Root CA - G3", cert.Subject);
     }
 
     private static string BuildJws(string bundleId, string productId, string transactionId)

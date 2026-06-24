@@ -7,6 +7,12 @@
     <InternalsVisibleTo Include="Odin.Api.Tests" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Apple Root CA - G3 (public cert from apple.com/certificateauthority). Bundled so the App Store
+         IAP validator can verify signed StoreKit transactions in production with no file to deploy.
+         Resource name: Odin.Api.Certificates.AppleRootCA-G3.cer -->
+    <EmbeddedResource Include="Certificates\AppleRootCA-G3.cer" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="Hangfire.AspNetCore" />
     <PackageReference Include="Hangfire.PostgreSql" />
