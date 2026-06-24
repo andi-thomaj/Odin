@@ -46,6 +46,7 @@ namespace Odin.Api.Extensions
             v1.MapGeneticInspectionEndpoints();
             v1.MapOrderEndpoints();
             v1.MapAppStoreWebhookEndpoints();
+            v1.MapAppStoreTransactionAdminEndpoints();
             v1.MapAppSettingsEndpoints();
             v1.MapNotificationEndpoints();
             v1.MapSubscribeEndpoints();
