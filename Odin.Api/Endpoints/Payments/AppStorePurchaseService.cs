@@ -50,6 +50,13 @@ namespace Odin.Api.Endpoints.Payments
             var transactionId = GetString(root, "transactionId");
             var environment = GetString(root, "environment");
 
+            // Log the decoded fields up-front so a rejected purchase is diagnosable from the server logs
+            // (which value tripped which check), regardless of which check below throws.
+            _logger.LogInformation(
+                "App Store transaction received: transactionId={TransactionId} bundleId={BundleId} " +
+                "productId={ProductId} environment={Environment} expectedService={ExpectedService} verifySignature={VerifySignature}",
+                transactionId, bundleId, productId, environment, expectedService, _verifySignature);
+
             if (string.IsNullOrEmpty(transactionId))
                 throw new AppStorePurchaseException("Transaction is missing a transaction id.");
 
