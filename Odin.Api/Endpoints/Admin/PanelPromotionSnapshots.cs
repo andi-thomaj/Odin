@@ -27,6 +27,18 @@ public sealed class LabelApplyResult
 }
 
 /// <summary>
+/// Combined result of promoting a bundle (links mirror + label apply). When <see cref="DryRun"/> is
+/// true nothing was written — the counts are the <i>preview</i> of what an apply would change.
+/// </summary>
+public sealed class PanelPromotionApplyResult
+{
+    public bool DryRun { get; set; }
+    public string Panel { get; set; } = "HO";
+    public LinksMirrorResult Links { get; set; } = new();
+    public LabelApplyResult Labels { get; set; } = new();
+}
+
+/// <summary>
 /// Loads the committed panel-promotion snapshot files from <c>Data/SeedData/</c> and applies the
 /// links snapshot as a full mirror. Shared by the admin <c>PanelPromotionService</c> (the "Promote
 /// now" button) and the startup <c>QpadmPopulationPanelSampleSeeder</c> so both converge identically.
@@ -70,7 +82,7 @@ public static class PanelPromotionSnapshots
     /// </summary>
     public static async Task<LinksMirrorResult> ApplyLinksMirrorAsync(
         ApplicationDbContext db, PanelLinksSnapshot snapshot, string identityId,
-        CancellationToken cancellationToken = default)
+        bool dryRun = false, CancellationToken cancellationToken = default)
     {
         var result = new LinksMirrorResult();
 
@@ -119,27 +131,29 @@ public static class PanelPromotionSnapshots
                 result.Unchanged++;
                 continue;
             }
-            db.QpadmPopulationPanelSamples.Add(new QpadmPopulationPanelSample
-            {
-                QpadmPopulationId = d.PopId,
-                Panel = d.Panel,
-                SampleId = d.SampleId,
-                CreatedAt = now,
-                CreatedBy = identityId,
-                UpdatedAt = now,
-                UpdatedBy = identityId,
-            });
+            if (!dryRun)
+                db.QpadmPopulationPanelSamples.Add(new QpadmPopulationPanelSample
+                {
+                    QpadmPopulationId = d.PopId,
+                    Panel = d.Panel,
+                    SampleId = d.SampleId,
+                    CreatedAt = now,
+                    CreatedBy = identityId,
+                    UpdatedAt = now,
+                    UpdatedBy = identityId,
+                });
             result.Added++;
         }
 
         foreach (var e in existing)
         {
             if (desired.Contains((e.QpadmPopulationId, e.Panel, e.SampleId))) continue;
-            db.QpadmPopulationPanelSamples.Remove(e);
+            if (!dryRun) db.QpadmPopulationPanelSamples.Remove(e);
             result.Removed++;
         }
 
-        await db.SaveChangesAsync(cancellationToken);
+        // dryRun computes the Added/Removed/Unchanged counts (the preview) without touching the DB.
+        if (!dryRun) await db.SaveChangesAsync(cancellationToken);
         return result;
     }
 
@@ -150,7 +164,7 @@ public static class PanelPromotionSnapshots
     /// </summary>
     public static async Task<LabelApplyResult> ApplyLabelsAsync(
         IMergePipelineService mergeService, PanelLabelsSnapshot snapshot,
-        CancellationToken cancellationToken = default)
+        bool dryRun = false, CancellationToken cancellationToken = default)
     {
         var result = new LabelApplyResult();
         try
@@ -168,8 +182,10 @@ public static class PanelPromotionSnapshots
                 result.Total++;
                 if (target.Label == row.Label) continue;
 
-                await mergeService.SetPanelIndRowLabelAsync(
-                    snapshot.Panel, target.Index, row.Label, cancellationToken);
+                // dryRun counts the rows that WOULD change without writing them.
+                if (!dryRun)
+                    await mergeService.SetPanelIndRowLabelAsync(
+                        snapshot.Panel, target.Index, row.Label, cancellationToken);
                 result.Changed++;
             }
 

@@ -69,6 +69,7 @@ namespace Odin.Api.Extensions
             v1.MapCacheAdminEndpoints();
             v1.MapMergePanelAdminEndpoints();
             v1.MapMergePanelLabelsEndpoints();
+            v1.MapPanelPromotionEndpoints();
             v1.MapMergeAdminEndpoints();
             v1.MapHangfireSessionEndpoints();
             v1.MapCalculatorEndpoints();

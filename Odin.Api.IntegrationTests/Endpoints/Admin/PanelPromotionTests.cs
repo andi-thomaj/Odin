@@ -207,4 +207,119 @@ public class PanelPromotionTests(CustomWebApplicationFactory factory) : Integrat
         Assert.Equal(0, result.Changed);
         Assert.Equal(2, result.Total);
     }
+
+    // ── Dry-run (preview) — computes the counts but writes nothing ──────────────────
+
+    [Fact]
+    public async Task LinksMirror_DryRun_ComputesCountsButWritesNothing()
+    {
+        var pops = await SeedPopulationsAsync();
+        await AddLinkAsync(pops[1].Id, "HO.002"); // would be removed (not in the snapshot)
+
+        var snapshot = new PanelLinksSnapshot
+        {
+            Panels = [Panel],
+            Links = [new PanelLinkRow { Panel = Panel, SampleId = "HO.001", PopulationName = pops[0].Name }],
+        };
+
+        LinksMirrorResult result;
+        await using (var scope = Factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            result = await PanelPromotionSnapshots.ApplyLinksMirrorAsync(db, snapshot, "tester", dryRun: true);
+        }
+
+        Assert.Equal(1, result.Added);
+        Assert.Equal(1, result.Removed);
+
+        // Nothing written: the original link survives, the "added" one was not inserted.
+        var db2 = await GetDbContextAsync();
+        var remaining = await db2.QpadmPopulationPanelSamples
+            .Where(e => e.Panel == Panel).Select(e => e.SampleId).OrderBy(s => s).ToListAsync();
+        Assert.Equal(["HO.002"], remaining);
+    }
+
+    [Fact]
+    public async Task ApplyLabels_DryRun_CountsButWritesNothing()
+    {
+        await SeedPopulationsAsync();
+        var fake = Factory.Services.GetRequiredService<FakeMergePipelineService>();
+        fake.SetRows(Panel, [("HO.001", "M", "OldA"), ("HO.002", "F", "KeepB")]);
+
+        var snapshot = new PanelLabelsSnapshot
+        {
+            Panel = Panel,
+            Rows =
+            [
+                new PanelLabelRow { Id = "HO.001", Label = "NewA" },
+                new PanelLabelRow { Id = "HO.002", Label = "KeepB" },
+            ],
+        };
+
+        var result = await PanelPromotionSnapshots.ApplyLabelsAsync(fake, snapshot, dryRun: true);
+
+        Assert.True(result.Applied);
+        Assert.Equal(1, result.Changed); // HO.001 WOULD change
+        Assert.Equal("OldA", fake.Rows.Single(r => r.Id == "HO.001").Label); // ...but nothing was written
+    }
+
+    // ── PanelPromotionService — export + apply (the runtime button engine) ──────────
+
+    [Fact]
+    public async Task PromotionService_Export_CapturesLinksByNameAndLabels()
+    {
+        var pops = await SeedPopulationsAsync();
+        await AddLinkAsync(pops[2].Id, "HO.010");
+        var fake = Factory.Services.GetRequiredService<FakeMergePipelineService>();
+        fake.SetRows(Panel, [("HO.010", "M", "LabelX"), ("HO.011", "F", "LabelY")]);
+
+        PanelPromotionBundle bundle;
+        await using (var scope = Factory.Services.CreateAsyncScope())
+            bundle = await scope.ServiceProvider.GetRequiredService<IPanelPromotionService>().ExportAsync(Panel);
+
+        Assert.Equal(Panel, bundle.Panel);
+        Assert.Equal([Panel], bundle.Links.Panels);
+        var link = Assert.Single(bundle.Links.Links);
+        Assert.Equal("HO.010", link.SampleId);
+        Assert.Equal(pops[2].Name, link.PopulationName); // denormalised to NAME, not id
+        Assert.Equal(2, bundle.Labels.Rows.Count);
+        Assert.Contains(bundle.Labels.Rows, r => r.Id == "HO.010" && r.Label == "LabelX");
+    }
+
+    [Fact]
+    public async Task PromotionService_ApplyDryRun_PreviewsWithoutWriting()
+    {
+        var pops = await SeedPopulationsAsync();
+        var fake = Factory.Services.GetRequiredService<FakeMergePipelineService>();
+        fake.SetRows(Panel, [("HO.001", "M", "Old")]);
+
+        var bundle = new PanelPromotionBundle
+        {
+            Panel = Panel,
+            Links = new PanelLinksSnapshot
+            {
+                Panels = [Panel],
+                Links = [new PanelLinkRow { Panel = Panel, SampleId = "HO.001", PopulationName = pops[0].Name }],
+            },
+            Labels = new PanelLabelsSnapshot
+            {
+                Panel = Panel,
+                Rows = [new PanelLabelRow { Id = "HO.001", Label = "New" }],
+            },
+        };
+
+        PanelPromotionApplyResult result;
+        await using (var scope = Factory.Services.CreateAsyncScope())
+            result = await scope.ServiceProvider.GetRequiredService<IPanelPromotionService>()
+                .ApplyAsync(bundle, "tester", dryRun: true);
+
+        Assert.True(result.DryRun);
+        Assert.Equal(1, result.Links.Added);
+        Assert.Equal(1, result.Labels.Changed);
+
+        // Preview only — neither the DB link nor the label was written.
+        var db2 = await GetDbContextAsync();
+        Assert.Equal(0, await db2.QpadmPopulationPanelSamples.CountAsync(e => e.Panel == Panel));
+        Assert.Equal("Old", fake.Rows.Single(r => r.Id == "HO.001").Label);
+    }
 }
