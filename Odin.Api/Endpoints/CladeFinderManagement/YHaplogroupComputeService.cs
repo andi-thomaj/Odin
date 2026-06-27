@@ -27,7 +27,6 @@ namespace Odin.Api.Endpoints.CladeFinderManagement
         ApplicationDbContext dbContext,
         ICladeFinderService cladeFinderService,
         IMemoryCache cache,
-        RequestAppContext appContext,
         ILogger<YHaplogroupComputeService> logger) : IYHaplogroupComputeService
     {
         private const string ResultsVersion = "v1";
@@ -37,9 +36,8 @@ namespace Odin.Api.Endpoints.CladeFinderManagement
         [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
         public async Task ComputeAndPersistAsync(int geneticInspectionId, CancellationToken cancellationToken = default)
         {
-            // Background job: no HTTP request set the app context, so look the inspection up across all apps
-            // (by PK, filters off) and then pin the request app to it — so the QpadmCladeResult we persist is
-            // stamped with the inspection's app and the per-app query filters stay aligned for the rest of the job.
+            // Background job: look the inspection up by PK with filters off (it includes the soft-deletable
+            // RawGeneticFile).
             var inspection = await dbContext.QpadmGeneticInspections
                 .IgnoreQueryFilters()
                 .Include(gi => gi.RawGeneticFile)
@@ -51,8 +49,6 @@ namespace Odin.Api.Endpoints.CladeFinderManagement
                 logger.LogWarning("Y-DNA compute skipped: genetic inspection {InspectionId} not found.", geneticInspectionId);
                 return;
             }
-
-            appContext.SetApp(inspection.App);
 
             // Already computed successfully — nothing to do. (Transient/terminal-failure states are re-attempted.)
             if (inspection.QpadmCladeResult?.Status == CladeAnalysisStatus.Completed)
@@ -218,7 +214,6 @@ namespace Odin.Api.Endpoints.CladeFinderManagement
                 record = new QpadmCladeResult
                 {
                     GeneticInspectionId = inspection.Id,
-                    App = inspection.App,
                     ResultsVersion = ResultsVersion,
                     CreatedBy = createdBy,
                     CreatedAt = now,

@@ -37,63 +37,25 @@ The per-request role lookup is cached via [UserRoleCacheKeys](Odin.Api/Authentic
 and invalidated on every write to `User.Role` (see [UserService](Odin.Api/Endpoints/UserManagement/UserService.cs)
 `UpdateUserRoleAsync` / `DeleteUserAsync`) so promotions still apply immediately.
 
-## Multi-app data isolation — separate accounts + data per application (`X-App`)
+## Single application — identity keyed on the Auth0 sub (multi-app isolation REMOVED)
 
-Several frontends (odin-react = `ancestrify`, odin-aurora = `aurora`, more later) share this backend, DB, and
-Auth0 tenant. The **same Auth0 sub is a SEPARATE account per app**: identity is the composite
-`application_users (IdentityId, App)`, and every user-owned row carries an `App`. Reference/seed data is shared
-(NOT partitioned).
+This backend serves **one** application. The web (odin-charmander) and the iOS app are the same product to the
+backend, so a user is **one account everywhere**: identity is `application_users.IdentityId` (the Auth0 sub),
+which is **globally unique**. Reference/seed data is shared.
 
-How it works:
-- Each frontend sends an **`X-App` header** (axios default header). SignalR can't set headers on its
-  WebSocket, so its hub URL carries `?app=<key>` instead — both are read by
-  [AppResolutionMiddleware](Odin.Api/Middleware/AppResolutionMiddleware.cs), which runs **after**
-  `UseAuthentication` and **before** `UseRoleEnrichment`, validates against the `applications` registry
-  (unknown/inactive ⇒ 400; missing ⇒ default `ancestrify`), and records the app on the scoped
-  [IAppContext](Odin.Api/Authentication/IAppContext.cs).
-- [ApplicationDbContext](Odin.Api/Data/ApplicationDbContext.cs) constructor-injects `IAppContext` (so it is
-  **`AddDbContext`, not pooled**) and applies a global query filter `App == _appContext.App` to every
-  [IAppScoped](Odin.Api/Data/Entities/IAppScoped.cs) entity, plus auto-stamps `App` on inserts in a
-  `SaveChanges` override. `RawGeneticFile` folds its soft-delete predicate into that filter; `Calculator`
-  uses `IsAdmin || App == current` (admin/global calculators show in every app).
-- The auth hot path keys on the app: provisioning sets `App`, and the role-lookup cache key is
-  `(identityId, app)`.
+The former **multi-app data-isolation** capability (a separate account + data silo per `X-App` value) was
+**removed** — migration `RemoveMultiAppIsolation` drops the `App` column from every user-owned table, drops the
+`applications` table, and re-points the indexes (e.g. `application_users` unique on `IdentityId` alone). **Do not
+reintroduce it**: there is no `X-App` header, no `AppResolutionMiddleware`, no `IAppContext`/`RequestAppContext`,
+no `IAppScoped`, no `App` column, no `applications` registry/seeder. Frontends no longer send `X-App` / `?app=`.
 
-**When you add code, remember:**
-- **New user-owned entity** ⇒ implement `IAppScoped` (add `App`, `IsRequired().HasMaxLength(50)`), add it to the
-  query-filter list in `ApplicationDbContext.OnModelCreating`, and (if uniqueness is per-user) make indexes
-  app-leading. New *reference* tables stay shared — don't implement `IAppScoped`.
-- **Background jobs run with no HTTP request, so `IAppContext` defaults to `ancestrify`** — every job that
-  reads or writes `IAppScoped` data must be made app-aware, or it silently sees/affects only ancestrify.
-  Three patterns, by job shape:
-  - **Per-entity job** (processes one owning entity): load it by PK with `IgnoreQueryFilters()`, then
-    `RequestAppContext.SetApp(entity.App)` so the rest of the job is pinned to that entity's app. See
-    [YHaplogroupComputeService](Odin.Api/Endpoints/CladeFinderManagement/YHaplogroupComputeService.cs) and
-    `MergeJob.RunCoreAsync` ([MergeJob.cs](Odin.Api/Endpoints/MergeManagement/MergeJob.cs)).
-  - **Global coordinator / sweep** (one shared resource serving all apps): query across apps with
-    `IgnoreQueryFilters()` and do **not** pin a single app. `MergeJob.DispatchPendingMergesAsync` counts
-    in-flight and picks candidates globally because the `merge` Hangfire queue is a single app-agnostic
-    worker; `CleanupOrphansAsync` already sweeps cross-app. The per-merge runner it enqueues then pins the
-    app per-entity (above).
-  - **Cross-app batch over shared reference data**: scan every app with `IgnoreQueryFilters()` and stamp each
-    new `IAppScoped` row from **its own source entity's `App`** (not the ambient context, which can't vary
-    per row). See `OrderService.RecomputeG25DistanceResultsAsync`
-    ([OrderService.G25Distances.cs](Odin.Api/Endpoints/OrderManagement/OrderService.G25Distances.cs)) — driven
-    by a shared population-sample change, so it refreshes all apps' G25 distance results in one run.
-  Reach for the per-entity pattern by default; only sweep/stamp-per-row when the job legitimately spans apps.
-- **Admin user-management is app-scoped** (each app's admin manages that app — the global filter handles it; no
-  cross-app super-admin view yet). Consequence: the **first admin in a new app must be promoted via a one-time
-  DB edit** (`UPDATE application_users SET role='Admin' WHERE identity_id=… AND app=…`), since a fresh app login
-  provisions a default `User` account. Cross-app admin queries that are intentional must use
-  `IgnoreQueryFilters()`.
-- **SignalR's real-time push still targets the raw sub** ([UserIdProvider](Odin.Api/Hubs/UserIdProvider.cs)), so
-  a user signed into two apps may see a notification *toast* in both tabs — the *persisted* notification list is
-  correctly app-scoped. App-keying the live push is a deferred enhancement.
-
-The `applications` registry (key, display name, frontend URL, from-email, is_active) is seeded idempotently by
-[ApplicationsSeeder](Odin.Api/Data/Seeders/ApplicationsSeeder.cs) (startup + after test Respawn), NOT by the
-migration — so adding an app is one seed row + the frontend header, no schema change. Per-app branding columns
-exist for future email/redirect use.
+- The auth hot path keys on the sub alone: provisioning inserts `User { IdentityId }`, role-lookup cache key is
+  `UserRoleCacheKeys.ForIdentity(identityId)`.
+- The **only** remaining global query filter is `RawGeneticFile`'s soft-delete (`!IsDeleted`) in
+  [ApplicationDbContext](Odin.Api/Data/ApplicationDbContext.cs). Background jobs that must see soft-deleted files
+  (e.g. `MergeJob`) call `IgnoreQueryFilters()` purely to bypass that — there is no app dimension anymore.
+- **First admin** is still promoted via a one-time DB edit:
+  `UPDATE application_users SET role='Admin' WHERE identity_id=…`.
 
 ## Caching — in-process `IMemoryCache`, single instance, invalidate on write
 
@@ -208,10 +170,10 @@ NB: with trident a merge peaks at ~1.3 GB and never OOMs — no swap/host-resize
 The **iOS app** requires a paid in-app purchase before a qpAdm/G25 order is created; the backend verifies the Apple purchase before creating it. (The web has **no** IAP — a future web payment path is separate.)
 
 - **Paid endpoint:** `POST /v1/api/orders/purchase` ([`OrderEndpoints`](Odin.Api/Endpoints/OrderManagement/OrderEndpoints.cs), `EmailVerified`, `file-upload` limit) — the same multipart form as `POST /orders` **plus** an `AppStoreTransaction` field (the StoreKit 2 signed transaction JWS). Handled by `OrderService.CreatePaidAsync` ([OrderService.cs](Odin.Api/Endpoints/OrderManagement/OrderService.cs)).
-- **Legacy `POST /orders` is now `AdminOnly`** (was `EmailVerified`) so payment can't be bypassed. Admins keep a free back-office create path; the web is pre-launch (no public order creation). iOS and web share `X-App: ancestrify`, so the paid path can't be told apart by app — hence a dedicated endpoint, not per-app branching.
+- **Legacy `POST /orders` is now `AdminOnly`** (was `EmailVerified`) so payment can't be bypassed. Admins keep a free back-office create path; the web is pre-launch (no public order creation). iOS and web hit the same backend and can't be told apart, so the paid flow is a dedicated endpoint rather than a branch on the caller.
 - **Validation** ([`Endpoints/Payments/`](Odin.Api/Endpoints/Payments/)): `IAppStorePurchaseService.ValidateTransaction` verifies the JWS signature + Apple cert chain (`AppStoreJwsVerifier`, anchored on **Apple Root CA - G3**), then the bundle id, environment, and **product → service mapping** (a G25 product can't create a qpAdm order). Bound via `AppleIapOptions` (`AppleIap:*` — bundle id, product ids, prices, `VerifySignature`, `AppleRootCertPath`, allowed environments).
 - **Signature verification is skipped under the `Testing` host env or when `AppleIap:VerifySignature=false`** (local dev / **Xcode StoreKit testing**, whose transactions are signed by a LOCAL test cert, not Apple's root) — the payload + business checks still run. **Production must set `AppleIap:AppleRootCertPath`** (the public `AppleRootCA-G3.cer`) and keep `VerifySignature=true`.
-- **Idempotency / anti-replay:** every consumed purchase is recorded as an `AppStoreTransaction` (`IAppScoped`, table `app_store_transactions`) with a **unique `(App, TransactionId)`** index, linked to the order it created. The transaction is recorded in the **same DB transaction** as the order. Replaying the same StoreKit transaction returns the order it already created (the iOS app replays unfinished transactions after a dropped response), so a purchase always maps to exactly one order. The order's `Price` is finally populated (from the product→price map).
+- **Idempotency / anti-replay:** every consumed purchase is recorded as an `AppStoreTransaction` (table `app_store_transactions`) with a **unique `TransactionId`** index, linked to the order it created. The transaction is recorded in the **same DB transaction** as the order. Replaying the same StoreKit transaction returns the order it already created (the iOS app replays unfinished transactions after a dropped response), so a purchase always maps to exactly one order. The order's `Price` is finally populated (from the product→price map).
 - **Refunds:** `POST /v1/api/webhooks/app-store` ([`AppStoreWebhookEndpoints`](Odin.Api/Endpoints/Payments/AppStoreWebhookEndpoints.cs), `AllowAnonymous`, signature-verified) handles App Store Server Notifications V2 — `REFUND`/`REVOKE` mark the transaction `Refunded`. Configure the URL in App Store Connect.
-- **Admin view:** `GET /v1/api/admin/app-store-transactions` ([`AppStoreTransactionAdminEndpoints`](Odin.Api/Endpoints/Payments/AppStoreTransactionAdminEndpoints.cs), `AdminOnly`, app-scoped) lists all transactions with owner + linked-order info. Surfaced in odin-react as **Admin → App Store Transactions** (`AppStoreTransactionsAdminPage`, a read-only DataGridPro).
+- **Admin view:** `GET /v1/api/admin/app-store-transactions` ([`AppStoreTransactionAdminEndpoints`](Odin.Api/Endpoints/Payments/AppStoreTransactionAdminEndpoints.cs), `AdminOnly`) lists all transactions with owner + linked-order info. Surfaced in odin-react as **Admin → App Store Transactions** (`AppStoreTransactionsAdminPage`, a read-only DataGridPro).
 - **Tests:** `AppStorePurchaseServiceTests` (unit, `Odin.Api.Tests`) and `OrderPurchaseEndpointsTests` (integration). The shared `TestDataHelper.CreateOrderViaApiAsync` now posts to `/orders/purchase` with a crafted unsigned test transaction (`BuildAppStoreTransactionJws`), so all downstream order tests exercise the paid path.

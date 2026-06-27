@@ -55,10 +55,8 @@ namespace Odin.Api.Endpoints.Payments
             if (notification.TransactionId is { Length: > 0 } transactionId
                 && notification.NotificationType is "REFUND" or "REVOKE")
             {
-                // No X-App on a webhook (IAppContext defaults to ancestrify); match across apps by Apple's
-                // globally-unique transaction id with IgnoreQueryFilters so the right row is found regardless.
+                // Match by Apple's globally-unique transaction id.
                 var txn = await dbContext.AppStoreTransactions
-                    .IgnoreQueryFilters()
                     .FirstOrDefaultAsync(t => t.TransactionId == transactionId, ct);
 
                 if (txn is not null && txn.Status != AppStoreTransactionStatus.Refunded)

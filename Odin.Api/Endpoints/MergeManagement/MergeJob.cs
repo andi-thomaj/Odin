@@ -20,7 +20,6 @@ namespace Odin.Api.Endpoints.MergeManagement
         IGeneticInspectionRealtimeNotifier liveUpdates,
         TimeProvider timeProvider,
         IOptions<MergeJobOptions> mergeOptions,
-        RequestAppContext appContext,
         ILogger<MergeJob> logger) : IMergeJob
     {
         // Cap on merge jobs in flight (Queued + Converting + Merging). Pinned to 1 — merges run strictly
@@ -36,10 +35,9 @@ namespace Odin.Api.Endpoints.MergeManagement
         [DisableConcurrentExecution(60)]
         public async Task DispatchPendingMergesAsync(CancellationToken cancellationToken = default)
         {
-            // The merge worker is a single, app-agnostic queue (one job at a time across every app), so the
-            // dispatcher coordinates GLOBALLY: it counts in-flight and picks candidates across all apps with
-            // IgnoreQueryFilters(). Without this, a background run (no X-App) would only ever see ancestrify —
-            // it would never admit another app's merges, and could over-admit by undercounting in-flight ones.
+            // The merge worker is a single queue (one job at a time), so the dispatcher counts in-flight and
+            // picks candidates with IgnoreQueryFilters() — a background run must see every file, including
+            // soft-deleted ones, so its in-flight count is accurate.
             // Retrying counts as in-flight: such a job is still scheduled in Hangfire and occupies a
             // merge slot, so it must be counted or the dispatcher would over-admit and build a backlog.
             var inFlight = await dbContext.RawGeneticFiles
@@ -123,8 +121,6 @@ namespace Odin.Api.Endpoints.MergeManagement
                     geneticInspectionId);
                 return;
             }
-
-            appContext.SetApp(inspection.App);
 
             // Idempotent: don't redo a finished merge, and never resurrect one deleted after completion.
             if (file.MergeStatus is MergeStatus.Ready or MergeStatus.Deleted)

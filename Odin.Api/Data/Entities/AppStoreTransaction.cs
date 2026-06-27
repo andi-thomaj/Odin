@@ -11,12 +11,9 @@ namespace Odin.Api.Data.Entities
     /// replaying an unfinished transaction after a dropped response) returns the order it already created
     /// rather than creating a second one. iOS-only today — the web has no IAP.
     /// </summary>
-    public class AppStoreTransaction : BaseEntity, IAppScoped
+    public class AppStoreTransaction : BaseEntity
     {
         public int Id { get; set; }
-
-        /// <summary>Owning application (applications.key). Auto-stamped + query-filtered — see <see cref="IAppScoped"/>.</summary>
-        public string App { get; set; } = string.Empty;
 
         /// <summary>Apple's <c>transactionId</c> — unique per purchase; the idempotency / anti-replay key.</summary>
         public string TransactionId { get; set; } = string.Empty;
@@ -52,7 +49,6 @@ namespace Odin.Api.Data.Entities
         public void Configure(EntityTypeBuilder<AppStoreTransaction> builder)
         {
             builder.HasKey(e => e.Id);
-            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
             builder.Property(e => e.TransactionId).IsRequired().HasMaxLength(100);
             builder.Property(e => e.OriginalTransactionId).HasMaxLength(100);
             builder.Property(e => e.ProductId).IsRequired().HasMaxLength(200);
@@ -61,9 +57,9 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.Environment).HasMaxLength(20);
             builder.Property(e => e.RawJws).HasColumnType("text");
 
-            // One paid order per Apple transaction, per app. App-leading so the per-app idempotency
-            // lookup uses the index; UNIQUE is the real race-proof guard behind CreatePaidAsync.
-            builder.HasIndex(e => new { e.App, e.TransactionId }).IsUnique();
+            // One paid order per Apple transaction. UNIQUE is the real race-proof guard behind CreatePaidAsync
+            // and backs the idempotency lookup.
+            builder.HasIndex(e => e.TransactionId).IsUnique();
 
             builder.ToTable("app_store_transactions");
         }

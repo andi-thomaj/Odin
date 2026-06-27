@@ -494,9 +494,9 @@ public partial class OrderService(
         }
 
         /// <summary>
-        /// Adds the consumed <see cref="AppStoreTransaction"/> row for a paid order. App is auto-stamped by
-        /// SaveChanges (IAppScoped). Exactly one of <paramref name="qpadmOrder"/> / <paramref name="g25Order"/>
-        /// is set; the order must already have a database id (it is saved before this is called).
+        /// Adds the consumed <see cref="AppStoreTransaction"/> row for a paid order. Exactly one of
+        /// <paramref name="qpadmOrder"/> / <paramref name="g25Order"/> is set; the order must already have a
+        /// database id (it is saved before this is called).
         /// </summary>
         private void RecordPurchase(PaidPurchase paid, QpadmOrder? qpadmOrder, G25Order? g25Order)
         {

@@ -4,11 +4,9 @@ using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
-    public class RawGeneticFile : BaseEntity, IAppScoped
+    public class RawGeneticFile : BaseEntity
     {
         public int Id { get; set; }
-        /// <summary>Owning application (applications.key). Auto-stamped + query-filtered — see <see cref="IAppScoped"/>.</summary>
-        public string App { get; set; } = string.Empty;
         public required byte[] RawData { get; set; } = [];
         public required string RawDataFileName { get; set; }
 
@@ -51,7 +49,6 @@ namespace Odin.Api.Data.Entities
             builder.Property(e => e.MergeFileName).HasMaxLength(200);
             builder.Property(e => e.MergeError).HasMaxLength(1000);
             builder.Property(e => e.IsDeleted).HasDefaultValue(false);
-            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
 
             // NB: soft-delete (!IsDeleted) is combined with app scoping into ONE global query filter in
             // ApplicationDbContext.OnModelCreating — EF Core allows only a single query filter per entity.
@@ -63,7 +60,7 @@ namespace Odin.Api.Data.Entities
             // Per-user uniqueness: a user cannot have two active uploads with the same
             // file name. Soft-deleted rows are excluded so a user can re-upload the same
             // name after deleting it.
-            builder.HasIndex(e => new { e.App, e.CreatedBy, e.RawDataFileName })
+            builder.HasIndex(e => new { e.CreatedBy, e.RawDataFileName })
                 .IsUnique()
                 .HasFilter("\"IsDeleted\" = false");
 

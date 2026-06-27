@@ -4,11 +4,9 @@ using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
-    public class G25GeneticInspection : IAppScoped
+    public class G25GeneticInspection
     {
         public int Id { get; set; }
-        /// <summary>Owning application (applications.key). Auto-stamped + query-filtered — see <see cref="IAppScoped"/>.</summary>
-        public string App { get; set; } = string.Empty;
         public int UserId { get; set; }
         public User User { get; set; }
         public string FirstName { get; set; }
@@ -51,8 +49,6 @@ namespace Odin.Api.Data.Entities
                 .WithMany()
                 .HasForeignKey(e => e.RawGeneticFileId)
                 .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
 
             builder.ToTable("g25_genetic_inspections");
         }

@@ -4,11 +4,9 @@ using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
-    public class G25Order : BaseEntity, IAppScoped
+    public class G25Order : BaseEntity
     {
         public int Id { get; set; }
-        /// <summary>Owning application (applications.key). Auto-stamped + query-filtered — see <see cref="IAppScoped"/>.</summary>
-        public string App { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public OrderStatus Status { get; set; }
         public bool HasViewedResults { get; set; }
@@ -35,10 +33,7 @@ namespace Odin.Api.Data.Entities
 
             // Per-user order list filters on CreatedBy and orders by CreatedAt; the admin list orders
             // by CreatedAt across all rows. Without these the listings full-scan the table.
-            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
-
-            // App-leading so a user's per-app order list uses the index.
-            builder.HasIndex(e => new { e.App, e.CreatedBy, e.CreatedAt });
+            builder.HasIndex(e => new { e.CreatedBy, e.CreatedAt });
             builder.HasIndex(e => e.CreatedAt);
 
             builder.ToTable("g25_orders");

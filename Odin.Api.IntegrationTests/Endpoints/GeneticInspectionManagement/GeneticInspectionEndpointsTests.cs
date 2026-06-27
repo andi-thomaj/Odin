@@ -419,13 +419,15 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
     }
 
     [Fact]
-    public async Task SubmitQpadmResult_BeforeMergeFinished_ReturnsConflict()
+    public async Task SubmitQpadmResult_BeforeMergeFinished_IsAllowed()
     {
         await using var seedScope = Factory.Services.CreateAsyncScope();
         var seeder = seedScope.ServiceProvider.GetRequiredService<DatabaseSeeder>();
         await seeder.SeedReferenceCatalogAsync();
 
-        // A fresh inspection's merge is NotStarted (the default) — results must be rejected with 409.
+        // Result submission is intentionally NOT gated on the AADR merge status (a scientist may enter results
+        // while the merge is still running / never started) — so a fresh inspection (merge NotStarted) succeeds.
+        // Mirrors the unit-level SubmitQpadmResultMergeGuardTests.Submit_Allowed_RegardlessOfMergeStatus.
         var createdInspection = await CreateTestInspectionAsync();
 
         await using var scope = Factory.Services.CreateAsyncScope();
@@ -449,7 +451,7 @@ public class GeneticInspectionEndpointsTests(CustomWebApplicationFactory factory
         var response = await Client.PostAsync(
             $"/api/genetic-inspections/{createdInspection.Id}/qpadm-result", form);
 
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]
