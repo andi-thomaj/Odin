@@ -57,6 +57,7 @@ public sealed class AncestralPortraitSettingsService(
         entity.Moderation = request.Moderation;
         entity.VariationsPerEra = request.VariationsPerEra;
         entity.MaxEras = request.MaxEras;
+        entity.MaxPopulationsPerEra = request.MaxPopulationsPerEra;
         entity.MaxFaceReferences = request.MaxFaceReferences;
         entity.CostPerMillionInputTokensUsd = request.CostPerMillionInputTokensUsd;
         entity.CostPerMillionOutputTokensUsd = request.CostPerMillionOutputTokensUsd;
@@ -101,6 +102,7 @@ public sealed class AncestralPortraitSettingsService(
         Moderation = e.Moderation,
         VariationsPerEra = e.VariationsPerEra,
         MaxEras = e.MaxEras,
+        MaxPopulationsPerEra = e.MaxPopulationsPerEra,
         MaxFaceReferences = e.MaxFaceReferences,
         CostPerMillionInputTokensUsd = e.CostPerMillionInputTokensUsd,
         CostPerMillionOutputTokensUsd = e.CostPerMillionOutputTokensUsd,

@@ -290,25 +290,34 @@ public sealed class AncestralPortraitService(
                 .GroupBy(g => g.EraId).Select(g => g.First())
                 .OrderBy(g => g.EraId)
                 .Take(settings.MaxEras).ToList();
+
+            // Flatten to one (era, population) target per population in every era, ranked by ancestry % within the
+            // era and capped at MaxPopulationsPerEra (a cost rail — each target is a paid gpt-image-2 call). A portrait
+            // is generated for EVERY population, not just the era's top source.
+            var targets = eras.SelectMany(era => era.QpadmResultPopulations
+                    .Where(p => p.Population is not null)
+                    .GroupBy(p => p.PopulationId).Select(g => g.First()) // de-dup a population within an era (defensive)
+                    .OrderByDescending(p => p.Percentage)
+                    .Take(settings.MaxPopulationsPerEra)
+                    .Select(p => (Era: era, Pop: p)))
+                .ToList();
+
             var now = DateTime.UtcNow;
             var produced = 0;
             string? lastError = null;
             long inputTokens = 0, outputTokens = 0, totalTokens = 0;
             var imageCount = 0;
 
-            foreach (var era in eras)
+            foreach (var (era, pop) in targets)
             {
-                var top = era.QpadmResultPopulations.OrderByDescending(p => p.Percentage).FirstOrDefault();
-                if (top?.Population is null)
-                    continue;
-
+                var population = pop.Population!;
                 var prompt = AncestralPortraitPrompts.Build(
-                    top.Population.Name, top.Population.Description, era.Era?.Name, top.Population.ImagePrompt);
+                    population.Name, population.Description, era.Era?.Name, population.ImagePrompt);
 
                 try
                 {
-                    logger.LogInformation("Ancestral portraits set {SetId}: calling gpt-image-2 (edit) for era {EraId} as {Population}, {N} variation(s), size {Size}, quality {Quality}.",
-                        set.Id, era.EraId, top.Population.Name, parameters.N, parameters.Size, parameters.Quality);
+                    logger.LogInformation("Ancestral portraits set {SetId}: calling gpt-image-2 (edit) for era {EraId} population {PopulationId} as {Population}, {N} variation(s), size {Size}, quality {Quality}.",
+                        set.Id, era.EraId, pop.PopulationId, population.Name, parameters.N, parameters.Size, parameters.Quality);
                     // NOTE: do NOT pass `input_fidelity` — gpt-image-2 rejects that parameter (it's a gpt-image-1
                     // edit option). The user's face photos are the reference; identity preservation is driven by the
                     // prompt's "the SAME person" lead instead.
@@ -318,7 +327,7 @@ public sealed class AncestralPortraitService(
                     for (var i = 0; i < result.Images.Count; i++)
                     {
                         var bytes = result.Images[i].Bytes;
-                        var key = $"users/{identitySlug}/ancestral-portraits/{set.Id:N}/{era.EraId}-{i}.{ext}";
+                        var key = $"users/{identitySlug}/ancestral-portraits/{set.Id:N}/{era.EraId}-{pop.PopulationId}-{i}.{ext}";
                         using (var stream = new MemoryStream(bytes, writable: false))
                             await r2Storage.UploadAsync(key, stream, contentType, cancellationToken);
                         uploadedKeys.Add(key);
@@ -328,12 +337,13 @@ public sealed class AncestralPortraitService(
                             SetId = set.Id,
                             EraId = era.EraId,
                             EraName = era.Era?.Name ?? string.Empty,
-                            PopulationName = top.Population.Name,
+                            PopulationId = pop.PopulationId,
+                            PopulationName = population.Name,
                             R2Key = key,
                             ContentType = contentType,
                             ByteSize = bytes.LongLength,
                             VariationIndex = i,
-                            IsSelected = i == 0, // default-select the first so the share set + reel always have a pick
+                            IsSelected = i == 0, // default-select the first variation of each population so the share set + reel always have a pick
                             CreatedBy = user.IdentityId,
                             CreatedAt = now,
                             UpdatedAt = now,
@@ -348,12 +358,12 @@ public sealed class AncestralPortraitService(
                 catch (OpenAIImageException ex)
                 {
                     lastError = ex.Detail;
-                    logger.LogWarning(ex, "Ancestral portrait era {EraId} failed for set {SetId}.", era.EraId, set.Id);
+                    logger.LogWarning(ex, "Ancestral portrait era {EraId} population {PopulationId} failed for set {SetId}.", era.EraId, pop.PopulationId, set.Id);
                 }
             }
 
             set.Status = produced > 0 ? AncestralPortraitStatus.Succeeded : AncestralPortraitStatus.Failed;
-            set.Error = produced > 0 ? (produced < eras.Count ? lastError : null) : (lastError ?? "Portrait generation failed.");
+            set.Error = produced > 0 ? (produced < targets.Count ? lastError : null) : (lastError ?? "Portrait generation failed.");
             set.UsageInputTokens = inputTokens;
             set.UsageOutputTokens = outputTokens;
             set.UsageTotalTokens = totalTokens;
@@ -363,8 +373,8 @@ public sealed class AncestralPortraitService(
             set.UpdatedAt = DateTime.UtcNow;
             await dbContext.SaveChangesAsync(cancellationToken);
             logger.LogInformation(
-                "Ancestral portrait set {SetId} finished: {Produced}/{Total} eras, {Images} image(s), {TotalTokens} tokens (in {In}/out {Out}), est. ${Cost}.",
-                set.Id, produced, eras.Count, imageCount, totalTokens, inputTokens, outputTokens, set.EstimatedCostUsd);
+                "Ancestral portrait set {SetId} finished: {Produced}/{Total} population(s) across {Eras} era(s), {Images} image(s), {TotalTokens} tokens (in {In}/out {Out}), est. ${Cost}.",
+                set.Id, produced, targets.Count, eras.Count, imageCount, totalTokens, inputTokens, outputTokens, set.EstimatedCostUsd);
         }
         catch (Exception ex)
         {
@@ -428,13 +438,16 @@ public sealed class AncestralPortraitService(
         CreatedAt = set.CreatedAt,
         // NOTE: cost/usage is intentionally NOT mapped here — it must never reach the iOS app/user. It's persisted on
         // the entity + the completion log + the AdminOnly `/admin/ancestral-portraits/usage` endpoint (web only).
+        // One group per (era, population). Order by era, then by ancestry-rank within the era (preserved as the
+        // generation/insertion order → the group's lowest portrait Id), so the story/share set reads top-source-first.
         Eras = set.Portraits
-            .GroupBy(p => p.EraId)
-            .OrderBy(g => g.Key)
+            .GroupBy(p => new { p.EraId, p.PopulationId })
+            .OrderBy(g => g.Key.EraId).ThenBy(g => g.Min(p => p.Id))
             .Select(g => new AncestralPortraitEraContract.Response
             {
-                EraId = g.Key,
+                EraId = g.Key.EraId,
                 EraName = g.First().EraName,
+                PopulationId = g.Key.PopulationId,
                 PopulationName = g.First().PopulationName,
                 // Defensive de-dup: collapse any accidental duplicate variations (same VariationIndex) so a portrait
                 // never appears twice in a group, even if older data was generated before the anti-double-run claim.

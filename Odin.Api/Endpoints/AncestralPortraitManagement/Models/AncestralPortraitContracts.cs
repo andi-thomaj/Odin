@@ -21,13 +21,17 @@ public static class AncestralPortraitContract
     }
 }
 
-/// <summary>The per-era group: the era + its top population + the generated variations.</summary>
+/// <summary>One portrait group: a (era, population) pair + its generated variations. A set has ONE group per
+/// population per era (ranked by ancestry %), so several groups can share an <see cref="EraId"/> — the client keys
+/// each group on (<see cref="EraId"/>, <see cref="PopulationId"/>). (The list field on the set is still named
+/// <c>Eras</c> for back-compat; each entry is now an era×population group.)</summary>
 public static class AncestralPortraitEraContract
 {
     public class Response
     {
         public int EraId { get; set; }
         public string EraName { get; set; } = string.Empty;
+        public int PopulationId { get; set; }
         public string PopulationName { get; set; } = string.Empty;
         public List<AncestralPortraitContract.Response> Portraits { get; set; } = [];
     }

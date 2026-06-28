@@ -22,10 +22,14 @@ public class AncestralPortraitSettings : BaseEntity
     public string Moderation { get; set; } = "auto";
 
     /// <summary>Portrait images generated per era. Default 1 — a single image of the era's top ancestral population
-    /// (no variations to pick between). The admin can raise it, but the iOS "Ages" story shows one image per era.</summary>
+    /// (no variations to pick between) PER POPULATION. The admin can raise it for variations to pick between.</summary>
     public int VariationsPerEra { get; set; } = 1;
-    /// <summary>Max eras turned into portraits (one group per era).</summary>
+    /// <summary>Max eras turned into portraits.</summary>
     public int MaxEras { get; set; } = 6;
+    /// <summary>Max populations per era turned into portraits (ranked by ancestry %, highest first). A portrait is
+    /// generated for EVERY population in EVERY era up to this cap — the cap is a cost rail (each portrait is a paid
+    /// gpt-image-2 call); qpAdm eras rarely exceed a handful of sources, so the default includes them all in practice.</summary>
+    public int MaxPopulationsPerEra { get; set; } = 8;
     /// <summary>Face reference photos passed to the model (≤16).</summary>
     public int MaxFaceReferences { get; set; } = 6;
 

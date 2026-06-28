@@ -20,6 +20,7 @@ public static class AncestralPortraitSettingsContract
         public required string Moderation { get; set; }
         public int VariationsPerEra { get; set; } = 1;
         public int MaxEras { get; set; } = 6;
+        public int MaxPopulationsPerEra { get; set; } = 8;
         public int MaxFaceReferences { get; set; } = 6;
         public decimal CostPerMillionInputTokensUsd { get; set; } = 10m;
         public decimal CostPerMillionOutputTokensUsd { get; set; } = 40m;
@@ -43,6 +44,8 @@ public static class AncestralPortraitSettingsContract
                 yield return new ValidationResult("VariationsPerEra must be between 1 and 8.", ["VariationsPerEra"]);
             if (MaxEras is < 1 or > 20)
                 yield return new ValidationResult("MaxEras must be between 1 and 20.", ["MaxEras"]);
+            if (MaxPopulationsPerEra is < 1 or > 20)
+                yield return new ValidationResult("MaxPopulationsPerEra must be between 1 and 20.", ["MaxPopulationsPerEra"]);
             if (MaxFaceReferences is < 1 or > 16)
                 yield return new ValidationResult("MaxFaceReferences must be between 1 and 16.", ["MaxFaceReferences"]);
             if (CostPerMillionInputTokensUsd < 0 || CostPerMillionOutputTokensUsd < 0)
@@ -60,6 +63,7 @@ public static class AncestralPortraitSettingsContract
         public required string Moderation { get; set; }
         public int VariationsPerEra { get; set; }
         public int MaxEras { get; set; }
+        public int MaxPopulationsPerEra { get; set; }
         public int MaxFaceReferences { get; set; }
         public decimal CostPerMillionInputTokensUsd { get; set; }
         public decimal CostPerMillionOutputTokensUsd { get; set; }
