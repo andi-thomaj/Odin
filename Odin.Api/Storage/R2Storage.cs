@@ -157,5 +157,55 @@ public sealed class R2Storage : IR2Storage, IDisposable
         return $"{baseUrl}/{key}";
     }
 
+    public async Task<IReadOnlyList<string>> ListKeysAsync(string prefix, CancellationToken cancellationToken = default)
+    {
+        var keys = new List<string>();
+        string? token = null;
+        do
+        {
+            var response = await _client.ListObjectsV2Async(new ListObjectsV2Request
+            {
+                BucketName = _options.BucketName,
+                Prefix = prefix,
+                ContinuationToken = token,
+            }, cancellationToken);
+            if (response.S3Objects is { } objects)
+                keys.AddRange(objects.Select(o => o.Key));
+            token = response.IsTruncated == true ? response.NextContinuationToken : null;
+        }
+        while (token is not null);
+        return keys;
+    }
+
+    public async Task<IReadOnlyList<string>> ListCommonPrefixesAsync(
+        string prefix, string delimiter = "/", CancellationToken cancellationToken = default)
+    {
+        var prefixes = new List<string>();
+        string? token = null;
+        do
+        {
+            var response = await _client.ListObjectsV2Async(new ListObjectsV2Request
+            {
+                BucketName = _options.BucketName,
+                Prefix = prefix,
+                Delimiter = delimiter,
+                ContinuationToken = token,
+            }, cancellationToken);
+            if (response.CommonPrefixes is { } common)
+                prefixes.AddRange(common);
+            token = response.IsTruncated == true ? response.NextContinuationToken : null;
+        }
+        while (token is not null);
+        return prefixes;
+    }
+
+    public async Task DeleteManyAsync(IReadOnlyCollection<string> keys, CancellationToken cancellationToken = default)
+    {
+        // Per-object deletes reuse the proven idempotent path (R2's multi-object DeleteObjects has its own
+        // checksum/signing quirks). Orphan-cleanup volumes are small (one deleted user's handful of objects).
+        foreach (var key in keys)
+            await DeleteAsync(key, cancellationToken);
+    }
+
     public void Dispose() => _client.Dispose();
 }

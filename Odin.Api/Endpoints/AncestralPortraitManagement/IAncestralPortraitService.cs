@@ -29,6 +29,10 @@ public interface IAncestralPortraitService
     /// failed iteration). StatusCode 202 / 403 / 404.</summary>
     Task<int> RequestGenerateAsync(Guid setId, string identityId, CancellationToken cancellationToken = default);
 
+    /// <summary>Delete one iteration: removes its PRIVATE portrait objects from R2 AND the rows. 200 / 409 (still
+    /// generating — can't delete mid-run) / 403 / 404.</summary>
+    Task<int> DeleteSetAsync(Guid setId, string identityId, CancellationToken cancellationToken = default);
+
     /// <summary>Toggle this variation's selection (multi-select — any subset per era, even all/none). 200 / 403 / 404.</summary>
     Task<int> SelectAsync(int portraitId, string identityId, CancellationToken cancellationToken = default);
 

@@ -180,9 +180,9 @@ public class UserFacePhotoService(ApplicationDbContext dbContext, IR2Storage r2S
     }
 
     /// <summary>Auth0 subs contain '|' (e.g. <c>auth0|abc</c>, <c>google-oauth2|123</c>) — keep only key-safe chars
-    /// so the R2 key is clean and prefix-listable for a future "delete all my data" sweep.</summary>
-    private static string SanitizeIdentity(string identityId) =>
-        new(identityId.Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '_').ToArray());
+    /// so the R2 key is clean and prefix-listable for the orphan-cleanup sweep.</summary>
+    // Centralised in UserStorageKeys so the sweep derives the identical slug.
+    private static string SanitizeIdentity(string identityId) => UserStorageKeys.Sanitize(identityId);
 
     /// <summary>Best-effort JPEG dimension read from the Start-Of-Frame marker (no image library). Returns (0,0) when
     /// it can't parse — dimensions are informational metadata only, never load-bearing.</summary>

@@ -510,6 +510,10 @@ namespace Odin.Api
             services.AddScoped<
                 Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitWorker,
                 Odin.Api.Endpoints.AncestralPortraitManagement.AncestralPortraitWorker>();
+            // R2 orphan cleanup: deletes per-user R2 data (users/{slug}/) whose user no longer exists in the DB.
+            services.AddScoped<
+                Odin.Api.Endpoints.StorageManagement.IR2OrphanCleanupService,
+                Odin.Api.Endpoints.StorageManagement.R2OrphanCleanupService>();
             services.AddScoped<
                 Odin.Api.Hubs.IImageGenerationRealtimeNotifier,
                 Odin.Api.Hubs.ImageGenerationRealtimeNotifier>();
@@ -691,6 +695,16 @@ namespace Odin.Api
                     recurringJobId: "merge-cleanup",
                     methodCall: svc => svc.CleanupOrphansAsync(CancellationToken.None),
                     cronExpression: weeklyFromDeployCron,
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // r2-orphan-cleanup: daily at 04:00 UTC, delete per-user R2 data (users/{slug}/ — private face photos
+                // + ancestral portraits) whose user no longer exists in the DB. The DB rows cascade-delete with the
+                // user; this reclaims the lingering R2 objects (biometric images) so deleted users leave nothing in
+                // storage. Cheap (one delimited LIST + small deletes); daily keeps the privacy window short.
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.StorageManagement.IR2OrphanCleanupService>(
+                    recurringJobId: "r2-orphan-cleanup",
+                    methodCall: svc => svc.SweepAsync(CancellationToken.None),
+                    cronExpression: "0 4 * * *",
                     options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
             }
 

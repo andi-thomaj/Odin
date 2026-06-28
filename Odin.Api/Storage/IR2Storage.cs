@@ -43,4 +43,20 @@ public interface IR2Storage
     /// Returned URLs are stable; cache-busting is the caller's job (e.g. <c>?v=...</c> query).
     /// </summary>
     string GetPublicUrl(string key);
+
+    /// <summary>
+    /// Lists ALL object keys under <paramref name="prefix"/> (paginated internally). Intended for bounded prefixes
+    /// (e.g. one user's <c>users/{slug}/</c> tree), not the whole bucket.
+    /// </summary>
+    Task<IReadOnlyList<string>> ListKeysAsync(string prefix, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lists the immediate "sub-folders" under <paramref name="prefix"/> using <paramref name="delimiter"/> — the S3
+    /// <c>CommonPrefixes</c> (e.g. <c>users/{slug}/</c> entries under <c>users/</c>) without enumerating every object.
+    /// </summary>
+    Task<IReadOnlyList<string>> ListCommonPrefixesAsync(
+        string prefix, string delimiter = "/", CancellationToken cancellationToken = default);
+
+    /// <summary>Deletes many objects (idempotent per key — a missing key is fine). Used by the orphan-cleanup sweep.</summary>
+    Task DeleteManyAsync(IReadOnlyCollection<string> keys, CancellationToken cancellationToken = default);
 }

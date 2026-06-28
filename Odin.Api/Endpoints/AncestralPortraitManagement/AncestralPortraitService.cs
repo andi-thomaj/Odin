@@ -25,6 +25,10 @@ public sealed class AncestralPortraitService(
 {
     private readonly AppleIapOptions _apple = appleOptions.Value;
 
+    /// A Running set whose <c>UpdatedAt</c> is older than this is considered stale (worker died mid-run) and may be
+    /// re-claimed/regenerated. Far longer than a real run (~1–3 min); matches the Hangfire invisibility timeout.
+    private const int StaleRunMinutes = 30;
+
     public async Task<(AncestralPortraitSetContract.Response Response, int StatusCode, string? Error)> PurchaseAsync(
         int orderId, string identityId, string transactionJws, CancellationToken cancellationToken = default)
     {
@@ -63,7 +67,21 @@ public sealed class AncestralPortraitService(
             UpdatedAt = now,
         };
         dbContext.AncestralPortraitSets.Add(set);
-        await dbContext.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            // A concurrent request replaying the SAME Apple transaction won the unique-TransactionId race. Return the
+            // set it created (idempotent) instead of surfacing a 500. Mirrors OrderService.CreatePaidAsync.
+            dbContext.Entry(set).State = EntityState.Detached;
+            var winner = await dbContext.AncestralPortraitSets.AsNoTracking().Include(s => s.Portraits)
+                .FirstOrDefaultAsync(s => s.TransactionId == verified.TransactionId, cancellationToken);
+            if (winner is not null)
+                return (MapSet(winner, winner.OrderId), 200, null);
+            throw;
+        }
 
         backgroundJobs.Enqueue<IAncestralPortraitWorker>(w => w.RunAsync(set.Id, CancellationToken.None));
 
@@ -97,6 +115,31 @@ public sealed class AncestralPortraitService(
         return (MapSet(set, set.OrderId), 200);
     }
 
+    public async Task<int> DeleteSetAsync(Guid setId, string identityId, CancellationToken cancellationToken = default)
+    {
+        var user = await dbContext.Users.RequireByIdentityAsync(identityId, cancellationToken);
+        var set = await dbContext.AncestralPortraitSets.Include(s => s.Portraits)
+            .FirstOrDefaultAsync(s => s.Id == setId, cancellationToken);
+        if (set is null) return 404;
+        if (set.UserId != user.Id) return 403;
+        // Don't delete a set that's mid-generation: the worker uploads R2 objects then commits the rows at the end,
+        // so tearing the set out from under it would orphan those uploads + fail the worker's final save. 409 → the
+        // user waits for it to finish. (A *stale* Running set — a dead worker — is deletable so it can be cleaned up.)
+        if (set.Status == AncestralPortraitStatus.Running && set.UpdatedAt >= DateTime.UtcNow.AddMinutes(-StaleRunMinutes))
+            return 409;
+
+        // Delete the PRIVATE R2 objects (images of the user's face) before removing the rows — leaving them would
+        // orphan biometric data in storage.
+        foreach (var portrait in set.Portraits)
+            await r2Storage.DeleteAsync(portrait.R2Key, cancellationToken);
+        var removed = set.Portraits.Count;
+
+        dbContext.AncestralPortraitSets.Remove(set); // cascade-deletes the portrait rows
+        await dbContext.SaveChangesAsync(cancellationToken);
+        logger.LogInformation("Ancestral portrait set {SetId} deleted ({Count} R2 object(s) removed).", setId, removed);
+        return 200;
+    }
+
     public async Task<int> RequestGenerateAsync(Guid setId, string identityId, CancellationToken cancellationToken = default)
     {
         var user = await dbContext.Users.RequireByIdentityAsync(identityId, cancellationToken);
@@ -104,7 +147,10 @@ public sealed class AncestralPortraitService(
             .FirstOrDefaultAsync(s => s.Id == setId, cancellationToken);
         if (set is null) return 404;
         if (set.UserId != user.Id) return 403;
-        if (set.Status == AncestralPortraitStatus.Running) return 202; // already generating — don't double-enqueue
+        // Already generating (and not stale) → don't double-enqueue. A stale Running set (dead worker) IS re-enqueued
+        // so it can recover — the claim's staleness check lets exactly one re-run proceed.
+        if (set.Status == AncestralPortraitStatus.Running && set.UpdatedAt >= DateTime.UtcNow.AddMinutes(-StaleRunMinutes))
+            return 202;
 
         backgroundJobs.Enqueue<IAncestralPortraitWorker>(w => w.RunAsync(set.Id, CancellationToken.None));
         return 202;
@@ -149,11 +195,16 @@ public sealed class AncestralPortraitService(
         }
         // Atomically CLAIM the run (Pending/Failed → Running) so a duplicate enqueue or a second concurrent worker
         // can't generate the SAME set twice — that doubled the portraits. The conditional UPDATE only succeeds for
-        // exactly one worker; a set that's already Running or Succeeded is skipped (claimed == 0).
+        // exactly one worker; a set that's already Running or Succeeded is skipped (claimed == 0). A **stale** Running
+        // set (UpdatedAt older than the staleness window — e.g. the worker process died mid-run and Hangfire's
+        // invisibility timeout re-queued the job) IS re-claimable, so a crashed generation self-heals instead of being
+        // stuck "Painting…" forever. The window (30 min) is far longer than a real run (~1–3 min) and matches the
+        // Hangfire invisibility timeout, so a legitimately in-flight run is never re-claimed (no double-run).
+        var staleBefore = DateTime.UtcNow.AddMinutes(-StaleRunMinutes);
         var claimed = await dbContext.AncestralPortraitSets
             .Where(s => s.Id == setId
-                && s.Status != AncestralPortraitStatus.Running
-                && s.Status != AncestralPortraitStatus.Succeeded)
+                && s.Status != AncestralPortraitStatus.Succeeded
+                && (s.Status != AncestralPortraitStatus.Running || s.UpdatedAt < staleBefore))
             .ExecuteUpdateAsync(u => u
                 .SetProperty(s => s.Status, AncestralPortraitStatus.Running)
                 .SetProperty(s => s.Error, (string?)null)
@@ -169,6 +220,10 @@ public sealed class AncestralPortraitService(
         logger.LogInformation("Ancestral portrait generation STARTED for set {SetId} (order {OrderId}, user {UserId}).",
             set.Id, set.OrderId, set.UserId);
 
+        // R2 keys uploaded THIS run (declared outside the try so the catch can reclaim them). The portrait rows are
+        // only persisted at the single final SaveChanges (all-or-nothing), so anything that throws before that commit
+        // orphans these objects — the catch deletes them so we never strand private face images in storage.
+        var uploadedKeys = new List<string>();
         try
         {
             // Admin-editable settings (model/quality/size/variations/caps/cost rates) — fully runtime-configurable.
@@ -266,6 +321,7 @@ public sealed class AncestralPortraitService(
                         var key = $"users/{identitySlug}/ancestral-portraits/{set.Id:N}/{era.EraId}-{i}.{ext}";
                         using (var stream = new MemoryStream(bytes, writable: false))
                             await r2Storage.UploadAsync(key, stream, contentType, cancellationToken);
+                        uploadedKeys.Add(key);
 
                         dbContext.AncestralPortraits.Add(new AncestralPortrait
                         {
@@ -313,6 +369,17 @@ public sealed class AncestralPortraitService(
         catch (Exception ex)
         {
             logger.LogError(ex, "Ancestral portrait set {SetId} failed unexpectedly.", set.Id);
+            // The final SaveChanges is all-or-nothing, so on any throw NONE of this run's portrait rows committed —
+            // its R2 uploads are orphaned. Delete them (private face images), then detach the poisoned tracked inserts
+            // so FailAsync can persist just the Failed status (and the set stays retryable).
+            foreach (var key in uploadedKeys)
+            {
+                try { await r2Storage.DeleteAsync(key, cancellationToken); }
+                catch (Exception cleanupEx) { logger.LogWarning(cleanupEx, "Failed to delete orphaned R2 object {Key}.", key); }
+            }
+            foreach (var entry in dbContext.ChangeTracker.Entries<AncestralPortrait>()
+                         .Where(e => e.State == EntityState.Added).ToList())
+                entry.State = EntityState.Detached;
             await FailAsync(set, "Portrait generation failed unexpectedly.", cancellationToken);
         }
     }
@@ -383,8 +450,8 @@ public sealed class AncestralPortraitService(
             .ToList(),
     };
 
-    private static string SanitizeIdentity(string identityId) =>
-        new(identityId.Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '_').ToArray());
+    // Centralised so the orphan-cleanup sweep derives the same slug — see UserStorageKeys.
+    private static string SanitizeIdentity(string identityId) => UserStorageKeys.Sanitize(identityId);
 
     /// <summary>Maps the admin-configured output format to the R2 object's content type + file extension.</summary>
     private static (string ContentType, string Ext) ResolveContentType(string outputFormat) => outputFormat switch

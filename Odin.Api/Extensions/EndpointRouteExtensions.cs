@@ -16,6 +16,7 @@ using Odin.Api.Endpoints.Payments;
 using Odin.Api.Endpoints.PopulationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
+using Odin.Api.Endpoints.StorageManagement;
 using Odin.Api.Endpoints.MediaManagement;
 using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.Subscribe;
@@ -81,6 +82,7 @@ namespace Odin.Api.Extensions
             v1.MapImageGenerationEndpoints();
             v1.MapUserFacePhotoEndpoints();
             v1.MapAncestralPortraitEndpoints();
+            v1.MapStorageManagementEndpoints();
             return v1;
         }
     }

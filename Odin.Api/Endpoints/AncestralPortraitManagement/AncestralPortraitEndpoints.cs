@@ -39,6 +39,12 @@ public static class AncestralPortraitEndpoints
             .RequireRateLimiting("strict")
             .Produces(StatusCodes.Status202Accepted);
 
+        // Delete one iteration entirely — removes its private portrait objects from R2 + the rows.
+        perSet.MapDelete("/", DeleteSet)
+            .RequireRateLimiting("strict")
+            .Produces(StatusCodes.Status204NoContent)
+            .Produces(StatusCodes.Status409Conflict);
+
         var perPortrait = app.MapGroup("api/ancestral-portraits").RequireAuthorization("EmailVerified");
 
         perPortrait.MapPost("/{portraitId:int}/select", Select)
@@ -122,6 +128,20 @@ public static class AncestralPortraitEndpoints
         return statusCode switch
         {
             202 => Results.Accepted(),
+            403 => Results.Forbid(),
+            _ => Results.NotFound(),
+        };
+    }
+
+    private static async Task<IResult> DeleteSet(
+        IAncestralPortraitService service, HttpContext httpContext, Guid setId, CancellationToken cancellationToken)
+    {
+        var identityId = httpContext.User.GetIdentityId() ?? string.Empty;
+        var statusCode = await service.DeleteSetAsync(setId, identityId, cancellationToken);
+        return statusCode switch
+        {
+            200 => Results.NoContent(),
+            409 => Results.Conflict(new { Message = "This set is still generating. Try again once it finishes." }),
             403 => Results.Forbid(),
             _ => Results.NotFound(),
         };
