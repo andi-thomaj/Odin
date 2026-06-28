@@ -249,7 +249,7 @@ public sealed class AncestralPortraitService(
                 return;
             }
 
-            // The order's qpAdm eras (each era's top population becomes one portrait group).
+            // The order's qpAdm eras (every population in every era becomes its own portrait group — see below).
             var order = await dbContext.QpadmOrders.AsNoTracking()
                 .Include(o => o.GeneticInspection)
                 .FirstOrDefaultAsync(o => o.Id == set.OrderId, cancellationToken);

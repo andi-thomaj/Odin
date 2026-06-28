@@ -21,8 +21,8 @@ public class AncestralPortraitSettings : BaseEntity
     public string OutputFormat { get; set; } = "jpeg";
     public string Moderation { get; set; } = "auto";
 
-    /// <summary>Portrait images generated per era. Default 1 — a single image of the era's top ancestral population
-    /// (no variations to pick between) PER POPULATION. The admin can raise it for variations to pick between.</summary>
+    /// <summary>Variations generated per (era, population) group. Default 1 — a single image per population (no
+    /// variations to pick between). The admin can raise it for variations to choose from. (Name kept for back-compat.)</summary>
     public int VariationsPerEra { get; set; } = 1;
     /// <summary>Max eras turned into portraits.</summary>
     public int MaxEras { get; set; } = 6;
