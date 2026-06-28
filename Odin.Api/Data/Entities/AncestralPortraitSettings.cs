@@ -21,8 +21,9 @@ public class AncestralPortraitSettings : BaseEntity
     public string OutputFormat { get; set; } = "jpeg";
     public string Moderation { get; set; } = "auto";
 
-    /// <summary>Portrait variations generated per era (the user picks one).</summary>
-    public int VariationsPerEra { get; set; } = 2;
+    /// <summary>Portrait images generated per era. Default 1 — a single image of the era's top ancestral population
+    /// (no variations to pick between). The admin can raise it, but the iOS "Ages" story shows one image per era.</summary>
+    public int VariationsPerEra { get; set; } = 1;
     /// <summary>Max eras turned into portraits (one group per era).</summary>
     public int MaxEras { get; set; } = 6;
     /// <summary>Face reference photos passed to the model (≤16).</summary>

@@ -18,7 +18,7 @@ public static class AncestralPortraitSettingsContract
         public required string Background { get; set; }
         public required string OutputFormat { get; set; }
         public required string Moderation { get; set; }
-        public int VariationsPerEra { get; set; } = 2;
+        public int VariationsPerEra { get; set; } = 1;
         public int MaxEras { get; set; } = 6;
         public int MaxFaceReferences { get; set; } = 6;
         public decimal CostPerMillionInputTokensUsd { get; set; } = 10m;

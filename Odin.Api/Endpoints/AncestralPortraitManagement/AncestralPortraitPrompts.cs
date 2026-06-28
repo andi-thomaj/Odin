@@ -21,7 +21,8 @@ public static class AncestralPortraitPrompts
     private const string Style =
         " Render a REALISTIC, finely detailed human portrait — natural skin texture, hair, fabric and materials; soft " +
         "cinematic key light with a gentle rim; a deep, slightly muted period-mood palette — NOT cartoon, pixel art or " +
-        "cel-shaded. A head-and-shoulders portrait cropped at roughly mid-chest, the subject facing the camera. " +
+        "cel-shaded. A VERTICAL portrait-orientation, head-and-shoulders portrait cropped at roughly mid-chest, the " +
+        "single subject centered and facing the camera. " +
         "Period-accurate upper-body dress, headwear and adornments for this people; NO modern objects, NO helmet, " +
         "NO weapons or hand-held objects. Behind the subject, a full-bleed scene of this culture's iconography — " +
         "architecture, dwellings, tools, textiles, ornaments and landscape. NO frame, NO border, NO UI/HUD, NO text, " +
