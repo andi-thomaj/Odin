@@ -24,6 +24,13 @@ public interface IR2Storage
     Task DeleteAsync(string key, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Downloads the object at <paramref name="key"/> in full and returns its bytes, or <c>null</c> if
+    /// the object does not exist (a 404 is not an error). Intended for small objects (e.g. reference
+    /// images re-read for an OpenAI edit), not multi-GB blobs.
+    /// </summary>
+    Task<byte[]?> DownloadAsync(string key, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Server-side copy from <paramref name="sourceKey"/> to <paramref name="destinationKey"/>
     /// within the configured bucket. Used when a name-keyed object needs to follow a rename
     /// without re-uploading the bytes. The source object is left intact; pair with

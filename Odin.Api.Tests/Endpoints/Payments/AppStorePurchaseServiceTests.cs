@@ -81,6 +81,39 @@ public class AppStorePurchaseServiceTests
     }
 
     [Fact]
+    public void ValidateAddOnTransaction_MatchingProduct_ReturnsVerified()
+    {
+        var service = CreateService();
+        var jws = BuildJws("io.ancestrify.app", "io.ancestrify.app.aiportraits", "txn-addon");
+
+        var result = service.ValidateAddOnTransaction(jws, "io.ancestrify.app.aiportraits");
+
+        Assert.Equal("txn-addon", result.TransactionId);
+        Assert.Equal("io.ancestrify.app.aiportraits", result.ProductId);
+    }
+
+    [Fact]
+    public void ValidateAddOnTransaction_WrongProduct_Throws()
+    {
+        var service = CreateService();
+        // A qpAdm order purchase can't be redeemed as the AI-portraits add-on.
+        var jws = BuildJws("io.ancestrify.app", "io.ancestrify.app.qpadm", "txn-x");
+
+        Assert.Throws<AppStorePurchaseException>(() =>
+            service.ValidateAddOnTransaction(jws, "io.ancestrify.app.aiportraits"));
+    }
+
+    [Fact]
+    public void ValidateAddOnTransaction_WrongBundleId_Throws()
+    {
+        var service = CreateService();
+        var jws = BuildJws("com.someone.else", "io.ancestrify.app.aiportraits", "txn-x");
+
+        Assert.Throws<AppStorePurchaseException>(() =>
+            service.ValidateAddOnTransaction(jws, "io.ancestrify.app.aiportraits"));
+    }
+
+    [Fact]
     public void AppleRootCertificate_IsBundledAsEmbeddedResource()
     {
         // Production verification relies on this cert shipping inside the API assembly. Guard against it

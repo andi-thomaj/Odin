@@ -19,6 +19,9 @@ public sealed class AppleIapOptions
     /// <summary>App Store product id for the G25 consumable.</summary>
     public string G25ProductId { get; set; } = "io.ancestrify.app.g25";
 
+    /// <summary>App Store product id for the "Through the Ages" AI ancestral-portraits add-on (consumable, one unlock per order).</summary>
+    public string AiPortraitsProductId { get; set; } = "io.ancestrify.app.aiportraits";
+
     /// <summary>
     /// Authoritative price stamped on a created qpAdm order. Informational only — Apple charges the
     /// buyer's storefront price tier, which varies by region; this is what we record/display server-side.

@@ -88,6 +88,27 @@ public sealed class R2Storage : IR2Storage, IDisposable
         }
     }
 
+    public async Task<byte[]?> DownloadAsync(string key, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var response = await _client.GetObjectAsync(new GetObjectRequest
+            {
+                BucketName = _options.BucketName,
+                Key = key,
+            }, cancellationToken);
+
+            using var ms = new MemoryStream();
+            await response.ResponseStream.CopyToAsync(ms, cancellationToken);
+            return ms.ToArray();
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogDebug("R2 object {Bucket}/{Key} not found on download", _options.BucketName, key);
+            return null;
+        }
+    }
+
     public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         try

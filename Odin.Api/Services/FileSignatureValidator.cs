@@ -20,6 +20,42 @@ public static class FileSignatureValidator
             && data[8] == 'W' && data[9] == 'A' && data[10] == 'V' && data[11] == 'E';
     }
 
+    /// <summary>PNG: bytes 0-7 = 89 50 4E 47 0D 0A 1A 0A.</summary>
+    public static bool IsPng(byte[] data)
+    {
+        if (data is null || data.Length < 8) return false;
+        return data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47
+            && data[4] == 0x0D && data[5] == 0x0A && data[6] == 0x1A && data[7] == 0x0A;
+    }
+
+    /// <summary>JPEG: starts with the SOI marker FF D8 FF.</summary>
+    public static bool IsJpeg(byte[] data)
+    {
+        if (data is null || data.Length < 3) return false;
+        return data[0] == 0xFF && data[1] == 0xD8 && data[2] == 0xFF;
+    }
+
+    /// <summary>WEBP: RIFF container (bytes 0-3 "RIFF") with "WEBP" at bytes 8-11.</summary>
+    public static bool IsWebp(byte[] data)
+    {
+        if (data is null || data.Length < 12) return false;
+        return data[0] == 'R' && data[1] == 'I' && data[2] == 'F' && data[3] == 'F'
+            && data[8] == 'W' && data[9] == 'E' && data[10] == 'B' && data[11] == 'P';
+    }
+
+    /// <summary>
+    /// Confirms the bytes are a PNG, JPEG, or WEBP image (the set OpenAI's image edits accept) and,
+    /// when so, yields the canonical MIME type. The client-declared content type is never trusted.
+    /// </summary>
+    public static bool IsSupportedImage(byte[] data, out string contentType)
+    {
+        if (IsPng(data)) { contentType = "image/png"; return true; }
+        if (IsJpeg(data)) { contentType = "image/jpeg"; return true; }
+        if (IsWebp(data)) { contentType = "image/webp"; return true; }
+        contentType = "application/octet-stream";
+        return false;
+    }
+
     /// <summary>
     /// Heuristic for raw genetic-data uploads (23andMe, AncestryDNA, MyHeritage, FTDNA, ...).
     /// Vendor formats differ but all are either plain text (typically prefixed with a `#`

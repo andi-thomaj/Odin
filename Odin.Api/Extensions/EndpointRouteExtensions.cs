@@ -9,6 +9,7 @@ using Odin.Api.Endpoints.QpadmPopulationPanelSampleManagement;
 using Odin.Api.Endpoints.G25SavedCoordinateManagement;
 using Odin.Api.Endpoints.G25TargetCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
+using Odin.Api.Endpoints.ImageGenerationManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.Payments;
@@ -19,6 +20,8 @@ using Odin.Api.Endpoints.MediaManagement;
 using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.Subscribe;
 using Odin.Api.Endpoints.UserManagement;
+using Odin.Api.Endpoints.UserFacePhotoManagement;
+using Odin.Api.Endpoints.AncestralPortraitManagement;
 using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25ContinentManagement;
 using Odin.Api.Endpoints.CalculatorManagement;
@@ -75,6 +78,9 @@ namespace Odin.Api.Extensions
             v1.MapCalculatorEndpoints();
             v1.MapAdmixToolsEraEndpoints();
             v1.MapCladeFinderEndpoints();
+            v1.MapImageGenerationEndpoints();
+            v1.MapUserFacePhotoEndpoints();
+            v1.MapAncestralPortraitEndpoints();
             return v1;
         }
     }

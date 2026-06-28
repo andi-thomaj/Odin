@@ -96,6 +96,19 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyn
             services.AddSingleton<FakeMergePipelineService>();
             services.AddSingleton<Odin.Api.Endpoints.MergeManagement.IMergePipelineService>(
                 sp => sp.GetRequiredService<FakeMergePipelineService>());
+
+            // The real OpenAI image client calls OpenAI; swap in a fake so CI never makes a network call.
+            foreach (var d in services
+                         .Where(x => x.ServiceType == typeof(Odin.Api.Endpoints.ImageGenerationManagement.IOpenAIImageClient))
+                         .ToList())
+                services.Remove(d);
+            services.AddSingleton<Odin.Api.Endpoints.ImageGenerationManagement.IOpenAIImageClient, FakeOpenAIImageClient>();
+
+            // The real R2Storage needs Cloudflare credentials + network; swap in an in-memory fake so the
+            // image-generation upload/download flow works under test.
+            foreach (var d in services.Where(x => x.ServiceType == typeof(Odin.Api.Storage.IR2Storage)).ToList())
+                services.Remove(d);
+            services.AddSingleton<Odin.Api.Storage.IR2Storage, FakeR2Storage>();
         });
     }
 

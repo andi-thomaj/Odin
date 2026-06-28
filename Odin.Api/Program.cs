@@ -369,6 +369,10 @@ namespace Odin.Api
             services.AddScoped<Odin.Api.Hubs.IGeneticInspectionRealtimeNotifier, Odin.Api.Hubs.GeneticInspectionRealtimeNotifier>();
             services.AddScoped<IAppSettingsService, AppSettingsService>();
             services.AddScoped<IOrderService, OrderService>();
+            // Per-user face-photo set (iOS ARKit capture → R2) for future AI-image generation.
+            services.AddScoped<
+                Odin.Api.Endpoints.UserFacePhotoManagement.IUserFacePhotoService,
+                Odin.Api.Endpoints.UserFacePhotoManagement.UserFacePhotoService>();
             // Apple StoreKit 2 IAP validation (iOS paid-order flow). Singleton: it lazily loads + caches the
             // Apple root certificate and holds no per-request state.
             services.AddSingleton<
@@ -469,6 +473,46 @@ namespace Odin.Api
                 Odin.Api.Endpoints.MergeManagement.IMergeJob,
                 Odin.Api.Endpoints.MergeManagement.MergeJob>();
 
+            // ── OpenAI image generation (gpt-image-2 via the OpenAI SDK) ─────────────────────────────
+            services.Configure<Odin.Api.Configuration.OpenAIOptions>(
+                configuration.GetSection(Odin.Api.Configuration.OpenAIOptions.SectionName));
+            services.Configure<Odin.Api.Configuration.ImageGenerationLimitsOptions>(
+                configuration.GetSection(Odin.Api.Configuration.ImageGenerationLimitsOptions.SectionName));
+            services.Configure<Odin.Api.Configuration.AncestralPortraitLimitsOptions>(
+                configuration.GetSection(Odin.Api.Configuration.AncestralPortraitLimitsOptions.SectionName));
+            // Typed client: the SDK handles generation/edits internally; this HttpClient is used only for the
+            // Administration usage/cost endpoints (Admin key). Base address + timeout come from OpenAIOptions.
+            services.AddHttpClient<
+                Odin.Api.Endpoints.ImageGenerationManagement.IOpenAIImageClient,
+                Odin.Api.Endpoints.ImageGenerationManagement.OpenAIImageClient>((sp, client) =>
+            {
+                var openAiOptions = sp.GetRequiredService<IOptions<Odin.Api.Configuration.OpenAIOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(openAiOptions.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(openAiOptions.BaseUrl);
+                }
+                client.Timeout = TimeSpan.FromSeconds(Math.Max(1, openAiOptions.TimeoutSeconds));
+            });
+            services.AddScoped<
+                Odin.Api.Endpoints.ImageGenerationManagement.IImageGenerationService,
+                Odin.Api.Endpoints.ImageGenerationManagement.ImageGenerationService>();
+            services.AddScoped<
+                Odin.Api.Endpoints.ImageGenerationManagement.IImageSettingsService,
+                Odin.Api.Endpoints.ImageGenerationManagement.ImageSettingsService>();
+            services.AddScoped<
+                Odin.Api.Endpoints.ImageGenerationManagement.IImageGenerationWorker,
+                Odin.Api.Endpoints.ImageGenerationManagement.ImageGenerationWorker>();
+            // Paid "Through the Ages" AI ancestral-portraits add-on (per-user, gpt-image-2 edits from face photos).
+            services.AddScoped<
+                Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitService,
+                Odin.Api.Endpoints.AncestralPortraitManagement.AncestralPortraitService>();
+            services.AddScoped<
+                Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitWorker,
+                Odin.Api.Endpoints.AncestralPortraitManagement.AncestralPortraitWorker>();
+            services.AddScoped<
+                Odin.Api.Hubs.IImageGenerationRealtimeNotifier,
+                Odin.Api.Hubs.ImageGenerationRealtimeNotifier>();
+
             services.AddHttpClient("Auth0UserInfo", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
@@ -518,6 +562,10 @@ namespace Odin.Api
                 // Flip a merge order Retrying → Failed once Hangfire exhausts its retries (see
                 // MergeJobFailureStateFilter), so a dead job doesn't hold an in-flight merge slot forever.
                 .UseFilter(new Odin.Api.Endpoints.MergeManagement.MergeJobFailureStateFilter(
+                    provider.GetRequiredService<IServiceScopeFactory>()))
+                // Flip an image-generation job Pending/Running → Failed once its Hangfire job is exhausted
+                // or its worker died, so a crashed async generation doesn't stay stuck forever.
+                .UseFilter(new Odin.Api.Endpoints.ImageGenerationManagement.ImageGenerationJobFailureStateFilter(
                     provider.GetRequiredService<IServiceScopeFactory>())));
 
             // Worker process — skipped in Testing so the suite doesn't poll the throwaway

@@ -48,6 +48,13 @@ namespace Odin.Api.Data
         public DbSet<Calculator> Calculators { get; set; }
         public DbSet<AdmixToolsEra> AdmixToolsEras { get; set; }
         public DbSet<AppStoreTransaction> AppStoreTransactions { get; set; }
+        public DbSet<ImageGenerationJob> ImageGenerationJobs { get; set; }
+        public DbSet<GeneratedImage> GeneratedImages { get; set; }
+        public DbSet<ReferenceImage> ReferenceImages { get; set; }
+        public DbSet<ImageGenerationSettings> ImageGenerationSettings { get; set; }
+        public DbSet<UserFacePhoto> UserFacePhotos { get; set; }
+        public DbSet<AncestralPortraitSet> AncestralPortraitSets { get; set; }
+        public DbSet<AncestralPortrait> AncestralPortraits { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

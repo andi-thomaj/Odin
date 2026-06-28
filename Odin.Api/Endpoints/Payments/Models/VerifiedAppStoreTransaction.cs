@@ -16,6 +16,19 @@ namespace Odin.Api.Endpoints.Payments.Models
         string RawJws);
 
     /// <summary>
+    /// A StoreKit 2 signed transaction for a NON-order add-on product that has passed backend validation
+    /// (signature + chain + bundle id + product id). Add-ons aren't a qpAdm/G25 <c>ServiceType</c>, so this carries
+    /// the raw product id rather than a mapped service.
+    /// </summary>
+    public sealed record VerifiedAddOnTransaction(
+        string TransactionId,
+        string OriginalTransactionId,
+        string ProductId,
+        DateTime PurchaseDate,
+        string Environment,
+        string RawJws);
+
+    /// <summary>
     /// Thrown when an App Store transaction fails validation (bad/forged signature, untrusted certificate
     /// chain, wrong bundle id, unknown product, or a product that doesn't match the requested service).
     /// The order endpoints map it to a 400 so the iOS app can surface a clear message and NOT finish the

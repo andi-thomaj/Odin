@@ -93,6 +93,60 @@ namespace Odin.Api.Endpoints.Payments
                 transactionId, originalTransactionId, productId, service, purchaseDate, environment, signedTransactionJws);
         }
 
+        public VerifiedAddOnTransaction ValidateAddOnTransaction(string signedTransactionJws, string expectedProductId)
+        {
+            if (string.IsNullOrWhiteSpace(signedTransactionJws))
+                throw new AppStorePurchaseException("A purchase token is required to unlock this add-on.");
+
+            var payloadJson = _verifySignature
+                ? AppStoreJwsVerifier.VerifyAndDecode(signedTransactionJws, _appleRoot.Value)
+                : AppStoreJwsVerifier.DecodePayload(signedTransactionJws);
+
+            using var doc = JsonDocument.Parse(payloadJson);
+            var root = doc.RootElement;
+
+            var bundleId = GetString(root, "bundleId");
+            var productId = GetString(root, "productId");
+            var transactionId = GetString(root, "transactionId");
+            var environment = GetString(root, "environment");
+
+            _logger.LogInformation(
+                "App Store add-on transaction received: transactionId={TransactionId} bundleId={BundleId} " +
+                "productId={ProductId} environment={Environment} expectedProductId={ExpectedProductId} verifySignature={VerifySignature}",
+                transactionId, bundleId, productId, environment, expectedProductId, _verifySignature);
+
+            if (string.IsNullOrEmpty(transactionId))
+                throw new AppStorePurchaseException("Transaction is missing a transaction id.");
+
+            if (!string.Equals(bundleId, _options.BundleId, StringComparison.Ordinal))
+                throw new AppStorePurchaseException("Transaction is for a different app.");
+
+            if (_verifySignature
+                && _options.AllowedEnvironments.Length > 0
+                && !_options.AllowedEnvironments.Contains(environment, StringComparer.OrdinalIgnoreCase))
+            {
+                throw new AppStorePurchaseException($"Transaction environment '{environment}' is not accepted.");
+            }
+
+            if (!string.Equals(productId, expectedProductId, StringComparison.Ordinal))
+                throw new AppStorePurchaseException("The purchased product does not match this add-on.");
+
+            var originalTransactionId = GetString(root, "originalTransactionId");
+            if (string.IsNullOrEmpty(originalTransactionId)) originalTransactionId = transactionId;
+
+            var purchaseDate = root.TryGetProperty("purchaseDate", out var pd) && pd.TryGetInt64(out var ms)
+                ? DateTimeOffset.FromUnixTimeMilliseconds(ms).UtcDateTime
+                : DateTime.UtcNow;
+
+            if (!_verifySignature)
+                _logger.LogWarning(
+                    "App Store add-on transaction {TransactionId} accepted WITHOUT signature verification (dev/test mode).",
+                    transactionId);
+
+            return new VerifiedAddOnTransaction(
+                transactionId, originalTransactionId, productId, purchaseDate, environment, signedTransactionJws);
+        }
+
         public AppStoreNotification ParseNotification(string signedPayload)
         {
             if (string.IsNullOrWhiteSpace(signedPayload))

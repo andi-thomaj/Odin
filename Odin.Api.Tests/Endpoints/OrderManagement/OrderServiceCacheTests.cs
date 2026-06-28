@@ -262,6 +262,9 @@ public class OrderServiceCacheTests
         public VerifiedAppStoreTransaction ValidateTransaction(string signedTransactionJws, ServiceType expectedService)
             => throw new NotSupportedException();
 
+        public VerifiedAddOnTransaction ValidateAddOnTransaction(string signedTransactionJws, string expectedProductId)
+            => throw new NotSupportedException();
+
         public AppStoreNotification ParseNotification(string signedPayload)
             => throw new NotSupportedException();
     }
