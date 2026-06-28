@@ -1,4 +1,5 @@
 using System.Text;
+using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Endpoints.AncestralPortraitManagement;
 
@@ -33,11 +34,25 @@ public static class AncestralPortraitPrompts
     /// <c>QpadmPopulation.ImagePrompt</c> (may be null/blank); <paramref name="name"/> + <paramref name="description"/>
     /// are the fallback creative. <paramref name="eraName"/> grounds the period.
     /// </summary>
-    public static string Build(string name, string? description, string? eraName, string? curatedImagePrompt)
+    public static string Build(string name, string? description, string? eraName, string? curatedImagePrompt,
+        Gender? gender = null)
     {
         var subject = BuildSubject(name, description, eraName, curatedImagePrompt);
-        return IdentityLead + subject + Style;
+        return IdentityLead + subject + GenderClause(gender) + Style;
     }
+
+    /// <summary>Enforces a gender-consistent presentation — the client's gender drives feminine vs masculine
+    /// clothing/dress, hair and adornments (so the portrait matches the person, not just the population).</summary>
+    private static string GenderClause(Gender? gender) => gender switch
+    {
+        Gender.Female =>
+            " The subject is a WOMAN — give her a distinctly feminine presentation: the WOMEN'S period-accurate attire " +
+            "of this culture (dress/garments, hairstyle, headwear and jewellery), feminine grooming and silhouette.",
+        Gender.Male =>
+            " The subject is a MAN — give him a distinctly masculine presentation: the MEN'S period-accurate attire " +
+            "of this culture (garments, hairstyle, headwear and adornments), masculine grooming and silhouette.",
+        _ => string.Empty,
+    };
 
     private static string BuildSubject(string name, string? description, string? eraName, string? curatedImagePrompt)
     {

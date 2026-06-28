@@ -308,11 +308,14 @@ public sealed class AncestralPortraitService(
             long inputTokens = 0, outputTokens = 0, totalTokens = 0;
             var imageCount = 0;
 
+            // The client's gender → feminine vs masculine clothing/presentation in every portrait.
+            var gender = order.GeneticInspection.Gender;
+
             foreach (var (era, pop) in targets)
             {
                 var population = pop.Population!;
                 var prompt = AncestralPortraitPrompts.Build(
-                    population.Name, population.Description, era.Era?.Name, population.ImagePrompt);
+                    population.Name, population.Description, era.Era?.Name, population.ImagePrompt, gender);
 
                 try
                 {

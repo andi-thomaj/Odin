@@ -1,3 +1,4 @@
+using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.AncestralPortraitManagement;
 using Xunit;
 
@@ -52,8 +53,28 @@ public class AncestralPortraitPromptsTests
     public void Build_CapsLongDescriptions()
     {
         var huge = new string('x', 5000);
-        var prompt = AncestralPortraitPrompts.Build("Pop", huge, "Era", null);
+        // Even with a gender clause added, the prompt stays bounded.
+        var prompt = AncestralPortraitPrompts.Build("Pop", huge, "Era", null, Gender.Female);
         // The description contribution is capped (≤ ~900 chars) so the prompt stays bounded.
         Assert.True(prompt.Length < 2200, $"prompt length was {prompt.Length}");
+    }
+
+    [Fact]
+    public void Build_AppliesGenderConsistentPresentation()
+    {
+        var female = AncestralPortraitPrompts.Build("Celtic", null, "Iron Age", null, Gender.Female);
+        Assert.Contains("WOMAN", female);
+        Assert.Contains("feminine", female);
+        Assert.Contains("WOMEN'S period-accurate attire", female);
+
+        var male = AncestralPortraitPrompts.Build("Celtic", null, "Iron Age", null, Gender.Male);
+        Assert.Contains("MAN", male);
+        Assert.Contains("masculine", male);
+        Assert.Contains("MEN'S period-accurate attire", male);
+
+        // No gender supplied → no gendered clause (back-compat with callers that omit it).
+        var none = AncestralPortraitPrompts.Build("Celtic", null, "Iron Age", null);
+        Assert.DoesNotContain("distinctly feminine", none);
+        Assert.DoesNotContain("distinctly masculine", none);
     }
 }
