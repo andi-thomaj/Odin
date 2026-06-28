@@ -223,8 +223,11 @@ public sealed class AncestralPortraitService(
 
                 try
                 {
+                    // NOTE: do NOT pass `input_fidelity` — gpt-image-2 rejects that parameter (it's a gpt-image-1
+                    // edit option). The user's face photos are the reference; identity preservation is driven by the
+                    // prompt's "the SAME person" lead instead.
                     var result = await openAiClient.EditAsync(
-                        new OpenAIEditRequest(prompt, parameters, faceRefs, null, "high"), cancellationToken);
+                        new OpenAIEditRequest(prompt, parameters, faceRefs, null, null), cancellationToken);
 
                     for (var i = 0; i < result.Images.Count; i++)
                     {
