@@ -16,16 +16,14 @@ namespace Odin.Api.Endpoints.AncestralPortraitManagement;
 public sealed class AncestralPortraitService(
     ApplicationDbContext dbContext,
     IOpenAIImageClient openAiClient,
-    IImageSettingsService settingsService,
+    IAncestralPortraitSettingsService settingsService,
     IR2Storage r2Storage,
     IAppStorePurchaseService appStore,
     IBackgroundJobClient backgroundJobs,
     IOptions<AppleIapOptions> appleOptions,
-    IOptions<AncestralPortraitLimitsOptions> limitsOptions,
     ILogger<AncestralPortraitService> logger) : IAncestralPortraitService
 {
     private readonly AppleIapOptions _apple = appleOptions.Value;
-    private readonly AncestralPortraitLimitsOptions _limits = limitsOptions.Value;
 
     public async Task<(AncestralPortraitSetContract.Response Response, int StatusCode, string? Error)> PurchaseAsync(
         int orderId, string identityId, string transactionJws, CancellationToken cancellationToken = default)
@@ -38,20 +36,17 @@ public sealed class AncestralPortraitService(
 
         var user = await dbContext.Users.RequireByIdentityAsync(identityId, cancellationToken);
 
-        // Already unlocked for this order ⇒ idempotent (return the existing set; don't re-charge/re-create).
-        var existing = await LoadSetAsync(orderId, user.Id, cancellationToken);
-        if (existing is not null)
-            return (MapSet(existing, orderId), 200, null);
-
         // Validate the StoreKit add-on purchase (throws AppStorePurchaseException → 400 at the endpoint).
         var verified = appStore.ValidateAddOnTransaction(transactionJws, _apple.AiPortraitsProductId);
 
-        // Replay of the SAME transaction (e.g. a retried request) ⇒ return whatever set it created.
+        // Re-purchase is intentional: each NEW Apple transaction creates a NEW set (a fresh iteration the user keeps).
+        // Only a REPLAY of the SAME transaction (e.g. a retried request / app-killed-mid-flow) is idempotent — it
+        // returns the set that transaction already created (anti double-create, the unique TransactionId guarantees it).
         var byTxn = await dbContext.AncestralPortraitSets
             .FirstOrDefaultAsync(s => s.TransactionId == verified.TransactionId, cancellationToken);
         if (byTxn is not null)
         {
-            var reloaded = await LoadSetAsync(byTxn.OrderId, byTxn.UserId, cancellationToken);
+            var reloaded = await LoadSetByIdAsync(byTxn.Id, cancellationToken);
             return (MapSet(reloaded!, byTxn.OrderId), 200, null);
         }
 
@@ -75,7 +70,7 @@ public sealed class AncestralPortraitService(
         return (MapSet(set, orderId), 201, null);
     }
 
-    public async Task<(AncestralPortraitSetContract.Response? Response, int StatusCode)> GetSetAsync(
+    public async Task<(List<AncestralPortraitSetContract.Response>? Response, int StatusCode)> ListSetsAsync(
         int orderId, string identityId, CancellationToken cancellationToken = default)
     {
         var order = await dbContext.QpadmOrders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
@@ -85,25 +80,38 @@ public sealed class AncestralPortraitService(
             return (null, 403);
 
         var user = await dbContext.Users.RequireByIdentityAsync(identityId, cancellationToken);
-        var set = await LoadSetAsync(orderId, user.Id, cancellationToken);
-        return (set is null ? Empty(orderId) : MapSet(set, orderId), 200);
+        var sets = await dbContext.AncestralPortraitSets.AsNoTracking().Include(s => s.Portraits)
+            .Where(s => s.OrderId == orderId && s.UserId == user.Id)
+            .OrderByDescending(s => s.CreatedAt)   // newest iteration first
+            .ToListAsync(cancellationToken);
+        return (sets.Select(s => MapSet(s, orderId)).ToList(), 200);
     }
 
-    public async Task<int> RequestGenerateAsync(int orderId, string identityId, CancellationToken cancellationToken = default)
+    public async Task<(AncestralPortraitSetContract.Response? Response, int StatusCode)> GetSetByIdAsync(
+        Guid setId, string identityId, CancellationToken cancellationToken = default)
     {
-        var order = await dbContext.QpadmOrders.AsNoTracking().FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
-        if (order is null) return 404;
-        if (order.CreatedBy != identityId) return 403;
+        var user = await dbContext.Users.RequireByIdentityAsync(identityId, cancellationToken);
+        var set = await LoadSetByIdAsync(setId, cancellationToken);
+        if (set is null) return (null, 404);
+        if (set.UserId != user.Id) return (null, 403);
+        return (MapSet(set, set.OrderId), 200);
+    }
 
+    public async Task<int> RequestGenerateAsync(Guid setId, string identityId, CancellationToken cancellationToken = default)
+    {
         var user = await dbContext.Users.RequireByIdentityAsync(identityId, cancellationToken);
         var set = await dbContext.AncestralPortraitSets
-            .FirstOrDefaultAsync(s => s.OrderId == orderId && s.UserId == user.Id, cancellationToken);
-        if (set is null) return 404; // not purchased
+            .FirstOrDefaultAsync(s => s.Id == setId, cancellationToken);
+        if (set is null) return 404;
+        if (set.UserId != user.Id) return 403;
+        if (set.Status == AncestralPortraitStatus.Running) return 202; // already generating — don't double-enqueue
 
         backgroundJobs.Enqueue<IAncestralPortraitWorker>(w => w.RunAsync(set.Id, CancellationToken.None));
         return 202;
     }
 
+    /// <summary>Toggle this variation's selection (multi-select: the user can pick any subset per era, even all
+    /// of them, or none). 200 / 403 / 404.</summary>
     public async Task<int> SelectAsync(int portraitId, string identityId, CancellationToken cancellationToken = default)
     {
         var user = await dbContext.Users.RequireByIdentityAsync(identityId, cancellationToken);
@@ -112,11 +120,7 @@ public sealed class AncestralPortraitService(
         if (portrait is null) return 404;
         if (portrait.Set.UserId != user.Id) return 403;
 
-        var siblings = await dbContext.AncestralPortraits
-            .Where(p => p.SetId == portrait.SetId && p.EraId == portrait.EraId)
-            .ToListAsync(cancellationToken);
-        foreach (var sibling in siblings)
-            sibling.IsSelected = sibling.Id == portraitId;
+        portrait.IsSelected = !portrait.IsSelected;
         await dbContext.SaveChangesAsync(cancellationToken);
         return 200;
     }
@@ -143,22 +147,38 @@ public sealed class AncestralPortraitService(
             logger.LogWarning("Ancestral portrait generation for unknown set {SetId}.", setId);
             return;
         }
-        if (set.Status == AncestralPortraitStatus.Succeeded)
-            return; // idempotent
-
+        // Atomically CLAIM the run (Pending/Failed → Running) so a duplicate enqueue or a second concurrent worker
+        // can't generate the SAME set twice — that doubled the portraits. The conditional UPDATE only succeeds for
+        // exactly one worker; a set that's already Running or Succeeded is skipped (claimed == 0).
+        var claimed = await dbContext.AncestralPortraitSets
+            .Where(s => s.Id == setId
+                && s.Status != AncestralPortraitStatus.Running
+                && s.Status != AncestralPortraitStatus.Succeeded)
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(s => s.Status, AncestralPortraitStatus.Running)
+                .SetProperty(s => s.Error, (string?)null)
+                .SetProperty(s => s.UpdatedAt, DateTime.UtcNow), cancellationToken);
+        if (claimed == 0)
+        {
+            logger.LogInformation("Ancestral portrait set {SetId} already running/finished — skipping duplicate generation.", set.Id);
+            return;
+        }
         set.Status = AncestralPortraitStatus.Running;
         set.Error = null;
-        set.UpdatedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
+
+        logger.LogInformation("Ancestral portrait generation STARTED for set {SetId} (order {OrderId}, user {UserId}).",
+            set.Id, set.OrderId, set.UserId);
 
         try
         {
+            // Admin-editable settings (model/quality/size/variations/caps/cost rates) — fully runtime-configurable.
+            var settings = await settingsService.GetAsync(cancellationToken);
             var user = await dbContext.Users.FirstAsync(u => u.Id == set.UserId, cancellationToken);
 
-            // Face reference photos (the user's own) → gpt-image-2 edit inputs.
+            // Face reference photos (the user's own) → the model's edit inputs.
             var facePhotos = await dbContext.UserFacePhotos.AsNoTracking()
                 .Where(p => p.UserId == set.UserId).OrderBy(p => p.Id)
-                .Take(_limits.MaxFaceReferences).ToListAsync(cancellationToken);
+                .Take(settings.MaxFaceReferences).ToListAsync(cancellationToken);
             var faceRefs = new List<OpenAIReferenceImage>();
             foreach (var photo in facePhotos)
             {
@@ -166,6 +186,8 @@ public sealed class AncestralPortraitService(
                 if (bytes is not null)
                     faceRefs.Add(new OpenAIReferenceImage(bytes, photo.ContentType, photo.OriginalFileName));
             }
+            logger.LogInformation("Ancestral portraits set {SetId}: loaded {Count} face reference(s) of {Available} photo(s).",
+                set.Id, faceRefs.Count, facePhotos.Count);
             if (faceRefs.Count == 0)
             {
                 await FailAsync(set, "Capture your face photos first (Settings → AI Face Capture).", cancellationToken);
@@ -201,16 +223,23 @@ public sealed class AncestralPortraitService(
                 await dbContext.SaveChangesAsync(cancellationToken);
             }
 
-            var settings = await settingsService.GetAsync(cancellationToken);
             var parameters = new OpenAIImageParameters(
-                settings.Model, _limits.Size, _limits.Quality, "auto", "jpeg", null, "auto",
-                _limits.VariationsPerEra, user.IdentityId);
+                settings.Model, settings.Size, settings.Quality, settings.Background, settings.OutputFormat, null,
+                settings.Moderation, settings.VariationsPerEra, user.IdentityId);
+            var (contentType, ext) = ResolveContentType(settings.OutputFormat);
 
             var identitySlug = SanitizeIdentity(user.IdentityId);
-            var eras = qpadm.QpadmResultEraGroups.Take(_limits.MaxEras).ToList();
+            // De-dup era groups by EraId (defensive — a duplicate era group in the source would otherwise produce
+            // duplicate portrait groups) and take a stable, ordered slice.
+            var eras = qpadm.QpadmResultEraGroups
+                .GroupBy(g => g.EraId).Select(g => g.First())
+                .OrderBy(g => g.EraId)
+                .Take(settings.MaxEras).ToList();
             var now = DateTime.UtcNow;
             var produced = 0;
             string? lastError = null;
+            long inputTokens = 0, outputTokens = 0, totalTokens = 0;
+            var imageCount = 0;
 
             foreach (var era in eras)
             {
@@ -223,6 +252,8 @@ public sealed class AncestralPortraitService(
 
                 try
                 {
+                    logger.LogInformation("Ancestral portraits set {SetId}: calling gpt-image-2 (edit) for era {EraId} as {Population}, {N} variation(s), size {Size}, quality {Quality}.",
+                        set.Id, era.EraId, top.Population.Name, parameters.N, parameters.Size, parameters.Quality);
                     // NOTE: do NOT pass `input_fidelity` — gpt-image-2 rejects that parameter (it's a gpt-image-1
                     // edit option). The user's face photos are the reference; identity preservation is driven by the
                     // prompt's "the SAME person" lead instead.
@@ -232,9 +263,9 @@ public sealed class AncestralPortraitService(
                     for (var i = 0; i < result.Images.Count; i++)
                     {
                         var bytes = result.Images[i].Bytes;
-                        var key = $"users/{identitySlug}/ancestral-portraits/{set.Id:N}/{era.EraId}-{i}.jpg";
+                        var key = $"users/{identitySlug}/ancestral-portraits/{set.Id:N}/{era.EraId}-{i}.{ext}";
                         using (var stream = new MemoryStream(bytes, writable: false))
-                            await r2Storage.UploadAsync(key, stream, "image/jpeg", cancellationToken);
+                            await r2Storage.UploadAsync(key, stream, contentType, cancellationToken);
 
                         dbContext.AncestralPortraits.Add(new AncestralPortrait
                         {
@@ -243,7 +274,7 @@ public sealed class AncestralPortraitService(
                             EraName = era.Era?.Name ?? string.Empty,
                             PopulationName = top.Population.Name,
                             R2Key = key,
-                            ContentType = "image/jpeg",
+                            ContentType = contentType,
                             ByteSize = bytes.LongLength,
                             VariationIndex = i,
                             IsSelected = i == 0, // default-select the first so the share set + reel always have a pick
@@ -253,6 +284,10 @@ public sealed class AncestralPortraitService(
                         });
                     }
                     produced++;
+                    inputTokens += result.Usage?.InputTokens ?? 0;
+                    outputTokens += result.Usage?.OutputTokens ?? 0;
+                    totalTokens += result.Usage?.TotalTokens ?? 0;
+                    imageCount += result.Images.Count;
                 }
                 catch (OpenAIImageException ex)
                 {
@@ -263,15 +298,38 @@ public sealed class AncestralPortraitService(
 
             set.Status = produced > 0 ? AncestralPortraitStatus.Succeeded : AncestralPortraitStatus.Failed;
             set.Error = produced > 0 ? (produced < eras.Count ? lastError : null) : (lastError ?? "Portrait generation failed.");
+            set.UsageInputTokens = inputTokens;
+            set.UsageOutputTokens = outputTokens;
+            set.UsageTotalTokens = totalTokens;
+            set.ImageCount = imageCount;
+            set.EstimatedCostUsd = (inputTokens / 1_000_000m) * settings.CostPerMillionInputTokensUsd
+                                 + (outputTokens / 1_000_000m) * settings.CostPerMillionOutputTokensUsd;
             set.UpdatedAt = DateTime.UtcNow;
             await dbContext.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Ancestral portrait set {SetId} finished: {Produced}/{Total} eras.", set.Id, produced, eras.Count);
+            logger.LogInformation(
+                "Ancestral portrait set {SetId} finished: {Produced}/{Total} eras, {Images} image(s), {TotalTokens} tokens (in {In}/out {Out}), est. ${Cost}.",
+                set.Id, produced, eras.Count, imageCount, totalTokens, inputTokens, outputTokens, set.EstimatedCostUsd);
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Ancestral portrait set {SetId} failed unexpectedly.", set.Id);
             await FailAsync(set, "Portrait generation failed unexpectedly.", cancellationToken);
         }
+    }
+
+    public async Task<AncestralPortraitUsageContract.Response> GetUsageSummaryAsync(CancellationToken cancellationToken = default)
+    {
+        var sets = dbContext.AncestralPortraitSets.AsNoTracking();
+        return new AncestralPortraitUsageContract.Response
+        {
+            TotalRuns = await sets.CountAsync(cancellationToken),
+            SucceededRuns = await sets.CountAsync(s => s.Status == AncestralPortraitStatus.Succeeded, cancellationToken),
+            TotalImages = await sets.SumAsync(s => s.ImageCount, cancellationToken),
+            TotalInputTokens = await sets.SumAsync(s => s.UsageInputTokens ?? 0, cancellationToken),
+            TotalOutputTokens = await sets.SumAsync(s => s.UsageOutputTokens ?? 0, cancellationToken),
+            TotalTokens = await sets.SumAsync(s => s.UsageTotalTokens ?? 0, cancellationToken),
+            TotalEstimatedCostUsd = await sets.SumAsync(s => s.EstimatedCostUsd ?? 0m, cancellationToken),
+        };
     }
 
     // MARK: helpers
@@ -284,9 +342,9 @@ public sealed class AncestralPortraitService(
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 
-    private Task<AncestralPortraitSet?> LoadSetAsync(int orderId, int userId, CancellationToken cancellationToken) =>
+    private Task<AncestralPortraitSet?> LoadSetByIdAsync(Guid setId, CancellationToken cancellationToken) =>
         dbContext.AncestralPortraitSets.AsNoTracking().Include(s => s.Portraits)
-            .FirstOrDefaultAsync(s => s.OrderId == orderId && s.UserId == userId, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Id == setId, cancellationToken);
 
     private static AncestralPortraitSetContract.Response Empty(int orderId) => new()
     {
@@ -300,6 +358,9 @@ public sealed class AncestralPortraitService(
         OrderId = orderId,
         Status = set.Status.ToString(),
         Error = set.Error,
+        CreatedAt = set.CreatedAt,
+        // NOTE: cost/usage is intentionally NOT mapped here — it must never reach the iOS app/user. It's persisted on
+        // the entity + the completion log + the AdminOnly `/admin/ancestral-portraits/usage` endpoint (web only).
         Eras = set.Portraits
             .GroupBy(p => p.EraId)
             .OrderBy(g => g.Key)
@@ -308,17 +369,28 @@ public sealed class AncestralPortraitService(
                 EraId = g.Key,
                 EraName = g.First().EraName,
                 PopulationName = g.First().PopulationName,
-                Portraits = g.OrderBy(p => p.VariationIndex).Select(p => new AncestralPortraitContract.Response
-                {
-                    Id = p.Id,
-                    VariationIndex = p.VariationIndex,
-                    IsSelected = p.IsSelected,
-                    DownloadUrl = $"/v1/api/ancestral-portraits/{p.Id}/download",
-                }).ToList(),
+                // Defensive de-dup: collapse any accidental duplicate variations (same VariationIndex) so a portrait
+                // never appears twice in a group, even if older data was generated before the anti-double-run claim.
+                Portraits = g.GroupBy(p => p.VariationIndex).Select(v => v.OrderBy(p => p.Id).First())
+                    .OrderBy(p => p.VariationIndex).Select(p => new AncestralPortraitContract.Response
+                    {
+                        Id = p.Id,
+                        VariationIndex = p.VariationIndex,
+                        IsSelected = p.IsSelected,
+                        DownloadUrl = $"/v1/api/ancestral-portraits/{p.Id}/download",
+                    }).ToList(),
             })
             .ToList(),
     };
 
     private static string SanitizeIdentity(string identityId) =>
         new(identityId.Select(c => char.IsLetterOrDigit(c) || c is '-' or '_' ? c : '_').ToArray());
+
+    /// <summary>Maps the admin-configured output format to the R2 object's content type + file extension.</summary>
+    private static (string ContentType, string Ext) ResolveContentType(string outputFormat) => outputFormat switch
+    {
+        "png" => ("image/png", "png"),
+        "webp" => ("image/webp", "webp"),
+        _ => ("image/jpeg", "jpg"),
+    };
 }

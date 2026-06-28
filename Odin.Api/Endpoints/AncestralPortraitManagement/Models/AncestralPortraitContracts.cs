@@ -33,7 +33,8 @@ public static class AncestralPortraitEraContract
     }
 }
 
-/// <summary>The whole set for an order: purchase/generation status + the per-era portrait groups.</summary>
+/// <summary>The whole set for an order: purchase/generation status + the per-era portrait groups. **No cost/usage
+/// here** — that's deliberately NOT exposed to the iOS app/user (only the AdminOnly usage endpoint surfaces it).</summary>
 public static class AncestralPortraitSetContract
 {
     public class Response
@@ -43,6 +44,24 @@ public static class AncestralPortraitSetContract
         /// <summary>"NotPurchased" | "Pending" | "Running" | "Succeeded" | "Failed".</summary>
         public string Status { get; set; } = "NotPurchased";
         public string? Error { get; set; }
+        /// <summary>When this iteration was purchased (for ordering/labelling the history). Null for an empty placeholder.</summary>
+        public DateTime? CreatedAt { get; set; }
         public List<AncestralPortraitEraContract.Response> Eras { get; set; } = [];
+    }
+}
+
+/// <summary>Admin aggregate of AI-portrait spend across all runs (first-party, real-time — independent of OpenAI's
+/// lagging usage API). AdminOnly; consumed by the WEB admin app, never the iOS client.</summary>
+public static class AncestralPortraitUsageContract
+{
+    public class Response
+    {
+        public int TotalRuns { get; set; }
+        public int SucceededRuns { get; set; }
+        public int TotalImages { get; set; }
+        public long TotalInputTokens { get; set; }
+        public long TotalOutputTokens { get; set; }
+        public long TotalTokens { get; set; }
+        public decimal TotalEstimatedCostUsd { get; set; }
     }
 }

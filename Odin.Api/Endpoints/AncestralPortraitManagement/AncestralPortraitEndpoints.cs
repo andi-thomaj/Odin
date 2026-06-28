@@ -1,6 +1,7 @@
 using Odin.Api.Authentication;
 using Odin.Api.Endpoints.AncestralPortraitManagement.Models;
 using Odin.Api.Endpoints.Payments.Models;
+using Odin.Api.Extensions;
 
 namespace Odin.Api.Endpoints.AncestralPortraitManagement;
 
@@ -21,11 +22,20 @@ public static class AncestralPortraitEndpoints
             .Produces<AncestralPortraitSetContract.Response>(StatusCodes.Status201Created)
             .Produces<AncestralPortraitSetContract.Response>(StatusCodes.Status200OK);
 
-        perOrder.MapGet("/", GetSet)
+        // All iterations for this order, newest first (each re-purchase is a kept iteration).
+        perOrder.MapGet("/", ListSets)
+            .RequireRateLimiting("authenticated")
+            .Produces<List<AncestralPortraitSetContract.Response>>(StatusCodes.Status200OK);
+
+        var perSet = app.MapGroup("api/ancestral-portraits/sets/{setId:guid}").RequireAuthorization("EmailVerified");
+
+        // Poll one iteration while it generates.
+        perSet.MapGet("/", GetSetById)
             .RequireRateLimiting("authenticated")
             .Produces<AncestralPortraitSetContract.Response>(StatusCodes.Status200OK);
 
-        perOrder.MapPost("/generate", Generate)
+        // (Re)run generation for one iteration (retry a failed run / after capturing a face set).
+        perSet.MapPost("/generate", Generate)
             .RequireRateLimiting("strict")
             .Produces(StatusCodes.Status202Accepted);
 
@@ -37,6 +47,23 @@ public static class AncestralPortraitEndpoints
 
         perPortrait.MapGet("/{portraitId:int}/download", Download)
             .RequireRateLimiting("authenticated");
+
+        // Admin cost/usage dashboard — total AI-portrait spend across all runs (first-party, real-time).
+        app.MapGet("api/admin/ancestral-portraits/usage", Usage)
+            .RequireAuthorization("AdminOnly")
+            .RequireRateLimiting("authenticated")
+            .Produces<AncestralPortraitUsageContract.Response>(StatusCodes.Status200OK);
+
+        // Admin settings — fully runtime-configurable generation (model, quality, size, variations, caps, cost rates).
+        app.MapGet("api/admin/ancestral-portraits/settings", GetSettings)
+            .RequireAuthorization("AdminOnly")
+            .RequireRateLimiting("authenticated")
+            .Produces<AncestralPortraitSettingsContract.Response>(StatusCodes.Status200OK);
+
+        app.MapPut("api/admin/ancestral-portraits/settings", UpdateSettings)
+            .RequireAuthorization("AdminOnly")
+            .RequireRateLimiting("strict")
+            .Produces<AncestralPortraitSettingsContract.Response>(StatusCodes.Status200OK);
     }
 
     private static async Task<IResult> Purchase(
@@ -61,11 +88,24 @@ public static class AncestralPortraitEndpoints
         }
     }
 
-    private static async Task<IResult> GetSet(
+    private static async Task<IResult> ListSets(
         IAncestralPortraitService service, HttpContext httpContext, int orderId, CancellationToken cancellationToken)
     {
         var identityId = httpContext.User.GetIdentityId() ?? string.Empty;
-        var (response, statusCode) = await service.GetSetAsync(orderId, identityId, cancellationToken);
+        var (response, statusCode) = await service.ListSetsAsync(orderId, identityId, cancellationToken);
+        return statusCode switch
+        {
+            200 => Results.Ok(response),
+            403 => Results.Forbid(),
+            _ => Results.NotFound(),
+        };
+    }
+
+    private static async Task<IResult> GetSetById(
+        IAncestralPortraitService service, HttpContext httpContext, Guid setId, CancellationToken cancellationToken)
+    {
+        var identityId = httpContext.User.GetIdentityId() ?? string.Empty;
+        var (response, statusCode) = await service.GetSetByIdAsync(setId, identityId, cancellationToken);
         return statusCode switch
         {
             200 => Results.Ok(response),
@@ -75,10 +115,10 @@ public static class AncestralPortraitEndpoints
     }
 
     private static async Task<IResult> Generate(
-        IAncestralPortraitService service, HttpContext httpContext, int orderId, CancellationToken cancellationToken)
+        IAncestralPortraitService service, HttpContext httpContext, Guid setId, CancellationToken cancellationToken)
     {
         var identityId = httpContext.User.GetIdentityId() ?? string.Empty;
-        var statusCode = await service.RequestGenerateAsync(orderId, identityId, cancellationToken);
+        var statusCode = await service.RequestGenerateAsync(setId, identityId, cancellationToken);
         return statusCode switch
         {
             202 => Results.Accepted(),
@@ -98,6 +138,26 @@ public static class AncestralPortraitEndpoints
             403 => Results.Forbid(),
             _ => Results.NotFound(),
         };
+    }
+
+    private static async Task<IResult> Usage(IAncestralPortraitService service, CancellationToken cancellationToken)
+        => Results.Ok(await service.GetUsageSummaryAsync(cancellationToken));
+
+    private static async Task<IResult> GetSettings(
+        IAncestralPortraitSettingsService service, CancellationToken cancellationToken)
+        => Results.Ok(await service.GetAsync(cancellationToken));
+
+    private static async Task<IResult> UpdateSettings(
+        AncestralPortraitSettingsContract.Request request,
+        IAncestralPortraitSettingsService service,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var problem = request.ValidateAndGetProblem();
+        if (problem is not null) return problem;
+
+        var identityId = httpContext.User.GetIdentityId() ?? string.Empty;
+        return Results.Ok(await service.UpdateAsync(request, identityId, cancellationToken));
     }
 
     private static async Task<IResult> Download(

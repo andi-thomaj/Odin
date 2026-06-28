@@ -478,8 +478,6 @@ namespace Odin.Api
                 configuration.GetSection(Odin.Api.Configuration.OpenAIOptions.SectionName));
             services.Configure<Odin.Api.Configuration.ImageGenerationLimitsOptions>(
                 configuration.GetSection(Odin.Api.Configuration.ImageGenerationLimitsOptions.SectionName));
-            services.Configure<Odin.Api.Configuration.AncestralPortraitLimitsOptions>(
-                configuration.GetSection(Odin.Api.Configuration.AncestralPortraitLimitsOptions.SectionName));
             // Typed client: the SDK handles generation/edits internally; this HttpClient is used only for the
             // Administration usage/cost endpoints (Admin key). Base address + timeout come from OpenAIOptions.
             services.AddHttpClient<
@@ -506,6 +504,9 @@ namespace Odin.Api
             services.AddScoped<
                 Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitService,
                 Odin.Api.Endpoints.AncestralPortraitManagement.AncestralPortraitService>();
+            services.AddScoped<
+                Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitSettingsService,
+                Odin.Api.Endpoints.AncestralPortraitManagement.AncestralPortraitSettingsService>();
             services.AddScoped<
                 Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitWorker,
                 Odin.Api.Endpoints.AncestralPortraitManagement.AncestralPortraitWorker>();

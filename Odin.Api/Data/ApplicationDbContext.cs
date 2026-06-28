@@ -55,6 +55,7 @@ namespace Odin.Api.Data
         public DbSet<UserFacePhoto> UserFacePhotos { get; set; }
         public DbSet<AncestralPortraitSet> AncestralPortraitSets { get; set; }
         public DbSet<AncestralPortrait> AncestralPortraits { get; set; }
+        public DbSet<AncestralPortraitSettings> AncestralPortraitSettings { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
