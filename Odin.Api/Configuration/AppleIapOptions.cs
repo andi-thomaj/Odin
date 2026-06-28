@@ -22,6 +22,9 @@ public sealed class AppleIapOptions
     /// <summary>App Store product id for the "Through the Ages" AI ancestral-portraits add-on (consumable, one unlock per order).</summary>
     public string AiPortraitsProductId { get; set; } = "io.ancestrify.app.aiportraits";
 
+    /// <summary>App Store product id for the Y-DNA results unlock (consumable, one unlock per order — $9.99).</summary>
+    public string YDnaProductId { get; set; } = "io.ancestrify.app.ydna";
+
     /// <summary>
     /// Authoritative price stamped on a created qpAdm order. Informational only — Apple charges the
     /// buyer's storefront price tier, which varies by region; this is what we record/display server-side.

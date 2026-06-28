@@ -7,6 +7,7 @@ using Odin.Api.Data;
 using Odin.Api.Data.Entities;
 using Odin.Api.Data.Enums;
 using Odin.Api.Endpoints.ImageGenerationManagement.Models;
+using Odin.Api.Hubs;
 using Odin.Api.Pagination;
 using Odin.Api.Services;
 using Odin.Api.Storage;
@@ -18,6 +19,7 @@ public sealed class ImageGenerationService(
     IOpenAIImageClient openAiClient,
     IImageSettingsService settingsService,
     IR2Storage r2Storage,
+    IImageGenerationRealtimeNotifier notifier,
     IOptions<ImageGenerationLimitsOptions> limitsOptions,
     ILogger<ImageGenerationService> logger) : IImageGenerationService
 {
@@ -177,6 +179,7 @@ public sealed class ImageGenerationService(
             await dbContext.SaveChangesAsync(cancellationToken);
 
             logger.LogInformation("Image job {JobId} succeeded with {Count} image(s).", job.Id, images.Count);
+            await notifier.NotifyUsageChangedAsync(cancellationToken);
         }
         catch (OpenAIImageException ex)
         {
@@ -232,6 +235,7 @@ public sealed class ImageGenerationService(
         job.CompletedAt = DateTime.UtcNow;
         job.UpdatedAt = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
+        await notifier.NotifyUsageChangedAsync(cancellationToken);
     }
 
     public async Task<ImageJobContract.Response?> GetJobAsync(Guid jobId, CancellationToken cancellationToken = default)

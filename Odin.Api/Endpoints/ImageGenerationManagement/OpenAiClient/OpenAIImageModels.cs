@@ -36,9 +36,11 @@ public sealed record OpenAIImageResult(IReadOnlyList<OpenAIGeneratedImageBytes> 
 
 // ── Administration API (usage / costs) ────────────────────────────────────────────────────────────
 
-public sealed record OpenAIUsageBucket(long StartTime, long EndTime, long Images, long Requests);
+// gpt-image-2 usage is reported by the completions usage endpoint (token + request counts), filtered to the model.
+public sealed record OpenAIUsageBucket(long StartTime, long EndTime, long Requests, long InputTokens, long OutputTokens);
 
-public sealed record OpenAIImageUsageReport(IReadOnlyList<OpenAIUsageBucket> Buckets, long TotalImages, long TotalRequests);
+public sealed record OpenAICompletionsUsageReport(
+    IReadOnlyList<OpenAIUsageBucket> Buckets, long TotalRequests, long TotalInputTokens, long TotalOutputTokens);
 
 public sealed record OpenAICostBucket(long StartTime, long EndTime, decimal AmountUsd);
 

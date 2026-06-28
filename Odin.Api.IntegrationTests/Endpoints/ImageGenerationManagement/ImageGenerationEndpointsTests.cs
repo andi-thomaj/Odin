@@ -185,13 +185,18 @@ public class ImageGenerationEndpointsTests(CustomWebApplicationFactory factory) 
     }
 
     [Fact]
-    public async Task Usage_ReturnsBucketsAndCosts()
+    public async Task Usage_ReturnsCompletionsUsageAndCosts()
     {
         var usage = await Client.GetFromJsonAsync<OpenAIUsageContract.Response>($"{Base}/usage");
         Assert.NotNull(usage);
-        Assert.Equal(3, usage!.TotalImages);
+        Assert.Equal("gpt-image-2", usage!.Model);
+        Assert.Equal(2, usage.TotalRequests);
+        Assert.Equal(50, usage.TotalInputTokens);
+        Assert.Equal(100, usage.TotalOutputTokens);
+        Assert.True(usage.EstimatedCostUsd > 0); // token counts × the configured gpt-image-2 rates
         Assert.Equal("usd", usage.Currency);
         Assert.NotEmpty(usage.CostBuckets);
+        Assert.Null(usage.OpenAiError);
     }
 
     [Fact]

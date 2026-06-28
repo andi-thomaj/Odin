@@ -38,11 +38,11 @@ public sealed class FakeOpenAIImageClient : IOpenAIImageClient
         return new OpenAIImageResult(images, new OpenAIImageUsage(10, 20, 30));
     }
 
-    public Task<OpenAIImageUsageReport> GetImageUsageAsync(
-        DateTimeOffset start, DateTimeOffset? end, string bucketWidth, CancellationToken cancellationToken = default)
+    public Task<OpenAICompletionsUsageReport> GetCompletionsUsageAsync(
+        string model, DateTimeOffset start, DateTimeOffset? end, string bucketWidth, CancellationToken cancellationToken = default)
     {
-        var bucket = new OpenAIUsageBucket(start.ToUnixTimeSeconds(), start.ToUnixTimeSeconds() + 86_400, 3, 2);
-        return Task.FromResult(new OpenAIImageUsageReport([bucket], 3, 2));
+        var bucket = new OpenAIUsageBucket(start.ToUnixTimeSeconds(), start.ToUnixTimeSeconds() + 86_400, 2, 50, 100);
+        return Task.FromResult(new OpenAICompletionsUsageReport([bucket], 2, 50, 100));
     }
 
     public Task<OpenAICostReport> GetCostsAsync(

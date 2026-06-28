@@ -1,5 +1,7 @@
 using Hangfire;
+using Microsoft.Extensions.Options;
 using Odin.Api.Authentication;
+using Odin.Api.Configuration;
 using Odin.Api.Endpoints.ImageGenerationManagement.Models;
 using Odin.Api.Extensions;
 using Odin.Api.Pagination;
@@ -217,50 +219,69 @@ public static class ImageGenerationEndpoints
 
     private static async Task<IResult> GetUsage(
         IOpenAIImageClient client,
+        IOptions<OpenAIOptions> openAiOptions,
         DateTimeOffset? from,
         DateTimeOffset? to,
         string? bucket,
         CancellationToken cancellationToken)
     {
+        var options = openAiOptions.Value;
         var start = from ?? DateTimeOffset.UtcNow.AddDays(-30);
         var bucketWidth = string.IsNullOrWhiteSpace(bucket) ? "1d" : bucket;
+        var model = options.GenerationModel;
 
+        var response = new OpenAIUsageContract.Response { Model = model, Currency = "usd" };
+
+        // Usage (completions, filtered to the model) — near-real-time. Independent of the costs call so one
+        // failing (or lagging) doesn't blank the other. Soft-fail sets OpenAiError instead of erroring the page.
         try
         {
-            var usage = await client.GetImageUsageAsync(start, to, bucketWidth, cancellationToken);
-            var costs = await client.GetCostsAsync(start, to, cancellationToken);
-
-            var response = new OpenAIUsageContract.Response
-            {
-                UsageBuckets = usage.Buckets
-                    .Select(b => new OpenAIUsageContract.UsageBucket
-                    {
-                        StartTime = b.StartTime,
-                        EndTime = b.EndTime,
-                        Images = b.Images,
-                        Requests = b.Requests,
-                    })
-                    .ToList(),
-                TotalImages = usage.TotalImages,
-                TotalRequests = usage.TotalRequests,
-                CostBuckets = costs.Buckets
-                    .Select(b => new OpenAIUsageContract.CostBucket
-                    {
-                        StartTime = b.StartTime,
-                        EndTime = b.EndTime,
-                        AmountUsd = b.AmountUsd,
-                    })
-                    .ToList(),
-                TotalCostUsd = costs.TotalAmountUsd,
-                Currency = costs.Currency,
-            };
-
-            return Results.Ok(response);
+            var usage = await client.GetCompletionsUsageAsync(model, start, to, bucketWidth, cancellationToken);
+            response.UsageBuckets = usage.Buckets
+                .Select(b => new OpenAIUsageContract.UsageBucket
+                {
+                    StartTime = b.StartTime,
+                    EndTime = b.EndTime,
+                    Requests = b.Requests,
+                    InputTokens = b.InputTokens,
+                    OutputTokens = b.OutputTokens,
+                })
+                .ToList();
+            response.TotalRequests = usage.TotalRequests;
+            response.TotalInputTokens = usage.TotalInputTokens;
+            response.TotalOutputTokens = usage.TotalOutputTokens;
+            // Live estimate from the (near-real-time) token counts, since OpenAI's settled $ costs lag ~a day.
+            response.EstimatedCostUsd =
+                (usage.TotalInputTokens / 1_000_000m * options.InputCostPer1MTokensUsd)
+                + (usage.TotalOutputTokens / 1_000_000m * options.OutputCostPer1MTokensUsd);
         }
         catch (OpenAIImageException ex)
         {
-            return MapOpenAiError(ex);
+            response.OpenAiError = ex.Detail;
         }
+
+        // Settled costs (org-wide, lag ~a day).
+        try
+        {
+            var costs = await client.GetCostsAsync(start, to, cancellationToken);
+            response.CostBuckets = costs.Buckets
+                .Select(b => new OpenAIUsageContract.CostBucket
+                {
+                    StartTime = b.StartTime,
+                    EndTime = b.EndTime,
+                    AmountUsd = b.AmountUsd,
+                })
+                .ToList();
+            response.TotalCostUsd = costs.TotalAmountUsd;
+            if (!string.IsNullOrWhiteSpace(costs.Currency))
+                response.Currency = costs.Currency;
+        }
+        catch (OpenAIImageException ex)
+        {
+            response.OpenAiError ??= ex.Detail;
+        }
+
+        return Results.Ok(response);
     }
 
     private static IResult MapOpenAiError(OpenAIImageException ex)

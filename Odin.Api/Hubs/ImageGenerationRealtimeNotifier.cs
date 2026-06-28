@@ -11,7 +11,14 @@ namespace Odin.Api.Hubs;
 /// </summary>
 public interface IImageGenerationRealtimeNotifier
 {
+    /// <summary>Targeted push to the admin who started the job (async completion).</summary>
     Task NotifyJobChangedAsync(Guid jobId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Broadcast that image-generation usage changed (a job reached a terminal state), so any admin's
+    /// usage page refetches its first-party totals live. Minimal payload — the FE just invalidates.
+    /// </summary>
+    Task NotifyUsageChangedAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class ImageGenerationRealtimeNotifier(
@@ -42,6 +49,19 @@ public sealed class ImageGenerationRealtimeNotifier(
             // A failed live-refresh push must never fail the job that triggered it; the client still
             // catches up via polling. Log and move on.
             logger.LogWarning(ex, "Failed to push image-job change for {JobId}.", jobId);
+        }
+    }
+
+    public async Task NotifyUsageChangedAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Broadcast — the usage page is AdminOnly; the payload is empty (the FE just refetches).
+            await hubContext.Clients.All.SendAsync("ImageUsageChanged", cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to broadcast image-usage change.");
         }
     }
 }

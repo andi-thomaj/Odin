@@ -56,6 +56,7 @@ namespace Odin.Api.Data
         public DbSet<AncestralPortraitSet> AncestralPortraitSets { get; set; }
         public DbSet<AncestralPortrait> AncestralPortraits { get; set; }
         public DbSet<AncestralPortraitSettings> AncestralPortraitSettings { get; set; }
+        public DbSet<QpadmYDnaUnlock> QpadmYDnaUnlocks { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

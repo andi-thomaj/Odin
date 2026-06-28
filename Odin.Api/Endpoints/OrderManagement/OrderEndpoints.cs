@@ -79,6 +79,13 @@ namespace Odin.Api.Endpoints.OrderManagement
                 .RequireRateLimiting("authenticated")
                 .Produces<GetOrderQpadmResultContract.Response>(StatusCodes.Status200OK);
 
+            // Paid Y-DNA results unlock (iOS in-app purchase, $9.99): validate the Apple StoreKit transaction, record
+            // the per-order entitlement (idempotent on the transaction id), and return the now-unlocked Y-DNA result.
+            endpoints.MapPost("/{id:int}/ydna/purchase", PurchaseYDna)
+                .RequireAuthorization("EmailVerified")
+                .RequireRateLimiting("authenticated")
+                .Produces<GetOrderQpadmResultContract.YDnaResult>(StatusCodes.Status200OK);
+
             endpoints.MapGet("/{id:int}/g25-result", GetG25Result)
                 .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("authenticated")
@@ -197,6 +204,37 @@ namespace Odin.Api.Endpoints.OrderManagement
                 return Results.BadRequest(new { Message = ex.Message });
             }
             catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { Message = ex.Message });
+            }
+        }
+
+        // Paid Y-DNA results unlock gated on a validated Apple StoreKit transaction. Idempotent on the transaction id.
+        private static async Task<IResult> PurchaseYDna(
+            IOrderService service,
+            HttpContext httpContext,
+            int id,
+            [FromBody] PurchaseYDnaContract.Request request)
+        {
+            if (string.IsNullOrWhiteSpace(request.AppStoreTransaction))
+                return Results.BadRequest(new { Message = "A completed in-app purchase is required to unlock Y-DNA results." });
+
+            var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                             ?? httpContext.User.FindFirstValue("sub")
+                             ?? string.Empty;
+
+            try
+            {
+                var (yDna, statusCode, error) = await service.PurchaseYDnaUnlockAsync(id, identityId, request.AppStoreTransaction);
+                return statusCode switch
+                {
+                    200 => Results.Ok(yDna),
+                    403 => Results.Forbid(),
+                    404 => Results.NotFound(new { Message = error }),
+                    _ => Results.BadRequest(new { Message = error }),
+                };
+            }
+            catch (Payments.Models.AppStorePurchaseException ex)
             {
                 return Results.BadRequest(new { Message = ex.Message });
             }

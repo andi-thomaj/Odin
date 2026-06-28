@@ -38,4 +38,15 @@ public sealed class OpenAIOptions
     /// should use the async (Hangfire) mode.
     /// </summary>
     public int TimeoutSeconds { get; set; } = 180;
+
+    // ── Cost estimate rates (USD per 1M tokens) ────────────────────────────────────────────────────
+    // The usage endpoint's token counts are near-real-time, but OpenAI's settled $ costs lag ~a day. The
+    // usage admin endpoint multiplies token counts by these published gpt-image-2 rates to show a LIVE
+    // estimated cost. Tune to OpenAI's current pricing. (image input $8, image output $30, text input $5.)
+
+    /// <summary>USD per 1M input tokens for the cost estimate (gpt-image-2 image input ≈ $8; text input ≈ $5).</summary>
+    public decimal InputCostPer1MTokensUsd { get; set; } = 8m;
+
+    /// <summary>USD per 1M output tokens for the cost estimate (gpt-image-2 image output ≈ $30).</summary>
+    public decimal OutputCostPer1MTokensUsd { get; set; } = 30m;
 }

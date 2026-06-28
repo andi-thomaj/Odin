@@ -318,8 +318,14 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
             public string Status { get; set; } = string.Empty;
             public string? Message { get; set; }
 
-            /// <summary>The clade payload (same shape as the standalone clade finder); set only when <see cref="Status"/> is <c>Completed</c>.</summary>
+            /// <summary>The clade payload (same shape as the standalone clade finder); set only when <see cref="Status"/> is
+            /// <c>Completed</c> AND the order's Y-DNA unlock has been purchased. Withheld (null) while <see cref="Locked"/> is true.</summary>
             public AnalyzeCladeContract.Response? Clade { get; set; }
+
+            /// <summary>True when there IS a completed Y-DNA result but it's withheld behind the paid ($9.99) unlock for this
+            /// order — the client shows the paywall. False once unlocked (then <see cref="Clade"/> is populated) and for every
+            /// non-completed state (there's no Y-DNA to sell). Unlock via <c>POST /orders/{id}/ydna/purchase</c>.</summary>
+            public bool Locked { get; set; }
         }
 
         public class Response
@@ -337,6 +343,15 @@ namespace Odin.Api.Endpoints.OrderManagement.Models
 
             /// <summary>Y-DNA haplogroup result for the "Y-DNA Haplogroup" tab; null only on legacy orders not yet backfilled.</summary>
             public YDnaResult? YDna { get; set; }
+        }
+    }
+
+    /// <summary>iOS sends the StoreKit 2 signed transaction JWS to unlock an order's Y-DNA results ($9.99).</summary>
+    public static class PurchaseYDnaContract
+    {
+        public class Request
+        {
+            public string AppStoreTransaction { get; set; } = string.Empty;
         }
     }
 

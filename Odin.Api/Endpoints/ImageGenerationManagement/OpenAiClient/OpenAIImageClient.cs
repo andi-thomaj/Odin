@@ -244,51 +244,58 @@ public sealed class OpenAIImageClient : IOpenAIImageClient
         return new OpenAIImageResult(images, usage);
     }
 
-    public async Task<OpenAIImageUsageReport> GetImageUsageAsync(
-        DateTimeOffset start, DateTimeOffset? end, string bucketWidth, CancellationToken cancellationToken = default)
+    public async Task<OpenAICompletionsUsageReport> GetCompletionsUsageAsync(
+        string model, DateTimeOffset start, DateTimeOffset? end, string bucketWidth, CancellationToken cancellationToken = default)
     {
         EnsureAdminConfigured();
 
         var buckets = new List<OpenAIUsageBucket>();
         string? page = null;
 
-        // Bounded page walk; each page covers up to 180 buckets.
+        // gpt-image-2 is a GPT model — its usage is on the completions endpoint, filtered to the model.
         for (var i = 0; i < 50; i++)
         {
             var query = new List<string>
             {
                 $"start_time={start.ToUnixTimeSeconds()}",
                 $"bucket_width={Uri.EscapeDataString(bucketWidth)}",
-                "limit=180",
+                $"limit={MaxLimitForBucket(bucketWidth)}",
+                $"models={Uri.EscapeDataString(model)}",
             };
             if (end is { } e) query.Add($"end_time={e.ToUnixTimeSeconds()}");
             if (page is not null) query.Add($"page={Uri.EscapeDataString(page)}");
 
-            using var doc = await SendAdminGetAsync("/v1/organization/usage/images?" + string.Join("&", query), cancellationToken);
+            using var doc = await SendAdminGetAsync(
+                "/v1/organization/usage/completions?" + string.Join("&", query), cancellationToken);
             var root = doc.RootElement;
 
             foreach (var bucket in EnumerateData(root))
             {
                 var startTime = ReadLong(bucket, "start_time") ?? 0;
                 var endTime = ReadLong(bucket, "end_time") ?? startTime;
-                long imageCount = 0, requestCount = 0;
+                long requestCount = 0, inputTokens = 0, outputTokens = 0;
                 if (bucket.TryGetProperty("results", out var results) && results.ValueKind == JsonValueKind.Array)
                 {
                     foreach (var r in results.EnumerateArray())
                     {
-                        imageCount += ReadLong(r, "images") ?? 0;
                         requestCount += ReadLong(r, "num_model_requests") ?? 0;
+                        inputTokens += ReadLong(r, "input_tokens") ?? 0;
+                        outputTokens += ReadLong(r, "output_tokens") ?? 0;
                     }
                 }
 
-                buckets.Add(new OpenAIUsageBucket(startTime, endTime, imageCount, requestCount));
+                buckets.Add(new OpenAIUsageBucket(startTime, endTime, requestCount, inputTokens, outputTokens));
             }
 
             page = NextPage(root);
             if (page is null) break;
         }
 
-        return new OpenAIImageUsageReport(buckets, buckets.Sum(b => b.Images), buckets.Sum(b => b.Requests));
+        return new OpenAICompletionsUsageReport(
+            buckets,
+            buckets.Sum(b => b.Requests),
+            buckets.Sum(b => b.InputTokens),
+            buckets.Sum(b => b.OutputTokens));
     }
 
     public async Task<OpenAICostReport> GetCostsAsync(
@@ -306,7 +313,7 @@ public sealed class OpenAIImageClient : IOpenAIImageClient
             {
                 $"start_time={start.ToUnixTimeSeconds()}",
                 "bucket_width=1d", // the costs endpoint only supports daily buckets
-                "limit=180",
+                "limit=31", // the Administration API caps limit at 31 for 1d buckets
             };
             if (end is { } e) query.Add($"end_time={e.ToUnixTimeSeconds()}");
             if (page is not null) query.Add($"page={Uri.EscapeDataString(page)}");
@@ -362,6 +369,17 @@ public sealed class OpenAIImageClient : IOpenAIImageClient
 
         return JsonDocument.Parse(body);
     }
+
+    /// <summary>
+    /// Max page size the Administration API allows for a given bucket width: 1440 for <c>1m</c>, 168 for
+    /// <c>1h</c>, 31 for <c>1d</c>. Exceeding it returns a 400; longer ranges are walked via <c>next_page</c>.
+    /// </summary>
+    private static int MaxLimitForBucket(string bucketWidth) => bucketWidth switch
+    {
+        "1m" => 1440,
+        "1h" => 168,
+        _ => 31,
+    };
 
     private void EnsureAdminConfigured()
     {

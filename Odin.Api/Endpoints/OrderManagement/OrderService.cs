@@ -38,6 +38,9 @@ public interface IOrderService
     Task<(GetOrderContract.Response? Response, int StatusCode)> UpdateAsync(int id, string identityId, UpdateOrderContract.Request request);
     Task<bool> DeleteAsync(int id);
     Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
+    /// <summary>Validate the StoreKit Y-DNA-unlock purchase, record the per-order entitlement (idempotent on the Apple
+    /// transaction id), and return the now-unlocked Y-DNA result. 200 / 400 (bad purchase) / 403 / 404.</summary>
+    Task<(GetOrderQpadmResultContract.YDnaResult? YDna, int StatusCode, string? Error)> PurchaseYDnaUnlockAsync(int orderId, string identityId, string transactionJws);
     Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(int StatusCode, string? Error, string? MergeId, string? FileName, byte[]? LegacyBytes)> ResolveMergedDataDownloadAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, ServiceType service, bool isAdmin = false);
@@ -969,7 +972,7 @@ public partial class OrderService(
 
             if (!hostEnvironment.IsEnvironment("Testing") &&
                 cache.TryGetValue(OrderResultCacheKeys.Qpadm(orderId), out GetOrderQpadmResultContract.Response? cachedResponse))
-                return (cachedResponse!, 200, null);
+                return (await ApplyYDnaLockAsync(cachedResponse!, orderId, isAdmin), 200, null);
 
             var qpadmResult = await dbContext.QpadmResults
                 .AsNoTracking()
@@ -1053,7 +1056,107 @@ public partial class OrderService(
                 });
             }
 
-            return (response, 200, null);
+            // The CACHE holds the full result (with the clade); the paid Y-DNA lock is applied per-request from the live
+            // entitlement, so a purchase takes effect immediately (no cache invalidation) and an admin's unlocked view
+            // can't poison the owner's cached (locked) view.
+            return (await ApplyYDnaLockAsync(response, orderId, isAdmin), 200, null);
+        }
+
+        /// <summary>True once the order's Y-DNA unlock ($9.99) has been purchased.</summary>
+        private Task<bool> IsYDnaUnlockedAsync(int orderId) =>
+            dbContext.QpadmYDnaUnlocks.AsNoTracking().AnyAsync(u => u.OrderId == orderId);
+
+        /// <summary>
+        /// Withholds the Y-DNA clade behind the paid unlock: when there's a real Completed clade but no purchased unlock
+        /// (and the caller isn't an admin), returns a COPY of the response whose <c>YDna</c> has the clade stripped and
+        /// <c>Locked = true</c>. Never mutates the (shared, cached) input. Info states (NotApplicable/NoYData/Pending/…)
+        /// are free — only a sellable Completed clade is locked.
+        /// </summary>
+        private async Task<GetOrderQpadmResultContract.Response> ApplyYDnaLockAsync(
+            GetOrderQpadmResultContract.Response response, int orderId, bool isAdmin)
+        {
+            var yDna = response.YDna;
+            // Only paywall a real, determinable haplogroup. Admins see all; info states and a Completed-but-
+            // "couldn't determine" clade (error / empty clade id) are free — there's nothing of value to sell.
+            if (isAdmin || yDna is null
+                || yDna.Status != nameof(CladeAnalysisStatus.Completed)
+                || yDna.Clade is null
+                || string.IsNullOrWhiteSpace(yDna.Clade.Clade))
+                return response;
+
+            if (await IsYDnaUnlockedAsync(orderId))
+                return response;
+
+            return new GetOrderQpadmResultContract.Response
+            {
+                FirstName = response.FirstName,
+                MiddleName = response.MiddleName,
+                LastName = response.LastName,
+                HasMergedRawData = response.HasMergedRawData,
+                HasProfilePicture = response.HasProfilePicture,
+                Gender = response.Gender,
+                IntroTrackId = response.IntroTrackId,
+                HasIntroAudioFile = response.HasIntroAudioFile,
+                ResultsVersion = response.ResultsVersion,
+                EraGroups = response.EraGroups,   // shared by reference — read-only output, never mutated
+                YDna = new GetOrderQpadmResultContract.YDnaResult
+                {
+                    Status = yDna.Status,
+                    Message = yDna.Message,
+                    Clade = null,      // withheld until purchased
+                    Locked = true,
+                },
+            };
+        }
+
+        public async Task<(GetOrderQpadmResultContract.YDnaResult? YDna, int StatusCode, string? Error)> PurchaseYDnaUnlockAsync(
+            int orderId, string identityId, string transactionJws)
+        {
+            var order = await dbContext.QpadmOrders.AsNoTracking()
+                .Include(o => o.GeneticInspection)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order is null)
+                return (null, 404, $"Order with ID {orderId} not found.");
+            if (order.CreatedBy != identityId)
+                return (null, 403, "You do not have permission to unlock this order.");
+            if (order.GeneticInspection is null)
+                return (null, 404, "No genetic inspection associated with this order.");
+
+            // Validate the StoreKit add-on purchase (throws AppStorePurchaseException → 400 at the endpoint).
+            var verified = appStorePurchase.ValidateAddOnTransaction(transactionJws, appleIapOptions.Value.YDnaProductId);
+
+            // Idempotent: a replayed Apple transaction (retry / app-killed mid-flow) returns the already-granted unlock.
+            var existing = await dbContext.QpadmYDnaUnlocks.AsNoTracking()
+                .AnyAsync(u => u.TransactionId == verified.TransactionId);
+            if (!existing)
+            {
+                var user = await dbContext.Users.RequireByIdentityAsync(identityId);
+                var now = DateTime.UtcNow;
+                dbContext.QpadmYDnaUnlocks.Add(new QpadmYDnaUnlock
+                {
+                    OrderId = orderId,
+                    UserId = user.Id,
+                    TransactionId = verified.TransactionId,
+                    CreatedBy = identityId,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                });
+                try
+                {
+                    await dbContext.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    // A concurrent request replaying the SAME transaction won the unique-TransactionId race — that's fine,
+                    // the unlock exists either way (idempotent).
+                }
+            }
+
+            // Return the now-unlocked Y-DNA result so the client reveals it immediately. (The cached qpAdm response holds
+            // the full result already; the per-request lock now resolves to unlocked on the next view.)
+            var yDna = await BuildYDnaResultAsync(
+                order.GeneticInspection.Id, order.GeneticInspection.Gender?.ToString());
+            return (yDna, 200, null);
         }
 
         /// <summary>
