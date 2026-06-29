@@ -103,6 +103,32 @@ public class AncestralPortraitPromptsTests
     }
 
     [Fact]
+    public void Build_PreservesSkinAndEyeColour_ButRestylesHairAndBeard()
+    {
+        // Skin pigment + eye colour are preserved for everyone; hair is restyled for everyone, beard only for men.
+        var male = AncestralPortraitPrompts.Build("Celtic", null, "Iron Age", null, Gender.Male);
+        Assert.Contains("skin tone", male);
+        Assert.Contains("eye colour", male);
+        Assert.Contains("never lighten, darken or recolour the skin or eyes", male);
+        Assert.Contains("HAIR and BEARD restyled", male);
+
+        var female = AncestralPortraitPrompts.Build("Celtic", null, "Iron Age", null, Gender.Female);
+        Assert.Contains("never lighten, darken or recolour the skin or eyes", female);
+        Assert.Contains("HAIR restyled", female);
+        Assert.Contains("no beard", female);
+        Assert.DoesNotContain("HAIR and BEARD restyled", female); // women aren't given a beard
+    }
+
+    [Fact]
+    public void Build_StaysUnderLengthRail_ForLongestSeededScene()
+    {
+        // Longest population short-name + a near-max curated scene + female gender clause is the worst case.
+        var prompt = AncestralPortraitPrompts.Build(
+            "Anatolian Neolithic Farmer (8500 - 6000 BC)", null, "Hunter Gatherer and Neolithic Farmer", null, Gender.Female);
+        Assert.True(prompt.Length < 2200, $"prompt length was {prompt.Length}");
+    }
+
+    [Fact]
     public void Build_AdminOverrideBeatsBuiltInScene()
     {
         const string popName = "Illyrian (1200 - 250 BC)";

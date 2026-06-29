@@ -10,15 +10,20 @@ namespace Odin.Api.Endpoints.AncestralPortraitManagement;
 /// <c>QpadmPopulation.ImagePrompt</c> override when present, else (2) a built-in GENDER-SPECIFIC scene for the seeded
 /// population (<see cref="AncestralPortraitScenes"/> — so the portrait resembles the population's own photo, with a
 /// women's variant for female clients and a men's variant otherwise), else (3) the population's name + description.
-/// In every case the creative is wrapped with an identity-preserving instruction (so the output keeps the user's
-/// likeness), a gender clause, and the shared photoreal portrait style.
+/// In every case the creative is wrapped with an identity-preserving instruction (keep the user's bone structure,
+/// likeness, natural skin tone and eye colour — but restyle the hair, and for men the beard, to the ancestral
+/// period), a gender clause, and the shared photoreal portrait style.
 /// </summary>
 public static class AncestralPortraitPrompts
 {
-    /// <summary>Identity-preserving lead — gpt-image-2 edits the reference (the user's face) rather than inventing a face.</summary>
+    /// <summary>Identity-preserving lead — gpt-image-2 edits the reference (the user's face). Bone structure, likeness,
+    /// natural SKIN TONE and EYE COLOUR are kept exactly; only the HAIR (and, for men, the BEARD) is restyled to the
+    /// ancestral period — so the portrait reads as the user as their ancestor, not a recoloured/re-raced stranger.</summary>
     private const string IdentityLead =
         "Create a photorealistic portrait of the SAME person shown in the reference photographs — keep their exact " +
-        "facial identity, bone structure, and likeness — reimagined as ";
+        "facial bone structure and likeness, and keep their natural skin tone and eye colour exactly as in the reference " +
+        "(never lighten, darken or recolour the skin or eyes); their hair and any beard are restyled to the period — " +
+        "reimagined as ";
 
     /// <summary>Shared rendering style (mirrors the population-avatar AVATAR_IMAGE_STYLE: photoreal, period-accurate,
     /// rich cultural backdrop, no weapons/HUD/text), adapted for a vertical 9:16-ish portrait of the user.</summary>
@@ -44,16 +49,19 @@ public static class AncestralPortraitPrompts
         return IdentityLead + subject + GenderClause(gender) + Style;
     }
 
-    /// <summary>Enforces a gender-consistent presentation — the client's gender drives feminine vs masculine
-    /// clothing/dress, hair and adornments (so the portrait matches the person, not just the population).</summary>
+    /// <summary>Enforces a gender-consistent presentation — the client's gender drives feminine vs masculine clothing
+    /// and adornments AND the hair/beard restyle: women get this culture's women's hairstyle and are clean-faced; men
+    /// get this culture's men's hair AND beard. (Skin tone + eye colour are preserved by <see cref="IdentityLead"/>.)</summary>
     private static string GenderClause(Gender? gender) => gender switch
     {
         Gender.Female =>
             " The subject is a WOMAN — give her a distinctly feminine presentation: the WOMEN'S period-accurate attire " +
-            "of this culture (dress/garments, hairstyle, headwear and jewellery), feminine grooming and silhouette.",
+            "of this culture (dress, headwear and jewellery), with her HAIR restyled into this culture's women's hairstyle; " +
+            "clean-faced, no beard.",
         Gender.Male =>
             " The subject is a MAN — give him a distinctly masculine presentation: the MEN'S period-accurate attire " +
-            "of this culture (garments, hairstyle, headwear and adornments), masculine grooming and silhouette.",
+            "of this culture (garments, headwear and adornments), with his HAIR and BEARD restyled into this culture's " +
+            "men's style.",
         _ => string.Empty,
     };
 
@@ -87,8 +95,9 @@ public static class AncestralPortraitPrompts
         var desc = (description ?? string.Empty).Trim();
         if (desc.Length > 0)
         {
-            // Cap the description so the prompt stays well within model limits.
-            sb.Append(' ').Append(desc.Length > 900 ? desc[..900] : desc);
+            // Cap the description so the prompt stays well within model limits (and under the ~2200-char rail once
+            // the identity lead, gender clause and style block are added).
+            sb.Append(' ').Append(desc.Length > 800 ? desc[..800] : desc);
         }
         return sb.ToString();
     }
