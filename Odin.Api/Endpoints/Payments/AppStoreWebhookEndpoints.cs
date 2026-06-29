@@ -68,6 +68,20 @@ namespace Odin.Api.Endpoints.Payments
                         "App Store transaction {TransactionId} marked Refunded ({NotificationType}).",
                         transactionId, notification.NotificationType);
                 }
+
+                // The Y-DNA results unlock is a separate per-order entitlement (its own `qpadm_ydna_unlocks` table,
+                // not `app_store_transactions`), so revoke it explicitly on refund: deleting the row re-locks the
+                // clade (the per-request gate reads the table live, so the next result view is locked again).
+                var ydnaUnlock = await dbContext.QpadmYDnaUnlocks
+                    .FirstOrDefaultAsync(u => u.TransactionId == transactionId, ct);
+                if (ydnaUnlock is not null)
+                {
+                    dbContext.QpadmYDnaUnlocks.Remove(ydnaUnlock);
+                    await dbContext.SaveChangesAsync(ct);
+                    logger.LogInformation(
+                        "Y-DNA unlock for order {OrderId} revoked ({NotificationType}, txn {TransactionId}).",
+                        ydnaUnlock.OrderId, notification.NotificationType, transactionId);
+                }
             }
 
             // Always 200 for anything we successfully verified — otherwise Apple retries for hours on events

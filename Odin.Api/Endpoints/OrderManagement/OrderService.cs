@@ -1125,10 +1125,17 @@ public partial class OrderService(
             // Validate the StoreKit add-on purchase (throws AppStorePurchaseException → 400 at the endpoint).
             var verified = appStorePurchase.ValidateAddOnTransaction(transactionJws, appleIapOptions.Value.YDnaProductId);
 
-            // Idempotent: a replayed Apple transaction (retry / app-killed mid-flow) returns the already-granted unlock.
+            // A transaction unlocks EXACTLY ONE order — the one it was first redeemed against. The Apple
+            // transaction carries no order binding, so we bind it here. **Reject a replay against a DIFFERENT order**
+            // (otherwise one $9.99 purchase could reveal every order the buyer owns by re-POSTing the same receipt to
+            // each order's endpoint — and the response would return that order's clade for free). A replay against
+            // the SAME order is idempotent (retry / app-killed mid-flow).
             var existing = await dbContext.QpadmYDnaUnlocks.AsNoTracking()
-                .AnyAsync(u => u.TransactionId == verified.TransactionId);
-            if (!existing)
+                .FirstOrDefaultAsync(u => u.TransactionId == verified.TransactionId);
+            if (existing is not null && existing.OrderId != orderId)
+                return (null, 400, "This purchase has already been used to unlock a different order.");
+
+            if (existing is null)
             {
                 var user = await dbContext.Users.RequireByIdentityAsync(identityId);
                 var now = DateTime.UtcNow;
@@ -1147,13 +1154,19 @@ public partial class OrderService(
                 }
                 catch (DbUpdateException)
                 {
-                    // A concurrent request replaying the SAME transaction won the unique-TransactionId race — that's fine,
-                    // the unlock exists either way (idempotent).
+                    // A concurrent request replaying the SAME transaction won the unique-TransactionId race. Re-read it:
+                    // if it bound to a different order, reject; if to this order, it's an idempotent same-order replay.
+                    dbContext.ChangeTracker.Clear();
+                    var winner = await dbContext.QpadmYDnaUnlocks.AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.TransactionId == verified.TransactionId);
+                    if (winner is not null && winner.OrderId != orderId)
+                        return (null, 400, "This purchase has already been used to unlock a different order.");
                 }
             }
 
-            // Return the now-unlocked Y-DNA result so the client reveals it immediately. (The cached qpAdm response holds
-            // the full result already; the per-request lock now resolves to unlocked on the next view.)
+            // The transaction is now bound to THIS order ⇒ return the unlocked Y-DNA result so the client reveals it
+            // immediately. (The clade is only returned because the order is genuinely entitled — never on a cross-order
+            // replay, which returned 400 above.)
             var yDna = await BuildYDnaResultAsync(
                 order.GeneticInspection.Id, order.GeneticInspection.Gender?.ToString());
             return (yDna, 200, null);

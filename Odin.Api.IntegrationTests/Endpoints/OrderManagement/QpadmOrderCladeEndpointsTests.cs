@@ -116,6 +116,37 @@ public class QpadmOrderCladeEndpointsTests(CustomWebApplicationFactory factory) 
         Assert.Equal(1, await db.QpadmYDnaUnlocks.CountAsync(u => u.OrderId == orderId));
     }
 
+    /// <summary>SECURITY: one paid transaction unlocks exactly ONE order. Replaying its receipt against a DIFFERENT
+    /// order the buyer owns is rejected (400) and leaks no clade — otherwise one $9.99 buy would reveal every order.</summary>
+    [Fact]
+    public async Task PurchaseYDna_CannotReplayTransactionAgainstADifferentOrder()
+    {
+        var user = await CreateClientAsAsync("ydna-replay-user", AppRole.User);
+        var (orderA, _) = await SeedCompletedQpadmOrderWithCladeAsync(user);
+        var (orderB, _) = await SeedCompletedQpadmOrderWithCladeAsync(user);
+        var jws = BuildAppStoreTransactionJws(ServiceType.qpAdm, productId: "io.ancestrify.app.ydna");
+
+        // Pay for order A → unlocked.
+        var a = await user.PostAsJsonAsync($"/api/orders/{orderA}/ydna/purchase", new { appStoreTransaction = jws }, JsonOptions);
+        Assert.Equal(HttpStatusCode.OK, a.StatusCode);
+
+        // Replaying A's receipt against order B is REJECTED — and returns NO clade.
+        var b = await user.PostAsJsonAsync($"/api/orders/{orderB}/ydna/purchase", new { appStoreTransaction = jws }, JsonOptions);
+        Assert.Equal(HttpStatusCode.BadRequest, b.StatusCode);
+
+        // Order B stays locked.
+        var bodyB = await (await user.GetAsync($"/api/orders/{orderB}/qpadm-result"))
+            .Content.ReadFromJsonAsync<GetOrderQpadmResultContract.Response>(JsonOptions);
+        Assert.True(bodyB!.YDna!.Locked);
+        Assert.Null(bodyB.YDna.Clade);
+
+        // Only order A has an unlock row.
+        await using var scope = Factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        Assert.Equal(1, await db.QpadmYDnaUnlocks.CountAsync());
+        Assert.Equal(orderA, (await db.QpadmYDnaUnlocks.AsNoTracking().SingleAsync()).OrderId);
+    }
+
     [Fact]
     public async Task GetQpadmResult_WithCachedNoYData_ReturnsMessageAndNoClade()
     {
