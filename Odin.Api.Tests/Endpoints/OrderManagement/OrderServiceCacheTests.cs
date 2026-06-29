@@ -251,10 +251,21 @@ public class OrderServiceCacheTests
             Options.Create(new OrderLimitsOptions()),
             cache,
             new NoopRealtimeNotifier(),
+            new NoopPurchaseRealtimeNotifier(),
             env ?? FakeHostEnvironment.Production(),
             new StubAppStorePurchaseService(),
             Options.Create(new AppleIapOptions()),
             NullLogger<OrderService>.Instance);
+
+    private sealed class NoopPurchaseRealtimeNotifier : IAppStorePurchaseRealtimeNotifier
+    {
+        public Task NotifyPurchaseRecordedAsync(
+            string kind, string productLabel, decimal amount, string currency, string? createdBySub,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task NotifyRefundedAsync(string transactionId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
 
     private sealed class StubAppStorePurchaseService : IAppStorePurchaseService
     {

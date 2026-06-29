@@ -6,9 +6,12 @@ namespace Odin.Api.Endpoints.AncestralPortraitManagement;
 /// <summary>
 /// Builds the <c>gpt-image-2</c> EDIT prompt for an "ancestral self" portrait: the user's own face photos are the
 /// reference images, and the prompt reimagines that SAME person as a given ancestral population. Pure + deterministic
-/// so it's unit-testable. The per-population creative is sourced from the admin-curated <c>QpadmPopulation.ImagePrompt</c>
-/// when present, else built from the population's name + description; both are wrapped with an identity-preserving
-/// instruction (so the output keeps the user's likeness) and the shared photoreal portrait style.
+/// so it's unit-testable. The per-population creative is sourced, in priority order, from: (1) the admin-curated
+/// <c>QpadmPopulation.ImagePrompt</c> override when present, else (2) a built-in GENDER-SPECIFIC scene for the seeded
+/// population (<see cref="AncestralPortraitScenes"/> — so the portrait resembles the population's own photo, with a
+/// women's variant for female clients and a men's variant otherwise), else (3) the population's name + description.
+/// In every case the creative is wrapped with an identity-preserving instruction (so the output keeps the user's
+/// likeness), a gender clause, and the shared photoreal portrait style.
 /// </summary>
 public static class AncestralPortraitPrompts
 {
@@ -37,7 +40,7 @@ public static class AncestralPortraitPrompts
     public static string Build(string name, string? description, string? eraName, string? curatedImagePrompt,
         Gender? gender = null)
     {
-        var subject = BuildSubject(name, description, eraName, curatedImagePrompt);
+        var subject = BuildSubject(name, description, eraName, curatedImagePrompt, gender);
         return IdentityLead + subject + GenderClause(gender) + Style;
     }
 
@@ -54,17 +57,28 @@ public static class AncestralPortraitPrompts
         _ => string.Empty,
     };
 
-    private static string BuildSubject(string name, string? description, string? eraName, string? curatedImagePrompt)
+    private static string BuildSubject(string name, string? description, string? eraName, string? curatedImagePrompt,
+        Gender? gender)
     {
         var era = (eraName ?? string.Empty).Trim();
         var cleanName = ShortName(name);
 
+        // 1. Admin per-population override wins (QpadmPopulation.ImagePrompt).
         if (!string.IsNullOrWhiteSpace(curatedImagePrompt))
         {
             // The curated prompt already describes the population + scene; lead with the "you as" framing.
             return $"a {cleanName}. {curatedImagePrompt!.Trim()}";
         }
 
+        // 2. Built-in, gender-specific curated scene for a seeded population — so the portrait resembles the
+        //    population's own photo (period dress + cultural background) instead of the bare name+description.
+        //    Female clients get the period-researched women's variant; male/unknown get the men's variant.
+        if (AncestralPortraitScenes.TryGetScene(name, gender, out var scene) && !string.IsNullOrWhiteSpace(scene))
+        {
+            return $"a {cleanName}. {scene.Trim()}";
+        }
+
+        // 3. Fallback: short name + era grounding + the population's encyclopedic description (capped).
         var sb = new StringBuilder();
         sb.Append("a ").Append(cleanName);
         if (era.Length > 0) sb.Append(" of the ").Append(era);

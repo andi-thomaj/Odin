@@ -69,6 +69,7 @@ public partial class OrderService(
     IOptions<OrderLimitsOptions> orderLimitsOptions,
     IMemoryCache cache,
     Odin.Api.Hubs.IGeneticInspectionRealtimeNotifier liveUpdates,
+    Odin.Api.Hubs.IAppStorePurchaseRealtimeNotifier purchaseLiveUpdates,
     IHostEnvironment hostEnvironment,
     IAppStorePurchaseService appStorePurchase,
     IOptions<AppleIapOptions> appleIapOptions,
@@ -439,7 +440,18 @@ public partial class OrderService(
 
             try
             {
-                return await CreateInternalAsync(request, identityId, ipAddress, new PaidPurchase(verified, price));
+                var created = await CreateInternalAsync(request, identityId, ipAddress, new PaidPurchase(verified, price));
+
+                // Live-push the new purchase to the admin "App Store Transactions" page (best-effort; the notifier
+                // swallows its own failures so a live-refresh hiccup never fails a paid order).
+                await purchaseLiveUpdates.NotifyPurchaseRecordedAsync(
+                    kind: "Order",
+                    productLabel: request.Service == ServiceType.g25 ? "G25 Analysis" : "qpAdm Analysis",
+                    amount: price,
+                    currency: appleIapOptions.Value.Currency,
+                    createdBySub: identityId);
+
+                return created;
             }
             catch (DbUpdateException)
             {
@@ -1151,6 +1163,14 @@ public partial class OrderService(
                 try
                 {
                     await dbContext.SaveChangesAsync();
+
+                    // Live-push the new add-on purchase to the admin "App Store Transactions" page (best-effort).
+                    await purchaseLiveUpdates.NotifyPurchaseRecordedAsync(
+                        kind: "YDnaUnlock",
+                        productLabel: "Y-DNA Unlock",
+                        amount: appleIapOptions.Value.YDnaPrice,
+                        currency: appleIapOptions.Value.Currency,
+                        createdBySub: identityId);
                 }
                 catch (DbUpdateException)
                 {

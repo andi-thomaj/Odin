@@ -34,6 +34,13 @@ public class AncestralPortraitSet : BaseEntity
     public AncestralPortraitStatus Status { get; set; } = AncestralPortraitStatus.Pending;
     public string? Error { get; set; }
 
+    /// <summary>
+    /// Set when Apple sends a REFUND/REVOKE for this add-on's transaction. Unlike the Y-DNA unlock (whose row is
+    /// deleted on refund), the set is KEPT so the generated portraits aren't destroyed — but the back-office feed
+    /// shows it as refunded and excludes it from revenue. Null = not refunded.
+    /// </summary>
+    public DateTime? RefundedAt { get; set; }
+
     /// OpenAI token usage for the whole run (summed across the per-era gpt-image-2 edits) + a first-party USD estimate,
     /// so cost/usage is auditable per run without depending on OpenAI's lagging usage API.
     public long? UsageInputTokens { get; set; }

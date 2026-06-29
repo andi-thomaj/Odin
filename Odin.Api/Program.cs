@@ -517,6 +517,13 @@ namespace Odin.Api
             services.AddScoped<
                 Odin.Api.Hubs.IImageGenerationRealtimeNotifier,
                 Odin.Api.Hubs.ImageGenerationRealtimeNotifier>();
+            services.AddScoped<
+                Odin.Api.Hubs.IAppStorePurchaseRealtimeNotifier,
+                Odin.Api.Hubs.AppStorePurchaseRealtimeNotifier>();
+            // Refund cleanup: on an Apple REFUND/REVOKE for a paid order, purge the order + its results + add-ons.
+            services.AddScoped<
+                Odin.Api.Endpoints.Payments.IRefundCleanupJob,
+                Odin.Api.Endpoints.Payments.RefundCleanupJob>();
 
             services.AddHttpClient("Auth0UserInfo", client =>
             {

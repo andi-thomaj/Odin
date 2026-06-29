@@ -77,4 +77,38 @@ public class AncestralPortraitPromptsTests
         Assert.DoesNotContain("distinctly feminine", none);
         Assert.DoesNotContain("distinctly masculine", none);
     }
+
+    [Fact]
+    public void Build_UsesBuiltInGenderedScene_ForSeededPopulation_WhenNoOverride()
+    {
+        // A seeded population (exact name) with no admin ImagePrompt override uses the built-in curated scene —
+        // the women's variant for a female client, the men's variant otherwise — NOT the bare description.
+        const string popName = "Illyrian (1200 - 250 BC)";
+
+        var female = AncestralPortraitPrompts.Build(popName, "SENTINEL_DESCRIPTION", "Classical Antiquity", null, Gender.Female);
+        Assert.Contains("A woman of", female);
+        Assert.Contains("Illyrian", female);
+        Assert.DoesNotContain("SENTINEL_DESCRIPTION", female); // curated scene wins over the description fallback
+        Assert.Contains("fibulae", female);                    // period-researched women's attire
+
+        var male = AncestralPortraitPrompts.Build(popName, "SENTINEL_DESCRIPTION", "Classical Antiquity", null, Gender.Male);
+        Assert.Contains("A man of", male);
+        Assert.DoesNotContain("SENTINEL_DESCRIPTION", male);
+        Assert.Contains("pileus", male);                       // men's Illyrian dress
+
+        // The two genders yield genuinely different creative, and both stay bounded.
+        Assert.NotEqual(male, female);
+        Assert.True(female.Length < 2200, $"female prompt length was {female.Length}");
+        Assert.True(male.Length < 2200, $"male prompt length was {male.Length}");
+    }
+
+    [Fact]
+    public void Build_AdminOverrideBeatsBuiltInScene()
+    {
+        const string popName = "Illyrian (1200 - 250 BC)";
+        const string curated = "A custom admin-authored Illyrian scene.";
+        var prompt = AncestralPortraitPrompts.Build(popName, null, "Classical Antiquity", curated, Gender.Female);
+        Assert.Contains(curated, prompt);
+        Assert.DoesNotContain("A woman of", prompt); // the built-in scene is not used when an override is present
+    }
 }

@@ -21,6 +21,7 @@ public sealed class AncestralPortraitService(
     IAppStorePurchaseService appStore,
     IBackgroundJobClient backgroundJobs,
     IOptions<AppleIapOptions> appleOptions,
+    Odin.Api.Hubs.IAppStorePurchaseRealtimeNotifier purchaseLiveUpdates,
     ILogger<AncestralPortraitService> logger) : IAncestralPortraitService
 {
     private readonly AppleIapOptions _apple = appleOptions.Value;
@@ -84,6 +85,16 @@ public sealed class AncestralPortraitService(
         }
 
         backgroundJobs.Enqueue<IAncestralPortraitWorker>(w => w.RunAsync(set.Id, CancellationToken.None));
+
+        // Live-push the new add-on purchase to the admin "App Store Transactions" page (best-effort; the notifier
+        // swallows its own failures so a live-refresh hiccup never fails the purchase).
+        await purchaseLiveUpdates.NotifyPurchaseRecordedAsync(
+            kind: "AiPortraits",
+            productLabel: "Through the Ages",
+            amount: _apple.AiPortraitsPrice,
+            currency: _apple.Currency,
+            createdBySub: identityId,
+            cancellationToken: cancellationToken);
 
         return (MapSet(set, orderId), 201, null);
     }

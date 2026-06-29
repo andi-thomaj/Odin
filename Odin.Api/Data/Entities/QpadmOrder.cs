@@ -32,7 +32,11 @@ namespace Odin.Api.Data.Entities
 
             builder.HasOne(e => e.GeneticInspection)
                 .WithOne(gi => gi.Order)
-                .HasForeignKey<QpadmGeneticInspection>(gi => gi.OrderId);
+                .HasForeignKey<QpadmGeneticInspection>(gi => gi.OrderId)
+                // Explicit (matches G25Order) — Cascade is already the DB default for this required FK, but the
+                // refund-purge job RELIES on deleting the order cascading the inspection + results, so spell it out:
+                // a future change (e.g. making OrderId optional) can't then silently break the cascade.
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Per-user order list filters on CreatedBy and orders by CreatedAt; the admin list orders
             // by CreatedAt across all rows. Without these the listings full-scan the table.

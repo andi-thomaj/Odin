@@ -34,6 +34,19 @@ public sealed class AppleIapOptions
     /// <summary>Authoritative price stamped on a created G25 order (see <see cref="QpadmPrice"/>).</summary>
     public decimal G25Price { get; set; } = 39.90m;
 
+    /// <summary>Nominal price of the Y-DNA results unlock add-on (see <see cref="QpadmPrice"/> — informational/display).</summary>
+    public decimal YDnaPrice { get; set; } = 9.99m;
+
+    /// <summary>Nominal price of the "Through the Ages" AI ancestral-portraits add-on (see <see cref="QpadmPrice"/>).</summary>
+    public decimal AiPortraitsPrice { get; set; } = 9.99m;
+
+    /// <summary>
+    /// ISO currency code the nominal prices above are expressed in, used only for the admin back-office
+    /// "money paid" display. Apple charges the buyer's regional storefront tier, so this is a single nominal
+    /// reporting currency, not the per-region amount actually collected.
+    /// </summary>
+    public string Currency { get; set; } = "EUR";
+
     /// <summary>
     /// When true (the production default), the transaction's signature and Apple certificate chain are
     /// cryptographically verified against <see cref="AppleRootCertPath"/>. Set false ONLY for local dev or
