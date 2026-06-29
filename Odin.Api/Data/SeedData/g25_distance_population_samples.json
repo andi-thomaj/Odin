@@ -11110,7 +11110,7 @@
     ]
   },
   {
-    "SampleLabel": "Arbanon (830 AD)",
+    "SampleLabel": "Proto-Albanian (800 AD)",
     "Coordinates": "Medieval_Albanian,0.116099,0.153344,0.016217,-0.034561,0.026004,-0.007391,-0.000117,0.00023,0.00092,0.019044,-0.000812,0.006594,-0.0139,0.000482,-0.017847,-0.010143,0.008149,-0.000887,0.007605,-0.014007,-0.008111,0.00408,-0.000986,-0.001265,-0.001916",
     "Ids": "I14622,I13839",
     "G25DistanceEraId": 4,
@@ -11146,7 +11146,7 @@
     ]
   },
   {
-    "SampleLabel": "Austria Pannonian",
+    "SampleLabel": "Austria Pannonian (700 AD)",
     "Coordinates": "Avar_Pannonian_Local,0.127661,0.132094,0.038379,0.012995,0.029656,0.003532,0.003591,0.005256,0.001494,0.004269,-0.000783,0.001083,-0.000096,0.006904,-0.00749,-0.001231,0.004088,-0.000468,0.003702,-0.001005,-0.004249,0.000734,0.002406,-0.000008,-0.001612",
     "Ids": "CSK001,CSK002,CSK003,CSK004,CSK005,CSK006,CSK007,CSK008,CSK009,CSK010,CSK011,CSK012,CSK013,CSK014,CSK015,CSK016,CSK017,CSK018,CSK019,CSK020,CSK021,CSK022,CSK023,CSK025,CSK026,CSK028,CSK029,CSK030,CSK032,CSK033,CSK034,CSK036,CSK037,CSK038,CSK039,CSK040,CSK041,CSK042,CSK043,CSK044,CSK045,CSK046,CSK047,CSK048,CSK050,CSK051,CSK052,CSK053,CSK054,CSK055,CSK056,CSK057,CSK058,CSK059,CSK060,CSK061,CSK062,CSK063,CSK064,CSK065,CSK067,CSK068,CSK069,CSK070,CSK071,CSK073,CSK074,CSK075,CSK076,CSK077,CSK079,CSK080,CSK082,LEO054,LEO077,LEO078,LEO079,LEO091,LEO127,MGS001,MGS002,MGS003,MGS005,MGS006,MGS007,MGS008,MGS009,MGS010,MGS011,MGS012,MGS013,MGS014,MGS015,MGS017,MGS018,MGS019,MGS020,MGS021,MGS022,MGS023,MGS026,MGS027,MGS028,MGS029,MGS030,MGS031,MGS032,MGS033,MGS034,MGS035,MGS036,MGS037,MGS038,MGS039,MGS040,MGS044,MGS045,MGS046,MGS047,MGS048,MGS049,MGS050,MGS051,MGS052,MGS053,MGS054,MGS055,MGS057,MGS059,MGS060,MGS062,MGS063,MGS064,MGS066,MGS067,MGS068,MGS069,MGS070,MGS071,MGS073,MGS074,MGS075,MGS076,MGS077,MGS078,MGS079,MGS080,MGS081,MGS082,MGS083,MGS084,MGS085,MGS086,MGS087,MGS088,MGS089,MGS090,MGS091,MGS092,MGS093,MGS094,MGS096,MGS097,MGS099,MGS100,MGS101,MGS102,MGS104,MGS105,MGS106,MGS107,MGS108,MGS109,MGS110,MGS111,MGS112,MGS113,MGS115,MGS116,MGS117,MGS118,MGS119,MGS120,MGS122,MGS123,MGS124,MGS125,MGS126,MGS127,MGS128,MGS129,MGS130,MGS131,MGS132,MGS133,MGS134,MGS135,MGS137,MGS138,MGS139,MGS140,MGS141,MGS142,MGS143,MGS144,MGS145,MGS146,MGS147,MGS148,MGS149,MGS150,MGS151,MGS152,MGS153,MGS154,MGS155,MGS156,MGS157,MGS158,MGS159,MGS160,MGS161,MGS162,MGS163,MGS164,MGS165,MGS167,MGS169,MGS171,MGS172,MGS173,MGS174,MGS175,MGS176,MGS177,MGS178,MGS179,MGS180,MGS181,MGS182,MGS183,MGS184,MGS185,MGS186,MGS187,MGS188,MGS189,MGS190,MGS191,MGS192,MGS193,MGS194,MGS197,MGS198,MGS199,MGS200,MGS201,MGS202,MGS203,MGS204,MGS205,MGS206,MGS207,MGS209,MGS210,MGS211,MGS212,MGS213,MGS214,MGS215,MGS217,MGS218,MGS219,MGS220,MGS222,MGS223,MGS224,MGS225,MGS226,MGS227,MGS229,MGS230,MGS231,MGS232,MGS233,MGS234,MGS235,MGS236,MGS237,MGS238,MGS239,MGS240,MGS241,MGS242,MGS243,MGS244,MGS245,MGS246,MGS247,MGS248,MGS249,MGS251,MGS253,MGS255,MGS258,MGS260,MGS261,MGS262,MGS263,MGS264,MGS265,MGS266,MGS267,MGS268,MGS269,MGS270,MGS271,MGS272,MGS273,MGS274,MGS276,MGS277,MGS280,MGS281,MGS284,MGS285,MGS286,MGS288,MGS289,MGS290,MGS291,MGS292,MGS293,MGS294,MGS295,MGS296,MGS297,MGS298,MGS299,MGS300,MGS301,MGS302,MGS303,MGS304,MGS306,MGS307,MGS308,MGS309,MGS310,MGS311,MGS312,MGS313,MGS314,MGS315,MGS316,MGS317,MGS318,MGS319,MGS320,MGS321,MGS322,MGS323,MGS324,MGS325,MGS326,MGS327,MGS328,MGS329,MGS331,MGS332,MGS333,MGS334,MGS335,MGS337,MGS341,MGS343,MGS344,MGS345,MGS346,MGS347,MGS348,MGS350,MGS352,MGS353,MGS354,MGS355,MGS357,MGS359,MGS361,MGS363,MGS365,MGS366,MGS369,MGS370,MGS371,MGS384,MGS385,MGS386,MGS389,MGS392,MGS394,MGS396,MGS398,MGS399,MGS402,MGS403,MGS404,MGS405,MGS407,MGS408,MGS410,MGS411,MGS413,MGS414,MGS415,MGS417,MGS420,MGS421,MGS422,MGS423,MGS424,MGS426,MGS429,MGS432,MGS433,MGS434,MGS435,MGS437,MGS438,MGS439,MGS440,MGS445,MGS446,MGS447,MGS449,MGS450,MGS451,MGS452,MGS453,MGS457,MGS458,MGS459,MGS460,MGS461,MGS462,MGS463,MGS464,MGS465,MGS468,MGS470,MGS471,MGS472,MGS473,MGS474,MGS477,MGS478,MGS480,MGS482,MGS483,MGS484,MGS486,MGS488,MGS489,MGS490",
     "G25DistanceEraId": 4,
@@ -11362,6 +11362,1158 @@
       {
         "Label": "A genetic history of the Balkans from Roman frontier to Slavic migrations",
         "Link": "https://doi.org/10.1016/j.cell.2023.10.018"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Georgian (600-850 AD)",
+    "Coordinates": "EarlyMedieval_Georgian,0.106235,0.128634,-0.054808,-0.042651,-0.035230,-0.010438,0.006479,-0.004626,-0.050264,-0.015915,0.000974,0.007857,-0.015914,0.005734,-0.000911,-0.013701,0.004234,-0.003976,-0.006476,0.008903,0.010072,0.001331,-0.002371,-0.006616,-0.001329",
+    "Ids": "FQR004,KHT006,KHT002,KHT003,KHT001,MKV001,MUK001,SVL006,SVL007,SVL008,SVL009,SVL012,SVL013,SVL016,SMT018,SMT020,SMT021,SMT022,SMT024,SMT030,SMT033",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of the Southern Caucasus from the Bronze Age to the Early Middle Ages: 5,000 years of genetic continuity despite high mobility",
+        "Link": "https://doi.org/10.1016/j.cell.2025.07.013"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Alemannic (605 AD)",
+    "Coordinates": "Alemannic,0.130707,0.132865,0.066373,0.055879,0.042623,0.021196,0.007951,0.005692,0.003613,0.000972,-0.002679,0.009442,-0.010902,-0.013510,0.021421,0.010939,-0.001173,-0.001499,0.003268,0.005357,0.001809,0.003215,0.000965,0.016850,-0.002375",
+    "Ids": "NIEcap1,NIEcap12c,NIEcap9,NIEcap12b,NIEcap6,NIEcap3a",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genome-wide analyses infer kinship structure in an Early Medieval Alemannic graveyard",
+        "Link": "https://pubmed.ncbi.nlm.nih.gov/30191172/  Alemannic,0.130707,0.132865,0.066373,0.055879,0.042623,0.021196,0.00795"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Germany Saxon (600–1150 AD)",
+    "Coordinates": "Saxon,0.129528,0.135381,0.058117,0.043365,0.040282,0.015625,0.004643,0.006586,0.003814,0.003120,-0.005150,0.004887,-0.010917,-0.009855,0.017183,0.007294,-0.005525,0.002313,0.003768,0.002457,0.005517,0.004709,-0.000866,0.011678,0.000079",
+    "Ids": "IND001,IND002,IND003,IND004,IND005,IND006,IND007,IND010,IND011,IND012,IND013,IND014,IND015,IND016,IND017,IND008,ADN002,ADN004,ADN005,ADN006,ADN007,ADN008,ADN009_ADN010_merge,ADN011,ADN014,ADN015,ADN003,ADN001,ADN013,DRU001,DRU002,DRU003,DRU004,DRU005,DRU006,DRU007,DRU009,DRU011,DRU012,DRU013,DRU015,DRU016,DRU017,DRU018,DRU014,DUN002,DUN005,DUN006,DUN007,DUN009,DUN010,DUN011,DUN012,DUN013,DUN001,SWG004,SWG005,SWG006,SWG007,SWG009,SWG010,SWG011,SWG012,SWG014,SWG015,SWG001,SWG003,SWG008,SWG002,SWG013,SRS001,SRS003,SRS004,ZET001",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The Anglo-Saxon migration and the formation of the early English gene pool",
+        "Link": "https://doi.org/10.1038/s41586-022-05247-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Germany Slavic (600–1100 AD)",
+    "Coordinates": "Saxony-Anhalt_Slavic,0.132330,0.129119,0.069959,0.060677,0.041327,0.023354,0.006447,0.012184,-0.000269,-0.018039,-0.002399,-0.005809,0.012663,0.017747,-0.006610,0.000798,0.003254,-0.001419,0.003349,0.002028,-0.002074,-0.002321,0.005189,-0.003570,-0.000419",
+    "Ids": "KH150005,BRC039,NDW001,NDW002,NDW003,NDW004,NDW005,NDW006,NDW008,NDW009,NDW010,NDW011,NDW012,NDW013,NDW015,NDW016,NDW017,NDW018,NDW019,NDW020,NDW022,NDW023,NDW024,NDW025,NDW026,NDW028,NDW029,NDW030,NDW031,NDW032,NDW033,NDW034,NDW035,NDW036,NDW038,NDW039,NDW040,NDW041,NDW042,NDW043,NDW044,NDW045,NDW046,NDW047,NDW051,NDW052,NDW053,NDW055,NDW056,NDW057,NDW059,NDW061,NDW062,NDW063,NDW065,NDW066,NDW067,NDW068,NDW071,NDW072,NDW073,NDW079,NDW080,NDW081,NDW082,NDW083,NDW084,NDW086,NDW087,NDW088,NDW089,NDW090,NDW091,NDW093,NDW095,NDW096,NDW098,NDW099,NDW101,NDW102,NDW103,NDW104,NDW106,NDW107,NDW109,NDW111,NDW112,NDW114,NDW115,NDW118,NDW119,NDW121,NDW122,NDW124,NDW126,NDW128,NDW129,NDW130,NDW131,NDW132,NDW133,NDW136,NDW138,NDW140,NDW141,NDW142,NDW143,NDW144,NDW146,NDW148,NDW149,NDW150,NDW151,NDW152,NDW153,NDW156,NDW157,NDW158,NDW160,NDW161,NDW162,NDW163,NDW164,NDW167,NDW168,NDW170,NDW173,NDW174,NDW175,NDW176,NDW178,NDW179,NDW180,NDW181,NDW182,NDW183,NDW184,NDW185,NDW186,NDW187,NDW188,NDW189,NDW190,NDW191,NDW192,NDW194,NDW195,NDW196,NDW197,NDW198,NDW199,NDW200,OBM026,OBM027,OBM028,OBM029,OBM030,OBM031,OBM032,OBM033,OBM034,OBM035,OBM037,OBM038,OBM039,OBM040,OBM041,OBM042,OBM043,OBM044,OBM045,OBM046,OBM047,OBM048,OBM049,SDN001,SDN002,SDN003,SDN005,SDN006,SDN007,SDN008,SDN009,SDN010,SDN011,SDN012,SDN013,SDN014,SDN015,SDN016,SDN017,SDN018,SDN019,SDN021,SDN022,SDN023,SDN025,SDN027,SDN028,SDN029,SDN030,SDN031,SDN032,SDN033,SDN034,SDN035,SDN036,SDN037",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA connects large-scale migration with the spread of Slavs",
+        "Link": "Ancient DNA connects large-scale migration with the spread of Slavs"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Germany Ashkenazi Jew (1300-1400 AD)",
+    "Coordinates": "Medieval_Ashkenazi_Jewish,0.099846,0.136406,-0.005310,-0.039161,0.012913,-0.014056,-0.000432,0.000812,0.008688,0.014819,0.002338,0.001487,0.003538,0.002279,-0.005950,-0.003309,-0.003145,-0.000152,-0.001192,-0.004717,-0.002775,-0.003269,0.003303,0.002810,-0.001356",
+    "Ids": "I13861,I13862,I13863,I13864,I13865,I13866,I13867,I13868,I13870,I14736,I14738,I14739,I14847,I14852,I14903,I14898,I14741,I14904,I14737,I14850,I14851,I14740,I14897,I13869,I14853",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Genome-wide data from medieval German Jews show that the Ashkenazi founder event pre-dated the 14th century",
+        "Link": "https://doi.org/10.1016/j.cell.2022.11.002"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Chios Aegean Greek (1300 AD)",
+    "Coordinates": "Byzantine_Greek,0.105856,0.14979,-0.020175,-0.046189,0.008155,-0.023984,-0.00235,-0.006807,-0.001432,0.009841,0.006983,0.002772,-0.004757,0.005711,-0.013912,-0.004508,0.002542,-0.002597,0.008799,-0.004814,0.000999,-0.002411,-0.003882,-0.00235,-0.000479",
+    "Ids": "I37186,I37184",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Sacred Space and Identity: Insights from Archaeoanthropology, Historiography, and Archaeogenetics at the St. Isidore Cathedral of Chios Island, Greece",
+        "Link": "https://reich.hms.harvard.edu/sites/reich.hms.harvard.edu/files/inline-files/014_%2BSt%2BIsidore%2BArticle%2B-Agelarakis_2026.pdf"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Sarmatian (750 AD)",
+    "Coordinates": "Sarmatian,0.123732,0.119056,0.037956,0.020615,0.020284,0.004799,0.001368,0.003468,-0.004223,-0.00022,-0.000769,0.002451,-0.005457,-0.003287,-0.000415,0.000047,0.003206,-0.000525,0.001686,-0.002693,-0.005956,0.002029,0.003857,0.002431,-0.001173",
+    "Ids": "SZA002,SZA005,SZA011,SZA014,SZA015,SZA017,SZA021,SZA025,SZA026,SZA029,SZA030,SZA031,SZA033,SZA034,SZA037,SZA038,SZA039,SZA040,SZA041,SZA042,SZA043,SZA044,SZA045,SZA046,SZA047,SZA048,SZA049,SZA050,SZA051,SZA052,SZA053,SZA054,SZA055,IKU005",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Unveiling the origins and genetic makeup of the “forgotten people”: A study of the Sarmatian-period population in the Carpathian Basin",
+        "Link": "https://doi.org/10.1016/j.cell.2025.05.009"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hunnic Sarmatian (750 AD)",
+    "Coordinates": "Hunnic_Period_Sarmatian_Hun,0.124555,0.1252,0.034668,0.012159,0.026466,0.005199,0.000621,0.001994,-0.001023,0.007368,0.000835,0.002762,-0.007752,0.001642,-0.00506,-0.000777,0.002123,0.001457,0.003134,-0.003109,-0.003485,0.001934,0.000061,-0.002539,-0.002729",
+    "Ids": "ALB001,ALB002,ALB003,ALB004,ALB005,ALB006,ALB007,ALB008,ALB009,ALB010,ALB011,ALB012,ALB013,ALB014",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic origin of Huns, Avars, and conquering Hungarians",
+        "Link": "https://doi.org/10.1016/j.cub.2022.04.093"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Gepid (750 AD)",
+    "Coordinates": "Gepid,0.128193,0.136335,0.045679,0.024467,0.036737,0.008228,0.002908,0.008019,0.004346,0.00426,-0.000609,0.002342,-0.004497,0.000843,0.002664,0.002519,0.002298,0.001346,0.006615,0.001626,0.002964,-0.000247,0.002696,0.006567,-0.002051",
+    "Ids": "RKO001,RKO002,RKO003,RKO004,RKO005,RKO006,RKO007,RKO008",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Network of large pedigrees reveals social practices of Avar communities",
+        "Link": "https://www.nature.com/articles/s41586-024-07312-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Avar Khanagate (600-800 AD)",
+    "Coordinates": "Avar_InnerAsian,0.069234,-0.196025,0.05828,-0.009647,-0.043557,-0.024416,0.010226,0.014658,-0.000601,0.003729,-0.013437,0.000322,-0.002595,-0.000587,0.002598,-0.000107,-0.001118,-0.001818,0.001694,0.006712,-0.013405,-0.001935,-0.010614,-0.0008,0.00071",
+    "Ids": "KFJ027,KFJ033,KUP001,RKF080,RKF161,RKF228,RKF234,AGY-100,AGY-108,AGY-110,AGY-111,AGY-112,AGY-113,AGY-115,AGY-116,AGY-117,AGY-119,AGY-120,AGY-121,AGY-122,AGY-123,AGY-124,AGY-125,AGY-127,AGY-128,AGY-129,AGY-130,AGY-131,AGY-132,AGY-134,AGY-135,AGY-136,AGY-137,AGY-138,AGY-139,AGY-140,AGY-141,AGY-142,AGY-143,AGY-144,AGY-145,AGY-147,AGY-148,AGY-149,AGY-150,AGY-151,AGY-152,AGY-153,AGY-154,AGY-155,AGY-156,AGY-157,AGY-158,AGY-159,AGY-160,AGY-161,AGY-162,AGY-163,AGY-164,AGY-165,AGY-166,AGY-167,AGY-168,AGY-169,AGY-170,AGY-171,AGY-172,AGY-173,AGY-174,AGY-175,AGY-176,AGY-177,AGY-178,AGY-179,AGY-180,AGY-181,AGY-182,AGY-183,AGY-184,AGY-185,AGY-186,AGY-187,AGY-188,AGY-189,AGY-190,AGY-191,AGY-192,AGY-193,AGY-194,AGY-195,AGY-196,AGY-197,AGY-198,AGY-199,AGY-200,AGY-201,AGY-202,AGY-203,AGY-204,AGY-205,AGY-206,AGY-207,AGY-208,AGY-209,AGY-210,AGY-211,AGY-212,AGY-213,AGY-214,AGY-215,AGY-216,AGY-217,AGY-218,AGY-219,AGY-220,AGY-221,AGY-222,AGY-223,AGY-224,AGY-225,AGY-226,AGY-227,AGY-228,AGY-229,AGY-230,AGY-231,AGY-232,AGY-233,AGY-234,AGY-235,AGY-236,AGY-237,AGY-238,AGY-239,AGY-240,AGY-241,AGY-242,AGY-243,AGY-244,AGY-245,AGY-246,AGY-247,AGY-248,AGY-249,AGY-250,AGY-251,AGY-252,AGY-253,AGY-254,AGY-255,AGY-256,AGY-257,AGY-258,AGY-259,AGY-260,AGY-261,AGY-262,AGY-263,AGY-264,AGY-265,AGY-266,AGY-267,AGY-268,AGY-269,AGY-270,AGY-271,AGY-272,AGY-273,AGY-274,AGY-275,AGY-276,AGY-277,AGY-278,AGY-279,AGY-280,AGY-281,AGY-282,AGY-283,AGY-284,AGY-285,AGY-286,AGY-287,AGY-288,AGY-289,AGY-290,AGY-291,AGY-292,AGY-293,AGY-294,AGY-295,AGY-296,AGY-297,AGY-298,AGY-299,AGY-300",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic origin of Huns, Avars, and conquering Hungarians",
+        "Link": "https://doi.org/10.1016/j.cub.2022.04.093"
+      },
+      {
+        "Label": "Network of large pedigrees reveals social practices of Avar communities",
+        "Link": "https://doi.org/10.1038/s41586-024-07312-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Local Pannonian (600–880 AD)",
+    "Coordinates": "Avar_Local_Pannonian,0.122435,0.13262,0.028852,-0.001749,0.026566,-0.00065,0.002523,0.003352,0.002305,0.011477,-0.000155,0.002518,-0.004807,0.004263,-0.008767,-0.002067,0.003738,0.001313,0.006017,-0.002508,-0.004508,0.001718,0.000779,0.001667,-0.002111",
+    "Ids": "KUP014,KUP020,KUP021,RKC025,RKF026,RKF027,RKF165,RKF208,AV2,VPB-279,AGY-301,AGY-302,AGY-303,AGY-304,AGY-305,AGY-306,AGY-307,AGY-308,AGY-309,AGY-310,AGY-311,AGY-312,AGY-313,AGY-314,AGY-315,AGY-316,AGY-317,AGY-318,AGY-319,AGY-320,AGY-321,AGY-322,AGY-323,AGY-324,AGY-325,AGY-326,AGY-327,AGY-328,AGY-329,AGY-330,AGY-331,AGY-332,AGY-333,AGY-334,AGY-335,AGY-336,AGY-337,AGY-338,AGY-339,AGY-340,AGY-341,AGY-342,AGY-343,AGY-344,AGY-345,AGY-346,AGY-347,AGY-348,AGY-349,AGY-350,AGY-351,AGY-352,AGY-353,AGY-354,AGY-355,AGY-356,AGY-357,AGY-358,AGY-359,AGY-360,AGY-361,AGY-362,AGY-363,AGY-364,AGY-365,AGY-366,AGY-367,AGY-368,AGY-369,AGY-370,AGY-371,AGY-372,AGY-373,AGY-374,AGY-375,AGY-376,AGY-377,AGY-378,AGY-379,AGY-380,AGY-381,AGY-382,AGY-383,AGY-384,AGY-385,AGY-386,AGY-387,AGY-388,AGY-389,AGY-390,AGY-391,AGY-392,AGY-393,AGY-394,AGY-395,AGY-396,AGY-397,AGY-398,AGY-399,AGY-400",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomes reveal Avar-Hungarian transformations in the 9th–10th centuries CE in the Carpathian Basin",
+        "Link": "https://doi.org/10.1126/sciadv.adq5864"
+      },
+      {
+        "Label": "Network of large pedigrees reveals social practices of Avar communities",
+        "Link": "https://doi.org/10.1038/s41586-024-07312-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Magyar Conqueror (800-1000 AD)",
+    "Coordinates": "Magyar_Conqueror_Elite,0.099281,-0.024723,0.056978,0.025517,-0.016831,-0.002678,0.007184,0.008335,-0.005515,-0.01264,0.002604,-0.002059,0.004434,-0.011368,-0.003452,-0.000777,0.000843,0.000247,0.000741,-0.000431,-0.005746,0.002482,0.00051,-0.002023,-0.001274",
+    "Ids": "TCS-2,VPB-167,K1-1,K1-10,K1-3286,K2-16,K2-52,K2-61,LB-1432,SE-16,AGY-92,AGY-103,AGY-106,AGY-107,AGY-109,AGY-114,AGY-118,AGY-126,AGY-133,AGY-146,AGY-301,AGY-302,AGY-303,AGY-304,AGY-305,AGY-306,AGY-307,AGY-308,AGY-309,AGY-310,AGY-311,AGY-312,AGY-313,AGY-314,AGY-315,AGY-316,AGY-317,AGY-318,AGY-319,AGY-320,AGY-321,AGY-322,AGY-323,AGY-324,AGY-325,AGY-326,AGY-327,AGY-328,AGY-329,AGY-330,AGY-331,AGY-332,AGY-333,AGY-334,AGY-335,AGY-336,AGY-337,AGY-338",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic origin of Huns, Avars, and conquering Hungarians",
+        "Link": "https://doi.org/10.1016/j.cub.2022.04.093"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Conquest Commoner (1000 AD)",
+    "Coordinates": "Hungarian_Conquest_Commoner,0.11653,0.090405,0.045917,0.018368,0.018971,0.004103,0.004324,0.006154,0.001991,0.000709,-0.00004,0.000969,-0.001173,-0.002437,-0.001547,-0.000321,0.004085,0.000422,0.003277,0.000186,-0.002529,-0.000074,0.000802,0.001122,0.000269",
+    "Ids": "HMSZ-43,HMSZ-50,HMSZ-5,SZA-154,NTH-2,PLE-200,PLE-38,IBE-154,IBE-161,IBE-206,SH-12,SH-98,SH-103,SH-106,SH-143,SH-175,SH-182,SZA-7,SZA-20,SZA-29,SZA-44,SZA-52,SZOD-394,SZOD-566,NTH-1,NTH-19,NTH-20,PLE-23,PLE-28,PLE-57,PLE-195,SH-41,SH-81,SH-251,HMSZ-86,HMSZ-88,HMSZ-157,HMSZ-229,HMSZ-231,HMSZ-245,VPB-588,IBE-176,SZOD-426,SZOD-376,SH66",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic origin of Huns, Avars, and conquering Hungarians",
+        "Link": "https://doi.org/10.1016/j.cub.2022.04.093"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Arpadian (900-1100 AD)",
+    "Coordinates": "Early_Arpadian_Hungarian,0.120635,0.105726,0.046404,0.021818,0.025538,0.006035,0.003896,0.007366,0.00216,0.002523,-0.000431,0.000452,-0.002005,0.001931,-0.002095,-0.000302,0.000803,0.00019,0.003127,-0.000107,-0.00263,0.000027,0.001726,0.001452,-0.001392",
+    "Ids": "SZK001,SZK002,SZK003,SZK004,SZK005,SZK006,SZK007,SZK008,SZK009,SZK010,SZK011,SZK012,SZK013,SZK014,SZK015,SZK016,SZK017,LHP001,LHP002,LHP003,LHP004,LHP005,LHP006,LHP007,SEDH001,SEDH002,SEDH003,SEDH004,SEDH005,SEDH006,SEDH007,SEDH008,SEDH009,SEDH010,SEDH011,SEDH012,SEDH013,SEDH014,SEDH015,SEDH016,SEDH017,SEDH018,SEDH019,SEDH020,SEDH021,SEDH022,SEDH023,SEDH024,SEDH025,SEDH026,SEDH027,SEDH028,SEDH029,SEDH030,SEDH031,SEDH032,SEDH033,ZLH001,ZLH002,ZLH003,ZLH004,ZLH005,ZLH006,ZLH007",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomes reveal Avar-Hungarian transformations in the 9th–10th centuries CE in the Carpathian Basin",
+        "Link": "https://doi.org/10.1126/sciadv.adq5864"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungarian (1000-1400 AD)",
+    "Coordinates": "Medieval_Hungarian,0.123856,0.11972,0.050213,0.031307,0.03033,0.009265,0.004674,0.007145,0.002886,-0.001242,-0.00317,-0.000699,0.002103,0.004965,-0.001488,0.003344,0.004042,-0.000075,0.003217,0.001265,-0.001747,-0.000453,0.004026,0.000049,0.000869",
+    "Ids": "HUAS81,HUAS84,HUAS85,HUAS390F,HUAS55B,HUAS261F,HUAS57,HUAS450F,HUAS262F,HUAS309F,HUAS194B,HUAS257,HUAS55A,HUAS59B,VIS001,VIS002,VIS003,VIS004,VIS005,VIS006,VIS007,ZLM001,ZLM002,ZLM003,ZLM004,ZLM005,HUN1247",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Archaeogenetic analysis revealed East Eurasian paternal origin to the Aba royal family of Hungary",
+        "Link": "https://doi.org/10.1101/2024.03.20.585718"
+      },
+      {
+        "Label": "Ancient genomes reveal Avar-Hungarian transformations in the 9th–10th centuries CE in the Carpathian Basin",
+        "Link": "https://doi.org/10.1126/sciadv.adq5864"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Hungary Royal Arpad Dynasty",
+    "Coordinates": "Arpad_Dynasty,0.121506,0.121102,0.044688,0.034642,0.024851,0.008576,0.005993,0.009057,-0.001483,-0.007016,-0.004141,0.002211,-0.007024,0.002168,0.006651,0.004806,0.002575,0.000475,0.003802,0.003814,0.002308,0.002287,0.00191,-0.000572,0",
+    "Ids": "SZTL,HU52,HU3B,S18173",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Genome-wide autosomal, mtDNA, and Y chromosome analysis of King Bela III of the Hungarian Arpad dynasty",
+        "Link": "https://doi.org/10.1038/s41598-021-98796-x"
+      },
+      {
+        "Label": "Forensic and bioarchaeological identification of the skeletal remains of Béla, Duke of Macsó",
+        "Link": "https://doi.org/10.1016/j.fsigen.2025.103381"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Iceland Norse-Gaelic (900-1100 AD)",
+    "Coordinates": "Norse-Gaelic_Icelander,0.127375,0.129163,0.067493,0.056101,0.037440,0.018938,0.003121,0.007038,0.005036,-0.000997,-0.003496,0.004524,-0.010713,-0.012571,0.020744,0.007765,-0.005162,0.001877,0.003060,0.004897,0.005654,0.003455,-0.000998,0.012513,-0.000157",
+    "Ids": "DKS-A-1_38,SSG-A-2_38,SSG-A-4_38,FSS-A-1_38,GRS-A-1_38,HSJ-A-1_38,NNM-A-1_38,NTR-A-2_38,SBT-A-1_38,SVK-A-1_38,YGS-B-2_38,DAV-A-8_38,ORE-A-1_38,STT-A-2_38,VDP-A-5_38,VDP-A-6_38,VDP-A-7_38,KNS-A-1_38,TGS-A-1_38,VK127,VK128,VK129,VK95,VK98,VK99,VK101,VK102,VK122,VK123,VK225,VK227,VK230",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomes from Iceland reveal the making of a human populatio",
+        "Link": "https://doi.org/10.1126/science.aar2625"
+      },
+      {
+        "Label": "Population genomics of the Viking worl",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Islander Early Christian (1100-1400 AD)",
+    "Coordinates": "Early_Christian_Icelander,0.128620,0.127449,0.072219,0.059916,0.034930,0.021056,-0.000235,0.004500,0.008795,-0.002005,-0.005846,0.005845,-0.013603,-0.020849,0.012826,0.010143,0.006846,0.002344,0.005280,0.004752,0.001934,0.010449,0.003390,0.012833,-0.004670",
+    "Ids": "TSK-A-26_38,FOV-A-1_38",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient genomes from Iceland reveal the making of a human population",
+        "Link": "https://doi.org/10.1126/science.aar2625"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "India South Asian (700-950 AD)",
+    "Coordinates": "Medieval_South_Asian,0.045909,-0.06185,-0.14503,0.107636,-0.069918,0.058049,-0.001712,0.010033,0.034769,0.019187,-0.004446,-0.001228,-0.000857,-0.000891,-0.002876,-0.00245,0.001006,0.001291,-0.001317,0.003121,0.000232,-0.000942,0.002682,0,-0.002452",
+    "Ids": "I6943,I3352,I6938,I3346,I6944,I3402,I6942,I3343,I6934,I6946,I3344,I3349,I2871,I2872,I3342,I3407,I7036,I3406,I7035,I2868,I6941",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA from the skeletons of Roopkund Lake reveals Mediterranean migrants in India",
+        "Link": "https://doi.org/10.1038/s41467-019-11357-9"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Iranian (1300 AD)",
+    "Coordinates": "Medieval_Iranian,0.103579,0.125926,-0.074293,-0.047481,-0.039084,-0.00251,-0.000705,-0.009692,-0.022498,-0.014032,-0.000325,-0.006444,0.003122,-0.008395,0.010043,0.01074,-0.001825,-0.006334,0.005531,-0.016133,-0.006988,-0.00272,0.007272,-0.000723,0.000479",
+    "Ids": "IRN85W",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA indicates 3,000 years of genetic continuity in the Northern Iranian Plateau, from the Copper Age to the Sassanid Empire",
+        "Link": "https://doi.org/10.1038/s41598-025-99743-w"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Gaelic Irish (800–1200 AD)",
+    "Coordinates": "Gaelic_Irish,0.127482,0.138112,0.06279,0.052003,0.033391,0.017431,0.001293,0.003346,0.004295,0.004556,-0.003329,0.00652,-0.014494,-0.011354,0.022936,0.002254,-0.015972,0.001773,0.003896,0.0015,0.005053,0.002659,0.002034,0.003495,0.00012",
+    "Ids": "HAN197,HAN331",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Millennium-old pathogenic Mendelian mutation discovery for multiple osteochondromos from a Gaelic Medieval graveyard",
+        "Link": "https://doi.org/10.1038/s41431-022-01219-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Ireland Anglo-Saxon (1000 AD)",
+    "Coordinates": "Anglo-Saxon_Norman_Irish,0.130399,0.13332,0.060681,0.050812,0.037055,0.018851,0.0026,0.005488,0.004327,0.003052,-0.006749,0.006529,-0.015837,-0.017672,0.024671,0.008096,-0.008463,0.001948,0.003791,0.004229,0.00427,0.004679,0.00161,0.010973,-0.00021",
+    "Ids": "KIL001,KIL002,KIL003,KIL004,KIL006,KIL007,KIL008,KIL009,KIL012,KIL013,KIL014,KIL015,KIL016,KIL021,KIL022,KIL023,KIL025,KIL026,KIL027,KIL028,KIL031,KIL032,KIL033,KIL034,KIL035,KIL037,KIL038,KIL041,KIL042,KIL043,KIL044,KIL047",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The Anglo-Saxon migration and the formation of the early English gene pool",
+        "Link": "https://doi.org/10.1038/s41586-022-05247-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Ireland Viking (750–850 AD)",
+    "Coordinates": "Viking_Irish,0.124352,0.130495,0.067882,0.056363,0.042315,0.021544,0.001704,0.005942,0.004039,-0.004146,-0.004262,0.00547,-0.010257,-0.011182,0.020833,0.013624,0.002673,0.008425,0.00484,0.010474,0.007768,0.00405,0.004098,0.009308,-0.000898",
+    "Ids": "VK545,VK543,VK544,VK546",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Viking Manx (900 AD)",
+    "Coordinates": "Viking_Manx,0.124067,0.120848,0.070522,0.0646,0.038469,0.023706,-0.000705,0.005769,0.011658,-0.003827,-0.008444,0.004196,-0.010258,-0.00523,0.020629,0.006232,0.002608,-0.00076,0.002011,0.012631,0.006239,-0.002968,-0.008011,0.002651,-0.001796",
+    "Ids": "VK170",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Italy Langobard (600-750 AD)",
+    "Coordinates": "Langobard_Germanic,0.129303,0.133982,0.064387,0.051981,0.041526,0.019597,0.004324,0.008384,0.002536,-0.004082,-0.005045,0.001798,-0.013191,-0.007487,0.027379,0.003518,-0.013934,0.005549,0.006629,0.005394,0.005931,0.005028,-0.002925,0.013456,-0.000295",
+    "Ids": "CL84,CL93,CL97,CL146,CL145,CL83,CL151,CL87,CL92,COL_069,COL_140,COL_142,COL_143,COL_150,COL_128",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "CL84,CL93,CL97,CL146,CL145,CL83,CL151,CL87,CL92,COL_069,COL_140,COL_142,COL_143,COL_150,COL_128",
+        "Link": "https://doi.org/10.1038/s41467-018-06024-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Collegno North Italian (600–750 AD)",
+    "Coordinates": "Langobard_Local_NorthItalian,0.118945,0.141784,0.032012,-0.000509,0.032858,0.000418,0.001555,0.001846,0.009211,0.018707,-0.002486,0.005384,-0.012688,-0.003827,0.004364,-0.000903,-0.002643,0.00192,0.00264,-0.001087,0.001867,0.003529,-0.001901,0.002456,0.000824",
+    "Ids": "CL23,CL36,CL47,CL49,CL53,CL57,CL63,CL94,COL_130,COL_050,COL_002,COL_017,COL_033,COL_034,COL_039,COL_056,COL_077,COL_079,COL_081,COL_095,COL_098,COL_099,COL_112,COL_020,COL_008,COL_035",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Understanding 6th-century barbarian social organization and migration through paleogenomics",
+        "Link": "https://doi.org/10.1038/s41467-018-06024-4"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Alpine North Italian (650 AD)",
+    "Coordinates": "Alpine_North_Italian,0.116669,0.145728,0.028142,-0.007106,0.035199,0.000662,-0.002115,0.000029,0.011351,0.023873,-0.002294,0.006763,-0.014587,-0.007638,0.003054,0.006447,0.008117,-0.000079,0.002875,-0.001704,0.001825,0.00272,-0.001233,0.001024,0.001242",
+    "Ids": "Bard_T1,Bard_T2,Bard_T6,Bard_T7A,Bard_T8_rid,Bard_T10,Bard_T11,Bard_T12",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Fine-scale sampling uncovers the complexity of migrations in 5th-6th century Pannonia",
+        "Link": "https://doi.org/10.1016/j.cub.2023.07.063"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Southeast Italian (700–1250 AD)",
+    "Coordinates": "Medieval_South_Italian,0.106293,0.145299,-0.005048,-0.040847,0.014938,-0.013837,-0.001482,0.000053,0.005207,0.021686,-0.000188,0.002721,-0.005112,-0.006521,-0.006535,0.002693,0.002377,-0.001247,0.000251,-0.001193,-0.003388,0.001845,-0.000455,-0.00088,-0.001363",
+    "Ids": "VEN005,VEN006,VEN009,VEN010,VEN012,VEN013,VEN015,VEN016,VEN001,VK536,VK534,VK535,ORD010",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The origin and legacy of the Etruscans through a 2000-year archeogenomic time transect",
+        "Link": "https://doi.org/10.1126/sciadv.abi7673"
+      },
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Central Italian (600–1350 AD)",
+    "Coordinates": "Medieval_Central_Italian,0.111964,0.146575,0.001358,-0.033807,0.020045,-0.013433,0.000125,-0.002546,0.005713,0.02377,0.000969,0.004726,-0.010233,-0.002257,-0.007094,-0.001534,0.000439,0.001225,0.002635,-0.003368,-0.000308,0.002387,-0.001713,0.001635,-0.001202",
+    "Ids": "TAQ003,TAQ011,TAQ009,TAQ022,R1283,R59,R1285,R58,R64,R65,R1290,R52,R53,R54,R56,R57,R1291,R1292,R1294,PF11,PF19,PF24,PF28,PF36,POP001,ETR007,ETR010,ETR013,ETR014,ETR003",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient Rome: A genetic crossroads of Europe and the Mediterranean",
+        "Link": "https://doi.org/10.1126/science.aay6826"
+      },
+      {
+        "Label": "The origin and legacy of the Etruscans through a 2000-year archeogenomic time transect",
+        "Link": "https://doi.org/10.1126/sciadv.abi7673"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Sardinian (650-1300 AD)",
+    "Coordinates": "Medieval_Sardinian,0.101303,0.159946,0.003771,-0.055394,0.032775,-0.023845,-0.004113,-0.003692,0.025156,0.044101,0.003248,0.008018,-0.015386,-0.008945,-0.00475,-0.001922,0.009258,-0.000824,0.001571,-0.002001,-0.001123,0.002535,-0.002835,-0.010905,-0.003832",
+    "Ids": "I12220,SNN004",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic history from the Middle Neolithic to present on the Mediterranean island of Sardinia",
+        "Link": "https://doi.org/10.1038/s41467-020-14523-6"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Christian Sicilian (1100-1300 AD)",
+    "Coordinates": "https://doi.org/10.1371/journal.pone.0350298",
+    "Ids": "SGBN23,SGBN22,SGBN12,SGBN19,SGBN10,SGBN20,SGBN24,SGBN17",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic histories of individuals from multi-faith medieval Sicily",
+        "Link": "https://doi.org/10.1371/journal.pone.0350298"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Muslim Sicilian (850-1200 AD)",
+    "Coordinates": "Medieval_Sicilian_Muslim,0.056001,0.137096,-0.011314,-0.045285,0.013972,-0.019076,-0.009823,-0.0018,0.015421,0.017786,0.002696,0.002428,0.001159,-0.002862,-0.002443,0.001936,0.006285,-0.004054,-0.005883,0.001376,-0.007736,-0.004575,0.004634,-0.003013,0.00182",
+    "Ids": "SGBN5,SGBN6,SGBN4,SGBN7,SGBN1",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic histories of individuals from multi-faith medieval Sicily",
+        "Link": "https://doi.org/10.1371/journal.pone.0350298"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Early Turkic (600-850 AD)",
+    "Coordinates": "Early_Turkic,0.078822,-0.127703,0.039032,0.015908,-0.035622,-0.001115,0.003995,0.006288,-0.013703,-0.010843,-0.016442,-0.003672,-0.001264,-0.013797,0.004309,0.010242,0.004303,0.001267,0.001823,0.002407,-0.012509,0.002906,-0.006594,0.001747,-0.000419",
+    "Ids": "DA228,DA89,KKB002,KKB001",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      },
+      {
+        "Label": "Ancient genomic time transect from the Central Asian Steppe unravels the history of the Scythians",
+        "Link": "https://doi.org/10.1126/sciadv.abe4414"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Kazakhstan Kimak (700 AD)",
+    "Coordinates": "Kimak,0.073985,-0.138112,0.044877,0.023256,-0.053856,-0.007809,0.006815,-0.001846,-0.022498,-0.017312,-0.003410,-0.003597,-0.007433,-0.000413,0.009636,0.010342,-0.019036,0.004561,-0.000754,-0.017258,-0.019341,-0.005935,-0.005423,-0.008435,-0.000958",
+    "Ids": "DA87",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Karluk Turk (1000 AD)",
+    "Coordinates": "Karluk,0.063172,-0.147252,0.014707,-0.001776,-0.049239,-0.006415,0.006580,0.009000,-0.017282,-0.010934,-0.018593,-0.001349,-0.001412,-0.006193,0.007600,-0.004376,-0.015907,0.005067,0.004085,-0.000813,-0.015161,-0.002783,-0.003882,-0.000542,0.004550",
+    "Ids": "DA222,DA230",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Karakhanid Turk (950 AD)",
+    "Coordinates": "Karakhanid,0.067156,-0.171963,0.028410,0.006245,-0.046778,-0.005950,0.005248,0.002461,-0.014180,-0.010813,-0.020082,-0.002947,0.002131,-0.008899,0.006877,0.003580,-0.008127,-0.000127,0.001885,-0.000625,-0.012104,0.001608,-0.002547,-0.002209,-0.005469",
+    "Ids": "DA204,DA203,DA205",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Kipchak Turk (1100 AD)",
+    "Coordinates": "Kipchak,0.070001,-0.125418,0.027153,0.003069,-0.038315,-0.005718,0.002703,0.012577,-0.005113,-0.007199,-0.012342,0.001274,0.003270,-0.004404,0.002646,0.010607,0.005737,-0.001204,0.005530,0.003627,-0.010544,0.000742,-0.003266,-0.000723,-0.003234",
+    "Ids": "DA179,DA23",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Kazakhstan Nomad (600-950 AD)",
+    "Coordinates": "Medieval_Steppe_Nomad,0.080815,-0.138925,0.053174,0.026357,-0.044870,-0.003347,0.007849,0.007246,-0.012108,-0.016219,-0.002111,0.000629,0.003092,-0.023589,0.003094,0.000848,-0.003260,0.000431,0.001659,-0.002001,-0.014300,0.002275,-0.004930,0.004603,-0.007568",
+    "Ids": "NEO901,DA124,DA93,DA94,DA126",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      },
+      {
+        "Label": "Population Genomics of Stone Age Eurasia",
+        "Link": "https://doi.org/10.1101/2022.05.04.490594"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Kazakhstan Golden Horde Mongol (900-1400 AD)",
+    "Coordinates": "Golden_Horde_Asian,0.045150,-0.358143,0.084161,-0.020834,-0.072270,-0.043321,0.016607,0.023576,0.006136,0.014214,-0.024196,0.001823,-0.001635,0.007707,0.005926,-0.002497,-0.005237,-0.002048,0.006117,0.019343,-0.022876,-0.012716,-0.025594,-0.000683,-0.004570",
+    "Ids": "DA28,KLK002,DA128,CKZ003,CKZ004,CKZ002",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      },
+      {
+        "Label": "Ancient genomic time transect from the Central Asian Steppe unravels the history of the Scythians",
+        "Link": "https://doi.org/10.1126/sciadv.abe4414"
+      },
+      {
+        "Label": "Genomes of the Golden Horde elites and their implications for the rulers of the Mongol Empire",
+        "Link": "https://doi.org/10.1073/pnas.2531003123"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Latvia Vend (1050 AD)",
+    "Coordinates": "Vend_Couronian,0.125205,0.124910,0.073539,0.057494,0.034468,0.020359,0.011986,0.014307,0.006340,0.002916,-0.000487,-0.005695,0.007433,0.002064,0.003257,0.003182,0.003651,0.003674,0.001634,0.008379,0.005241,-0.005935,0.008997,0.000241,-0.003233",
+    "Ids": "MEZ002",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA connects large-scale migration with the spread of Slavs",
+        "Link": "https://doi.org/10.1038/s41586-025-09437-6"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Latvia Livonian (900-1250 AD)",
+    "Coordinates": "Livonian,0.130896,0.117802,0.090604,0.088421,0.042624,0.024473,0.009870,0.015577,0.002250,-0.029659,-0.000487,-0.011652,0.021147,0.023189,-0.008008,0.012994,0.003488,0.000222,0.003425,0.013288,-0.001029,0.001669,0.006810,-0.008254,-0.001347",
+    "Ids": "LAU002,VAM001,DOV001,NEO308",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA connects large-scale migration with the spread of Slavs",
+        "Link": "https://doi.org/10.1038/s41586-025-09437-6"
+      },
+      {
+        "Label": "Population genomics of post-glacial western Eurasia",
+        "Link": "https://doi.org/10.1038/s41586-023-06865-0"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Latvian Baltic",
+    "Coordinates": "VikingAge_Latvian_Baltic,0.127340,0.123768,0.093714,0.101019,0.047547,0.037441,0.010840,0.018317,-0.002352,-0.039432,-0.002558,-0.014031,0.029138,0.032083,-0.011349,0.008983,0.011392,-0.001695,0.004038,0.008426,-0.000016,-0.005147,0.006517,-0.014656,-0.000209",
+    "Ids": "VL2,VL9,VL11,VL18,VL19,VL20,VL21,VL24",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Charactarisation of Viking Age population in Latvia from ancient genomic data",
+        "Link": "https://www.ebi.ac.uk/ena/browser/view/PRJEB104994"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Montenegrin (800-1100 AD)",
+    "Coordinates": "Doclea_Montenegrin_Slav,0.1299860,0.1391276,0.0485732,0.0262922,0.0310208,0.0157296,0.0020680,0.0067382,-0.0026588,-0.0046654,-0.0020136,-0.0026078,0.0015758,0.0128540,-0.0114820,0.0019624,0.0105870,-0.0001774,0.0059076,-0.0010756,-0.0062640,-0.0033138,0.0032292,-0.0013496,-0.0001676",
+    "Ids": "R3478,R9919,R3482,R9920",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Stable population structure in Europe since the Iron Age, despite high mobility",
+        "Link": "https://elifesciences.org/articles/79714"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Lebanese (1150-1250 AD)",
+    "Coordinates": "Medieval_Lebanese,0.081573,0.150298,-0.05154,-0.08581,-0.01231,-0.029098,-0.005718,-0.011769,0.00259,0.012696,0.006333,-0.008343,0.010654,-0.000183,-0.008867,0.003889,0.000174,-0.002196,0.003143,-0.009088,0.000541,0.006141,-0.008791,0.005543,0.001557",
+    "Ids": "SI-38,SI-42,SI-45",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "A Genetic History of the Near East from an aDNA Time Course Sampling Eight Points in the Past 4,000 Years",
+        "Link": "https://doi.org/10.1016/j.ajhg.2020.05.008"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Lebanon Levantine (650 AD)",
+    "Coordinates": "LateAntique_Lebanese,0.080814,0.144459,-0.053645,-0.087614,-0.011848,-0.038138,-0.00517,-0.009057,0.008999,0.004692,0.005074,-0.005657,0.010146,-0.000791,-0.003868,0.016706,0.005346,0.004086,0.005656,-0.00369,-0.007487,0.006554,-0.005022,0.001295,-0.001227",
+    "Ids": "R9818,R9823,R3473,R12245",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Stable population structure in Europe since the Iron Age, despite high mobility",
+        "Link": "https://doi.org/10.7554/eLife.79714"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Lithuania Baltic (750 AD)",
+    "Coordinates": "IronAge_Lithuanian,0.122929,0.129988,0.098428,0.103037,0.042777,0.038208,0.012691,0.022614,0.006954,-0.041914,-0.007795,-0.008992,0.030624,0.043489,-0.008279,-0.012994,0.002217,-0.005194,0.00088,-0.000375,0.006489,-0.004204,0.002711,-0.005181,0.006347",
+    "Ids": "CGG017694",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Steppe Ancestry in western Eurasia and the spread of the Germanic Languages",
+        "Link": "https://doi.org/10.1101/2024.03.13.584607"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Netherlands Frisian (600–1050 AD)",
+    "Coordinates": "Frisian_Saxon,0.130114,0.136271,0.063380,0.052629,0.040873,0.018773,0.005170,0.006721,0.004027,-0.000068,-0.004354,0.004730,-0.010360,-0.010046,0.022046,0.005130,-0.007098,0.001599,0.003779,0.002994,0.005935,0.003200,0.000015,0.014219,0.000030",
+    "Ids": "MDM004,GRO023,GRO021,GRO013,GRO014,GRO012,GRO017,GRO002,GRO019,GRO004,GRO007,GRO010,GRO015,GRO020,GRO008,GRO024",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The Anglo-Saxon migration and the formation of the early English gene pool",
+        "Link": "(600–1050 AD)"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Macedonian Slav (1035 AD)",
+    "Coordinates": "Medieval_Macedonian,0.118376,0.128972,0.043369,0.012597,0.030159,-0.001394,0.011516,-0.000462,-0.001432,-0.001640,-0.005196,-0.002847,-0.002230,0.011423,-0.014929,-0.012463,-0.004563,0.007348,0.003394,0.002376,-0.001373,0.004822,0.005176,-0.007109,-0.002155",
+    "Ids": "I2530",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic history of the Balkans from Roman frontier to Slavic migrations",
+        "Link": "https://doi.org/10.1016/j.cell.2023.10.018"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Early Norse (600-800 AD)",
+    "Coordinates": "LateIronAge_Norse,0.127817,0.125926,0.070877,0.060287,0.041021,0.019227,0.003442,0.007995,0.004824,-0.003956,-0.002933,0.003174,-0.007258,-0.006687,0.019025,0.003962,-0.011826,0.000671,0.003401,0.005311,0.006804,0.002735,0.000014,0.009810,-0.000134",
+    "Ids": "CGG107028,CGG107038,CGG107034,CGG107024,CGG107033,CGG107032,CGG107027,CGG107023,CGG107016,CGG107037,CGG107010,CGG107011,CGG107012,CGG107017,CGG107039,CGG107040,CGG107041",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Steppe Ancestry in western Eurasia and the spread of the Germanic Languages",
+        "Link": "https://doi.org/10.1101/2024.03.13.584607"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Norway Finnic/Sami (650 AD)",
+    "Coordinates": "North_Norway_Sami_like,0.120652,0.060932,0.085229,0.074290,0.017234,0.008646,0.006815,0.007846,0.008590,-0.021504,0.004384,0.001499,0.005203,-0.011836,0.010179,0.019756,0.004303,-0.000380,0.004651,0.014507,0.015722,0.004204,0.000123,0.004579,0.008023",
+    "Ids": "CGG107013",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Steppe Ancestry in western Eurasia and the spread of the Germanic Languages",
+        "Link": "https://doi.org/10.1101/2024.03.13.584607"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Norwegian VIking (750–1000 AD)",
+    "Coordinates": "Viking_Norwegian,0.129895,0.125519,0.070265,0.060168,0.042974,0.022122,0.003694,0.008206,0.002512,-0.004563,-0.002949,0.005107,-0.008194,-0.010889,0.020765,0.010273,-0.001851,0.001698,0.003384,0.007378,0.006688,0.003932,-0.000365,0.013221,0.000762",
+    "Ids": "VK419,VK514,VK528,VK529,VK392,VK417,VK525,VK526,VK548,VK415,VK420,VK448,VK547,VK386,VK389,VK393,VK394,VK422,VK515,VK516,VK520,VK524,VK530,VK387,VK414",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Norwegian (1200 AD)",
+    "Coordinates": "Medieval_Norwegian,0.128051,0.132527,0.063985,0.049796,0.036366,0.017756,0.006267,0.008153,0.001466,-0.003796,-0.001001,0.002747,-0.011447,-0.010482,0.017056,0.008044,-0.003129,0.003231,0.004609,0.006211,0.007570,0.002452,0.003307,0.010764,0.004710",
+    "Ids": "VK388,VK114,VK117,VK118,VK124,Sverresborg",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      },
+      {
+        "Label": "Corroborating written history with ancient DNA: The case of the Well-man described in an Old Norse saga",
+        "Link": "https://doi.org/10.1016/j.isci.2024.111076"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Early Portuguese (600-850 AD)",
+    "Coordinates": "EarlyMedieval_Portuguese,0.087264,0.144544,0.025267,-0.016554,0.036981,-0.008646,-0.008558,0.003461,0.030815,0.033030,-0.002856,0.003747,-0.005711,-0.011079,0.011627,-0.001182,-0.000207,-0.002661,-0.010611,0.001188,0.000281,-0.003926,0.003348,-0.001747,-0.000818",
+    "Ids": "PT_22997,PT_23002,PT_23235,PT_24169,PT_24170,PT_24173,CGG018559,CGG018558,R10494,R10491,R10496,NEO638",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of Portugal over the past 5,000 years",
+        "Link": "https://doi.org/10.1186/s13059-025-03707-2"
+      },
+      {
+        "Label": "Steppe Ancestry in western Eurasia and the spread of the Germanic Languages",
+        "Link": "https://doi.org/10.1101/2024.03.13.584607"
+      },
+      {
+        "Label": "Population genomics of post-glacial western Eurasia",
+        "Link": "https://doi.org/10.1038/s41586-023-06865-0"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Portuguese (1100–1350 AD)",
+    "Coordinates": "Medieval_Portuguese,0.105856,0.143906,0.037912,-0.001406,0.041112,-0.003429,-0.004977,0.004262,0.026324,0.027282,-0.000229,0.005845,-0.011508,-0.010953,0.010371,-0.001006,-0.003267,-0.001252,-0.003275,-0.000809,0.001982,-0.005222,0.000986,-0.002254,-0.001092",
+    "Ids": "PT_22989,PT_22992,PT_22994,PT_22218,PT_22219-23224,PT_22220,PT_23221,PT_23223,PT_23226,PT_23227,PT_23229,PT_23230,PT_24163,PT_24164,PT_24165,PT_24166,PT_24167",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of Portugal over the past 5,000 years",
+        "Link": "https://doi.org/10.1186/s13059-025-03707-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Portugal Algarvian (1150-1350 AD)",
+    "Coordinates": "Medieval_Algarvian,0.078310,0.143799,0.025493,-0.023967,0.036745,-0.009817,-0.012597,0.003415,0.034401,0.037541,0.009548,0.002997,-0.004995,-0.021304,0.008849,0.004747,0.004328,-0.006309,-0.008346,0.005778,0.003070,-0.003512,0.009096,-0.001735,-0.004047",
+    "Ids": "PT_24175,PT_24176,PT_24178,PT_24180,PT_24181",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genetic history of Portugal over the past 5,000 years",
+        "Link": "https://doi.org/10.1186/s13059-025-03707-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Early Polish Slav (750-900 AD)",
+    "Coordinates": "EarlyMedieval_Polish_Slav,0.131872,0.126216,0.062171,0.048265,0.038776,0.015937,0.008998,0.009164,-0.000117,-0.01562,-0.001578,-0.004903,0.008601,0.017026,-0.010412,0.003845,0.009127,0.000199,0.004741,0.001179,-0.003048,-0.001625,0.007853,-0.005027,0.001899",
+    "Ids": "GRK010,GRK013,GRK008,GRK011,GRK014,GRK015,GRK004",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA connects large-scale migration with the spread of Slavs",
+        "Link": "https://doi.org/10.1038/s41586-025-09437-6"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Polish Slav (950-1200 AD)",
+    "Coordinates": "Medieval_Polish_Slav,0.129038,0.124974,0.072078,0.065369,0.040927,0.024546,0.007146,0.010863,-0.001074,-0.021905,-0.002664,-0.007748,0.014264,0.021469,-0.007471,0.001584,0.004326,-0.000459,0.002317,0.001559,-0.003601,-0.003735,0.00674,-0.00516,0.001155",
+    "Ids": "PCA0551,PCA0354,PCA0359,PCA0301,PCA0309,PCA0034,PCA0181,PCA0182,PCA0185,PCA0187,PCA0189,PCA0191,PCA0192,PCA0193,PCA0194,PCA0197,PCA0199,PCA0201,PCA0203,PCA0205,PCA0206,PCA0211,PCA0198,PCA0165,PCA0166,PCA0167,PCA0169,GRK007,GRK009,GRK002,GRK012,GRK001,GRK006,GRK005,PCA0156,PCA0157,PCA0541,PCA0122,PCA0124,PCA0126,PCA0127,PCA0132,PCA0133,PCA0137,PCA0138,PCA0140,PCA0142,PCA0146,PCA0148,PCA0216,PCA0218,PCA0225,PCA0332,PCA0333,PCA0334,PCA0335,PCA0339,PCA0340,PCA0341,PCA0343,PCA0344,PCA0297,PCA0314,PCA0317,PCA0319,PCA0324,PCA0327,PCA0328,PCA0549,PCA0244,PCA0246,PCA0376,PCA0383,PCA0391,PCA0399,PCA0408,PCA0410,PCA0411,PCA0426",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic history of East-Central Europe in the first millennium CE",
+        "Link": "https://doi.org/10.1186/s13059-023-03013-9"
+      },
+      {
+        "Label": "Ancient DNA connects large-scale migration with the spread of Slavs",
+        "Link": "https://doi.org/10.1038/s41586-025-09437-6"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Poland Viking (1000 AD)",
+    "Coordinates": "VikingAge_Poland,0.12862,0.1308,0.082212,0.069445,0.047763,0.027554,0.009118,0.011353,0.002536,-0.020192,-0.005099,-0.004196,0.013588,0.022047,-0.005076,-0.002333,-0.00193,-0.000355,0.005455,0.001826,0.000699,0.000495,0.005004,-0.00159,0.003209",
+    "Ids": "VK154,VK156,VK157,VK494,VK212",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Rmania Nomad Turk (1000 AD)",
+    "Coordinates": "Medieval_Turkic_Nomad_Romania,0.072847,-0.176702,0.065996,0.028424,-0.055395,-0.008367,0.008695,0.014307,-0.007363,-0.008018,-0.007795,-0.004346,0.001041,-0.018579,-0.005565,-0.009414,-0.004172,0.001647,0.006788,0.000875,-0.018842,0.005564,-0.008997,-0.001325,0.005748",
+    "Ids": "I10495",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic history of the Balkans from Roman frontier to Slavic migrations",
+        "Link": "https://doi.org/10.1016/j.cell.2023.10.018"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Alan (650-1100 AD)",
+    "Coordinates": "Alan,0.110408,0.106021,-0.022627,-0.007881,-0.030775,0.003570,0.007473,-0.005400,-0.046672,-0.024638,0.002696,0.008363,-0.015996,-0.006193,0.006515,-0.004190,0.005998,-0.005980,-0.008045,0.003101,0.004492,0.004724,0.000493,-0.001012,-0.001964",
+    "Ids": "DA146,DA160,DA162,DA243,DA164",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Caucasian (1000 AD)",
+    "Coordinates": "Medieval_Caucasian,0.108511,0.083950,-0.020993,-0.017227,-0.033032,0.000279,0.005640,-0.004769,-0.052767,-0.015794,-0.004005,0.007043,-0.013330,0.001652,-0.002352,-0.004950,0.020731,-0.004941,-0.005782,0.008296,0.000915,-0.001360,-0.003245,-0.001928,0.002635",
+    "Ids": "Anapa-11,Anapa-10,Anapa-9",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Altaian Turk (650–1300 AD)",
+    "Coordinates": "Medieval_Altai_Turkic,0.067725,-0.209961,0.063922,0.020753,-0.055010,-0.013526,0.007873,0.009230,-0.008641,-0.011025,-0.007957,-0.006144,0.001152,-0.014657,0.000679,-0.001392,-0.004172,0.000570,0.002765,0.004221,-0.021119,0.008378,-0.000647,-0.006115,-0.008173",
+    "Ids": "RISE599,RISE504_noUDG,DA142,NEO82",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "137 ancient human genomes from across the Eurasian steppes",
+        "Link": "https://doi.org/10.1038/s41586-018-0094-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Volga-Uralic Karayakupovo (650–950 AD)",
+    "Coordinates": "Karayakupovo,0.089196,-0.103168,0.082778,0.058169,-0.055395,-0.003879,0.006740,0.007668,-0.010319,-0.032024,0.025274,-0.004251,0.011764,-0.045078,-0.006262,-0.004966,-0.001517,0.000334,-0.002165,-0.007367,-0.003034,0.007369,0.000857,0.000920,-0.003565",
+    "Ids": "I25535,I25537,I25538,I25536,I25539,I19117,I19121,I19114,I19115,I19116,I19118,I19119,I19120,I6306,I19105,I19106,I19107,I19108,I19109,I25489,I25490,I25531",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Early medieval genetic data from Ural region evaluated in the light of archaeological evidence of ancient Hungarians",
+        "Link": "https://doi.org/10.1038/s41598-020-75910-z"
+      },
+      {
+        "Label": "Long shared haplotypes identify the southern Urals as a primary source for the 10th-century Hungarians",
+        "Link": "https://doi.org/10.1016/j.cell.2025.09.002"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Early Volga Bulgar (800–1000 AD)",
+    "Coordinates": "Early_Volga_Bulgar,0.095184,-0.029831,0.053975,0.046351,-0.044431,0.002859,0.008490,0.006779,-0.016976,-0.030069,0.016137,-0.004683,0.009812,-0.028075,-0.000831,-0.003182,-0.004531,-0.001568,-0.008453,-0.008457,0.000546,0.004220,-0.006055,0.004790,-0.002874",
+    "Ids": "I25526,I25528,I25529,I25533,I25534,I25527,I25532,I16638",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Long shared haplotypes identify the southern Urals as a primary source for the 10th-century Hungarians",
+        "Link": "https://doi.org/10.1016/j.cell.2025.09.002"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Finno-Turkic Chiyalik (1100-1300 AD)",
+    "Coordinates": "Chiyalik,0.091396,-0.078722,0.068887,0.040602,-0.030422,-0.000723,0.008365,0.009393,-0.005439,-0.022260,0.008360,-0.004380,0.011056,-0.017758,-0.005851,-0.005844,-0.005042,-0.000929,-0.002658,-0.001941,-0.005130,0.003938,-0.001096,-0.001147,-0.001818",
+    "Ids": "I25540,I25541,I25542,I25543,I25544,I25546,I25547,I25548,I25545,I19078,I19079,I19080,I25503,I33730,I33733,I34074,I19081,I32546,I32801,I32802,I32803,I32804,I30341,I32547,I30342,I30343,I10116",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Long shared haplotypes identify the southern Urals as a primary source for the 10th-century Hungarians",
+        "Link": "https://doi.org/10.1016/j.cell.2025.09.002"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Russia Siberian Ugric (650–1100 AD)",
+    "Coordinates": "West_Siberian_Ugric,0.074554,-0.189058,0.097611,0.059378,-0.080169,-0.017779,0.002037,0.007346,-0.005283,-0.030965,0.036010,-0.001636,0.014358,-0.053742,-0.005225,-0.009701,-0.012169,0.000369,0.003300,-0.004168,-0.014620,0.016672,0.014420,-0.006868,-0.004800",
+    "Ids": "I19095,I19096,I19098,I19087,I19088,I19089,I19090,I19091,I19092,I19093,I19097,I19094",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Long shared haplotypes identify the southern Urals as a primary source for the 10th-century Hungarians",
+        "Link": "https://doi.org/10.1016/j.cell.2025.09.002"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Rus (850-1350 AD)",
+    "Coordinates": "Medieval_Rus,0.123081,0.098574,0.073136,0.062210,0.028518,0.021029,0.010748,0.015446,-0.001991,-0.021905,-0.000812,-0.007124,0.013627,0.013670,-0.007003,0.000539,0.003216,-0.003311,0.000235,0.001642,0.003136,-0.004789,0.004174,-0.007728,-0.000128",
+    "Ids": "GOR001,GOS003,GOS002,GOS001,SHE003,SHE001,SHE004,SHE006,SHE005,SHE007,SHE009,SHE008,Sunghir6,VOS002,NEV2",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Genetic admixture and language shift in the medieval Volga-Oka interfluve",
+        "Link": "https://doi.org/10.1016/j.cub.2022.11.036"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Viking Rus (900–1100 AD)",
+    "Coordinates": "Viking_Rus,0.124584,0.123433,0.069904,0.059300,0.038860,0.020955,0.006666,0.009828,0.003356,-0.011473,-0.002716,-0.000136,-0.001101,0.001426,0.008754,0.009474,-0.000059,-0.000202,0.003942,0.003866,0.005127,0.000062,0.000095,0.008446,0.000022",
+    "Ids": "VK221,VK159,VK219,VK223,VK224,VK254,VK255,VK272,VK273,VK14,VK15,VK16,VK17,VK19,VK20,VK22,VK23,VK218,VK220,VK408,VK409,VK410",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Scotland VIking (950-1050 AD)",
+    "Coordinates": "VikingAge_Scottish,0.131655,0.135065,0.063733,0.051572,0.041341,0.018314,0.003055,0.005538,0.005727,0.003645,-0.004872,0.008143,-0.014668,-0.013808,0.028954,0.001326,-0.008388,0.003082,0.001592,0.002459,0.005282,0.001278,-0.003862,0.013174,0.003872",
+    "Ids": "VK202,VK204,VK207",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Serbian (900-1200 AD)",
+    "Coordinates": "Medieval_Serbian_Slav,0.12384,0.134152,0.043557,0.021544,0.032683,0.006638,0.003831,0.005908,0.002945,0.000164,-0.00255,-0.002982,0.003925,0.012964,-0.010437,-0.000332,0.002608,-0.000355,0.004274,-0.002351,-0.003756,0.000346,0.004252,-0.002205,0.000072",
+    "Ids": "I15537,I15541,I15543,I15540,I15542,I1116,I32299,I32300,I32301,R3918",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic history of the Balkans from Roman frontier to Slavic migrations",
+        "Link": "https://doi.org/10.1016/j.cell.2023.10.018"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Slovakian (650-880 AD)",
+    "Coordinates": "EarlyMedieval_Slovak_Slav,0.125964,0.126603,0.057637,0.043013,0.037597,0.012271,0.004348,0.011153,-0.001841,-0.013941,-0.001461,-0.007019,0.013578,0.017364,-0.011853,0.004132,0.012604,-0.000971,0.00287,-0.000334,-0.003993,-0.000742,0.002896,-0.008515,-0.00457",
+    "Ids": "I12991,I13458,I4803,CGG018917,CGG018924,CGG018927",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Steppe Ancestry in western Eurasia and the spread of the Germanic Languages",
+        "Link": "https://doi.org/10.1101/2024.03.13.584607"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Slovakia Balkano-Carpathian Local (880 AD)",
+    "Coordinates": "AvarPeriod_Slovakia_Balkan,0.110978,0.10917,0.034412,0.011144,0.024005,0.00509,0.001939,0.005365,-0.001278,0.000729,-0.003654,0.000075,0.00327,0.004989,-0.005259,0.001193,0.006063,0.000602,0.002639,-0.001219,-0.009233,-0.001545,0.001664,0.000331,-0.000749",
+    "Ids": "CGG018918,CGG018920,CGG018923,CGG018926",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Steppe Ancestry in western Eurasia and the spread of the Germanic Languages",
+        "Link": "https://doi.org/10.1101/2024.03.13.584607"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Ibizan (1050 AD)",
+    "Coordinates": "Medieval_Ibizan_Local,0.08179,0.146382,0.025105,-0.018642,0.039876,-0.009761,-0.008729,0.004088,0.029831,0.033011,-0.00348,0.003554,-0.011999,-0.012642,0.005177,0.004148,0.002365,-0.003801,-0.009248,0.001483,0.00041,-0.007119,0.001056,-0.003116,0.004225",
+    "Ids": "s.101,s.103,s.133,s.155,s.157,s.167,s.313",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Analysis of medieval burials from Ibiza reveals genetic and pathogenic diversity during the Islamic period",
+        "Link": "https://doi.org/10.1038/s41467-026-70615-9"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Spain Castilian (600–1050 AD)",
+    "Coordinates": "EarlyMedieval_Castilian,0.116605,0.14665,0.050213,0.008266,0.051497,-0.001498,-0.003168,0.002889,0.027755,0.036913,-0.005082,0.009186,-0.018792,-0.016082,0.012622,0.001238,-0.003776,0.000695,-0.001504,-0.003154,0.005726,0.000357,-0.005053,-0.006244,0.001206",
+    "Ids": "ldo057,ldo062,ldo039,ldo037,ldo038,ldo040,ldo042,ldo043,ldo045,ldo046,ldo048,ldo052,ldo054,ldo055,ldo058,ldo059,ldo060,ldo066,ldo160,ldo249,ldo254,ldo257,ldo263,ldo050,ldo264,ldo049,ldo044",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Five centuries of consanguinity, isolation, health, and conflict in Las Gobas: A Northern Medieval Iberian necropolis",
+        "Link": "https://doi.org/10.1126/sciadv.adp8625"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Spain Visigothic (600-800 AD)",
+    "Coordinates": "Visigothic_Carolingian_Iberian,0.106994,0.139381,0.037115,-0.000538,0.041392,-0.004137,-0.003506,0.001904,0.023247,0.028019,-0.003248,0.006194,-0.011224,-0.011537,0.007159,-0.000177,-0.004401,0.001151,-0.004389,-0.000031,0.000437,-0.001185,0.000945,0.000512,0.002365",
+    "Ids": "I7673,I7675,CGG022053,CGG022031,CGG022052,CGG022028,GOG034,GOG035,I3775,I3777,I3866,I3585",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genomic history of the Iberian Peninsula over the past 8000 years",
+        "Link": "https://doi.org/10.1126/science.aav4040"
+      },
+      {
+        "Label": "Medieval genomes from eastern Iberia illuminate the role of Morisco mass deportations in dismantling a long-standing genetic bridge with North Africa",
+        "Link": "https://doi.org/10.1186/s13059-025-03570-1"
+      },
+      {
+        "Label": "Steppe Ancestry in western Eurasia and the spread of the Germanic Languages",
+        "Link": "https://doi.org/10.1101/2024.03.13.584607"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Spain Christain Iberian (900-1400 AD)",
+    "Coordinates": "Medieval_Christian_Iberian,0.105855,0.14484,0.031348,-0.007792,0.038892,-0.001743,-0.005112,0.002048,0.028966,0.031048,0.00002,0.007756,-0.009942,-0.011354,0.006039,0.001989,0.002119,-0.004751,-0.006253,-0.003251,0.003073,0.000896,-0.001463,-0.002365,-0.000015",
+    "Ids": "T-145-2,I10895,I10892,I10852,I10853,I10897,GOG056,GOG057",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "The genomic history of the Iberian Peninsula over the past 8000 years",
+        "Link": "https://doi.org/10.1126/science.aav4040"
+      },
+      {
+        "Label": "Medieval genomes from eastern Iberia illuminate the role of Morisco mass deportations in dismantling a long-standing genetic bridge with North Africa",
+        "Link": "https://doi.org/10.1186/s13059-025-03570-1"
+      },
+      {
+        "Label": "Mapping co-ancestry connections between the genome of a Medieval individual and modern Europeans",
+        "Link": "https://doi.org/10.1038/s41598-020-64007-2"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Spain Andalusi Muslim Iberian (800-1400 AD)",
+    "Coordinates": "Medieval_Andalusi_Iberian,0.077735,0.142951,0.024801,-0.024092,0.036332,-0.01319,-0.009262,0.001303,0.031196,0.028236,0.000401,0.003253,-0.004101,-0.015098,0.008071,-0.002168,0.002845,-0.008712,-0.01274,0.000545,-0.001226,-0.008598,0.004321,-0.00202,0.001367",
+    "Ids": "I12516,I12514,I12515,I12644,I12647,I12649,I7457,I7497,I7498,I7499,I8146,MS060,GOG023,GOG024,GOG025,GOG026,GOG020",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "https://doi.org/10.1126/science.aav4040",
+        "Link": "https://doi.org/10.1126/science.aav4040"
+      },
+      {
+        "Label": "Medieval genomes from eastern Iberia illuminate the role of Morisco mass deportations in dismantling a long-standing genetic bridge with North Africa",
+        "Link": "https://doi.org/10.1186/s13059-025-03570-1"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Sweden Gotlander Viking (900-1050 AD)",
+    "Coordinates": "VikingAge_Gotlander,0.123996,0.124275,0.079667,0.069728,0.046739,0.027732,0.002291,0.009836,0.004397,-0.016754,-0.006699,-0.005358,0.003521,0.005428,0.012232,0.00479,-0.006022,0.003682,0.005743,0.007042,0.006379,0.00075,0.003497,0.009647,0.001287",
+    "Ids": "hav001,ihr183A,ihr183b,ihr218,ihr226,ihr241,ihr370,ihr373,ihr380,ihr504,ihr505,irh220,irh230,irh232,irh233,kvi001",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      },
+      {
+        "Label": "The genetic history of Scandinavia from the Roman Iron Age to the present",
+        "Link": "https://doi.org/10.1016/j.cell.2022.11.024"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Sweden Viking (700-1200 AD)",
+    "Coordinates": "VikingAge_Swedish,0.128238,0.129952,0.070192,0.058425,0.041419,0.021104,0.005823,0.008877,0.004221,-0.007612,-0.004133,0.000173,-0.002039,0.000458,0.010762,0.004626,-0.004291,0.001532,0.002581,0.003551,0.003699,0.002853,0.001416,0.006843,0.000447",
+    "Ids": "VK379,nuf001,nuf005,stl002,bro300,gor161,enb200,VK350,VK349,VK355,VK442,VK444,VK358,VK336,VK332,VK337,VK333,vik_stg026,VK265,VK266,VK268,VK269,VK335,VK342,VK343,VK344,VK345,VK346,VK347_V348_merge,VK352,VK380,VK443,vik_grt035,VK48,VK50,VK51,VK53,VK57,VK58,VK60,VK63,VK64,VK232,VK428,VK429,VK430,VK431,VK432,VK433,VK434,VK438,VK439,VK440,VK450,VK452,VK453,VK454,VK455,VK456,VK457,VK458,VK459,VK460,VK461,VK462,VK463,VK464,VK468,VK469,VK471,VK473,VK474,VK475,VK476,VK477,VK478,VK479,vik_84001,VK108,VK217,VK354,vik_stg021,vik_84005,vik_97002,vik_97026,vik_gtm021,vik_kls001,vik_nuf002,vik_urm045,VK29,VK30,VK31,VK34,VK35,VK39,VK40,VK42,VK303,VK306,VK308,VK309,VK395,VK396,VK397,VK398,VK399,VK400,VK401,VK402,VK403,VK404,VK405,VK406,VK407,VK424,VK425,VK426,VK427,VK527,VK334,VK353,VK357,vik_grt036,vik_urm035,vik_urm160,brk581,als015,stg018,als007,als010,bro100,gor358,sal002,enb508,gam872,gor164,vls696,frc007,wes056,Harane,Kufe,L,M",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
+      },
+      {
+        "Label": "The genetic history of Scandinavia from the Roman Iron Age to the present",
+        "Link": "https://doi.org/10.1016/j.cell.2022.11.024"
+      },
+      {
+        "Label": "Genomic and Strontium Isotope Variation Reveal Immigration Patterns in a Viking Age Town",
+        "Link": "https://doi.org/10.1016/j.cub.2018.06.053"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Syrian (750 AD)",
+    "Coordinates": "Medieval_Syrian,0.095611,0.120848,-0.061094,-0.060724,-0.022773,-0.016455,0.000705,-0.003461,0.002659,-0.012392,0.004709,-0.011989,0.016947,0.002615,-0.000271,0.011005,-0.025555,-0.00038,0.002263,0.001876,0.009858,0.002226,-0.002095,-0.002048,0.001557",
+    "Ids": "R3359",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Stable population structure in Europe since the Iron Age, despite high mobility",
+        "Link": "https://doi.org/10.7554/eLife.79714"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Umayyad Syrian (750 AD)",
+    "Coordinates": "Bioarchaeological evidence of one of the earliest Islamic burials in the Levant",
+    "Ids": "syr013,syr005",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Bioarchaeological evidence of one of the earliest Islamic burials in the Levant",
+        "Link": "Bioarchaeological evidence of one of the earliest Islamic burials in the Levant"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "West Anatolia Aegean Greek (600-1300 AD)",
+    "Coordinates": "Byzantine_Aegean_Greek,0.102441,0.147823,-0.030782,-0.060805,-0.000346,-0.022956,-0.001278,-0.004572,-0.004154,0.017905,0.003593,0.002164,-0.005185,0.001927,-0.013631,0.001616,0.011221,-0.001188,0.004777,-0.002126,-0.004835,0.000533,-0.000555,-0.000422,-0.00238",
+    "Ids": "I20259,I20260,I20261,I20265,I20266,I20320,I20141,I20187,I19539,I20142,I20143,I20144,I20145,I20146,I20147,I20574",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic probe into the ancient and medieval history of Southern Europe and West Asia",
+        "Link": "https://doi.org/10.1126/science.abq0755"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Marmara Anatolian (600-800 AD)",
+    "Coordinates": "Byzantine_Marmara_Anatolian,0.113368,0.149994,-0.020478,-0.055136,0.005847,-0.019606,0.001669,-0.005584,-0.006483,0.018315,0.005765,0.004046,-0.009128,0.004789,-0.01402,-0.011853,-0.002543,0.002724,0.006536,-0.008454,-0.003506,0.004031,-0.002132,-0.001579,-0.001305",
+    "Ids": "I14821,I14822,I14831,I14832,I10546,I8366,I8368,I8370,I8371,I8373",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic probe into the ancient and medieval history of Southern Europe and West Asia",
+        "Link": "https://doi.org/10.1126/science.abq0755"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Southeas Anatolian (600–1200 AD)",
+    "Coordinates": "Byzantine_Southeast_Anatolian,0.098413,0.138581,-0.054363,-0.06701,-0.022205,-0.020187,-0.001283,-0.00671,-0.016205,0.002271,0.005071,0.000115,0.000858,0.000667,-0.008143,0.005487,0.003982,-0.000166,0.002765,-0.002203,0.002102,0.003072,0.000408,-0.000667,-0.002349",
+    "Ids": "I4532,I14648,I14645,I14647,I14651,I14652,I14760,I14791,I4613,I4474,I4475,I4534,I4533",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "A genetic probe into the ancient and medieval history of Southern Europe and West Asia",
+        "Link": "https://doi.org/10.1126/science.abq0755"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Ukraine Alan (750-850 AD)",
+    "Coordinates": "Saltiv_Alan,0.104717,0.085051,-0.018008,-0.008802,-0.032852,-0.003416,0.006286,-0.003865,-0.043563,-0.022370,0.001827,0.005845,-0.009440,-0.009737,0.006379,-0.010839,0.002314,-0.002819,-0.006379,0.007066,0.005584,-0.003493,-0.002342,-0.003404,0.000539",
+    "Ids": "UKR139,UKR135,UKR136,UKR138",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "North Pontic crossroads: Mobility in Ukraine from the Bronze Age to the early modern period",
+        "Link": "https://doi.org/10.1126/sciadv.adr0695"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Ukraine Bulgar (800 AD)",
+    "Coordinates": "Saltiv_Bulgar,0.088213,0.041129,-0.006223,-0.012113,-0.036007,-0.001673,0.006580,0.008885,-0.029451,-0.014579,0.001300,-0.000824,-0.003568,0.007225,0.011672,-0.005834,0.000131,0.000570,-0.011879,-0.011006,-0.002933,-0.001175,-0.003389,0.000120,0.000898",
+    "Ids": "UKR147,UKR143",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "North Pontic crossroads: Mobility in Ukraine from the Bronze Age to the early modern period",
+        "Link": "https://doi.org/10.1126/sciadv.adr0695"
+      }
+    ]
+  },
+  {
+    "SampleLabel": "Ukrainian (1000-1250 AD)",
+    "Coordinates": "Medieval_Ukrainian_Rus,0.129102,0.122332,0.066170,0.053655,0.035403,0.020445,0.005532,0.012204,-0.001369,-0.017123,-0.000393,-0.004559,0.013671,0.021432,-0.010560,-0.000280,0.002929,-0.001949,0.001745,0.001905,-0.004372,-0.003586,0.008030,-0.004227,-0.000907",
+    "Ids": "PDH002,PDH007,PDH001,PDH003,PDH004,PDH005,PDH006,PDH008,PDH010,PDH011,PDH012,UKR166,VK541,KRW001,KRW002,KRW003,KRW004,KRW005,KRW006,KRW007,KRW008,KRW009,KRW010,KRW011,KRW013,KRW014",
+    "G25DistanceEraId": 4,
+    "ResearchLinks": [
+      {
+        "Label": "Ancient DNA connects large-scale migration with the spread of Slavs",
+        "Link": "https://doi.org/10.1038/s41586-025-09437-6"
+      },
+      {
+        "Label": "North Pontic crossroads: Mobility in Ukraine from the Bronze Age to the early modern period",
+        "Link": "https://doi.org/10.1126/sciadv.adr0695"
+      },
+      {
+        "Label": "Population genomics of the Viking world",
+        "Link": "https://doi.org/10.1038/s41586-020-2688-8"
       }
     ]
   }
