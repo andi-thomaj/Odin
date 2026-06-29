@@ -53,9 +53,9 @@ public class AncestralPortraitPromptsTests
     public void Build_CapsLongDescriptions()
     {
         var huge = new string('x', 5000);
-        // Even with a gender clause added, the prompt stays bounded.
+        // Even with the gender + hair clauses added, the prompt stays bounded.
         var prompt = AncestralPortraitPrompts.Build("Pop", huge, "Era", null, Gender.Female);
-        // The description contribution is capped (≤ ~900 chars) so the prompt stays bounded.
+        // The description contribution is capped (≤ ~800 chars) so the prompt stays bounded.
         Assert.True(prompt.Length < 2200, $"prompt length was {prompt.Length}");
     }
 
@@ -96,36 +96,42 @@ public class AncestralPortraitPromptsTests
         Assert.DoesNotContain("SENTINEL_DESCRIPTION", male);
         Assert.Contains("pileus", male);                       // men's Illyrian dress
 
-        // The two genders yield genuinely different creative, and both stay bounded.
+        // The two genders yield genuinely different creative, and both stay under the prompt rail.
         Assert.NotEqual(male, female);
-        Assert.True(female.Length < 2200, $"female prompt length was {female.Length}");
-        Assert.True(male.Length < 2200, $"male prompt length was {male.Length}");
+        Assert.True(female.Length < 2400, $"female prompt length was {female.Length}");
+        Assert.True(male.Length < 2400, $"male prompt length was {male.Length}");
     }
 
     [Fact]
-    public void Build_PreservesSkinAndEyeColour_ButRestylesHairAndBeard()
+    public void Build_PreservesSkinAndEyeColour_ButDescribesAndReplacesHairAndBeard()
     {
-        // Skin pigment + eye colour are preserved for everyone; hair is restyled for everyone, beard only for men.
-        var male = AncestralPortraitPrompts.Build("Celtic", null, "Iron Age", null, Gender.Male);
-        Assert.Contains("skin tone", male);
-        Assert.Contains("eye colour", male);
-        Assert.Contains("never lighten, darken or recolour the skin or eyes", male);
-        Assert.Contains("HAIR and BEARD restyled", male);
+        // Skin pigment + eye colour are PRESERVED for everyone; the hair (and, for men, the beard) is described
+        // EXPLICITLY and CONCRETELY in the prompt and the model is told to replace the selfie's hair with it.
+        // Use a seeded population so the concrete per-population hair descriptor is exercised.
+        const string popName = "Celtic (600 - 50 BC)";
 
-        var female = AncestralPortraitPrompts.Build("Celtic", null, "Iron Age", null, Gender.Female);
+        var male = AncestralPortraitPrompts.Build(popName, null, "Classical Antiquity", null, Gender.Male);
+        Assert.Contains("natural skin tone and eye colour", male);
+        Assert.Contains("never lighten, darken or recolour the skin or eyes", male);
+        Assert.Contains("His period hair and beard:", male);                                  // explicit description
+        Assert.Contains("lime-washed", male);                                                 // the concrete Celtic descriptor
+        Assert.Contains("do NOT copy the hairstyle or facial hair from the reference photo", male); // enforcement
+
+        var female = AncestralPortraitPrompts.Build(popName, null, "Classical Antiquity", null, Gender.Female);
         Assert.Contains("never lighten, darken or recolour the skin or eyes", female);
-        Assert.Contains("HAIR restyled", female);
-        Assert.Contains("no beard", female);
-        Assert.DoesNotContain("HAIR and BEARD restyled", female); // women aren't given a beard
+        Assert.Contains("Her period hairstyle:", female);                                      // explicit description
+        Assert.Contains("do NOT copy the hairstyle from the reference photo", female);
+        Assert.Contains("clean-faced with no beard", female);
+        Assert.DoesNotContain("His period hair and beard:", female);                          // women's descriptor, not men's
     }
 
     [Fact]
     public void Build_StaysUnderLengthRail_ForLongestSeededScene()
     {
-        // Longest population short-name + a near-max curated scene + female gender clause is the worst case.
+        // Longest population short-name + a near-max curated scene + female gender + hair clause is the worst case.
         var prompt = AncestralPortraitPrompts.Build(
             "Anatolian Neolithic Farmer (8500 - 6000 BC)", null, "Hunter Gatherer and Neolithic Farmer", null, Gender.Female);
-        Assert.True(prompt.Length < 2200, $"prompt length was {prompt.Length}");
+        Assert.True(prompt.Length < 2400, $"prompt length was {prompt.Length}");
     }
 
     [Fact]
