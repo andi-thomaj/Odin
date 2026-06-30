@@ -43,6 +43,10 @@ public interface IAncestralPortraitService
     /// <summary>The actual generation loop (called by the Hangfire worker). Bounded, never rethrows — records Status.</summary>
     Task RunGenerationAsync(Guid setId, CancellationToken cancellationToken = default);
 
+    /// <summary>Self-heal: re-enqueue every set still <c>Running</c> past the stale window (a worker died / a redeploy
+    /// killed it mid-run). Driven by the recurring reconcile job. Returns how many sets were re-enqueued.</summary>
+    Task<int> ReconcileStaleRunsAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Admin aggregate: total runs / images / tokens / estimated USD spend across ALL portrait runs.</summary>
     Task<AncestralPortraitUsageContract.Response> GetUsageSummaryAsync(CancellationToken cancellationToken = default);
 }

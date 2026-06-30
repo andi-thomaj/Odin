@@ -18,10 +18,19 @@ public interface IAncestralPortraitWorker
     [Queue("default")]
     [AutomaticRetry(Attempts = 0)]
     Task RunAsync(Guid setId, CancellationToken cancellationToken = default);
+
+    /// <summary>Recurring self-heal: re-enqueue sets stuck <c>Running</c> past the stale window (worker death/redeploy).
+    /// <c>[Queue]</c>/<c>[AutomaticRetry]</c> live on the interface (same load-bearing rule as <see cref="RunAsync"/>).</summary>
+    [Queue("default")]
+    [AutomaticRetry(Attempts = 0)]
+    Task ReconcileStaleRunsAsync(CancellationToken cancellationToken = default);
 }
 
 public sealed class AncestralPortraitWorker(IAncestralPortraitService service) : IAncestralPortraitWorker
 {
     public Task RunAsync(Guid setId, CancellationToken cancellationToken = default) =>
         service.RunGenerationAsync(setId, cancellationToken);
+
+    public Task ReconcileStaleRunsAsync(CancellationToken cancellationToken = default) =>
+        service.ReconcileStaleRunsAsync(cancellationToken);
 }

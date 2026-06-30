@@ -26,9 +26,13 @@ public sealed class AncestralPortraitService(
 {
     private readonly AppleIapOptions _apple = appleOptions.Value;
 
-    /// A Running set whose <c>UpdatedAt</c> is older than this is considered stale (worker died mid-run) and may be
-    /// re-claimed/regenerated. Far longer than a real run (~1–3 min); matches the Hangfire invisibility timeout.
-    private const int StaleRunMinutes = 30;
+    /// A Running set whose <c>UpdatedAt</c> is older than this is considered stale (the worker died mid-run, e.g. a
+    /// deploy/restart killed the process) and may be re-claimed/regenerated. <see cref="RunGenerationAsync"/> HEARTBEATS
+    /// <c>UpdatedAt</c> after every population, so a live run's <c>UpdatedAt</c> is never more than ~1 min old — this
+    /// window therefore only ever trips on a genuinely dead run, never on a slow-but-alive one (no double-run). Kept
+    /// comfortably above that heartbeat gap; the <c>ancestral-portrait-reconcile-stale</c> recurring job re-enqueues
+    /// anything still Running past this window so a redeploy can't strand a set "Painting…" forever.
+    private const int StaleRunMinutes = 10;
 
     public async Task<(AncestralPortraitSetContract.Response Response, int StatusCode, string? Error)> PurchaseAsync(
         int orderId, string identityId, string transactionJws, CancellationToken cancellationToken = default)
@@ -374,6 +378,14 @@ public sealed class AncestralPortraitService(
                     lastError = ex.Detail;
                     logger.LogWarning(ex, "Ancestral portrait era {EraId} population {PopulationId} failed for set {SetId}.", era.EraId, pop.PopulationId, set.Id);
                 }
+
+                // Heartbeat: keep UpdatedAt fresh so a live (multi-minute) run is never mistaken for a dead one. This is
+                // a direct UPDATE that does NOT flush the pending portrait inserts (those stay all-or-nothing for the
+                // final SaveChanges). If the worker dies/redeploys mid-run, UpdatedAt stops advancing and the set goes
+                // stale within StaleRunMinutes — then the claim's staleness check (and the reconcile job) can re-run it
+                // instead of leaving it orphaned at Running with no images.
+                await dbContext.AncestralPortraitSets.Where(s => s.Id == setId)
+                    .ExecuteUpdateAsync(u => u.SetProperty(s => s.UpdatedAt, DateTime.UtcNow), cancellationToken);
             }
 
             set.Status = produced > 0 ? AncestralPortraitStatus.Succeeded : AncestralPortraitStatus.Failed;
@@ -406,6 +418,33 @@ public sealed class AncestralPortraitService(
                 entry.State = EntityState.Detached;
             await FailAsync(set, "Portrait generation failed unexpectedly.", cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Self-heal orphaned generations: re-enqueue any set still <c>Running</c> past <see cref="StaleRunMinutes"/> (its
+    /// heartbeat stopped — the worker died or a deploy killed it mid-run, leaving it stuck with no images and nothing to
+    /// re-trigger it). The claim in <see cref="RunGenerationAsync"/> re-claims a stale Running set, so the re-enqueued
+    /// job regenerates it from scratch. Bounded — a re-run ends <c>Succeeded</c>/<c>Failed</c> (no longer Running), so a
+    /// set is never re-enqueued in a loop. Driven by the recurring <c>ancestral-portrait-reconcile-stale</c> job, so a
+    /// redeploy mid-generation can no longer strand a portrait set forever. Returns how many sets were re-enqueued.
+    /// </summary>
+    public async Task<int> ReconcileStaleRunsAsync(CancellationToken cancellationToken = default)
+    {
+        var staleBefore = DateTime.UtcNow.AddMinutes(-StaleRunMinutes);
+        var staleIds = await dbContext.AncestralPortraitSets.AsNoTracking()
+            .Where(s => s.Status == AncestralPortraitStatus.Running && s.UpdatedAt < staleBefore)
+            .Select(s => s.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var id in staleIds)
+        {
+            logger.LogWarning(
+                "Re-enqueuing stale ancestral-portrait set {SetId}: still Running with no heartbeat for > {Minutes} min (likely a worker death/redeploy). It will be re-claimed and regenerated.",
+                id, StaleRunMinutes);
+            backgroundJobs.Enqueue<IAncestralPortraitWorker>(w => w.RunAsync(id, CancellationToken.None));
+        }
+
+        return staleIds.Count;
     }
 
     public async Task<AncestralPortraitUsageContract.Response> GetUsageSummaryAsync(CancellationToken cancellationToken = default)

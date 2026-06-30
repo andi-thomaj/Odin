@@ -713,6 +713,17 @@ namespace Odin.Api
                     methodCall: svc => svc.SweepAsync(CancellationToken.None),
                     cronExpression: "0 4 * * *",
                     options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // ancestral-portrait-reconcile-stale: every 5 min, re-enqueue any "Through the Ages" set stuck Running
+                // past the stale window (its heartbeat stopped — the worker died or a DEPLOY/restart killed it mid-run).
+                // Without this a redeploy mid-generation strands the set "Painting…" forever with no images and nothing
+                // to re-trigger it (the iOS client only polls). The generation claim re-claims a stale Running set, so
+                // the re-enqueued job regenerates from scratch; bounded (a re-run ends Succeeded/Failed, never re-loops).
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitWorker>(
+                    recurringJobId: "ancestral-portrait-reconcile-stale",
+                    methodCall: w => w.ReconcileStaleRunsAsync(CancellationToken.None),
+                    cronExpression: "*/5 * * * *",
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
             }
 
             // Version prefix — all business endpoints live under /v1 so breaking changes
