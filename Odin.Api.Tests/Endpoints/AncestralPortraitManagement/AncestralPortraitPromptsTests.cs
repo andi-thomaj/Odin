@@ -103,29 +103,44 @@ public class AncestralPortraitPromptsTests
     }
 
     [Fact]
-    public void Build_PreservesSkinAndEyeColour_ButDescribesAndReplacesHairAndBeard()
+    public void Build_PreservesSkinAndEyeColour_ButReplacesHairAndBeard_ForMaleViaSelfContainedDirective()
     {
-        // Skin pigment + eye colour are PRESERVED for everyone; the hair (and, for men, the beard) is described
-        // EXPLICITLY and CONCRETELY in the prompt and the model is told to replace the selfie's hair with it.
-        // Use a seeded population so the concrete per-population hair descriptor is exercised.
+        // Skin pigment + eye colour are PRESERVED for everyone. For MEN the hair/beard directive is SELF-CONTAINED in
+        // the population's own descriptor (it owns its own "replace the photo's hair/beard" instruction) — there is no
+        // shared/global male enforcement clause. Use a seeded population so the concrete descriptor is exercised.
         const string popName = "Celtic (600 - 50 BC)";
 
         var male = AncestralPortraitPrompts.Build(popName, null, "Classical Antiquity", null, Gender.Male);
         Assert.Contains("natural skin tone and eye colour", male);
         Assert.Contains("never lighten, darken or recolour the skin or eyes", male);
-        Assert.Contains("His period hair and beard:", male);                  // explicit description
-        Assert.Contains("lime-washed", male);                                 // the concrete Celtic descriptor
-        Assert.Contains("hair AND beard MUST visibly change", male);          // forced change
-        Assert.Contains("even if he is already bearded", male);               // change applies to bearded users too
-        Assert.Contains("never keep the photo's hairstyle or facial hair", male);
+        Assert.Contains("lime-washed", male);                                                  // concrete Celtic descriptor preserved
+        Assert.Contains("replacing the hair and facial hair from the reference photo", male);  // the population's OWN replace directive
+        Assert.Contains("never keep the photo's own", male);
+        Assert.True(male.Length < 2400, $"male prompt length was {male.Length}");
+        // No shared male enforcement clause + no shared "His period hair and beard:" label any more.
+        Assert.DoesNotContain("His period hair and beard:", male);
+        Assert.DoesNotContain("MUST visibly change", male);
 
         var female = AncestralPortraitPrompts.Build(popName, null, "Classical Antiquity", null, Gender.Female);
         Assert.Contains("never lighten, darken or recolour the skin or eyes", female);
-        Assert.Contains("Her period hairstyle:", female);                     // explicit description
-        Assert.Contains("hair MUST visibly change", female);
-        Assert.Contains("never keep the photo's hairstyle", female);
+        Assert.Contains("Her period hairstyle:", female);                     // women keep the small shared clause
+        Assert.Contains("Her hair MUST visibly change", female);
         Assert.Contains("clean-faced with no beard", female);
-        Assert.DoesNotContain("His period hair and beard:", female);          // women's descriptor, not men's
+        Assert.DoesNotContain("replacing the hair and facial hair from the reference photo", female); // male-only directive
+    }
+
+    [Fact]
+    public void Build_KeepsClientsOwnFacialHair_ForAnatolianNeolithicMale()
+    {
+        // The one population whose MALE portrait keeps the client's OWN beard from the uploaded photo (only the hair
+        // restyles) — its descriptor carries a unique KEEP directive instead of the usual replace one.
+        const string popName = "Anatolian Neolithic Farmer (8500 - 6000 BC)";
+        var male = AncestralPortraitPrompts.Build(popName, null, "Hunter Gatherer and Neolithic Farmer", null, Gender.Male);
+
+        Assert.Contains("shoulder-length dark wavy", male);                          // hair is still described/restyled
+        Assert.Contains("keep his own facial hair from the reference photo", male);  // beard FOLLOWS the photo
+        Assert.DoesNotContain("replacing the hair and facial hair", male);           // NOT the replace directive
+        Assert.DoesNotContain("MUST visibly change", male);                          // no shared enforcement clause
     }
 
     [Fact]

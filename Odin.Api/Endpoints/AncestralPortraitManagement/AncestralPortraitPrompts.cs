@@ -11,16 +11,18 @@ namespace Odin.Api.Endpoints.AncestralPortraitManagement;
 /// population (<see cref="AncestralPortraitScenes"/> — so the portrait resembles the population's own photo, with a
 /// women's variant for female clients and a men's variant otherwise), else (3) the population's name + description.
 /// In every case the creative is wrapped with: an identity-preserving lead (keep the user's facial features, bone
-/// structure, natural skin tone and eye colour); a gender clause (the culture's gendered attire); an emphatic hair
-/// clause that forces the hair — and for men the beard — to CHANGE to a concrete period look (so the edit doesn't
-/// just copy the selfie's hair); and the shared photoreal portrait style.
+/// structure, natural skin tone and eye colour); a gender clause (the culture's gendered attire); the per-population
+/// HAIR directive (for men a SELF-CONTAINED instruction baked into each population's own descriptor that owns whether
+/// to REPLACE or KEEP the photo's hair/beard — there is no shared/global male hair clause, so each population's prompt
+/// is unique; for women a small shared "restyle the hair, keep her clean-faced" clause); and the photoreal style.
 /// </summary>
 public static class AncestralPortraitPrompts
 {
     /// <summary>Identity-preserving lead — gpt-image-2 edits the reference (the user's face). ONLY the facial features,
     /// bone structure, natural SKIN TONE and EYE COLOUR are kept; the hair and beard are deliberately NOT among the
-    /// preserved traits (the <see cref="HairClause"/> replaces them with the period look) — note it does not say
-    /// "likeness", which the model reads as "keep the hair too".</summary>
+    /// preserved traits (each population's hair descriptor — see <see cref="AppendHairDescription"/> — states what to
+    /// render and whether to replace or keep them) — note it does not say "likeness", which the model reads as "keep
+    /// the hair too".</summary>
     private const string IdentityLead =
         "Create a photorealistic portrait of the SAME person shown in the reference photographs — keep their exact " +
         "facial features, bone structure, natural skin tone and eye colour (never lighten, darken or recolour the skin " +
@@ -48,12 +50,13 @@ public static class AncestralPortraitPrompts
     {
         var subject = BuildSubject(name, description, eraName, curatedImagePrompt, gender);
         subject = AppendHairDescription(subject, name, gender);
-        return IdentityLead + subject + GenderClause(gender) + HairEnforcement(gender) + Style;
+        return IdentityLead + subject + GenderClause(gender) + FemaleHairEnforcement(gender) + Style;
     }
 
     /// <summary>Enforces a gender-consistent presentation — the client's gender drives the feminine vs masculine
-    /// clothing and adornments. (Hair/beard is handled by <see cref="HairClause"/>; skin tone + eye colour by
-    /// <see cref="IdentityLead"/>.)</summary>
+    /// clothing and adornments. (Hair/beard is handled by the per-population descriptor in
+    /// <see cref="AppendHairDescription"/> for men and <see cref="FemaleHairEnforcement"/> for women; skin tone + eye
+    /// colour by <see cref="IdentityLead"/>.)</summary>
     private static string GenderClause(Gender? gender) => gender switch
     {
         Gender.Female =>
@@ -66,38 +69,33 @@ public static class AncestralPortraitPrompts
     };
 
     /// <summary>
-    /// Appends the population's CONCRETE period hair (and, for men, the beard) to the subject description, so EVERY
-    /// prompt explicitly states the exact hairstyle to render — not a vague "period hair". gpt-image-2 copies the
-    /// selfie's hair unless it is given a concrete target plus the matching negation in <see cref="HairEnforcement"/>.
-    /// Women get the women's hair descriptor; men/unknown get the men's hair + beard. Skin tone + eye colour are never
-    /// touched (see <see cref="IdentityLead"/>). A non-seeded population (name+description path) has no descriptor and
-    /// is left to the generic enforcement clause.
+    /// Appends the population's CONCRETE period hair to the subject description, so EVERY prompt explicitly states the
+    /// exact hairstyle to render — not a vague "period hair" (gpt-image-2 copies the selfie's hair without a concrete
+    /// target). <b>Male/unknown descriptors are SELF-CONTAINED directives</b>: each is a full instruction that already
+    /// owns whether to REPLACE the photo's hair/beard (the default) or KEEP it (e.g. Anatolian Neolithic Farmer), so
+    /// it is appended verbatim and there is <b>no shared male enforcement clause</b> — every population's prompt is
+    /// unique and controls its own hair/beard. The women's descriptor is still a plain hairstyle, forced to render +
+    /// kept clean-faced by the small shared <see cref="FemaleHairEnforcement"/>. Skin tone + eye colour are never
+    /// touched (see <see cref="IdentityLead"/>). A non-seeded population (name+description path) has no descriptor.
     /// </summary>
     private static string AppendHairDescription(string subject, string name, Gender? gender)
     {
         if (!AncestralPortraitScenes.TryGetHair(name, gender, out var hair) || string.IsNullOrWhiteSpace(hair))
             return subject;
 
-        var label = gender == Gender.Female ? "Her period hairstyle" : "His period hair and beard";
-        return $"{subject} {label}: {hair.Trim()}.";
+        // Women: a hairstyle descriptor + the shared clean-faced clause. Men/unknown: a self-contained directive.
+        return gender == Gender.Female
+            ? $"{subject} Her period hairstyle: {hair.Trim()}."
+            : $"{subject} {hair.Trim()}.";
     }
 
-    /// <summary>Forces the hair (and, for men, the beard) described in the subject to ACTUALLY replace the selfie's —
-    /// gpt-image-2 edits otherwise copy the reference hair. Skin tone/eye colour stay untouched (see
-    /// <see cref="IdentityLead"/>); women are kept clean-faced.</summary>
-    private static string HairEnforcement(Gender? gender) => gender switch
-    {
-        Gender.Female =>
-            " Her hair MUST visibly change to the period style described above and look clearly different from the " +
-            "reference photo — never keep the photo's hairstyle; restyle it completely. Keep her clean-faced with no beard.",
-        Gender.Male =>
-            " His hair AND beard MUST visibly change to the period style described above and look clearly different from " +
-            "the reference photo — never keep the photo's hairstyle or facial hair; restyle the hair completely and grow, " +
-            "restyle or shave the beard exactly as described, even if he is already bearded.",
-        _ =>
-            " The hair (and, for a man, the beard) MUST visibly change to the period style described above and look " +
-            "clearly different from the reference photo — never keep the photo's hairstyle or facial hair.",
-    };
+    /// <summary>The WOMEN-only hair clause: restyle the hair to the period look and keep her clean-faced (men have no
+    /// shared clause — each male population's descriptor owns its own replace-or-keep hair/beard directive). Skin
+    /// tone/eye colour stay untouched (see <see cref="IdentityLead"/>).</summary>
+    private static string FemaleHairEnforcement(Gender? gender) => gender == Gender.Female
+        ? " Her hair MUST visibly change to the period style described above and look clearly different from the " +
+          "reference photo — never keep the photo's hairstyle; restyle it completely. Keep her clean-faced with no beard."
+        : string.Empty;
 
     private static string BuildSubject(string name, string? description, string? eraName, string? curatedImagePrompt,
         Gender? gender)
