@@ -113,16 +113,19 @@ public class AncestralPortraitPromptsTests
         var male = AncestralPortraitPrompts.Build(popName, null, "Classical Antiquity", null, Gender.Male);
         Assert.Contains("natural skin tone and eye colour", male);
         Assert.Contains("never lighten, darken or recolour the skin or eyes", male);
-        Assert.Contains("His period hair and beard:", male);                                  // explicit description
-        Assert.Contains("lime-washed", male);                                                 // the concrete Celtic descriptor
-        Assert.Contains("do NOT copy the hairstyle or facial hair from the reference photo", male); // enforcement
+        Assert.Contains("His period hair and beard:", male);                  // explicit description
+        Assert.Contains("lime-washed", male);                                 // the concrete Celtic descriptor
+        Assert.Contains("hair AND beard MUST visibly change", male);          // forced change
+        Assert.Contains("even if he is already bearded", male);               // change applies to bearded users too
+        Assert.Contains("never keep the photo's hairstyle or facial hair", male);
 
         var female = AncestralPortraitPrompts.Build(popName, null, "Classical Antiquity", null, Gender.Female);
         Assert.Contains("never lighten, darken or recolour the skin or eyes", female);
-        Assert.Contains("Her period hairstyle:", female);                                      // explicit description
-        Assert.Contains("do NOT copy the hairstyle from the reference photo", female);
+        Assert.Contains("Her period hairstyle:", female);                     // explicit description
+        Assert.Contains("hair MUST visibly change", female);
+        Assert.Contains("never keep the photo's hairstyle", female);
         Assert.Contains("clean-faced with no beard", female);
-        Assert.DoesNotContain("His period hair and beard:", female);                          // women's descriptor, not men's
+        Assert.DoesNotContain("His period hair and beard:", female);          // women's descriptor, not men's
     }
 
     [Fact]

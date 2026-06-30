@@ -88,14 +88,15 @@ public static class AncestralPortraitPrompts
     private static string HairEnforcement(Gender? gender) => gender switch
     {
         Gender.Female =>
-            " Render her hair exactly as described above — this culture's period style — and do NOT copy the hairstyle " +
-            "from the reference photo; keep her clean-faced with no beard.",
+            " Her hair MUST visibly change to the period style described above and look clearly different from the " +
+            "reference photo — never keep the photo's hairstyle; restyle it completely. Keep her clean-faced with no beard.",
         Gender.Male =>
-            " Render his hair and beard exactly as described above — this culture's period style — and do NOT copy the " +
-            "hairstyle or facial hair from the reference photo.",
+            " His hair AND beard MUST visibly change to the period style described above and look clearly different from " +
+            "the reference photo — never keep the photo's hairstyle or facial hair; restyle the hair completely and grow, " +
+            "restyle or shave the beard exactly as described, even if he is already bearded.",
         _ =>
-            " Render the hair (and, for a man, the beard) in this culture's period style — and do NOT copy the " +
-            "hairstyle or facial hair from the reference photo.",
+            " The hair (and, for a man, the beard) MUST visibly change to the period style described above and look " +
+            "clearly different from the reference photo — never keep the photo's hairstyle or facial hair.",
     };
 
     private static string BuildSubject(string name, string? description, string? eraName, string? curatedImagePrompt,
