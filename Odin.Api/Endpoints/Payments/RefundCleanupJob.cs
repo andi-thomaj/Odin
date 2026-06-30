@@ -22,13 +22,16 @@ namespace Odin.Api.Endpoints.Payments;
 /// and no-ops) and <b>best-effort per asset</b> (one R2/tools-api failure is logged and the rest still runs). The
 /// <c>[Queue]</c>/<c>[AutomaticRetry]</c> attributes MUST live on this <b>interface</b> method (Hangfire reads filter
 /// attributes off the enqueued interface — same load-bearing rule as <c>IMergeJob</c>/<c>IAncestralPortraitWorker</c>).
-/// <c>Attempts = 0</c>: a failed purge leaves recoverable orphans the weekly merge/R2 sweeps reclaim; a blanket retry
-/// of a destructive job is riskier than letting an admin re-trigger it.
+/// <c>Attempts = 3</c> (was 0): because the purge is fully idempotent, a worker death / deploy mid-run MUST re-run to
+/// completion — otherwise a partial purge strands the order's PRIVATE R2 portrait images, which the daily
+/// <c>users/{slug}</c> R2 sweep will NOT reclaim (the user still exists after a refund, so their slug stays "live").
+/// Letting Hangfire retry the idempotent job is safe and closes that orphan gap; <c>AttemptsExceededAction.Fail</c>
+/// surfaces a still-failing purge as Failed for an admin rather than silently dropping it.
 /// </remarks>
 public interface IRefundCleanupJob
 {
     [Queue("default")]
-    [AutomaticRetry(Attempts = 0)]
+    [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
     Task PurgeRefundedOrderAsync(ServiceType service, int orderId, CancellationToken cancellationToken = default);
 }
 

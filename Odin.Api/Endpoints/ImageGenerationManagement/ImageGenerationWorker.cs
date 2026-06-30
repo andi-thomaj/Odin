@@ -33,4 +33,7 @@ public sealed class ImageGenerationWorker(
 
         await notifier.NotifyJobChangedAsync(jobId, CancellationToken.None);
     }
+
+    public Task ReconcileStaleJobsAsync(CancellationToken cancellationToken = default) =>
+        service.ReconcileStaleJobsAsync(cancellationToken);
 }

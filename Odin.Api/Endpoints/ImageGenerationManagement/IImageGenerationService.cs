@@ -23,6 +23,10 @@ public interface IImageGenerationService
     /// <summary>Execute a Pending job to a terminal state. Idempotent (a Succeeded job is left untouched); rethrows <see cref="OpenAIImageException"/>.</summary>
     Task ProcessJobAsync(Guid jobId, CancellationToken cancellationToken = default);
 
+    /// <summary>Self-heal: re-enqueue every job still <c>Running</c> past the stale window (a worker died / a redeploy
+    /// killed it mid-run). Driven by the recurring reconcile job. Returns how many jobs were re-enqueued.</summary>
+    Task<int> ReconcileStaleJobsAsync(CancellationToken cancellationToken = default);
+
     Task<ImageJobContract.Response?> GetJobAsync(Guid jobId, CancellationToken cancellationToken = default);
 
     Task<PageResponse<ImageJobContract.Response>> ListJobsAsync(PageRequest request, CancellationToken cancellationToken = default);

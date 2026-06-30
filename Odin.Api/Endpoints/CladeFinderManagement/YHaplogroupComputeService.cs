@@ -20,6 +20,14 @@ namespace Odin.Api.Endpoints.CladeFinderManagement
         /// any other prior outcome is overwritten. Designed to run as a Hangfire background job (the single
         /// int argument is Hangfire-serializable). Rethrows on transient failures so Hangfire retries.
         /// </summary>
+        /// <remarks>
+        /// The <c>[AutomaticRetry]</c> MUST live on this <b>interface</b> method: the job is enqueued via
+        /// <c>Enqueue&lt;IYHaplogroupComputeService&gt;(..)</c>, so Hangfire reads the filter off the interface; an
+        /// attribute on the concrete method is silently ignored and the job falls back to Hangfire's default of 10
+        /// retries (same load-bearing rule as <c>IMergeJob</c>/<c>IAncestralPortraitWorker</c>). A transient tools-api
+        /// outage is retried a few times, then surfaces as <c>Unavailable</c> (re-enqueued on the next result view).
+        /// </remarks>
+        [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
         Task ComputeAndPersistAsync(int geneticInspectionId, CancellationToken cancellationToken = default);
     }
 
@@ -31,9 +39,8 @@ namespace Odin.Api.Endpoints.CladeFinderManagement
     {
         private const string ResultsVersion = "v1";
 
-        // Cap retries (Hangfire's default is 10, backing off over days). A transient tools-api outage
-        // should be retried a few times, then surface as Unavailable rather than retry indefinitely.
-        [AutomaticRetry(Attempts = 3, OnAttemptsExceeded = AttemptsExceededAction.Fail)]
+        // NOTE: [AutomaticRetry] lives on IYHaplogroupComputeService.ComputeAndPersistAsync (the interface) — Hangfire
+        // reads job filters off the enqueued interface method; one here on the concrete method would be silently ignored.
         public async Task ComputeAndPersistAsync(int geneticInspectionId, CancellationToken cancellationToken = default)
         {
             // Background job: look the inspection up by PK with filters off (it includes the soft-deletable

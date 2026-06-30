@@ -724,6 +724,16 @@ namespace Odin.Api
                     methodCall: w => w.ReconcileStaleRunsAsync(CancellationToken.None),
                     cronExpression: "*/5 * * * *",
                     options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // image-generation-reconcile-stale: every 5 min, re-enqueue any admin image-gen job stuck Running past
+                // the stale window (its worker died or a DEPLOY/restart killed it mid-run). Same self-heal as the
+                // portraits job — without it a redeploy strands the job "Running" until Hangfire's slow retry/timeout
+                // path eventually surfaces it. The claim in ProcessJobAsync re-claims the stale job and re-runs it.
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.ImageGenerationManagement.IImageGenerationWorker>(
+                    recurringJobId: "image-generation-reconcile-stale",
+                    methodCall: w => w.ReconcileStaleJobsAsync(CancellationToken.None),
+                    cronExpression: "*/5 * * * *",
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
             }
 
             // Version prefix — all business endpoints live under /v1 so breaking changes

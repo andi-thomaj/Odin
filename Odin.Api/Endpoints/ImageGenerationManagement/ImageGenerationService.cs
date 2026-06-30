@@ -1,5 +1,6 @@
 using System.Net;
 using System.Security.Cryptography;
+using Hangfire;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Odin.Api.Configuration;
@@ -20,10 +21,16 @@ public sealed class ImageGenerationService(
     IImageSettingsService settingsService,
     IR2Storage r2Storage,
     IImageGenerationRealtimeNotifier notifier,
+    IBackgroundJobClient backgroundJobs,
     IOptions<ImageGenerationLimitsOptions> limitsOptions,
     ILogger<ImageGenerationService> logger) : IImageGenerationService
 {
     private readonly ImageGenerationLimitsOptions _limits = limitsOptions.Value;
+
+    /// <summary>A job still <c>Running</c> with no progress for longer than this is treated as a dead worker (e.g. a
+    /// deploy killed it mid-run) and is re-claimable / re-enqueued. A single OpenAI generate/edit call is bounded to
+    /// ~1–2 min even at "high" quality, so a live run is never this old — no per-call heartbeat is needed.</summary>
+    private const int StaleJobMinutes = 20;
 
     public async Task<Guid> CreateGenerationJobAsync(
         GenerateImageContract.Request request, string identityId, CancellationToken cancellationToken = default)
@@ -124,14 +131,31 @@ public sealed class ImageGenerationService(
             return;
         }
 
-        if (job.Status == ImageGenerationStatus.Succeeded)
-            return; // idempotent — already done
-
+        // Atomically CLAIM the job (Pending/Failed → Running, or re-claim a STALE Running whose worker died — e.g. a
+        // deploy killed it mid-run). The conditional UPDATE succeeds for exactly one worker; a FRESH Running job (a
+        // duplicate enqueue, or the reconcile job racing the live worker) is skipped (claimed == 0), so a re-run never
+        // double-generates. A live run finishes well inside StaleJobMinutes, so it is never mistaken for a dead one.
+        var staleBefore = DateTime.UtcNow.AddMinutes(-StaleJobMinutes);
+        var claimed = await dbContext.ImageGenerationJobs
+            .Where(j => j.Id == jobId
+                && j.Status != ImageGenerationStatus.Succeeded
+                && (j.Status != ImageGenerationStatus.Running || j.UpdatedAt < staleBefore))
+            .ExecuteUpdateAsync(u => u
+                .SetProperty(j => j.Status, ImageGenerationStatus.Running)
+                .SetProperty(j => j.StartedAt, DateTime.UtcNow)
+                .SetProperty(j => j.UpdatedAt, DateTime.UtcNow), cancellationToken);
+        if (claimed == 0)
+        {
+            logger.LogInformation("Image job {JobId} already running/finished — skipping duplicate processing.", job.Id);
+            return;
+        }
         job.Status = ImageGenerationStatus.Running;
         job.StartedAt = DateTime.UtcNow;
-        job.UpdatedAt = DateTime.UtcNow;
-        await dbContext.SaveChangesAsync(cancellationToken);
 
+        // R2 keys uploaded THIS run; the GeneratedImage rows commit only at the final SaveChanges, so anything that
+        // throws before that orphans these objects — the catch deletes them. (Keys are deterministic per (jobId, index),
+        // so a clean re-run also overwrites any leftovers from a worker-death mid-run.)
+        var uploadedKeys = new List<string>();
         try
         {
             var parameters = new OpenAIImageParameters(
@@ -153,6 +177,7 @@ public sealed class ImageGenerationService(
                 {
                     await r2Storage.UploadAsync(key, stream, contentType, cancellationToken);
                 }
+                uploadedKeys.Add(key);
 
                 images.Add(new GeneratedImage
                 {
@@ -183,15 +208,60 @@ public sealed class ImageGenerationService(
         }
         catch (OpenAIImageException ex)
         {
+            await DiscardRunArtifactsAsync(uploadedKeys);
             await RecordFailureAsync(job, ex.Code ?? "openai_error", ex.Detail, cancellationToken);
             throw;
         }
         catch (Exception ex)
         {
             logger.LogError(ex, "Image job {JobId} failed unexpectedly.", job.Id);
+            await DiscardRunArtifactsAsync(uploadedKeys);
             await RecordFailureAsync(job, "internal_error", "Image generation failed unexpectedly.", cancellationToken);
             throw;
         }
+    }
+
+    /// <summary>On a failed run, delete the R2 objects this run uploaded (their GeneratedImage rows never committed) and
+    /// detach the poisoned Added inserts so <see cref="RecordFailureAsync"/> persists ONLY the Failed status — never
+    /// half-saved image rows pointing at deleted bytes. Deletes use <see cref="CancellationToken.None"/> so cleanup
+    /// still runs when the failure itself was a cancellation/timeout.</summary>
+    private async Task DiscardRunArtifactsAsync(List<string> uploadedKeys)
+    {
+        foreach (var key in uploadedKeys)
+        {
+            try { await r2Storage.DeleteAsync(key, CancellationToken.None); }
+            catch (Exception ex) { logger.LogWarning(ex, "Failed to delete orphaned image R2 object {Key}.", key); }
+        }
+
+        foreach (var entry in dbContext.ChangeTracker.Entries<GeneratedImage>()
+                     .Where(e => e.State == EntityState.Added).ToList())
+            entry.State = EntityState.Detached;
+    }
+
+    /// <summary>
+    /// Self-heal orphaned async jobs: re-enqueue any job still <c>Running</c> past <see cref="StaleJobMinutes"/> (its
+    /// worker died / a deploy killed it mid-run, so it would otherwise sit "Running" until Hangfire's slow retry/timeout
+    /// machinery noticed). The claim in <see cref="ProcessJobAsync"/> re-claims a stale job, so the re-enqueued run
+    /// regenerates from scratch; bounded — a re-run ends Succeeded/Failed, never re-loops. Driven by the recurring
+    /// <c>image-generation-reconcile-stale</c> job. Returns how many jobs were re-enqueued.
+    /// </summary>
+    public async Task<int> ReconcileStaleJobsAsync(CancellationToken cancellationToken = default)
+    {
+        var staleBefore = DateTime.UtcNow.AddMinutes(-StaleJobMinutes);
+        var staleIds = await dbContext.ImageGenerationJobs.AsNoTracking()
+            .Where(j => j.Status == ImageGenerationStatus.Running && j.UpdatedAt < staleBefore)
+            .Select(j => j.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var id in staleIds)
+        {
+            logger.LogWarning(
+                "Re-enqueuing stale image job {JobId}: Running with no progress for > {Minutes} min (likely a worker death/redeploy). It will be re-claimed and re-run.",
+                id, StaleJobMinutes);
+            backgroundJobs.Enqueue<IImageGenerationWorker>(w => w.RunAsync(id, CancellationToken.None));
+        }
+
+        return staleIds.Count;
     }
 
     private async Task<OpenAIImageResult> RunEditAsync(

@@ -21,4 +21,10 @@ public interface IImageGenerationWorker
     [Queue("default")]
     [AutomaticRetry(Attempts = 2)]
     Task RunAsync(Guid jobId, CancellationToken cancellationToken = default);
+
+    /// <summary>Recurring self-heal: re-enqueue jobs stuck <c>Running</c> past the stale window (worker death/redeploy).
+    /// <c>[Queue]</c>/<c>[AutomaticRetry]</c> live on the interface (same load-bearing rule as <see cref="RunAsync"/>).</summary>
+    [Queue("default")]
+    [AutomaticRetry(Attempts = 0)]
+    Task ReconcileStaleJobsAsync(CancellationToken cancellationToken = default);
 }
