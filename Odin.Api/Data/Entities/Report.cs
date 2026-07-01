@@ -4,11 +4,9 @@ using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
-    public class Report : BaseEntity, IAppScoped
+    public class Report : BaseEntity
     {
         public int Id { get; set; }
-        /// <summary>Owning application (applications.key). Auto-stamped + query-filtered — see <see cref="IAppScoped"/>.</summary>
-        public string App { get; set; } = string.Empty;
         public int UserId { get; set; }
         public User User { get; set; } = null!;
         public ReportType Type { get; set; }
@@ -42,8 +40,6 @@ namespace Odin.Api.Data.Entities
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(e => new { e.UserId, e.Status });
-
-            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
 
             builder.ToTable("reports");
         }

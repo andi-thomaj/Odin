@@ -56,8 +56,7 @@ internal static class DatabaseResetService
             .UseNpgsql(targetConnectionString, npgsql => npgsql.CommandTimeout(300))
             .Options;
 
-        // App context is irrelevant here (migrations don't evaluate query filters); use the default.
-        await using var context = new ApplicationDbContext(options, new Odin.Api.Authentication.RequestAppContext());
+        await using var context = new ApplicationDbContext(options);
         await context.Database.MigrateAsync(ct);
 
         var applied = (await context.Database.GetAppliedMigrationsAsync(ct)).ToList();

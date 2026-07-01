@@ -4,11 +4,9 @@ using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
-    public class Notification : BaseEntity, IAppScoped
+    public class Notification : BaseEntity
     {
         public int Id { get; set; }
-        /// <summary>Owning application (applications.key). Auto-stamped + query-filtered — see <see cref="IAppScoped"/>.</summary>
-        public string App { get; set; } = string.Empty;
         public int RecipientUserId { get; set; }
         public User RecipientUser { get; set; } = null!;
         public NotificationType Type { get; set; }
@@ -36,8 +34,6 @@ namespace Odin.Api.Data.Entities
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasIndex(e => new { e.RecipientUserId, e.IsRead });
-
-            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
 
             builder.ToTable("notifications");
         }

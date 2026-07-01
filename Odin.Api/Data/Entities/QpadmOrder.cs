@@ -4,11 +4,9 @@ using Odin.Api.Data.Enums;
 
 namespace Odin.Api.Data.Entities
 {
-    public class QpadmOrder : BaseEntity, IAppScoped
+    public class QpadmOrder : BaseEntity
     {
         public int Id { get; set; }
-        /// <summary>Owning application (applications.key). Auto-stamped + query-filtered — see <see cref="IAppScoped"/>.</summary>
-        public string App { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public OrderStatus Status { get; set; }
         public bool HasViewedResults { get; set; }
@@ -34,14 +32,15 @@ namespace Odin.Api.Data.Entities
 
             builder.HasOne(e => e.GeneticInspection)
                 .WithOne(gi => gi.Order)
-                .HasForeignKey<QpadmGeneticInspection>(gi => gi.OrderId);
+                .HasForeignKey<QpadmGeneticInspection>(gi => gi.OrderId)
+                // Explicit (matches G25Order) — Cascade is already the DB default for this required FK, but the
+                // refund-purge job RELIES on deleting the order cascading the inspection + results, so spell it out:
+                // a future change (e.g. making OrderId optional) can't then silently break the cascade.
+                .OnDelete(DeleteBehavior.Cascade);
 
             // Per-user order list filters on CreatedBy and orders by CreatedAt; the admin list orders
             // by CreatedAt across all rows. Without these the listings full-scan the table.
-            builder.Property(e => e.App).IsRequired().HasMaxLength(50);
-
-            // App-leading so a user's per-app order list uses the index.
-            builder.HasIndex(e => new { e.App, e.CreatedBy, e.CreatedAt });
+            builder.HasIndex(e => new { e.CreatedBy, e.CreatedAt });
             builder.HasIndex(e => e.CreatedAt);
 
             builder.ToTable("qpadm_orders");

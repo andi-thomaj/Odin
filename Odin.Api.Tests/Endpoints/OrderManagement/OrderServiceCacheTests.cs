@@ -15,6 +15,8 @@ using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25Calculations.Models;
 using Odin.Api.Endpoints.OrderManagement;
 using Odin.Api.Endpoints.OrderManagement.Models;
+using Odin.Api.Endpoints.Payments;
+using Odin.Api.Endpoints.Payments.Models;
 using Odin.Api.Hubs;
 using Odin.Api.Services;
 
@@ -249,8 +251,34 @@ public class OrderServiceCacheTests
             Options.Create(new OrderLimitsOptions()),
             cache,
             new NoopRealtimeNotifier(),
+            new NoopPurchaseRealtimeNotifier(),
             env ?? FakeHostEnvironment.Production(),
+            new StubAppStorePurchaseService(),
+            Options.Create(new AppleIapOptions()),
             NullLogger<OrderService>.Instance);
+
+    private sealed class NoopPurchaseRealtimeNotifier : IAppStorePurchaseRealtimeNotifier
+    {
+        public Task NotifyPurchaseRecordedAsync(
+            string kind, string productLabel, decimal amount, string currency, string? createdBySub,
+            CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task NotifyRefundedAsync(string transactionId, CancellationToken cancellationToken = default)
+            => Task.CompletedTask;
+    }
+
+    private sealed class StubAppStorePurchaseService : IAppStorePurchaseService
+    {
+        // The cache tests never exercise the paid path; these throw if unexpectedly invoked.
+        public VerifiedAppStoreTransaction ValidateTransaction(string signedTransactionJws, ServiceType expectedService)
+            => throw new NotSupportedException();
+
+        public VerifiedAddOnTransaction ValidateAddOnTransaction(string signedTransactionJws, string expectedProductId)
+            => throw new NotSupportedException();
+
+        public AppStoreNotification ParseNotification(string signedPayload)
+            => throw new NotSupportedException();
+    }
 
     private static async Task<int> SeedQpadmOrderAsync(
         ApplicationDbContext db, OrderStatus status, string owner, bool withInspection)
@@ -332,7 +360,7 @@ public class OrderServiceCacheTests
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase($"order-cache-tests-{Guid.NewGuid():N}")
             .Options;
-        return new ApplicationDbContext(options, new Odin.Api.Authentication.RequestAppContext());
+        return new ApplicationDbContext(options);
     }
 
     private sealed class FakeHostEnvironment : IHostEnvironment

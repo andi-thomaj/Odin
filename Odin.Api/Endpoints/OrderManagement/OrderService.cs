@@ -16,6 +16,8 @@ using Odin.Api.Endpoints.G25Calculations.Models;
 using Odin.Api.Endpoints.MergeManagement;
 using Odin.Api.Configuration;
 using Odin.Api.Endpoints.OrderManagement.Models;
+using Odin.Api.Endpoints.Payments;
+using Odin.Api.Endpoints.Payments.Models;
 using Odin.Api.Extensions;
 using Odin.Api.Services;
 
@@ -24,12 +26,21 @@ namespace Odin.Api.Endpoints.OrderManagement;
 public interface IOrderService
 {
     Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null);
+    /// <summary>
+    /// Creates an order gated on a validated Apple StoreKit purchase (iOS in-app purchase). Validates the
+    /// signed transaction, then creates the order and records the consumed transaction atomically. Idempotent
+    /// on the Apple transaction id: replaying the same transaction returns the order it already created.
+    /// </summary>
+    Task<CreateOrderContract.Response> CreatePaidAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null);
     Task<GetOrderContract.Response?> GetByIdAsync(int id, string identityId);
     Task<IEnumerable<GetOrderContract.Response>> GetAllAsync(string identityId);
     Task<IEnumerable<AdminGetOrderContract.Response>> GetAllAdminAsync(int? skip = null, int? take = null);
     Task<(GetOrderContract.Response? Response, int StatusCode)> UpdateAsync(int id, string identityId, UpdateOrderContract.Request request);
     Task<bool> DeleteAsync(int id);
     Task<(GetOrderQpadmResultContract.Response? Result, int StatusCode, string? Error)> GetQpadmResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
+    /// <summary>Validate the StoreKit Y-DNA-unlock purchase, record the per-order entitlement (idempotent on the Apple
+    /// transaction id), and return the now-unlocked Y-DNA result. 200 / 400 (bad purchase) / 403 / 404.</summary>
+    Task<(GetOrderQpadmResultContract.YDnaResult? YDna, int StatusCode, string? Error)> PurchaseYDnaUnlockAsync(int orderId, string identityId, string transactionJws);
     Task<(GetOrderG25ResultContract.Response? Result, int StatusCode, string? Error)> GetG25ResultForOrderAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(int StatusCode, string? Error, string? MergeId, string? FileName, byte[]? LegacyBytes)> ResolveMergedDataDownloadAsync(int orderId, string identityId, bool isAdmin = false);
     Task<(byte[]? FileBytes, string? FileName, int StatusCode, string? Error)> GetProfilePictureAsync(int orderId, string identityId, ServiceType service, bool isAdmin = false);
@@ -58,9 +69,15 @@ public partial class OrderService(
     IOptions<OrderLimitsOptions> orderLimitsOptions,
     IMemoryCache cache,
     Odin.Api.Hubs.IGeneticInspectionRealtimeNotifier liveUpdates,
+    Odin.Api.Hubs.IAppStorePurchaseRealtimeNotifier purchaseLiveUpdates,
     IHostEnvironment hostEnvironment,
+    IAppStorePurchaseService appStorePurchase,
+    IOptions<AppleIapOptions> appleIapOptions,
     ILogger<OrderService> logger) : IOrderService
 {
+    /// <summary>A server-validated Apple purchase to record against a newly created order.</summary>
+    private sealed record PaidPurchase(VerifiedAppStoreTransaction Transaction, decimal Price);
+
         private const string G25DistanceResultsVersion = "v1";
         private int MaxEthnicities => orderLimitsOptions.Value.MaxEthnicities;
         private int MaxRegionsPerEthnicity => orderLimitsOptions.Value.MaxRegionsPerEthnicity;
@@ -76,7 +93,11 @@ public partial class OrderService(
             response.YDna is { Status: var status }
             && status is not ("Pending" or nameof(CladeAnalysisStatus.Unavailable));
 
-        public async Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null)
+        public Task<CreateOrderContract.Response> CreateAsync(CreateOrderContract.Request request, string identityId, string? ipAddress = null)
+            => CreateInternalAsync(request, identityId, ipAddress, paid: null);
+
+        private async Task<CreateOrderContract.Response> CreateInternalAsync(
+            CreateOrderContract.Request request, string identityId, string? ipAddress, PaidPurchase? paid)
         {
             var user = await dbContext.Users.RequireByIdentityAsync(identityId);
 
@@ -88,7 +109,7 @@ public partial class OrderService(
             }
 
             if (request.Service == ServiceType.g25)
-                return await CreateG25OrderAsync(request, identityId, user);
+                return await CreateG25OrderAsync(request, identityId, user, paid);
 
             await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
@@ -159,7 +180,7 @@ public partial class OrderService(
             var now = DateTime.UtcNow;
             var order = new QpadmOrder
             {
-                Price = 0m,
+                Price = paid?.Price ?? 0m,
                 Status = OrderStatus.Pending,
                 CreatedBy = identityId,
                 CreatedAt = now,
@@ -207,6 +228,12 @@ public partial class OrderService(
 
             dbContext.QpadmGeneticInspectionRegions.AddRange(regionAssociations);
 
+            // Record the paid purchase in the SAME transaction as the order, so a successful order always
+            // has its consumed AppStoreTransaction row (and vice-versa) — the unique (App, TransactionId)
+            // index then makes a replay return this order instead of creating a second one.
+            if (paid is not null)
+                RecordPurchase(paid, qpadmOrder: order, g25Order: null);
+
             await dbContext.SaveChangesAsync();
             await transaction.CommitAsync();
 
@@ -239,7 +266,8 @@ public partial class OrderService(
         private async Task<CreateOrderContract.Response> CreateG25OrderAsync(
             CreateOrderContract.Request request,
             string identityId,
-            User user)
+            User user,
+            PaidPurchase? paid)
         {
             await using var transaction = await dbContext.Database.BeginTransactionAsync();
 
@@ -315,7 +343,7 @@ public partial class OrderService(
             var now = DateTime.UtcNow;
             var order = new G25Order
             {
-                Price = 0m,
+                Price = paid?.Price ?? 0m,
                 Status = OrderStatus.Pending,
                 CreatedBy = identityId,
                 CreatedAt = now,
@@ -354,6 +382,10 @@ public partial class OrderService(
 
             dbContext.G25GeneticInspections.Add(geneticInspection);
 
+            // Record the paid purchase atomically with the order (see the qpAdm path for why).
+            if (paid is not null)
+                RecordPurchase(paid, qpadmOrder: null, g25Order: order);
+
             await dbContext.SaveChangesAsync();
             // Commit the order + inspection create before running the distance compute below.
             // The compute is expensive and is a Phase 2 target for background-jobification;
@@ -386,6 +418,117 @@ public partial class OrderService(
                 Status = order.Status.ToString(),
                 GeneticInspectionId = geneticInspection.Id
             };
+        }
+
+        public async Task<CreateOrderContract.Response> CreatePaidAsync(
+            CreateOrderContract.Request request, string identityId, string? ipAddress = null)
+        {
+            // 1. Verify the Apple StoreKit transaction (signature + bundle + product↔service). Throws
+            //    AppStorePurchaseException (→ 400) on any failure; the iOS app then keeps the StoreKit
+            //    transaction unfinished so it can retry rather than losing the purchase.
+            var verified = appStorePurchase.ValidateTransaction(
+                request.AppStoreTransaction ?? string.Empty, request.Service);
+
+            // 2. Idempotency fast-path: this transaction already created an order — return it unchanged.
+            var prior = await FindOrderForTransactionAsync(verified.TransactionId);
+            if (prior is not null)
+                return prior;
+
+            var price = request.Service == ServiceType.g25
+                ? appleIapOptions.Value.G25Price
+                : appleIapOptions.Value.QpadmPrice;
+
+            try
+            {
+                var created = await CreateInternalAsync(request, identityId, ipAddress, new PaidPurchase(verified, price));
+
+                // Live-push the new purchase to the admin "App Store Transactions" page (best-effort; the notifier
+                // swallows its own failures so a live-refresh hiccup never fails a paid order).
+                await purchaseLiveUpdates.NotifyPurchaseRecordedAsync(
+                    kind: "Order",
+                    productLabel: request.Service == ServiceType.g25 ? "G25 Analysis" : "qpAdm Analysis",
+                    amount: price,
+                    currency: appleIapOptions.Value.Currency,
+                    createdBySub: identityId);
+
+                return created;
+            }
+            catch (DbUpdateException)
+            {
+                // Lost a race to insert the same transaction (unique (App, TransactionId)). The winner's
+                // order is committed — return it so the purchase still resolves to exactly one order.
+                var raced = await FindOrderForTransactionAsync(verified.TransactionId);
+                if (raced is not null)
+                    return raced;
+                throw;
+            }
+        }
+
+        /// <summary>Returns the order a consumed Apple transaction already created, or null if none.</summary>
+        private async Task<CreateOrderContract.Response?> FindOrderForTransactionAsync(string transactionId)
+        {
+            var txn = await dbContext.AppStoreTransactions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(t => t.TransactionId == transactionId);
+            if (txn is null)
+                return null;
+
+            if (txn.Service == ServiceType.g25 && txn.G25OrderId is { } g25OrderId)
+            {
+                var order = await dbContext.G25Orders
+                    .AsNoTracking()
+                    .Include(o => o.GeneticInspection)
+                    .FirstOrDefaultAsync(o => o.Id == g25OrderId);
+                return order is null ? null : new CreateOrderContract.Response
+                {
+                    Id = order.Id,
+                    Price = order.Price,
+                    Service = ServiceType.g25.ToString(),
+                    Status = order.Status.ToString(),
+                    GeneticInspectionId = order.GeneticInspection?.Id ?? 0,
+                };
+            }
+
+            if (txn.Service == ServiceType.qpAdm && txn.QpadmOrderId is { } qpadmOrderId)
+            {
+                var order = await dbContext.QpadmOrders
+                    .AsNoTracking()
+                    .Include(o => o.GeneticInspection)
+                    .FirstOrDefaultAsync(o => o.Id == qpadmOrderId);
+                return order is null ? null : new CreateOrderContract.Response
+                {
+                    Id = order.Id,
+                    Price = order.Price,
+                    Service = ServiceType.qpAdm.ToString(),
+                    Status = order.Status.ToString(),
+                    GeneticInspectionId = order.GeneticInspection?.Id ?? 0,
+                };
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Adds the consumed <see cref="AppStoreTransaction"/> row for a paid order. Exactly one of
+        /// <paramref name="qpadmOrder"/> / <paramref name="g25Order"/> is set; the order must already have a
+        /// database id (it is saved before this is called).
+        /// </summary>
+        private void RecordPurchase(PaidPurchase paid, QpadmOrder? qpadmOrder, G25Order? g25Order)
+        {
+            dbContext.AppStoreTransactions.Add(new AppStoreTransaction
+            {
+                TransactionId = paid.Transaction.TransactionId,
+                OriginalTransactionId = paid.Transaction.OriginalTransactionId,
+                ProductId = paid.Transaction.ProductId,
+                Service = paid.Transaction.Service,
+                Status = AppStoreTransactionStatus.Consumed,
+                QpadmOrderId = qpadmOrder?.Id,
+                G25OrderId = g25Order?.Id,
+                PurchaseDate = paid.Transaction.PurchaseDate,
+                Environment = paid.Transaction.Environment,
+                RawJws = paid.Transaction.RawJws,
+                CreatedBy = qpadmOrder?.CreatedBy ?? g25Order?.CreatedBy ?? string.Empty,
+            });
         }
 
         private async Task<int> ComputeAndPersistG25DistancesAsync(
@@ -841,7 +984,7 @@ public partial class OrderService(
 
             if (!hostEnvironment.IsEnvironment("Testing") &&
                 cache.TryGetValue(OrderResultCacheKeys.Qpadm(orderId), out GetOrderQpadmResultContract.Response? cachedResponse))
-                return (cachedResponse!, 200, null);
+                return (await ApplyYDnaLockAsync(cachedResponse!, orderId, isAdmin), 200, null);
 
             var qpadmResult = await dbContext.QpadmResults
                 .AsNoTracking()
@@ -925,7 +1068,128 @@ public partial class OrderService(
                 });
             }
 
-            return (response, 200, null);
+            // The CACHE holds the full result (with the clade); the paid Y-DNA lock is applied per-request from the live
+            // entitlement, so a purchase takes effect immediately (no cache invalidation) and an admin's unlocked view
+            // can't poison the owner's cached (locked) view.
+            return (await ApplyYDnaLockAsync(response, orderId, isAdmin), 200, null);
+        }
+
+        /// <summary>True once the order's Y-DNA unlock ($9.99) has been purchased.</summary>
+        private Task<bool> IsYDnaUnlockedAsync(int orderId) =>
+            dbContext.QpadmYDnaUnlocks.AsNoTracking().AnyAsync(u => u.OrderId == orderId);
+
+        /// <summary>
+        /// Withholds the Y-DNA clade behind the paid unlock: when there's a real Completed clade but no purchased unlock
+        /// (and the caller isn't an admin), returns a COPY of the response whose <c>YDna</c> has the clade stripped and
+        /// <c>Locked = true</c>. Never mutates the (shared, cached) input. Info states (NotApplicable/NoYData/Pending/…)
+        /// are free — only a sellable Completed clade is locked.
+        /// </summary>
+        private async Task<GetOrderQpadmResultContract.Response> ApplyYDnaLockAsync(
+            GetOrderQpadmResultContract.Response response, int orderId, bool isAdmin)
+        {
+            var yDna = response.YDna;
+            // Only paywall a real, determinable haplogroup. Admins see all; info states and a Completed-but-
+            // "couldn't determine" clade (error / empty clade id) are free — there's nothing of value to sell.
+            if (isAdmin || yDna is null
+                || yDna.Status != nameof(CladeAnalysisStatus.Completed)
+                || yDna.Clade is null
+                || string.IsNullOrWhiteSpace(yDna.Clade.Clade))
+                return response;
+
+            if (await IsYDnaUnlockedAsync(orderId))
+                return response;
+
+            return new GetOrderQpadmResultContract.Response
+            {
+                FirstName = response.FirstName,
+                MiddleName = response.MiddleName,
+                LastName = response.LastName,
+                HasMergedRawData = response.HasMergedRawData,
+                HasProfilePicture = response.HasProfilePicture,
+                Gender = response.Gender,
+                IntroTrackId = response.IntroTrackId,
+                HasIntroAudioFile = response.HasIntroAudioFile,
+                ResultsVersion = response.ResultsVersion,
+                EraGroups = response.EraGroups,   // shared by reference — read-only output, never mutated
+                YDna = new GetOrderQpadmResultContract.YDnaResult
+                {
+                    Status = yDna.Status,
+                    Message = yDna.Message,
+                    Clade = null,      // withheld until purchased
+                    Locked = true,
+                },
+            };
+        }
+
+        public async Task<(GetOrderQpadmResultContract.YDnaResult? YDna, int StatusCode, string? Error)> PurchaseYDnaUnlockAsync(
+            int orderId, string identityId, string transactionJws)
+        {
+            var order = await dbContext.QpadmOrders.AsNoTracking()
+                .Include(o => o.GeneticInspection)
+                .FirstOrDefaultAsync(o => o.Id == orderId);
+            if (order is null)
+                return (null, 404, $"Order with ID {orderId} not found.");
+            if (order.CreatedBy != identityId)
+                return (null, 403, "You do not have permission to unlock this order.");
+            if (order.GeneticInspection is null)
+                return (null, 404, "No genetic inspection associated with this order.");
+
+            // Validate the StoreKit add-on purchase (throws AppStorePurchaseException → 400 at the endpoint).
+            var verified = appStorePurchase.ValidateAddOnTransaction(transactionJws, appleIapOptions.Value.YDnaProductId);
+
+            // A transaction unlocks EXACTLY ONE order — the one it was first redeemed against. The Apple
+            // transaction carries no order binding, so we bind it here. **Reject a replay against a DIFFERENT order**
+            // (otherwise one $9.99 purchase could reveal every order the buyer owns by re-POSTing the same receipt to
+            // each order's endpoint — and the response would return that order's clade for free). A replay against
+            // the SAME order is idempotent (retry / app-killed mid-flow).
+            var existing = await dbContext.QpadmYDnaUnlocks.AsNoTracking()
+                .FirstOrDefaultAsync(u => u.TransactionId == verified.TransactionId);
+            if (existing is not null && existing.OrderId != orderId)
+                return (null, 400, "This purchase has already been used to unlock a different order.");
+
+            if (existing is null)
+            {
+                var user = await dbContext.Users.RequireByIdentityAsync(identityId);
+                var now = DateTime.UtcNow;
+                dbContext.QpadmYDnaUnlocks.Add(new QpadmYDnaUnlock
+                {
+                    OrderId = orderId,
+                    UserId = user.Id,
+                    TransactionId = verified.TransactionId,
+                    CreatedBy = identityId,
+                    CreatedAt = now,
+                    UpdatedAt = now,
+                });
+                try
+                {
+                    await dbContext.SaveChangesAsync();
+
+                    // Live-push the new add-on purchase to the admin "App Store Transactions" page (best-effort).
+                    await purchaseLiveUpdates.NotifyPurchaseRecordedAsync(
+                        kind: "YDnaUnlock",
+                        productLabel: "Y-DNA Unlock",
+                        amount: appleIapOptions.Value.YDnaPrice,
+                        currency: appleIapOptions.Value.Currency,
+                        createdBySub: identityId);
+                }
+                catch (DbUpdateException)
+                {
+                    // A concurrent request replaying the SAME transaction won the unique-TransactionId race. Re-read it:
+                    // if it bound to a different order, reject; if to this order, it's an idempotent same-order replay.
+                    dbContext.ChangeTracker.Clear();
+                    var winner = await dbContext.QpadmYDnaUnlocks.AsNoTracking()
+                        .FirstOrDefaultAsync(u => u.TransactionId == verified.TransactionId);
+                    if (winner is not null && winner.OrderId != orderId)
+                        return (null, 400, "This purchase has already been used to unlock a different order.");
+                }
+            }
+
+            // The transaction is now bound to THIS order ⇒ return the unlocked Y-DNA result so the client reveals it
+            // immediately. (The clade is only returned because the order is genuinely entitled — never on a cross-order
+            // replay, which returned 400 above.)
+            var yDna = await BuildYDnaResultAsync(
+                order.GeneticInspection.Id, order.GeneticInspection.Gender?.ToString());
+            return (yDna, 200, null);
         }
 
         /// <summary>

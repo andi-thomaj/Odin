@@ -9,16 +9,22 @@ using Odin.Api.Endpoints.QpadmPopulationPanelSampleManagement;
 using Odin.Api.Endpoints.G25SavedCoordinateManagement;
 using Odin.Api.Endpoints.G25TargetCoordinateManagement;
 using Odin.Api.Endpoints.GeneticInspectionManagement;
+using Odin.Api.Endpoints.ImageGenerationManagement;
 using Odin.Api.Endpoints.NotificationManagement;
 using Odin.Api.Endpoints.OrderManagement;
+using Odin.Api.Endpoints.Payments;
 using Odin.Api.Endpoints.PopulationManagement;
 using Odin.Api.Endpoints.RawGeneticFileManagement;
 using Odin.Api.Endpoints.ReferenceDataManagement;
+using Odin.Api.Endpoints.StorageManagement;
 using Odin.Api.Endpoints.MediaManagement;
 using Odin.Api.Endpoints.ReportManagement;
 using Odin.Api.Endpoints.Subscribe;
 using Odin.Api.Endpoints.UserManagement;
+using Odin.Api.Endpoints.UserFacePhotoManagement;
+using Odin.Api.Endpoints.AncestralPortraitManagement;
 using Odin.Api.Endpoints.G25Calculations;
+using Odin.Api.Endpoints.G25PcaScatter;
 using Odin.Api.Endpoints.G25ContinentManagement;
 using Odin.Api.Endpoints.CalculatorManagement;
 using Odin.Api.Endpoints.G25AdmixtureEraManagement;
@@ -44,6 +50,8 @@ namespace Odin.Api.Extensions
             v1.MapRawGeneticFileEndpoints();
             v1.MapGeneticInspectionEndpoints();
             v1.MapOrderEndpoints();
+            v1.MapAppStoreWebhookEndpoints();
+            v1.MapAppStoreTransactionAdminEndpoints();
             v1.MapAppSettingsEndpoints();
             v1.MapNotificationEndpoints();
             v1.MapSubscribeEndpoints();
@@ -52,6 +60,7 @@ namespace Odin.Api.Extensions
             v1.MapG25PopulationSampleEndpoints();
             v1.MapG25DistancePopulationSampleEndpoints();
             v1.MapG25PcaPopulationsSampleEndpoints();
+            v1.MapG25PcaScatterEndpoints();
             v1.MapQpadmPopulationSampleEndpoints();
             v1.MapQpadmPopulationPanelSampleEndpoints();
             v1.MapG25SavedCoordinateEndpoints();
@@ -66,11 +75,16 @@ namespace Odin.Api.Extensions
             v1.MapCacheAdminEndpoints();
             v1.MapMergePanelAdminEndpoints();
             v1.MapMergePanelLabelsEndpoints();
+            v1.MapPanelPromotionEndpoints();
             v1.MapMergeAdminEndpoints();
             v1.MapHangfireSessionEndpoints();
             v1.MapCalculatorEndpoints();
             v1.MapAdmixToolsEraEndpoints();
             v1.MapCladeFinderEndpoints();
+            v1.MapImageGenerationEndpoints();
+            v1.MapUserFacePhotoEndpoints();
+            v1.MapAncestralPortraitEndpoints();
+            v1.MapStorageManagementEndpoints();
             return v1;
         }
     }

@@ -20,7 +20,6 @@ namespace Odin.Api.Endpoints.MergeManagement
         IGeneticInspectionRealtimeNotifier liveUpdates,
         TimeProvider timeProvider,
         IOptions<MergeJobOptions> mergeOptions,
-        RequestAppContext appContext,
         ILogger<MergeJob> logger) : IMergeJob
     {
         // Cap on merge jobs in flight (Queued + Converting + Merging). Pinned to 1 — merges run strictly
@@ -32,14 +31,17 @@ namespace Odin.Api.Endpoints.MergeManagement
         private readonly int _maxInFlight = Math.Max(1, mergeOptions.Value.MaxConcurrentMerges);
 
         // Serialized so the count→admit step can't over-admit when fired from several sources at once
-        // (order creation, merge completion, the recurring safety net).
-        [DisableConcurrentExecution(60)]
+        // (order creation, merge completion, the recurring safety net). [DisableConcurrentExecution(60)] is on
+        // IMergeJob.DispatchPendingMergesAsync (the interface) — NOT here — because Hangfire reads filter
+        // attributes off the enqueued INTERFACE method (jobs come in via Enqueue<IMergeJob>/AddOrUpdate<IMergeJob>);
+        // on this concrete method it would be silently ignored, letting concurrent dispatches race the
+        // count→admit step and over-admit past the cap (the "several merges Merging at once" bug). Same gotcha
+        // as [Queue]/[AutomaticRetry] on RunAsync below.
         public async Task DispatchPendingMergesAsync(CancellationToken cancellationToken = default)
         {
-            // The merge worker is a single, app-agnostic queue (one job at a time across every app), so the
-            // dispatcher coordinates GLOBALLY: it counts in-flight and picks candidates across all apps with
-            // IgnoreQueryFilters(). Without this, a background run (no X-App) would only ever see ancestrify —
-            // it would never admit another app's merges, and could over-admit by undercounting in-flight ones.
+            // The merge worker is a single queue (one job at a time), so the dispatcher counts in-flight and
+            // picks candidates with IgnoreQueryFilters() — a background run must see every file, including
+            // soft-deleted ones, so its in-flight count is accurate.
             // Retrying counts as in-flight: such a job is still scheduled in Hangfire and occupies a
             // merge slot, so it must be counted or the dispatcher would over-admit and build a backlog.
             var inFlight = await dbContext.RawGeneticFiles
@@ -124,8 +126,6 @@ namespace Odin.Api.Endpoints.MergeManagement
                 return;
             }
 
-            appContext.SetApp(inspection.App);
-
             // Idempotent: don't redo a finished merge, and never resurrect one deleted after completion.
             if (file.MergeStatus is MergeStatus.Ready or MergeStatus.Deleted)
                 return;
@@ -184,7 +184,10 @@ namespace Odin.Api.Endpoints.MergeManagement
             {
                 // No auto-retry: every tools-api failure is terminal here — a bad upload (400), the panel
                 // not provisioned (503), a merge tool failure (500), or a timeout.
-                // Record it as Failed; an admin re-runs it (RequeueAsync) once the cause is addressed.
+                // Drop any bundle the tools-api may have produced (or is still producing) BEFORE marking
+                // Failed, so a failed merge never leaves a stray .tar.gz filling the volume; then record
+                // Failed (an admin re-runs it via RequeueAsync once the cause is addressed).
+                await DropAnyProducedBundleAsync(file);
                 await SetStatusAsync(file, MergeStatus.Failed, ex.Detail, cancellationToken);
                 logger.LogWarning("Merge for inspection {InspectionId} failed ({Status}): {Detail}.",
                     geneticInspectionId, (int)ex.StatusCode, ex.Detail);
@@ -192,6 +195,10 @@ namespace Odin.Api.Endpoints.MergeManagement
             catch (Exception ex)
             {
                 // Network/timeout/unexpected — also terminal (no auto-retry). Admin re-runs if appropriate.
+                // This is the case that actually leaks disk: a .NET client timeout (or lost response) while
+                // trident keeps running on its uncancellable threadpool and writes the bundle afterward.
+                // DropAnyProducedBundleAsync KILLS a still-running forge AND deletes any finished bundle.
+                await DropAnyProducedBundleAsync(file);
                 await SetStatusAsync(file, MergeStatus.Failed, Truncate(ex.Message, 1000), cancellationToken);
                 logger.LogError(ex, "Merge for inspection {InspectionId} failed.", geneticInspectionId);
             }
@@ -395,9 +402,6 @@ namespace Odin.Api.Endpoints.MergeManagement
                 .Select(f => f.Id)
                 .ToListAsync(cancellationToken);
 
-            if (orphanIds.Count == 0)
-                return;
-
             var deleted = 0;
             foreach (var id in orphanIds)
             {
@@ -413,7 +417,87 @@ namespace Odin.Api.Endpoints.MergeManagement
                 }
             }
 
-            logger.LogInformation("Merge orphan cleanup: deleted {Deleted}/{Total} bundle(s).", deleted, orphanIds.Count);
+            // Backstop for the disk leak DropAnyProducedBundleAsync normally closes inline: a merge can fail
+            // with a bundle still on the volume when the .NET worker DIED before its catch ran (redeploy,
+            // crash) — MergeJobFailureStateFilter then reconciles the row to Failed, but no cleanup fired, so
+            // the tools-api bundle (written by trident on its uncancellable threadpool) is orphaned. Neither
+            // the Ready sweep above nor an admin Retry (which mints a NEW merge_id) ever reclaims it. Drop the
+            // bundle for every Failed row that still carries a merge_id, keeping the Failed status + error.
+            var failedWithBundle = await dbContext.RawGeneticFiles
+                .IgnoreQueryFilters()
+                .Where(f => f.MergeStatus == MergeStatus.Failed && f.MergeId != null)
+                .Select(f => f.Id)
+                .ToListAsync(cancellationToken);
+
+            var failedReclaimed = 0;
+            foreach (var id in failedWithBundle)
+            {
+                try
+                {
+                    if (await TryDropFailedBundleAsync(id, cancellationToken))
+                        failedReclaimed++;
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "Merge orphan cleanup: failed to drop orphaned FAILED bundle for raw file {FileId}.", id);
+                }
+            }
+
+            logger.LogInformation(
+                "Merge orphan cleanup: deleted {Deleted}/{Total} Ready bundle(s), reclaimed {FailedReclaimed}/{FailedTotal} orphaned Failed bundle(s).",
+                deleted, orphanIds.Count, failedReclaimed, failedWithBundle.Count);
+        }
+
+        /// <summary>
+        /// Drop the tools-api bundle for a <c>Failed</c> merge that still carries a <c>MergeId</c> (an orphan
+        /// left when the worker died before its inline cleanup ran), then detach the merge id so the sweep
+        /// won't revisit it and an admin Retry mints a fresh one. The row stays <c>Failed</c> with its error
+        /// message — only the now-deleted bundle reference is cleared. Returns <c>false</c> on a no-op (row
+        /// gone, no longer Failed, or merge id already cleared).
+        /// </summary>
+        private async Task<bool> TryDropFailedBundleAsync(int rawGeneticFileId, CancellationToken cancellationToken)
+        {
+            var file = await dbContext.RawGeneticFiles
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(f => f.Id == rawGeneticFileId, cancellationToken);
+            if (file is null || file.MergeStatus != MergeStatus.Failed || string.IsNullOrWhiteSpace(file.MergeId))
+                return false;
+
+            // Idempotent on the tools-api: deletes the bundle if present, no-ops (deleted=false) otherwise —
+            // so this is safe even when DropAnyProducedBundleAsync already removed it inline.
+            await mergeService.DeleteAsync(file.MergeId, cancellationToken);
+
+            file.MergeId = null;
+            file.MergeFileName = null;
+            file.MergeSizeBytes = null;
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await BroadcastMergeStatusAsync(file, cancellationToken);
+
+            logger.LogInformation("Reclaimed orphaned bundle for FAILED raw file {FileId}.", rawGeneticFileId);
+            return true;
+        }
+
+        // Best-effort cleanup after a merge fails: drop any bundle this merge produced — or kill it if the
+        // tools-api is STILL running it (a .NET client timeout doesn't cancel forge's uncancellable
+        // threadpool, so it keeps going and would otherwise write an orphaned .tar.gz nothing reclaims).
+        // CancelMergeAsync covers both: it SIGKILLs a live forge AND deletes any finished/partial bundle for
+        // the id (idempotent when nothing is running). Uses CancellationToken.None so it still runs when the
+        // failure WAS a cancellation/timeout (the job's token may already be tripped). Never rethrows — a
+        // cleanup hiccup must not mask the original failure; CleanupOrphansAsync is the backstop.
+        private async Task DropAnyProducedBundleAsync(RawGeneticFile file)
+        {
+            if (string.IsNullOrWhiteSpace(file.MergeId))
+                return; // failed before the merge step ran → the tools-api wrote nothing to delete
+            try
+            {
+                await mergeService.CancelMergeAsync(file.MergeId, CancellationToken.None);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex,
+                    "Post-failure cleanup: could not drop bundle {MergeId} (the orphan sweep will retry).",
+                    file.MergeId);
+            }
         }
 
         private async Task SetStatusAsync(

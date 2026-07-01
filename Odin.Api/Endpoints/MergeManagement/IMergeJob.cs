@@ -25,6 +25,18 @@ namespace Odin.Api.Endpoints.MergeManagement
         /// can't race. Invoked on order creation, when a merge finishes (to refill freed capacity), and by a
         /// recurring safety-net schedule.
         /// </summary>
+        /// <remarks>
+        /// <c>[DisableConcurrentExecution]</c> MUST live on this <b>interface</b> method, not only on the
+        /// concrete <c>MergeJob</c> — same rule as <c>[Queue]</c>/<c>[AutomaticRetry]</c> on <see cref="RunAsync"/>.
+        /// Dispatch is enqueued via <c>Enqueue&lt;IMergeJob&gt;(svc =&gt; svc.DispatchPendingMergesAsync(..))</c>
+        /// and registered via <c>AddOrUpdate&lt;IMergeJob&gt;(..)</c>, so Hangfire reads the filter off the
+        /// <i>interface</i> method; an attribute on the concrete method is silently ignored. Without it the
+        /// every-minute recurring dispatch (multi-worker "default" queue) and the per-event dispatches
+        /// (order creation, merge completion, requeue, stop) run concurrently and race the count→admit step,
+        /// each reading the same stale in-flight count and admitting a candidate — over-admitting past the cap
+        /// of 1, which is how several merges ended up "Merging" at once. Keep this on the interface.
+        /// </remarks>
+        [DisableConcurrentExecution(60)]
         Task DispatchPendingMergesAsync(CancellationToken cancellationToken = default);
 
         /// <summary>

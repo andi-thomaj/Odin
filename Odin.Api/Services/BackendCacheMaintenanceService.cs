@@ -6,8 +6,8 @@ public interface IBackendCacheMaintenanceService
 {
     /// <summary>
     /// Evicts every entry from the in-process <see cref="IMemoryCache"/> — qpAdm/G25 result payloads,
-    /// reference-data lookups (eras, ethnicities, populations, G25 distance population samples),
-    /// geo-location and auth/token caches, etc.
+    /// reference-data lookups (eras, ethnicities, populations, G25 distance population samples,
+    /// per-era G25 PCA scatters), geo-location and auth/token caches, etc.
     /// Returns the number of entries evicted, or <c>-1</c> when the registered cache implementation does
     /// not support counting/clearing (in which case the call is a logged no-op).
     /// </summary>

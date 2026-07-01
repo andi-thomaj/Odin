@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <!-- One-off console generator: synchronous Console.WriteLine is fine here. -->
+    <NoWarn>$(NoWarn);CA1849</NoWarn>
+  </PropertyGroup>
+  <!-- Shares the PCA matching logic (G25PcaSeedBuilder) with the import test via Odin.Api. Referencing
+       the web project needs the ASP.NET framework reference, same as Odin.Api.Tests. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Odin.Api\Odin.Api.csproj" />
+  </ItemGroup>
+</Project>

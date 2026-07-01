@@ -34,3 +34,20 @@ public sealed class PanelLabelsSnapshot
     public string Panel { get; set; } = "HO";
     public List<PanelLabelRow> Rows { get; set; } = [];
 }
+
+/// <summary>
+/// A self-contained, environment-portable promotion bundle exported from one environment (dev) and
+/// applied to another (prod): the panel's sample→population <see cref="Links"/> (keyed by population
+/// <i>name</i>, since ids differ per environment) plus every sample's <see cref="Labels"/> (keyed by
+/// sample id). One downloadable file; the unit the "Export snapshot" / "Apply snapshot" buttons move.
+/// </summary>
+public sealed class PanelPromotionBundle
+{
+    public string Panel { get; set; } = "HO";
+
+    /// <summary>ISO-8601 UTC timestamp of the export (informational).</summary>
+    public string? ExportedAtUtc { get; set; }
+
+    public PanelLinksSnapshot Links { get; set; } = new();
+    public PanelLabelsSnapshot Labels { get; set; } = new();
+}

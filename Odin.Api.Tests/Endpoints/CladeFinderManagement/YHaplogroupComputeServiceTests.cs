@@ -196,7 +196,6 @@ public class YHaplogroupComputeServiceTests
     private static YHaplogroupComputeService CreateService(
         ApplicationDbContext db, ICladeFinderService clade, IMemoryCache? cache = null)
         => new(db, clade, cache ?? new MemoryCache(new MemoryCacheOptions()),
-            new Odin.Api.Authentication.RequestAppContext(),
             NullLogger<YHaplogroupComputeService>.Instance);
 
     private static ICladeFinderService StubReturning(AnalyzeCladeContract.Response response)
@@ -245,7 +244,7 @@ public class YHaplogroupComputeServiceTests
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase($"ydna-tests-{Guid.NewGuid():N}")
             .Options;
-        return new ApplicationDbContext(options, new Odin.Api.Authentication.RequestAppContext());
+        return new ApplicationDbContext(options);
     }
 
     private sealed class StubCladeFinder(

@@ -27,12 +27,17 @@ public interface IG25CalculationService
 public static class G25SampleCacheKeys
 {
     public static string DistanceSamples(int eraId) => $"g25-distance-samples:{eraId}";
+
+    // Per-era fitted-PCA scatter (basis + projected reference points), served to order owners on the
+    // Ancient Origins PCA tab. Invalidated whenever a PCA population sample in that era changes.
+    public static string PcaScatter(int eraId) => $"g25-pca-scatter:{eraId}";
 }
 
 public class G25CalculationService(
     ApplicationDbContext dbContext,
     IMemoryCache cache,
-    IHostEnvironment hostEnvironment) : IG25CalculationService
+    IHostEnvironment hostEnvironment,
+    ILogger<G25CalculationService> logger) : IG25CalculationService
 {
     private const int MaxTargetCsvLength = 64 * 1024;
     private const int MaxTargetRows = 100;
@@ -192,9 +197,16 @@ public class G25CalculationService(
             .Select(s => new { s.Label, s.Coordinates })
             .ToListAsync(ct);
 
-        var lines = (IReadOnlyList<string>)samples
-            .Select(s => BuildSampleLine(s.Label, s.Coordinates))
-            .ToList();
+        var (lines, skippedLabels) = SelectValidSampleLines(samples.Select(s => (s.Label, s.Coordinates)));
+        if (skippedLabels.Count > 0)
+        {
+            // One malformed reference sample (e.g. a citation/URL pasted into Coordinates) must not fail
+            // the whole era's parse and wipe distance results for every user — drop it and log it instead.
+            logger.LogWarning(
+                "G25 distance era {EraId}: skipped {Count} malformed reference sample(s) (non-numeric or " +
+                "inconsistent-length coordinates). Examples: {Labels}.",
+                eraId, skippedLabels.Count, string.Join(" | ", skippedLabels.Take(10)));
+        }
 
         if (!hostEnvironment.IsEnvironment("Testing"))
         {
@@ -225,6 +237,67 @@ public class G25CalculationService(
             return $"{label},{trimmed}";
         }
         return $"{label},{trimmed[(firstComma + 1)..]}";
+    }
+
+    /// <summary>
+    /// Builds the "Label,v1,...,vN" source line for each sample and keeps only the well-formed ones:
+    /// every value numeric and a consistent column count across the era (the majority width). A single
+    /// malformed reference sample — e.g. a DOI/URL or a paper title accidentally pasted into the
+    /// Coordinates field — would otherwise make <see cref="G25CoordinateParser"/> reject the ENTIRE era
+    /// (variable-column / non-numeric error), wiping distance results for every user. Returns the kept
+    /// lines plus the labels of the samples that were dropped (for logging).
+    /// </summary>
+    public static (List<string> Lines, List<string> SkippedLabels) SelectValidSampleLines(
+        IEnumerable<(string Label, string Coordinates)> samples)
+    {
+        var candidates = new List<(string Label, string Line, int ValueCount)>();
+        var skipped = new List<string>();
+
+        foreach (var (label, coordinates) in samples)
+        {
+            var line = BuildSampleLine(label, coordinates);
+            var columns = line.Split(',');
+            if (columns.Length < 2 || !AllNumeric(columns, 1))
+            {
+                skipped.Add(label);
+                continue;
+            }
+
+            candidates.Add((label, line, columns.Length - 1));
+        }
+
+        if (candidates.Count == 0)
+            return (new List<string>(), skipped);
+
+        // Keep the majority column width; drop numeric-but-wrong-length outliers (a sample with too few
+        // or too many values would still trip the parser's "variable column number" check).
+        var modalValueCount = candidates
+            .GroupBy(c => c.ValueCount)
+            .OrderByDescending(g => g.Count())
+            .ThenByDescending(g => g.Key)
+            .First().Key;
+
+        var lines = new List<string>(candidates.Count);
+        foreach (var candidate in candidates)
+        {
+            if (candidate.ValueCount == modalValueCount)
+                lines.Add(candidate.Line);
+            else
+                skipped.Add(candidate.Label);
+        }
+
+        return (lines, skipped);
+    }
+
+    private static bool AllNumeric(string[] columns, int startIndex)
+    {
+        for (var j = startIndex; j < columns.Length; j++)
+        {
+            if (!double.TryParse(columns[j].Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+                return false;
+        }
+
+        return true;
     }
 
     private static int CountSet(params object?[] fields)

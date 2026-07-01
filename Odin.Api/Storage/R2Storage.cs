@@ -88,6 +88,27 @@ public sealed class R2Storage : IR2Storage, IDisposable
         }
     }
 
+    public async Task<byte[]?> DownloadAsync(string key, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            using var response = await _client.GetObjectAsync(new GetObjectRequest
+            {
+                BucketName = _options.BucketName,
+                Key = key,
+            }, cancellationToken);
+
+            using var ms = new MemoryStream();
+            await response.ResponseStream.CopyToAsync(ms, cancellationToken);
+            return ms.ToArray();
+        }
+        catch (AmazonS3Exception ex) when (ex.StatusCode == HttpStatusCode.NotFound)
+        {
+            _logger.LogDebug("R2 object {Bucket}/{Key} not found on download", _options.BucketName, key);
+            return null;
+        }
+    }
+
     public async Task DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         try
@@ -134,6 +155,56 @@ public sealed class R2Storage : IR2Storage, IDisposable
     {
         var baseUrl = _options.PublicBaseUrl.TrimEnd('/');
         return $"{baseUrl}/{key}";
+    }
+
+    public async Task<IReadOnlyList<string>> ListKeysAsync(string prefix, CancellationToken cancellationToken = default)
+    {
+        var keys = new List<string>();
+        string? token = null;
+        do
+        {
+            var response = await _client.ListObjectsV2Async(new ListObjectsV2Request
+            {
+                BucketName = _options.BucketName,
+                Prefix = prefix,
+                ContinuationToken = token,
+            }, cancellationToken);
+            if (response.S3Objects is { } objects)
+                keys.AddRange(objects.Select(o => o.Key));
+            token = response.IsTruncated == true ? response.NextContinuationToken : null;
+        }
+        while (token is not null);
+        return keys;
+    }
+
+    public async Task<IReadOnlyList<string>> ListCommonPrefixesAsync(
+        string prefix, string delimiter = "/", CancellationToken cancellationToken = default)
+    {
+        var prefixes = new List<string>();
+        string? token = null;
+        do
+        {
+            var response = await _client.ListObjectsV2Async(new ListObjectsV2Request
+            {
+                BucketName = _options.BucketName,
+                Prefix = prefix,
+                Delimiter = delimiter,
+                ContinuationToken = token,
+            }, cancellationToken);
+            if (response.CommonPrefixes is { } common)
+                prefixes.AddRange(common);
+            token = response.IsTruncated == true ? response.NextContinuationToken : null;
+        }
+        while (token is not null);
+        return prefixes;
+    }
+
+    public async Task DeleteManyAsync(IReadOnlyCollection<string> keys, CancellationToken cancellationToken = default)
+    {
+        // Per-object deletes reuse the proven idempotent path (R2's multi-object DeleteObjects has its own
+        // checksum/signing quirks). Orphan-cleanup volumes are small (one deleted user's handful of objects).
+        foreach (var key in keys)
+            await DeleteAsync(key, cancellationToken);
     }
 
     public void Dispose() => _client.Dispose();

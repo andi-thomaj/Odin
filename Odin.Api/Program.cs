@@ -294,7 +294,6 @@ namespace Odin.Api
                         .WithHeaders(
                             "Content-Type",
                             "Authorization",
-                            "X-App", // identifies the calling application (multi-app data isolation)
                             "X-Request-ID",
                             "X-SignalR-User-Agent", // SignalR specific header
                             "x-requested-with", // Common header SignalR may use
@@ -341,12 +340,9 @@ namespace Odin.Api
                 options.AddPolicy("PanelRestore", TimeSpan.FromHours(2));
             });
 
-            // Not pooled: the context constructor-injects the scoped IAppContext that drives the multi-app
-            // query filters + write stamping, which AddDbContextPool forbids (pooled instances take only
-            // options). This API runs as a single, non-horizontally-scaled instance, so the pooling cost is
-            // negligible. The ConfigureWarnings silences a benign EF warning raised because app-scoped entities
-            // reference unfiltered shared tables (e.g. Calculator→AdmixToolsEra) — those reference rows always
-            // exist, so the required-navigation/query-filter interaction is harmless here.
+            // The ConfigureWarnings silences a benign EF warning raised when an entity carrying a query filter
+            // (RawGeneticFile's soft-delete) has a required navigation to an unfiltered shared table — those
+            // reference rows always exist, so the interaction is harmless here.
             services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection"),
                         npgsqlOptions => npgsqlOptions.CommandTimeout(180))
@@ -355,14 +351,6 @@ namespace Odin.Api
                             .PossibleIncorrectRequiredNavigationWithQueryFilterInteractionWarning)));
             services.AddScoped<ApplicationDbContextInitializer>();
             services.AddScoped<DatabaseSeeder>();
-
-            // Multi-app data isolation: one RequestAppContext per request (set by AppResolutionMiddleware from
-            // the X-App header), exposed read-only as IAppContext to the DbContext + auth hot path. The registry
-            // validates the header and carries per-app branding.
-            services.AddScoped<Odin.Api.Authentication.RequestAppContext>();
-            services.AddScoped<Odin.Api.Authentication.IAppContext>(
-                sp => sp.GetRequiredService<Odin.Api.Authentication.RequestAppContext>());
-            services.AddScoped<Odin.Api.Services.IApplicationRegistry, Odin.Api.Services.ApplicationRegistry>();
 
             // R2 (Cloudflare object storage) — population MP4 avatars and any future media.
             services.Configure<Odin.Api.Storage.R2Options>(
@@ -377,9 +365,19 @@ namespace Odin.Api
             services.AddScoped<IPopulationService, PopulationService>();
             services.AddScoped<IRawGeneticFileService, RawGeneticFileService>();
             services.AddScoped<IGeneticInspectionService, GeneticInspectionService>();
+            services.AddScoped<Odin.Api.Endpoints.Admin.IPanelPromotionService, Odin.Api.Endpoints.Admin.PanelPromotionService>();
             services.AddScoped<Odin.Api.Hubs.IGeneticInspectionRealtimeNotifier, Odin.Api.Hubs.GeneticInspectionRealtimeNotifier>();
             services.AddScoped<IAppSettingsService, AppSettingsService>();
             services.AddScoped<IOrderService, OrderService>();
+            // Per-user face-photo set (iOS ARKit capture → R2) for future AI-image generation.
+            services.AddScoped<
+                Odin.Api.Endpoints.UserFacePhotoManagement.IUserFacePhotoService,
+                Odin.Api.Endpoints.UserFacePhotoManagement.UserFacePhotoService>();
+            // Apple StoreKit 2 IAP validation (iOS paid-order flow). Singleton: it lazily loads + caches the
+            // Apple root certificate and holds no per-request state.
+            services.AddSingleton<
+                Odin.Api.Endpoints.Payments.IAppStorePurchaseService,
+                Odin.Api.Endpoints.Payments.AppStorePurchaseService>();
             services.AddScoped<INotificationService, NotificationService>();
             services.AddScoped<IReportService, ReportService>();
             services.AddScoped<IMediaService, MediaService>();
@@ -396,6 +394,7 @@ namespace Odin.Api
             services.AddScoped<IG25DistanceEraService, G25DistanceEraService>();
             services.AddScoped<IG25AdmixtureEraService, G25AdmixtureEraService>();
             services.AddScoped<IG25CalculationService, G25CalculationService>();
+            services.AddScoped<Odin.Api.Endpoints.G25PcaScatter.IG25PcaScatterService, Odin.Api.Endpoints.G25PcaScatter.G25PcaScatterService>();
             services.AddScoped<ICalculatorService, CalculatorService>();
             services.AddScoped<IAdmixToolsEraService, AdmixToolsEraService>();
             services.AddScoped<ILogCleanupService, LogCleanupService>();
@@ -407,6 +406,8 @@ namespace Odin.Api
             services.Configure<AppPublicOptions>(configuration.GetSection(AppPublicOptions.SectionName));
             services.Configure<Odin.Api.Configuration.OrderLimitsOptions>(
                 configuration.GetSection(Odin.Api.Configuration.OrderLimitsOptions.SectionName));
+            services.Configure<Odin.Api.Configuration.AppleIapOptions>(
+                configuration.GetSection(Odin.Api.Configuration.AppleIapOptions.SectionName));
 
             services.AddHttpClient<IResendAudienceService, ResendAudienceService>((_, client) =>
             {
@@ -473,6 +474,58 @@ namespace Odin.Api
                 Odin.Api.Endpoints.MergeManagement.IMergeJob,
                 Odin.Api.Endpoints.MergeManagement.MergeJob>();
 
+            // ── OpenAI image generation (gpt-image-2 via the OpenAI SDK) ─────────────────────────────
+            services.Configure<Odin.Api.Configuration.OpenAIOptions>(
+                configuration.GetSection(Odin.Api.Configuration.OpenAIOptions.SectionName));
+            services.Configure<Odin.Api.Configuration.ImageGenerationLimitsOptions>(
+                configuration.GetSection(Odin.Api.Configuration.ImageGenerationLimitsOptions.SectionName));
+            // Typed client: the SDK handles generation/edits internally; this HttpClient is used only for the
+            // Administration usage/cost endpoints (Admin key). Base address + timeout come from OpenAIOptions.
+            services.AddHttpClient<
+                Odin.Api.Endpoints.ImageGenerationManagement.IOpenAIImageClient,
+                Odin.Api.Endpoints.ImageGenerationManagement.OpenAIImageClient>((sp, client) =>
+            {
+                var openAiOptions = sp.GetRequiredService<IOptions<Odin.Api.Configuration.OpenAIOptions>>().Value;
+                if (!string.IsNullOrWhiteSpace(openAiOptions.BaseUrl))
+                {
+                    client.BaseAddress = new Uri(openAiOptions.BaseUrl);
+                }
+                client.Timeout = TimeSpan.FromSeconds(Math.Max(1, openAiOptions.TimeoutSeconds));
+            });
+            services.AddScoped<
+                Odin.Api.Endpoints.ImageGenerationManagement.IImageGenerationService,
+                Odin.Api.Endpoints.ImageGenerationManagement.ImageGenerationService>();
+            services.AddScoped<
+                Odin.Api.Endpoints.ImageGenerationManagement.IImageSettingsService,
+                Odin.Api.Endpoints.ImageGenerationManagement.ImageSettingsService>();
+            services.AddScoped<
+                Odin.Api.Endpoints.ImageGenerationManagement.IImageGenerationWorker,
+                Odin.Api.Endpoints.ImageGenerationManagement.ImageGenerationWorker>();
+            // Paid "Through the Ages" AI ancestral-portraits add-on (per-user, gpt-image-2 edits from face photos).
+            services.AddScoped<
+                Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitService,
+                Odin.Api.Endpoints.AncestralPortraitManagement.AncestralPortraitService>();
+            services.AddScoped<
+                Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitSettingsService,
+                Odin.Api.Endpoints.AncestralPortraitManagement.AncestralPortraitSettingsService>();
+            services.AddScoped<
+                Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitWorker,
+                Odin.Api.Endpoints.AncestralPortraitManagement.AncestralPortraitWorker>();
+            // R2 orphan cleanup: deletes per-user R2 data (users/{slug}/) whose user no longer exists in the DB.
+            services.AddScoped<
+                Odin.Api.Endpoints.StorageManagement.IR2OrphanCleanupService,
+                Odin.Api.Endpoints.StorageManagement.R2OrphanCleanupService>();
+            services.AddScoped<
+                Odin.Api.Hubs.IImageGenerationRealtimeNotifier,
+                Odin.Api.Hubs.ImageGenerationRealtimeNotifier>();
+            services.AddScoped<
+                Odin.Api.Hubs.IAppStorePurchaseRealtimeNotifier,
+                Odin.Api.Hubs.AppStorePurchaseRealtimeNotifier>();
+            // Refund cleanup: on an Apple REFUND/REVOKE for a paid order, purge the order + its results + add-ons.
+            services.AddScoped<
+                Odin.Api.Endpoints.Payments.IRefundCleanupJob,
+                Odin.Api.Endpoints.Payments.RefundCleanupJob>();
+
             services.AddHttpClient("Auth0UserInfo", client =>
             {
                 client.Timeout = TimeSpan.FromSeconds(10);
@@ -522,6 +575,10 @@ namespace Odin.Api
                 // Flip a merge order Retrying → Failed once Hangfire exhausts its retries (see
                 // MergeJobFailureStateFilter), so a dead job doesn't hold an in-flight merge slot forever.
                 .UseFilter(new Odin.Api.Endpoints.MergeManagement.MergeJobFailureStateFilter(
+                    provider.GetRequiredService<IServiceScopeFactory>()))
+                // Flip an image-generation job Pending/Running → Failed once its Hangfire job is exhausted
+                // or its worker died, so a crashed async generation doesn't stay stuck forever.
+                .UseFilter(new Odin.Api.Endpoints.ImageGenerationManagement.ImageGenerationJobFailureStateFilter(
                     provider.GetRequiredService<IServiceScopeFactory>())));
 
             // Worker process — skipped in Testing so the suite doesn't poll the throwaway
@@ -585,9 +642,6 @@ namespace Odin.Api
             }
 
             app.UseAuthentication();
-            // Resolve the calling app (X-App header) into IAppContext BEFORE role enrichment and any DB access,
-            // so provisioning/role lookup and the app-scoped query filters key on the right application.
-            app.UseAppResolution();
             // Rate limiting must run AFTER authentication: the global limiter's authenticated tier
             // (100 vs 30 req/min) and per-user partitioning both key off context.User, which is only
             // populated once UseAuthentication has run. Placed before role enrichment so a throttled
@@ -649,6 +703,37 @@ namespace Odin.Api
                     recurringJobId: "merge-cleanup",
                     methodCall: svc => svc.CleanupOrphansAsync(CancellationToken.None),
                     cronExpression: weeklyFromDeployCron,
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // r2-orphan-cleanup: daily at 04:00 UTC, delete per-user R2 data (users/{slug}/ — private face photos
+                // + ancestral portraits) whose user no longer exists in the DB. The DB rows cascade-delete with the
+                // user; this reclaims the lingering R2 objects (biometric images) so deleted users leave nothing in
+                // storage. Cheap (one delimited LIST + small deletes); daily keeps the privacy window short.
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.StorageManagement.IR2OrphanCleanupService>(
+                    recurringJobId: "r2-orphan-cleanup",
+                    methodCall: svc => svc.SweepAsync(CancellationToken.None),
+                    cronExpression: "0 4 * * *",
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // ancestral-portrait-reconcile-stale: every 5 min, re-enqueue any "Through the Ages" set stuck Running
+                // past the stale window (its heartbeat stopped — the worker died or a DEPLOY/restart killed it mid-run).
+                // Without this a redeploy mid-generation strands the set "Painting…" forever with no images and nothing
+                // to re-trigger it (the iOS client only polls). The generation claim re-claims a stale Running set, so
+                // the re-enqueued job regenerates from scratch; bounded (a re-run ends Succeeded/Failed, never re-loops).
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.AncestralPortraitManagement.IAncestralPortraitWorker>(
+                    recurringJobId: "ancestral-portrait-reconcile-stale",
+                    methodCall: w => w.ReconcileStaleRunsAsync(CancellationToken.None),
+                    cronExpression: "*/5 * * * *",
+                    options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
+
+                // image-generation-reconcile-stale: every 5 min, re-enqueue any admin image-gen job stuck Running past
+                // the stale window (its worker died or a DEPLOY/restart killed it mid-run). Same self-heal as the
+                // portraits job — without it a redeploy strands the job "Running" until Hangfire's slow retry/timeout
+                // path eventually surfaces it. The claim in ProcessJobAsync re-claims the stale job and re-runs it.
+                recurringJobManager.AddOrUpdate<Odin.Api.Endpoints.ImageGenerationManagement.IImageGenerationWorker>(
+                    recurringJobId: "image-generation-reconcile-stale",
+                    methodCall: w => w.ReconcileStaleJobsAsync(CancellationToken.None),
+                    cronExpression: "*/5 * * * *",
                     options: new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc });
             }
 

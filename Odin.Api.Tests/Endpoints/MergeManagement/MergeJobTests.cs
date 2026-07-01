@@ -1,4 +1,5 @@
 using System.Net;
+using System.Reflection;
 using Hangfire;
 using Hangfire.Common;
 using Hangfire.States;
@@ -81,6 +82,56 @@ public class MergeJobTests
     }
 
     [Fact]
+    public async Task RunAsync_MergeFailure_DropsAnyProducedBundle_SoNoTrashIsLeft()
+    {
+        // A merge that fails AFTER the tools-api may have produced a bundle (the timeout / lost-response
+        // case) must drop it, or it orphans a .tar.gz that no sweep reclaims and the disk slowly fills.
+        await using var db = CreateDbContext();
+        var (inspectionId, _) = await SeedOrderAsync(db);
+
+        string? cancelled = null;
+        var proxy = new StubMergeService
+        {
+            OnConvert = (_, _) => Task.FromResult(new ConvertResult("x", "x_23andme.txt", "23andme")),
+            OnMerge = (_, _, _, _, _) => throw new MergePipelineException(HttpStatusCode.InternalServerError, "trident failed"),
+            OnCancel = id => { cancelled = id; return Task.CompletedTask; },
+        };
+        var job = CreateJob(db, proxy);
+
+        await job.RunAsync(inspectionId);
+
+        var file = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
+        Assert.Equal(MergeStatus.Failed, file.MergeStatus);
+        // The merge reached the Merging step, so a mergeId was assigned and the bundle was dropped for it.
+        Assert.False(string.IsNullOrWhiteSpace(file.MergeId));
+        Assert.Equal(file.MergeId, cancelled);
+    }
+
+    [Fact]
+    public async Task RunAsync_ConvertFailure_DoesNotAttemptBundleCleanup()
+    {
+        // A failure BEFORE the merge step never assigned a mergeId and the tools-api wrote nothing, so we
+        // must not make a spurious cancel/delete call for a bundle that can't exist.
+        await using var db = CreateDbContext();
+        var (inspectionId, _) = await SeedOrderAsync(db);
+
+        var cancelCalled = false;
+        var proxy = new StubMergeService
+        {
+            OnConvert = (_, _) => throw new MergePipelineException(HttpStatusCode.BadRequest, "bad upload"),
+            OnCancel = _ => { cancelCalled = true; return Task.CompletedTask; },
+        };
+        var job = CreateJob(db, proxy);
+
+        await job.RunAsync(inspectionId);
+
+        var file = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
+        Assert.Equal(MergeStatus.Failed, file.MergeStatus);
+        Assert.Null(file.MergeId);
+        Assert.False(cancelCalled);
+    }
+
+    [Fact]
     public async Task RunAsync_AlreadyReady_IsNoOp()
     {
         await using var db = CreateDbContext();
@@ -141,28 +192,6 @@ public class MergeJobTests
     }
 
     [Fact]
-    public async Task Dispatch_AdmitsMergeFromAnotherApp_NotJustAncestrify()
-    {
-        var dbName = $"merge-tests-{Guid.NewGuid():N}";
-
-        // Seed a qpAdm order under the "aurora" app — SaveChanges stamps App="aurora" on the rows.
-        await using (var auroraDb = CreateDbContext(dbName, "aurora"))
-            await SeedOrderAsync(auroraDb);
-
-        // The dispatcher runs as a background job with NO X-App, so its context defaults to ancestrify.
-        // Pre-fix it would see zero candidates (the aurora rows are filtered out) and admit nothing.
-        await using var jobDb = CreateDbContext(dbName);
-        var jobClient = new FakeJobClient();
-        var job = CreateJob(jobDb, new StubMergeService(), jobClient);
-
-        await job.DispatchPendingMergesAsync();
-
-        Assert.Equal(1, jobClient.CountOf(nameof(IMergeJob.RunAsync)));
-        Assert.Equal(1, await jobDb.RawGeneticFiles.IgnoreQueryFilters()
-            .CountAsync(f => f.MergeStatus == MergeStatus.Queued));
-    }
-
-    [Fact]
     public async Task Dispatch_NoCapacity_WhenCapInFlight_AdmitsNone()
     {
         await using var db = CreateDbContext();
@@ -182,6 +211,74 @@ public class MergeJobTests
 
         Assert.Equal(0, jobClient.CountOf(nameof(IMergeJob.RunAsync)));
         Assert.Equal(1, await db.RawGeneticFiles.CountAsync(f => f.MergeStatus == MergeStatus.NotStarted));
+    }
+
+    [Fact]
+    public void HangfireFilters_LiveOnTheInterface_SoSerializationActuallyTakesEffect()
+    {
+        // The merges-running-concurrently regression guard. Hangfire reads job filter attributes off the
+        // ENQUEUED method, and every merge job is enqueued via the INTERFACE
+        // (Enqueue<IMergeJob>(..) / AddOrUpdate<IMergeJob>(..) in Program.cs / MergeJob). If a filter drifts
+        // onto the concrete MergeJob it is silently ignored:
+        //   • [DisableConcurrentExecution] off the dispatcher → concurrent dispatches race the count→admit
+        //     step and over-admit past the cap → several merges show "Merging" at once (the reported bug);
+        //   • [Queue("merge")] off RunAsync → merges land on the multi-worker "default" queue and run in
+        //     parallel; [AutomaticRetry(0)] off RunAsync → a failed merge takes Hangfire's default 10 retries.
+        // Assert each lives on the interface method so none of that can return unnoticed.
+        var dispatch = typeof(IMergeJob).GetMethod(nameof(IMergeJob.DispatchPendingMergesAsync))!;
+        Assert.NotNull(dispatch.GetCustomAttribute<DisableConcurrentExecutionAttribute>());
+
+        var run = typeof(IMergeJob).GetMethod(nameof(IMergeJob.RunAsync))!;
+        Assert.Equal("merge", run.GetCustomAttribute<QueueAttribute>()?.Queue);
+        Assert.Equal(0, run.GetCustomAttribute<AutomaticRetryAttribute>()?.Attempts);
+
+        var cleanup = typeof(IMergeJob).GetMethod(nameof(IMergeJob.CleanupOrphansAsync))!;
+        Assert.Equal("merge", cleanup.GetCustomAttribute<QueueAttribute>()?.Queue);
+    }
+
+    [Fact]
+    public async Task Dispatch_CapOfOne_AdmitsExactlyOne_LeavesRestQueued()
+    {
+        // Production pins the in-flight cap to 1 (Program.cs hardwires MaxConcurrentMerges = 1). With three
+        // waiting (NotStarted) merges and nothing running, a single dispatch must admit EXACTLY one and
+        // leave the other two waiting — never more than one merge in flight.
+        await using var db = CreateDbContext();
+        await SeedOrderAsync(db);
+        await SeedOrderAsync(db);
+        await SeedOrderAsync(db);
+
+        var jobClient = new FakeJobClient();
+        var job = CreateJob(db, new StubMergeService(), jobClient, maxInFlight: 1);
+
+        await job.DispatchPendingMergesAsync();
+
+        var statuses = await db.RawGeneticFiles.AsNoTracking().Select(f => f.MergeStatus).ToListAsync();
+        Assert.Equal(1, statuses.Count(s => s == MergeStatus.Queued));
+        Assert.Equal(2, statuses.Count(s => s == MergeStatus.NotStarted));
+        Assert.Equal(1, jobClient.CountOf(nameof(IMergeJob.RunAsync)));
+    }
+
+    [Fact]
+    public async Task Dispatch_CapOfOne_WithOneAlreadyMerging_AdmitsNone()
+    {
+        // The exact reported failure mode: one merge already "Merging" must block every other waiting merge,
+        // so a concurrently-fired dispatch admits nothing (the count→admit arithmetic the
+        // [DisableConcurrentExecution] lock protects from racing in production).
+        await using var db = CreateDbContext();
+        var (_, f1) = await SeedOrderAsync(db);
+        await SeedOrderAsync(db);
+        await SeedOrderAsync(db);
+        (await db.RawGeneticFiles.SingleAsync(f => f.Id == f1)).MergeStatus = MergeStatus.Merging;
+        await db.SaveChangesAsync();
+
+        var jobClient = new FakeJobClient();
+        var job = CreateJob(db, new StubMergeService(), jobClient, maxInFlight: 1);
+
+        await job.DispatchPendingMergesAsync();
+
+        Assert.Equal(0, jobClient.CountOf(nameof(IMergeJob.RunAsync)));
+        Assert.Equal(1, await db.RawGeneticFiles.CountAsync(f => f.MergeStatus == MergeStatus.Merging));
+        Assert.Equal(2, await db.RawGeneticFiles.CountAsync(f => f.MergeStatus == MergeStatus.NotStarted));
     }
 
     [Fact]
@@ -268,6 +365,59 @@ public class MergeJobTests
         Assert.False(called);
         var after = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
         Assert.Equal(MergeStatus.Ready, after.MergeStatus);
+    }
+
+    [Fact]
+    public async Task CleanupOrphans_ReclaimsOrphanedFailedBundle_KeepsFailedStatus_ClearsMergeId()
+    {
+        // Backstop for the worker-died case: a row reconciled to Failed but with a bundle still on the
+        // volume. The sweep must drop that bundle (so it can't fill the disk) while preserving the Failed
+        // status + error, and detach the merge id so it isn't revisited.
+        await using var db = CreateDbContext();
+        var (_, fileId) = await SeedOrderAsync(db);
+        var file = await db.RawGeneticFiles.SingleAsync(f => f.Id == fileId);
+        file.MergeStatus = MergeStatus.Failed;
+        file.MergeError = "trident failed (exit -9)";
+        file.MergeId = "insp-1-orphan";
+        file.MergeFileName = "insp-1-orphan.tar.gz";
+        file.MergeSizeBytes = 999;
+        await db.SaveChangesAsync();
+
+        string? deleted = null;
+        var proxy = new StubMergeService { OnDelete = id => { deleted = id; return Task.CompletedTask; } };
+        var job = CreateJob(db, proxy);
+
+        await job.CleanupOrphansAsync();
+
+        Assert.Equal("insp-1-orphan", deleted);
+        var after = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
+        Assert.Equal(MergeStatus.Failed, after.MergeStatus); // status + error preserved
+        Assert.Equal("trident failed (exit -9)", after.MergeError);
+        Assert.Null(after.MergeId); // detached so the next sweep won't revisit it
+        Assert.Null(after.MergeFileName);
+        Assert.Null(after.MergeSizeBytes);
+    }
+
+    [Fact]
+    public async Task CleanupOrphans_FailedWithoutMergeId_IsLeftAlone()
+    {
+        // A merge that failed before producing anything has no merge id → no bundle to reclaim.
+        await using var db = CreateDbContext();
+        var (_, fileId) = await SeedOrderAsync(db);
+        var file = await db.RawGeneticFiles.SingleAsync(f => f.Id == fileId);
+        file.MergeStatus = MergeStatus.Failed;
+        file.MergeError = "bad upload";
+        await db.SaveChangesAsync();
+
+        var called = false;
+        var proxy = new StubMergeService { OnDelete = _ => { called = true; return Task.CompletedTask; } };
+        var job = CreateJob(db, proxy);
+
+        await job.CleanupOrphansAsync();
+
+        Assert.False(called);
+        var after = await db.RawGeneticFiles.AsNoTracking().SingleAsync();
+        Assert.Equal(MergeStatus.Failed, after.MergeStatus);
     }
 
     [Fact]
@@ -429,7 +579,6 @@ public class MergeJobTests
             TimeProvider.System,
             Microsoft.Extensions.Options.Options.Create(
                 new Odin.Api.Configuration.MergeJobOptions { MaxConcurrentMerges = maxInFlight }),
-            new Odin.Api.Authentication.RequestAppContext(),
             NullLogger<MergeJob>.Instance);
 
     /// <summary>Seed an order whose merge is already <c>Ready</c> with a bundle (a deletable bundle).</summary>
@@ -483,16 +632,12 @@ public class MergeJobTests
     private static ApplicationDbContext CreateDbContext()
         => CreateDbContext($"merge-tests-{Guid.NewGuid():N}");
 
-    // Shared-name overload so a test can seed under one app and run the job under another (simulating a
-    // background job with no X-App). Pass `app` to pin the context's RequestAppContext for write stamping.
-    private static ApplicationDbContext CreateDbContext(string dbName, string? app = null)
+    private static ApplicationDbContext CreateDbContext(string dbName)
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
             .UseInMemoryDatabase(dbName)
             .Options;
-        var appContext = new Odin.Api.Authentication.RequestAppContext();
-        if (app is not null) appContext.SetApp(app);
-        return new ApplicationDbContext(options, appContext);
+        return new ApplicationDbContext(options);
     }
 
     private sealed class NoopRealtimeNotifier : IGeneticInspectionRealtimeNotifier

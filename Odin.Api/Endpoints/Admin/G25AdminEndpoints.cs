@@ -22,6 +22,11 @@ public static class G25AdminEndpoints
             .RequireRateLimiting("strict")
             .Produces<ImportG25DistancePopulationSamplesContract.Response>(StatusCodes.Status200OK)
             .WithRequestTimeout(TimeSpan.FromMinutes(5));
+
+        endpoints.MapPost("/import-pca-population-samples", ImportPcaPopulationSamples)
+            .RequireRateLimiting("strict")
+            .Produces<ImportG25PcaPopulationSamplesContract.Response>(StatusCodes.Status200OK)
+            .WithRequestTimeout(TimeSpan.FromMinutes(5));
     }
 
     private static async Task<IResult> GetInspections(IOrderService service)
@@ -58,6 +63,19 @@ public static class G25AdminEndpoints
                          ?? string.Empty;
 
         var result = await importService.ImportDistancePopulationSamplesAsync(identityId, cancellationToken);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> ImportPcaPopulationSamples(
+        IG25SeedImportService importService,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        var identityId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                         ?? httpContext.User.FindFirstValue("sub")
+                         ?? string.Empty;
+
+        var result = await importService.ImportPcaPopulationSamplesAsync(identityId, cancellationToken);
         return Results.Ok(result);
     }
 }

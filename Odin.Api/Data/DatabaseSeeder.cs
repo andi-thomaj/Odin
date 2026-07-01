@@ -18,7 +18,6 @@ namespace Odin.Api.Data;
 public class DatabaseSeeder(
     ApplicationDbContext context,
     IMergePipelineService mergeService,
-    IConfiguration configuration,
     ILogger<DatabaseSeeder> logger)
 {
     /// <summary>Runs every seeder in dependency order — the entry point used by app startup.</summary>
@@ -62,8 +61,6 @@ public class DatabaseSeeder(
     public async Task SeedReferenceCatalogAsync()
     {
         await using var transaction = await context.Database.BeginTransactionAsync();
-        // Application registry first — app resolution validates the X-App header against these rows.
-        await new ApplicationsSeeder(context, configuration).SeedAsync();
         await new EthnicityAndRegionSeeder(context).SeedAsync();
         await new QpadmEraAndPopulationSeeder(context).SeedAsync();
         await new G25Seeder(context).SeedAsync();

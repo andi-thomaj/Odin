@@ -3,11 +3,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Odin.Api.Data.Entities;
 
-public class G25DistanceResult : BaseEntity, IAppScoped
+public class G25DistanceResult : BaseEntity
 {
     public int Id { get; set; }
-    /// <summary>Owning application (applications.key). Set from the parent inspection; query-filtered — see <see cref="IAppScoped"/>.</summary>
-    public string App { get; set; } = string.Empty;
     public int GeneticInspectionId { get; set; }
     public G25GeneticInspection GeneticInspection { get; set; }
     public int G25DistanceEraId { get; set; }
@@ -47,8 +45,6 @@ public class G25DistanceResultConfiguration : IEntityTypeConfiguration<G25Distan
             b.ToJson();
             b.Property(p => p.Name).IsRequired().HasMaxLength(500);
         });
-
-        builder.Property(e => e.App).IsRequired().HasMaxLength(50);
 
         builder.ToTable("g25_distance_results");
     }
