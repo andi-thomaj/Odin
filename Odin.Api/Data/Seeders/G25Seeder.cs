@@ -21,6 +21,7 @@ internal sealed class G25Seeder(ApplicationDbContext context)
         await SeedG25ServiceAsync();
         await SeedG25DistanceErasAsync();
         await SeedG25DistancePopulationSamplesAsync();
+        await SeedG25PcaPopulationSamplesAsync();
         await SeedG25AdmixtureErasAsync();
     }
 
@@ -207,6 +208,95 @@ internal sealed class G25Seeder(ApplicationDbContext context)
         if (batch.Count > 0)
         {
             context.G25DistancePopulationSamples.AddRange(batch);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+        }
+    }
+
+    /// <summary>
+    /// Seeds the G25 PCA population samples — the PER-INDIVIDUAL reference cloud (one row per sample),
+    /// as opposed to the distance dataset's population averages. The seed JSON is produced offline by
+    /// <c>tools/GenerateG25PcaSeed</c> from the distance samples' member ids + the per-era G25 coordinate
+    /// files. PCA samples reuse the <see cref="G25DistanceEra"/> catalog (no separate PCA era), so this
+    /// runs after <see cref="SeedG25DistancePopulationSamplesAsync"/>. Idempotent: skips when the table
+    /// already has rows.
+    /// </summary>
+    private async Task SeedG25PcaPopulationSamplesAsync()
+    {
+        if (await context.G25PcaPopulationsSamples.AnyAsync())
+            return;
+
+        var path = Path.Combine(AppContext.BaseDirectory, "Data", "SeedData", "g25_pca_population_samples.json");
+        if (!File.Exists(path))
+            throw new FileNotFoundException(
+                $"G25 PCA population sample seed file not found at '{path}'. " +
+                "Make sure Data/SeedData/g25_pca_population_samples.json is set to copy to the build output.");
+
+        var jsonOpts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+        var seeds = JsonSerializer.Deserialize<List<DistancePopulationSampleSeed>>(
+            await File.ReadAllTextAsync(path), jsonOpts);
+        if (seeds is null || seeds.Count == 0)
+            throw new InvalidOperationException(
+                "g25_pca_population_samples.json deserialised to an empty list — check the file contents.");
+
+        var validEraIds = await context.G25DistanceEras.Select(e => e.Id).ToHashSetAsync();
+        var now = DateTime.UtcNow;
+        const int batchSize = 1000;
+        var batch = new List<G25PcaPopulationsSample>(batchSize);
+
+        foreach (var seed in seeds)
+        {
+            if (string.IsNullOrWhiteSpace(seed.SampleLabel) || string.IsNullOrWhiteSpace(seed.Coordinates))
+                continue;
+            if (!validEraIds.Contains(seed.G25DistanceEraId))
+                throw new InvalidOperationException(
+                    $"PCA sample '{seed.SampleLabel}' references unknown G25DistanceEraId {seed.G25DistanceEraId}. " +
+                    "Re-check seed data against the G25 distance era catalog.");
+
+            var sample = new G25PcaPopulationsSample
+            {
+                Label = seed.SampleLabel,
+                Coordinates = seed.Coordinates,
+                Ids = seed.Ids ?? string.Empty,
+                G25DistanceEraId = seed.G25DistanceEraId,
+                CreatedAt = now,
+                CreatedBy = SeederTag,
+                UpdatedAt = now,
+                UpdatedBy = SeederTag,
+            };
+
+            if (seed.ResearchLinks is { Count: > 0 })
+            {
+                foreach (var link in seed.ResearchLinks)
+                {
+                    if (string.IsNullOrWhiteSpace(link.Label) || string.IsNullOrWhiteSpace(link.Link))
+                        continue;
+                    sample.ResearchLinks.Add(new ResearchLink
+                    {
+                        Label = link.Label,
+                        Link = link.Link,
+                        CreatedAt = now,
+                        CreatedBy = SeederTag,
+                        UpdatedAt = now,
+                        UpdatedBy = SeederTag,
+                    });
+                }
+            }
+
+            batch.Add(sample);
+
+            if (batch.Count < batchSize)
+                continue;
+
+            context.G25PcaPopulationsSamples.AddRange(batch);
+            await context.SaveChangesAsync();
+            context.ChangeTracker.Clear();
+            batch.Clear();
+        }
+
+        if (batch.Count > 0)
+        {
+            context.G25PcaPopulationsSamples.AddRange(batch);
             await context.SaveChangesAsync();
             context.ChangeTracker.Clear();
         }

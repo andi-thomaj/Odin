@@ -1,0 +1,565 @@
+G25 PCA seed generation report
+Generated (UTC): 2026-07-01T14:47:51.9632830Z
+Distance seed:   Odin.Api/Data/SeedData/g25_distance_population_samples.json
+Genetic dir:     Odin.Api/Data/SeedData/g25-coordinates
+Output JSON:     Odin.Api/Data/SeedData/g25_pca_population_samples.json
+Total PCA rows:  18077  (ancient 7150 + modern 10927)
+Dedup skipped:   17
+
+Unmatched ids (absent from the era file): 528
+  [era 1] Pre-Columbian Indigenous Argentina (2600 - 1350 BC) :: 12726
+  [era 1] Pre-Columbian Indigenous Brazil (2700 – 1200 BC) :: I18121
+  [era 1] Pre-Columbian Indigenous Brazil (2700 – 1200 BC) :: I18123
+  [era 1] Pre-Columbian Indigenous Brazil (2700 – 1200 BC) :: I18125
+  [era 1] Mycenaean Greece (1700-1200 BC) :: I13518
+  [era 1] Mycenaean Greece (1700-1200 BC) :: I13506_d
+  [era 1] Cycladic Aegean (1200 BC) :: KUK001
+  [era 1] Cycladic Aegean (1200 BC) :: KUK002
+  [era 1] Cycladic Aegean (1200 BC) :: KUK005
+  [era 1] Cycladic Aegean (1200 BC) :: KUK006
+  [era 1] Greece Dodona Epirus (1200 BC) :: Amm_Epi_LBA_1
+  [era 1] Greece Dodona Epirus (1200 BC) :: Amm_Epi_LBA_2
+  [era 1] Uzbekistan Bustan Culture (1800-1400 BC) :: I12026
+  [era 2] Nairi (1200-850 BC) :: I11668
+  [era 2] Proto-Illyrian Cetina Culture (1600 BC) :: I18747
+  [era 2] Proto-Illyrian Cetina Culture (1600 BC) :: I18746
+  [era 2] Proto-Illyrian Cetina Culture (1600 BC) :: I18745
+  [era 2] Proto-Illyrian Cetina Culture (1600 BC) :: I19027
+  [era 2] Proto-Illyrian Cetina Culture (1600 BC) :: I18752
+  [era 2] Celtic Briton (500-0 BC) :: DUX004
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: 0LS11
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: V14
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: V16
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: V9
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: X08
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: X10
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: X11
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: X14
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: X15
+  [era 2] Estonia Early Balto-Finnic (1180–484 BC) :: X17
+  [era 2] Estonia Balto-Finnic (650–150 BC) :: 0LS10
+  [era 2] Estonia Balto-Finnic (650–150 BC) :: V10
+  [era 2] Estonia Balto-Finnic (650–150 BC) :: V11
+  [era 2] Estonia Balto-Finnic (650–150 BC) :: V12
+  [era 2] Estonia Balto-Finnic (650–150 BC) :: VII4
+  [era 2] Estonia Balto-Finnic (650–150 BC) :: X04
+  [era 2] Germany Celtic Hallstatt Culture (650–300 BC) :: c
+  [era 2] Corinthian (500 BC) :: Ten_Pel_Arch1
+  [era 2] Corinthian (500 BC) :: Ten_Pel_Arch2
+  [era 2] Iran Mannaean (1200–600 BC) :: 4237
+  [era 2] Israelite (1200-1000 BC) :: ASH0087
+  [era 2] Russia Koban (750–200 BC) :: AB10
+  [era 2] Hittite (1600 BC) :: MA2200
+  [era 2] Hittite (1600 BC) :: MA2203
+  [era 3] Romano-British Celt (0-350 AD) :: DUX001
+  [era 3] Romano-British Celt (0-350 AD) :: DUX010
+  [era 3] Romano-British Celt (0-350 AD) :: DUX012
+  [era 3] Romano-British Celt (0-350 AD) :: DUX017
+  [era 3] Romano-British Celt (0-350 AD) :: DUX019
+  [era 3] Romano-British Celt (0-350 AD) :: VIC001
+  [era 3] Romano-British Celt (0-350 AD) :: VIC004
+  [era 3] Romano-British Celt (0-350 AD) :: VIC005
+  [era 3] Romano-British Celt (0-350 AD) :: VIC008
+  [era 3] Romano-British Celt (0-350 AD) :: VIC010
+  [era 3] Romano-British Celt (0-350 AD) :: VIC016
+  [era 3] Portuguese (150–600 AD) :: 25510
+  [era 3] Portuguese (150–600 AD) :: 25522
+  [era 3] Portuguese (150–600 AD) :: 25536
+  [era 3] Romania Sarmatian (0–250 AD) :: TAR-184POG-10
+  [era 3] Russia Volga Uralic (0–500 AD) :: 19265
+  [era 3] Early Byzantine Carian :: I20259
+  [era 3] Early Byzantine Carian :: I20260
+  [era 3] Early Byzantine Carian :: I20261
+  [era 3] Early Byzantine Carian :: I20265
+  [era 3] Early Byzantine Carian :: I20266
+  [era 3] Early Byzantine Carian :: I20320
+  [era 3] Early Byzantine Carian :: I20264
+  [era 4] Hungary Sarmatian (750 AD) :: SZA002
+  [era 4] Hungary Sarmatian (750 AD) :: SZA005
+  [era 4] Hungary Sarmatian (750 AD) :: SZA011
+  [era 4] Hungary Sarmatian (750 AD) :: SZA014
+  [era 4] Hungary Sarmatian (750 AD) :: SZA015
+  [era 4] Hungary Sarmatian (750 AD) :: SZA017
+  [era 4] Hungary Sarmatian (750 AD) :: SZA021
+  [era 4] Hungary Sarmatian (750 AD) :: SZA025
+  [era 4] Hungary Sarmatian (750 AD) :: SZA026
+  [era 4] Hungary Sarmatian (750 AD) :: SZA029
+  [era 4] Hungary Sarmatian (750 AD) :: SZA030
+  [era 4] Hungary Sarmatian (750 AD) :: SZA031
+  [era 4] Hungary Sarmatian (750 AD) :: SZA033
+  [era 4] Hungary Sarmatian (750 AD) :: SZA034
+  [era 4] Hungary Sarmatian (750 AD) :: SZA037
+  [era 4] Hungary Sarmatian (750 AD) :: SZA038
+  [era 4] Hungary Sarmatian (750 AD) :: SZA039
+  [era 4] Hungary Sarmatian (750 AD) :: SZA040
+  [era 4] Hungary Sarmatian (750 AD) :: SZA041
+  [era 4] Hungary Sarmatian (750 AD) :: SZA042
+  [era 4] Hungary Sarmatian (750 AD) :: SZA043
+  [era 4] Hungary Sarmatian (750 AD) :: SZA044
+  [era 4] Hungary Sarmatian (750 AD) :: SZA045
+  [era 4] Hungary Sarmatian (750 AD) :: SZA046
+  [era 4] Hungary Sarmatian (750 AD) :: SZA047
+  [era 4] Hungary Sarmatian (750 AD) :: SZA048
+  [era 4] Hungary Sarmatian (750 AD) :: SZA049
+  [era 4] Hungary Sarmatian (750 AD) :: SZA050
+  [era 4] Hungary Sarmatian (750 AD) :: SZA051
+  [era 4] Hungary Sarmatian (750 AD) :: SZA052
+  [era 4] Hungary Sarmatian (750 AD) :: SZA053
+  [era 4] Hungary Sarmatian (750 AD) :: SZA054
+  [era 4] Hungary Sarmatian (750 AD) :: SZA055
+  [era 4] Hungary Sarmatian (750 AD) :: IKU005
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB001
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB002
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB003
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB004
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB005
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB006
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB007
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB008
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB009
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB010
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB011
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB012
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB013
+  [era 4] Hunnic Sarmatian (750 AD) :: ALB014
+  [era 4] Hungary Gepid (750 AD) :: RKO008
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-100
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-108
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-110
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-111
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-112
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-113
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-115
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-116
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-117
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-119
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-120
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-121
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-122
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-123
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-124
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-125
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-127
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-128
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-129
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-130
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-131
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-132
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-134
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-135
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-136
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-137
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-138
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-139
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-140
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-141
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-142
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-143
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-144
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-145
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-147
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-148
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-149
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-150
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-151
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-152
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-153
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-154
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-155
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-156
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-157
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-158
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-159
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-160
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-161
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-162
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-163
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-164
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-165
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-166
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-167
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-168
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-169
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-170
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-171
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-172
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-173
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-174
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-175
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-176
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-177
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-178
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-179
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-180
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-181
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-182
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-183
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-184
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-185
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-186
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-187
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-188
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-189
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-190
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-191
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-192
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-193
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-194
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-195
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-196
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-197
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-198
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-199
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-200
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-201
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-202
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-203
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-204
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-205
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-206
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-207
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-208
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-209
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-210
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-211
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-212
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-213
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-214
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-215
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-216
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-217
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-218
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-219
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-220
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-221
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-222
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-223
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-224
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-225
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-226
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-227
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-228
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-229
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-230
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-231
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-232
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-233
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-234
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-235
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-236
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-237
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-238
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-239
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-240
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-241
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-242
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-243
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-244
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-245
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-246
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-247
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-248
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-249
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-250
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-251
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-252
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-253
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-254
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-255
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-256
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-257
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-258
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-259
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-260
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-261
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-262
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-263
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-264
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-265
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-266
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-267
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-268
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-269
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-270
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-271
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-272
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-273
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-274
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-275
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-276
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-277
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-278
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-279
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-280
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-281
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-282
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-283
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-284
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-285
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-286
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-287
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-288
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-289
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-290
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-291
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-292
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-293
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-294
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-295
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-296
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-297
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-298
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-299
+  [era 4] Hungary Avar Khanagate (600-800 AD) :: AGY-300
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-301
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-302
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-303
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-304
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-305
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-306
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-307
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-308
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-309
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-310
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-311
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-312
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-313
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-314
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-315
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-316
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-317
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-318
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-319
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-320
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-321
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-322
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-323
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-324
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-325
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-326
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-327
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-328
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-329
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-330
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-331
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-332
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-333
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-334
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-335
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-336
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-337
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-338
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-339
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-340
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-341
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-342
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-343
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-344
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-345
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-346
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-347
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-348
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-349
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-350
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-351
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-352
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-353
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-354
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-355
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-356
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-357
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-358
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-359
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-360
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-361
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-362
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-363
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-364
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-365
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-366
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-367
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-368
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-369
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-370
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-371
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-372
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-373
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-374
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-375
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-376
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-377
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-378
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-379
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-380
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-381
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-382
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-383
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-384
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-385
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-386
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-387
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-388
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-389
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-390
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-391
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-392
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-393
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-394
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-395
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-396
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-397
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-398
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-399
+  [era 4] Hungary Local Pannonian (600–880 AD) :: AGY-400
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-103
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-106
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-107
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-109
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-114
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-118
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-126
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-133
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-146
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-301
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-302
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-303
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-304
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-305
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-306
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-307
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-308
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-309
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-310
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-311
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-312
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-313
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-314
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-315
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-316
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-317
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-318
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-319
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-320
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-321
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-322
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-323
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-324
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-325
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-326
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-327
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-328
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-329
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-330
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-331
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-332
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-333
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-334
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-335
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-336
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-337
+  [era 4] Hungary Magyar Conqueror (800-1000 AD) :: AGY-338
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK001
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK002
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK003
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK004
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK005
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK006
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK007
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK008
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK009
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK010
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK011
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK012
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK013
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK014
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK015
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK016
+  [era 4] Hungary Arpadian (900-1100 AD) :: SZK017
+  [era 4] Hungary Arpadian (900-1100 AD) :: LHP001
+  [era 4] Hungary Arpadian (900-1100 AD) :: LHP002
+  [era 4] Hungary Arpadian (900-1100 AD) :: LHP003
+  [era 4] Hungary Arpadian (900-1100 AD) :: LHP004
+  [era 4] Hungary Arpadian (900-1100 AD) :: LHP005
+  [era 4] Hungary Arpadian (900-1100 AD) :: LHP006
+  [era 4] Hungary Arpadian (900-1100 AD) :: LHP007
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH001
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH002
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH003
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH004
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH005
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH006
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH007
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH008
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH009
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH010
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH011
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH012
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH013
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH014
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH015
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH016
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH017
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH018
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH019
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH020
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH021
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH022
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH023
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH024
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH025
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH026
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH027
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH028
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH029
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH030
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH031
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH032
+  [era 4] Hungary Arpadian (900-1100 AD) :: SEDH033
+  [era 4] Hungary Arpadian (900-1100 AD) :: ZLH001
+  [era 4] Hungary Arpadian (900-1100 AD) :: ZLH002
+  [era 4] Hungary Arpadian (900-1100 AD) :: ZLH003
+  [era 4] Hungary Arpadian (900-1100 AD) :: ZLH004
+  [era 4] Hungary Arpadian (900-1100 AD) :: ZLH005
+  [era 4] Hungary Arpadian (900-1100 AD) :: ZLH006
+  [era 4] Hungary Arpadian (900-1100 AD) :: ZLH007
+  [era 4] Hungarian (1000-1400 AD) :: VIS001
+  [era 4] Hungarian (1000-1400 AD) :: VIS002
+  [era 4] Hungarian (1000-1400 AD) :: VIS003
+  [era 4] Hungarian (1000-1400 AD) :: VIS004
+  [era 4] Hungarian (1000-1400 AD) :: VIS005
+  [era 4] Hungarian (1000-1400 AD) :: VIS006
+  [era 4] Hungarian (1000-1400 AD) :: VIS007
+  [era 4] Hungarian (1000-1400 AD) :: ZLM001
+  [era 4] Hungarian (1000-1400 AD) :: ZLM002
+  [era 4] Hungarian (1000-1400 AD) :: ZLM003
+  [era 4] Hungarian (1000-1400 AD) :: ZLM004
+  [era 4] Hungarian (1000-1400 AD) :: ZLM005
+  [era 4] Hungarian (1000-1400 AD) :: HUN1247
+
+Dirty tokens skipped (coordinate noise / mangled): 26
+  [era 2] Thracian Triballi :: BGR_Thracian_Triballi*(650*BC):Bulgaria_IA:I5769__BC_642__Cov_92.96%
+  [era 2] Thracian Triballi :: 0.126344
+  [era 2] Thracian Triballi :: 0.152329
+  [era 2] Thracian Triballi :: 0.007165
+  [era 2] Thracian Triballi :: -0.052972
+  [era 2] Thracian Triballi :: 0.031698
+  [era 2] Thracian Triballi :: -0.0251
+  [era 2] Thracian Triballi :: 0.00235
+  [era 2] Thracian Triballi :: 0.000231
+  [era 2] Thracian Triballi :: 0.005318
+  [era 2] Thracian Triballi :: 0.035718
+  [era 2] Thracian Triballi :: 0.00065
+  [era 2] Thracian Triballi :: 0.007493
+  [era 2] Thracian Triballi :: -0.015312
+  [era 2] Thracian Triballi :: -0.00234
+  [era 2] Thracian Triballi :: -0.013979
+  [era 2] Thracian Triballi :: -0.002917
+  [era 2] Thracian Triballi :: 0.011083
+  [era 2] Thracian Triballi :: 0.000253
+  [era 2] Thracian Triballi :: 0.003771
+  [era 2] Thracian Triballi :: -0.008129
+  [era 2] Thracian Triballi :: -0.006988
+  [era 2] Thracian Triballi :: -0.000495
+  [era 2] Thracian Triballi :: -0.007272
+  [era 2] Thracian Triballi :: 0.00964
+  [era 2] Thracian Triballi :: -0.009101
