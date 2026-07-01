@@ -15,8 +15,8 @@ namespace Odin.Api.IntegrationTests.Endpoints.OrderManagement;
 /// <summary>
 /// The iOS in-app-purchase paid-order flow: <c>POST /orders/purchase</c> validates the StoreKit
 /// transaction (signature checks are skipped under Testing), creates the order, records the consumed
-/// transaction, and is idempotent on the Apple transaction id. The legacy free <c>POST /orders</c> is now
-/// admin-only.
+/// transaction, and is idempotent on the Apple transaction id. The free <c>POST /orders</c> path is open to any
+/// authenticated + email-verified user (simple users included) so regular web accounts can create orders.
 /// </summary>
 public class OrderPurchaseEndpointsTests(CustomWebApplicationFactory factory) : IntegrationTestBase(factory)
 {
@@ -108,14 +108,14 @@ public class OrderPurchaseEndpointsTests(CustomWebApplicationFactory factory) : 
     }
 
     [Fact]
-    public async Task CreateFree_AsNonAdmin_IsForbidden()
+    public async Task CreateFree_AsNonAdmin_IsAllowed()
     {
-        // The legacy free endpoint is admin-only now — a regular verified user must be rejected.
+        // The free endpoint is open to any verified user now — a regular (non-admin) account can create an order.
         var userClient = await CreateClientAsAsync("auth0|order-lockdown-user", AppRole.User);
         var (regionIds, _) = await SeedEthnicitiesAndRegionsAsync(Factory.Services, 1, 1);
         using var content = QpadmForm(regionIds);
         var response = await userClient.PostAsync("/api/orders", content);
-        Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
     }
 
     [Fact]

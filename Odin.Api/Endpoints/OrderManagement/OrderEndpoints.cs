@@ -42,12 +42,13 @@ namespace Odin.Api.Endpoints.OrderManagement
                 .RequireRateLimiting("authenticated")
                 .Produces<GetOrderContract.Response>(StatusCodes.Status200OK);
 
-            // Free order creation is now ADMIN-ONLY. Paid users go through POST /purchase below, which
-            // requires a validated Apple StoreKit transaction. (iOS and web share X-App: ancestrify, so the
-            // paid path can't be distinguished by app — hence a dedicated endpoint rather than per-app gating.)
+            // Free order creation is open to any authenticated + email-verified user (simple users included), so
+            // regular accounts can create orders on the web. The paid iOS path (POST /purchase, validated Apple
+            // StoreKit transaction) is unchanged. NOTE: re-tighten this before a public web launch adds a payment
+            // path — until then the web has no charge for creating an order.
             endpoints.MapPost("/", Create)
                 .DisableAntiforgery()
-                .RequireAuthorization("AdminOnly")
+                .RequireAuthorization("EmailVerified")
                 .RequireRateLimiting("file-upload")
                 .Produces<CreateOrderContract.Response>(StatusCodes.Status201Created)
                 .WithRequestTimeout(TimeSpan.FromMinutes(5));
