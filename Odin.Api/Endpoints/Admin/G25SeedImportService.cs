@@ -159,8 +159,8 @@ public class G25SeedImportService(ApplicationDbContext dbContext, IMemoryCache c
     /// Admin-triggered re-import of the G25 PCA population sample seed file (the per-individual reference
     /// cloud). Mirrors <see cref="ImportDistancePopulationSamplesAsync"/>, but because a PCA
     /// <c>Label</c> is NOT unique (many individuals share a population), an existing row is identified by
-    /// the <c>(era, label, ids)</c> triple — the same identity the seed generator dedups on. No cache
-    /// invalidation: PCA samples are not cached (there is no PCA <see cref="G25SampleCacheKeys"/> entry).
+    /// the <c>(era, label, ids)</c> triple — the same identity the seed generator dedups on. Busts the
+    /// per-era PCA scatter cache (<see cref="G25SampleCacheKeys.PcaScatter"/>) for every era that gained rows.
     /// </summary>
     public async Task<ImportG25PcaPopulationSamplesContract.Response> ImportPcaPopulationSamplesAsync(
         string identityId, CancellationToken cancellationToken = default)
@@ -200,6 +200,8 @@ public class G25SeedImportService(ApplicationDbContext dbContext, IMemoryCache c
         var skippedExisting = 0;
         var skippedInvalidEra = 0;
         var skippedMalformed = 0;
+        // Eras that gained samples — their per-era PCA scatter cache must be busted after import.
+        var affectedEraIds = new HashSet<int>();
 
         foreach (var seed in seeds)
         {
@@ -255,6 +257,7 @@ public class G25SeedImportService(ApplicationDbContext dbContext, IMemoryCache c
             batch.Add(sample);
             // Reserve the key so a duplicate triple inside the seed file isn't inserted twice in one run.
             existingKeys.Add(key);
+            affectedEraIds.Add(seed.G25DistanceEraId);
             inserted++;
 
             if (batch.Count < BatchSize)
@@ -272,6 +275,9 @@ public class G25SeedImportService(ApplicationDbContext dbContext, IMemoryCache c
             await dbContext.SaveChangesAsync(cancellationToken);
             dbContext.ChangeTracker.Clear();
         }
+
+        foreach (var eraId in affectedEraIds)
+            cache.Remove(G25SampleCacheKeys.PcaScatter(eraId));
 
         stopwatch.Stop();
         return new ImportG25PcaPopulationSamplesContract.Response

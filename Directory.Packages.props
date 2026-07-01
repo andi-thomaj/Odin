@@ -22,6 +22,8 @@
     <PackageVersion Include="Npgsql" Version="10.0.2" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     <PackageVersion Include="Npgsql.NetTopologySuite" Version="10.0.2" />
+    <!-- Numerics (G25 per-era PCA eigendecomposition) -->
+    <PackageVersion Include="MathNet.Numerics" Version="5.0.0" />
     <!-- Health Checks -->
     <PackageVersion Include="AspNetCore.HealthChecks.Npgsql" Version="9.0.0" />
     <!-- Background jobs -->

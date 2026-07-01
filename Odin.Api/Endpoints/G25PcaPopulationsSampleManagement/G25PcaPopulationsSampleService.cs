@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Odin.Api.Data;
 using Odin.Api.Data.Entities;
+using Odin.Api.Endpoints.G25Calculations;
 using Odin.Api.Endpoints.G25PcaPopulationsSampleManagement.Models;
 
 namespace Odin.Api.Endpoints.G25PcaPopulationsSampleManagement;
@@ -18,10 +20,19 @@ public interface IG25PcaPopulationsSampleService
     Task<IReadOnlyList<string>> SearchLabelsAsync(string query, int limit = 50, CancellationToken cancellationToken = default);
 }
 
-public class G25PcaPopulationsSampleService(ApplicationDbContext dbContext) : IG25PcaPopulationsSampleService
+public class G25PcaPopulationsSampleService(ApplicationDbContext dbContext, IMemoryCache cache)
+    : IG25PcaPopulationsSampleService
 {
     private const int MaxPageSize = 200;
     private const int MaxSearchLimit = 200;
+
+    // The per-era PCA scatter (Ancient Origins PCA tab) is cached per era; any edit to a sample changes
+    // its era's fitted projection, so bust that era's scatter cache on write.
+    private void InvalidatePcaScatter(int? eraId)
+    {
+        if (eraId is int id)
+            cache.Remove(G25SampleCacheKeys.PcaScatter(id));
+    }
 
     public async Task<IReadOnlyList<GetG25PcaPopulationsSampleContract.Response>> GetAllAsync(CancellationToken cancellationToken = default)
     {
@@ -203,6 +214,7 @@ public class G25PcaPopulationsSampleService(ApplicationDbContext dbContext) : IG
 
         dbContext.G25PcaPopulationsSamples.Add(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
+        InvalidatePcaScatter(entity.G25DistanceEraId);
 
         return new CreateG25PcaPopulationsSampleContract.Response
         {
@@ -234,6 +246,10 @@ public class G25PcaPopulationsSampleService(ApplicationDbContext dbContext) : IG
             .Include(e => e.ResearchLinks)
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity is null) return null;
+
+        // Captured before mutation: a row can move between eras, so both the old and the new era's
+        // cached scatter must be invalidated.
+        var previousEraId = entity.G25DistanceEraId;
 
         G25DistanceEra? era = null;
         if (request.G25DistanceEraId is int eraId)
@@ -298,6 +314,8 @@ public class G25PcaPopulationsSampleService(ApplicationDbContext dbContext) : IG
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);
+        InvalidatePcaScatter(previousEraId);
+        InvalidatePcaScatter(entity.G25DistanceEraId);
 
         return new GetG25PcaPopulationsSampleContract.Response
         {
@@ -326,8 +344,10 @@ public class G25PcaPopulationsSampleService(ApplicationDbContext dbContext) : IG
         var entity = await dbContext.G25PcaPopulationsSamples.FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
         if (entity is null) return false;
 
+        var eraId = entity.G25DistanceEraId;
         dbContext.G25PcaPopulationsSamples.Remove(entity);
         await dbContext.SaveChangesAsync(cancellationToken);
+        InvalidatePcaScatter(eraId);
         return true;
     }
 }

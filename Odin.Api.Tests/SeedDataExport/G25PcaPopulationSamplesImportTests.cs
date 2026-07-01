@@ -23,7 +23,7 @@ namespace Odin.Api.Tests.SeedDataExport;
 /// </summary>
 public class G25PcaPopulationSamplesImportTests
 {
-    [Fact(Skip = "Manual seed-import utility — requires a populated Postgres; run locally only.")]
+    [Fact]
     public async Task Import_PcaPopulationSamples_IntoDatabase()
     {
         var connectionString = ResolveConnectionString();

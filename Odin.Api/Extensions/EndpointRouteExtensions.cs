@@ -24,6 +24,7 @@ using Odin.Api.Endpoints.UserManagement;
 using Odin.Api.Endpoints.UserFacePhotoManagement;
 using Odin.Api.Endpoints.AncestralPortraitManagement;
 using Odin.Api.Endpoints.G25Calculations;
+using Odin.Api.Endpoints.G25PcaScatter;
 using Odin.Api.Endpoints.G25ContinentManagement;
 using Odin.Api.Endpoints.CalculatorManagement;
 using Odin.Api.Endpoints.G25AdmixtureEraManagement;
@@ -59,6 +60,7 @@ namespace Odin.Api.Extensions
             v1.MapG25PopulationSampleEndpoints();
             v1.MapG25DistancePopulationSampleEndpoints();
             v1.MapG25PcaPopulationsSampleEndpoints();
+            v1.MapG25PcaScatterEndpoints();
             v1.MapQpadmPopulationSampleEndpoints();
             v1.MapQpadmPopulationPanelSampleEndpoints();
             v1.MapG25SavedCoordinateEndpoints();

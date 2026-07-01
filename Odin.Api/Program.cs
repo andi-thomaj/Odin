@@ -394,6 +394,7 @@ namespace Odin.Api
             services.AddScoped<IG25DistanceEraService, G25DistanceEraService>();
             services.AddScoped<IG25AdmixtureEraService, G25AdmixtureEraService>();
             services.AddScoped<IG25CalculationService, G25CalculationService>();
+            services.AddScoped<Odin.Api.Endpoints.G25PcaScatter.IG25PcaScatterService, Odin.Api.Endpoints.G25PcaScatter.G25PcaScatterService>();
             services.AddScoped<ICalculatorService, CalculatorService>();
             services.AddScoped<IAdmixToolsEraService, AdmixToolsEraService>();
             services.AddScoped<ILogCleanupService, LogCleanupService>();
