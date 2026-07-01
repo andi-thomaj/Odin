@@ -33,7 +33,7 @@ public class G25PcaSeedBuilderTests
     }
 
     [Fact]
-    public void Build_Matches_Prefixmulti_Dirty_Unmatched_Modern_AndDedup()
+    public void Build_AggregatesEachPopulation_Prefixmulti_Dirty_Unmatched_Modern_AndDedup()
     {
         var coordsAg = Coords(1);
         var coordsSg = Coords(2);
@@ -58,19 +58,23 @@ public class G25PcaSeedBuilderTests
 
         var distance = new List<G25PcaDistanceSample>
         {
-            // I100 -> boundary-prefix hits BOTH .AG and .SG (two rows); I200 -> exact (one row);
+            // I100 -> boundary-prefix hits BOTH .AG and .SG (two members); I200 -> exact (one member);
             // I999 -> unmatched; "0.123" -> dirty (decimal); "foo:bar" -> dirty (colon).
             new("Alpha", "I100,I200,I999,0.123,foo:bar", 1),
-            new("Alpha", "I200", 1), // duplicate (era 1, Alpha, I200) -> deduped
+            new("Alpha", "I200", 1), // second Alpha sample in era 1 -> merges; its I200 is a duplicate member
             new("ModThing", "ignored", G25PcaSeedBuilder.ModernEraId), // modern distance ids are ignored
         };
 
         var result = G25PcaSeedBuilder.Build(distance, eraRows);
 
-        Assert.Equal(3, result.AncientRows);
-        Assert.Equal(2, result.ModernRows);
-        Assert.Equal(5, result.Records.Count);
-        Assert.Equal(1, result.DedupSkipped);
+        // One record PER POPULATION now: a single "Alpha" cluster (both Alpha samples merged) + one
+        // "ModPop" cluster.
+        Assert.Equal(1, result.AncientClusters);
+        Assert.Equal(1, result.ModernClusters);
+        Assert.Equal(3, result.AncientMembers);
+        Assert.Equal(2, result.ModernMembers);
+        Assert.Equal(2, result.Records.Count);
+        Assert.Equal(1, result.DedupSkipped); // the second Alpha's I200
 
         Assert.Single(result.Unmatched);
         Assert.Equal("I999", result.Unmatched[0].Token);
@@ -79,18 +83,16 @@ public class G25PcaSeedBuilderTests
         Assert.Contains(result.Dirty, d => d.Token == "0.123");
         Assert.Contains(result.Dirty, d => d.Token == "foo:bar");
 
-        // Prefix-multi: both sequencings become their own point, carrying the sample's friendly label.
-        Assert.Contains(result.Records, r =>
-            r is { Label: "Alpha", Ids: "I100.AG__BC_1", EraId: 1 } && r.Coordinates == coordsAg);
-        Assert.Contains(result.Records, r =>
-            r is { Label: "Alpha", Ids: "I100.SG__BC_1", EraId: 1 } && r.Coordinates == coordsSg);
-        Assert.Contains(result.Records, r =>
-            r is { Label: "Alpha", Ids: "I200", EraId: 1 } && r.Coordinates == coordsI200);
+        // Alpha aggregates all three matched members (prefix-multi .AG + .SG + the exact I200), members
+        // sorted by individual portion, coordinates ';'-joined and ids ','-joined in the same order.
+        var alpha = Assert.Single(result.Records, r => r is { Label: "Alpha", EraId: 1 });
+        Assert.Equal("I100.AG__BC_1,I100.SG__BC_1,I200", alpha.Ids);
+        Assert.Equal($"{coordsAg};{coordsSg};{coordsI200}", alpha.Coordinates);
 
-        // Modern rows are ingested as-is: label = population prefix, ids = individual portion.
-        Assert.Contains(result.Records, r =>
-            r is { Label: "ModPop", Ids: "M1", EraId: G25PcaSeedBuilder.ModernEraId });
-        Assert.Contains(result.Records, r =>
-            r is { Label: "ModPop", Ids: "M2", EraId: G25PcaSeedBuilder.ModernEraId });
+        // Modern is grouped by the file's population prefix (distance ids ignored): one "ModPop" cluster.
+        var modPop = Assert.Single(result.Records, r => r.EraId == G25PcaSeedBuilder.ModernEraId);
+        Assert.Equal("ModPop", modPop.Label);
+        Assert.Equal("M1,M2", modPop.Ids);
+        Assert.Equal($"{coordsM1};{coordsM2}", modPop.Coordinates);
     }
 }

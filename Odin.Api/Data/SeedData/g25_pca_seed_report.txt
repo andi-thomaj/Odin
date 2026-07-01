@@ -1,10 +1,11 @@
 G25 PCA seed generation report
-Generated (UTC): 2026-07-01T14:47:51.9632830Z
+Generated (UTC): 2026-07-01T19:44:06.7190040Z
 Distance seed:   Odin.Api/Data/SeedData/g25_distance_population_samples.json
 Genetic dir:     Odin.Api/Data/SeedData/g25-coordinates
 Output JSON:     Odin.Api/Data/SeedData/g25_pca_population_samples.json
-Total PCA rows:  18077  (ancient 7150 + modern 10927)
-Dedup skipped:   17
+PCA clusters (one row per population): 1427  (ancient 423 + modern 1004)
+Member individuals aggregated:        18077  (ancient 7150 + modern 10927)
+Dedup skipped (duplicate members):    17
 
 Unmatched ids (absent from the era file): 528
   [era 1] Pre-Columbian Indigenous Argentina (2600 - 1350 BC) :: 12726

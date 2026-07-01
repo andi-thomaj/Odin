@@ -156,11 +156,13 @@ public class G25SeedImportService(ApplicationDbContext dbContext, IMemoryCache c
     }
 
     /// <summary>
-    /// Admin-triggered re-import of the G25 PCA population sample seed file (the per-individual reference
-    /// cloud). Mirrors <see cref="ImportDistancePopulationSamplesAsync"/>, but because a PCA
-    /// <c>Label</c> is NOT unique (many individuals share a population), an existing row is identified by
-    /// the <c>(era, label, ids)</c> triple — the same identity the seed generator dedups on. Busts the
-    /// per-era PCA scatter cache (<see cref="G25SampleCacheKeys.PcaScatter"/>) for every era that gained rows.
+    /// Admin-triggered re-import of the G25 PCA population sample seed file (the per-population reference
+    /// cloud — one row per population, all member individuals' coordinates ';'-joined). Mirrors
+    /// <see cref="ImportDistancePopulationSamplesAsync"/>; an existing row is identified by the
+    /// <c>(era, label, ids)</c> triple — the same identity the seed generator dedups on. A population is
+    /// now a single row, so <c>(era, label)</c> is already unique (the <c>ids</c> component is redundant
+    /// but harmless). Busts the per-era PCA scatter cache
+    /// (<see cref="G25SampleCacheKeys.PcaScatter"/>) for every era that gained rows.
     /// </summary>
     public async Task<ImportG25PcaPopulationSamplesContract.Response> ImportPcaPopulationSamplesAsync(
         string identityId, CancellationToken cancellationToken = default)

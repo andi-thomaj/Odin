@@ -4,7 +4,8 @@ using Odin.Api.Data.Seeders;
 
 // G25 PCA seed generator.
 //
-// Derives the PER-INDIVIDUAL G25 PCA population samples from (a) the already-seeded G25 distance
+// Derives the PER-POPULATION G25 PCA population samples (one cluster row per population, carrying all its
+// member individuals' coordinates as ';'-joined 25-value groups) from (a) the already-seeded G25 distance
 // population samples and (b) the per-era G25 coordinate files, and writes
 // Data/SeedData/g25_pca_population_samples.json (same record shape the distance seed uses) plus a
 // human-readable Data/SeedData/g25_pca_seed_report.txt. The matching rules live in the shared
@@ -75,8 +76,12 @@ report.AppendLine($"Distance seed:   {distanceJson}");
 report.AppendLine($"Genetic dir:     {geneticDir}");
 report.AppendLine($"Output JSON:     {outPath}");
 report.AppendLine(
-    $"Total PCA rows:  {result.Records.Count}  (ancient {result.AncientRows} + modern {result.ModernRows})");
-report.AppendLine($"Dedup skipped:   {result.DedupSkipped}");
+    $"PCA clusters (one row per population): {result.Records.Count}  " +
+    $"(ancient {result.AncientClusters} + modern {result.ModernClusters})");
+report.AppendLine(
+    $"Member individuals aggregated:        {result.AncientMembers + result.ModernMembers}  " +
+    $"(ancient {result.AncientMembers} + modern {result.ModernMembers})");
+report.AppendLine($"Dedup skipped (duplicate members):    {result.DedupSkipped}");
 report.AppendLine();
 report.AppendLine($"Unmatched ids (absent from the era file): {result.Unmatched.Count}");
 foreach (var u in result.Unmatched)
@@ -89,8 +94,9 @@ foreach (var d in result.Dirty)
 await File.WriteAllTextAsync(reportPath, report.ToString());
 
 Console.WriteLine();
-Console.WriteLine($"Wrote {result.Records.Count} PCA records -> {outPath}");
-Console.WriteLine($"  ancient {result.AncientRows} + modern {result.ModernRows}; " +
+Console.WriteLine($"Wrote {result.Records.Count} PCA cluster records -> {outPath}");
+Console.WriteLine($"  clusters: ancient {result.AncientClusters} + modern {result.ModernClusters}; " +
+                  $"members: ancient {result.AncientMembers} + modern {result.ModernMembers}; " +
                   $"unmatched {result.Unmatched.Count}; dirty {result.Dirty.Count}; dedup skipped {result.DedupSkipped}");
 Console.WriteLine($"Report -> {reportPath}");
 return 0;

@@ -10,20 +10,22 @@ using Odin.Api.Data.Seeders;
 namespace Odin.Api.Tests.SeedDataExport;
 
 /// <summary>
-/// Manual seed-IMPORT utility — populates <c>g25_pca_populations_samples</c> (the per-individual PCA
-/// reference cloud) directly into a live Postgres, derived from the committed distance seed + the
-/// per-era G25 coordinate files under <c>Odin.Api/Data/SeedData/g25-coordinates</c>. Mirrors
+/// Manual seed-IMPORT utility — populates <c>g25_pca_populations_samples</c> (the per-population PCA
+/// reference cloud — one row per population, all member individuals' coordinates ';'-joined) directly
+/// into a live Postgres, derived from the committed distance seed + the per-era G25 coordinate files
+/// under <c>Odin.Api/Data/SeedData/g25-coordinates</c>. Mirrors
 /// <see cref="G25DistancePopulationSamplesExportTests"/>: not a CI test — remove the Skip and run
 /// locally with <c>ConnectionStrings__DefaultConnection</c> set (or via user-secrets), or
 /// <c>dotnet test --filter</c> against this single test.
 ///
-/// It is idempotent: existing rows are matched on the <c>(era, label, ids)</c> triple and skipped, so
-/// it can be re-run to top up new samples without duplicating. Only the G25 distance eras (1-6) need to
-/// already exist in the target DB — the distance samples and coordinates are read from the repo.
+/// It is idempotent: existing rows are matched on the <c>(era, label, ids)</c> triple and skipped (now
+/// that a population is a single row, <c>(era, label)</c> is unique, so the triple is too), so it can be
+/// re-run to top up new samples without duplicating. Only the G25 distance eras (1-6) need to already
+/// exist in the target DB — the distance samples and coordinates are read from the repo.
 /// </summary>
 public class G25PcaPopulationSamplesImportTests
 {
-    [Fact]
+    [Fact(Skip = "Manual seed-import utility — requires a populated Postgres; run locally only.")]
     public async Task Import_PcaPopulationSamples_IntoDatabase()
     {
         var connectionString = ResolveConnectionString();
@@ -126,8 +128,9 @@ public class G25PcaPopulationSamplesImportTests
         // Surfaced in the test runner output.
         Assert.True(
             inserted >= 0,
-            $"Imported {inserted} new PCA rows (built {build.Records.Count}: ancient {build.AncientRows} + " +
-            $"modern {build.ModernRows}; unmatched {build.Unmatched.Count}; dirty {build.Dirty.Count}). " +
+            $"Imported {inserted} new PCA rows (built {build.Records.Count} clusters: ancient " +
+            $"{build.AncientClusters} + modern {build.ModernClusters}; members ancient {build.AncientMembers} " +
+            $"+ modern {build.ModernMembers}; unmatched {build.Unmatched.Count}; dirty {build.Dirty.Count}). " +
             $"Table now holds {total}.");
     }
 

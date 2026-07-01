@@ -61,7 +61,10 @@ public class G25PcaScatterService(
         var coordinates = new List<double[]>(rows.Count);
         foreach (var row in rows)
         {
-            if (TryParseCoordinates(row.Coordinates, out var vector))
+            // Each row is a whole population's cloud: its Coordinates hold one 25-value group per member
+            // individual (groups joined with ';'). Expand into one plotted vector per member, all tagged
+            // with the row's population label. A malformed group is skipped without discarding the rest.
+            foreach (var vector in ParseCoordinateGroups(row.Coordinates))
             {
                 labels.Add(row.Label);
                 coordinates.Add(vector);
@@ -195,23 +198,37 @@ public class G25PcaScatterService(
         return result;
     }
 
-    private static bool TryParseCoordinates(string? raw, out double[] vector)
+    // A population row's Coordinates is one 25-value group per member individual, groups joined with ';'
+    // (a single-group string — the plain 25-value CSV — parses to one vector, so the old shape still
+    // works). Each valid group becomes one vector; a group that isn't exactly 25 numeric values is
+    // skipped so one corrupt member costs one point rather than the whole population.
+    private static List<double[]> ParseCoordinateGroups(string? raw)
     {
-        vector = [];
+        var vectors = new List<double[]>();
         if (string.IsNullOrWhiteSpace(raw))
-            return false;
+            return vectors;
 
-        var parts = raw.Split(',');
-        if (parts.Length != G25PcaEngine.Dims)
-            return false;
+        foreach (var group in raw.Split(
+                     ';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var parts = group.Split(',');
+            if (parts.Length != G25PcaEngine.Dims)
+                continue;
 
-        var parsed = new double[G25PcaEngine.Dims];
-        for (var i = 0; i < parts.Length; i++)
-            if (!double.TryParse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out parsed[i]))
-                return false;
+            var parsed = new double[G25PcaEngine.Dims];
+            var ok = true;
+            for (var i = 0; i < parts.Length; i++)
+                if (!double.TryParse(parts[i], NumberStyles.Float, CultureInfo.InvariantCulture, out parsed[i]))
+                {
+                    ok = false;
+                    break;
+                }
 
-        vector = parsed;
-        return true;
+            if (ok)
+                vectors.Add(parsed);
+        }
+
+        return vectors;
     }
 
     private static double Round(double value) => Math.Round(value, CoordinatePrecision);

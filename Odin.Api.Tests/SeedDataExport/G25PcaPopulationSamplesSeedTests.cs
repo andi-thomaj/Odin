@@ -5,10 +5,11 @@ namespace Odin.Api.Tests.SeedDataExport;
 
 /// <summary>
 /// Validates the committed G25 PCA population-sample seed (produced offline by
-/// <c>tools/GenerateG25PcaSeed</c>). These are structural guards so a bad regeneration can't ship a
-/// seed the startup seeder / PCA parser would choke on: every row must carry exactly 25 PC values, a
-/// known era id (1-6, the G25DistanceEra catalog), and a non-empty label — and every (era, label, ids)
-/// triple must be unique (the seeder inserts one row per triple).
+/// <c>tools/GenerateG25PcaSeed</c>). The PCA dataset now holds ONE row per POPULATION per era (a
+/// cluster): its <c>Coordinates</c> is the member individuals' 25-value groups joined with ';'. These
+/// structural guards keep a bad regeneration from shipping a seed the startup seeder / PCA parser would
+/// choke on: every member group is exactly 25 numeric PC values, every era id is known (1-6), every
+/// label non-empty, and <c>(era, label)</c> is unique (one cluster per population per era).
 /// </summary>
 public class G25PcaPopulationSamplesSeedTests
 {
@@ -21,9 +22,10 @@ public class G25PcaPopulationSamplesSeedTests
     {
         var samples = LoadSeed();
 
-        // Sanity bounds — the ancient ids + all Modern individuals land in the tens of thousands. Loose
-        // enough to survive a re-generation against refreshed coordinate files.
-        Assert.InRange(samples.Count, 15_000, 40_000);
+        // One row per (era, population). Loose bounds so a regeneration against refreshed coordinate
+        // files survives, while still catching a collapse to ~0 or a regression back to per-individual
+        // (which would land in the tens of thousands).
+        Assert.InRange(samples.Count, 100, 10_000);
 
         foreach (var sample in samples)
         {
@@ -31,48 +33,63 @@ public class G25PcaPopulationSamplesSeedTests
             Assert.NotNull(sample.Coordinates);
             Assert.Contains(sample.G25DistanceEraId, ValidEraIds);
 
-            var parts = sample.Coordinates!.Split(',');
+            var groups = MemberGroups(sample.Coordinates!);
             Assert.True(
-                parts.Length == ExpectedCoordinateCount,
-                $"'{sample.SampleLabel}' (era {sample.G25DistanceEraId}) has {parts.Length} coordinate " +
-                $"values, expected {ExpectedCoordinateCount}.");
+                groups.Count >= 1,
+                $"'{sample.SampleLabel}' (era {sample.G25DistanceEraId}) has no member coordinate groups.");
 
-            foreach (var part in parts)
+            foreach (var group in groups)
+            {
+                var parts = group.Split(',');
                 Assert.True(
-                    double.TryParse(part, NumberStyles.Float, CultureInfo.InvariantCulture, out _),
-                    $"'{sample.SampleLabel}' has a non-numeric coordinate value '{part}'.");
+                    parts.Length == ExpectedCoordinateCount,
+                    $"'{sample.SampleLabel}' (era {sample.G25DistanceEraId}) has a member group with " +
+                    $"{parts.Length} values, expected {ExpectedCoordinateCount}.");
+
+                foreach (var part in parts)
+                    Assert.True(
+                        double.TryParse(part, NumberStyles.Float, CultureInfo.InvariantCulture, out _),
+                        $"'{sample.SampleLabel}' has a non-numeric coordinate value '{part}'.");
+            }
         }
     }
 
     [Fact]
-    public void PcaSeed_CoversEveryEra_AndModernIsLargest()
+    public void PcaSeed_CoversEveryEra_AndModernHasMostMembers()
     {
         var samples = LoadSeed();
-        var perEra = samples
-            .GroupBy(s => s.G25DistanceEraId)
-            .ToDictionary(g => g.Key, g => g.Count());
 
         foreach (var eraId in ValidEraIds)
-            Assert.True(perEra.ContainsKey(eraId) && perEra[eraId] > 0, $"Era {eraId} has no PCA samples.");
+            Assert.True(samples.Any(s => s.G25DistanceEraId == eraId), $"Era {eraId} has no PCA samples.");
 
-        // Modern (all file rows) is by far the biggest cluster of samples.
-        var modern = perEra[ModernEraId];
+        // "Largest" is now measured by aggregated MEMBER individuals (the point cloud), not row count —
+        // one row per population means the row count tracks population diversity, not cloud size.
+        var membersPerEra = ValidEraIds.ToDictionary(
+            era => era,
+            era => samples.Where(s => s.G25DistanceEraId == era).Sum(s => MemberGroups(s.Coordinates!).Count));
+
+        var modernMembers = membersPerEra[ModernEraId];
         Assert.True(
-            ValidEraIds.Where(e => e != ModernEraId).All(e => perEra[e] < modern),
-            "Modern era should hold more PCA samples than any single ancient era.");
+            ValidEraIds.Where(e => e != ModernEraId).All(e => membersPerEra[e] < modernMembers),
+            "Modern era should aggregate more member individuals than any single ancient era.");
     }
 
     [Fact]
-    public void PcaSeed_HasNoDuplicateEraLabelIdsTriples()
+    public void PcaSeed_HasUniqueEraLabel()
     {
         var samples = LoadSeed();
         var seen = new HashSet<string>();
         foreach (var s in samples)
         {
-            var key = $"{s.G25DistanceEraId}\n{s.SampleLabel}\n{s.Ids}";
-            Assert.True(seen.Add(key), $"Duplicate PCA seed row for triple: {key.Replace('\n', '|')}");
+            var key = $"{s.G25DistanceEraId}\n{s.SampleLabel}";
+            Assert.True(seen.Add(key), $"Duplicate PCA cluster for (era, label): {key.Replace('\n', '|')}");
         }
     }
+
+    private static List<string> MemberGroups(string coordinates) =>
+        coordinates
+            .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
 
     private static List<SampleRow> LoadSeed()
     {
